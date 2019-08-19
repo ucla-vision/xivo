@@ -151,7 +151,7 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 |:---       | :---    | :---:   | :---:       | :---:   | :---:  |
 |room1     | 156m   | **0.06m** | 0.07m | 0.16m | 0.22m |
 |room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.08m |
-|room3     | 135m   | **0.7m**  | 0.11m | 0.15m | 0.11m |
+|room3     | 135m   | **0.07m**  | 0.11m | 0.15m | 0.11m |
 |room4     | 68m    | **0.03m** | 0.04m | 0.09m | 0.08m |
 |room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.11m |
 |room6     | 67m    | **0.04m** | 0.08m | 0.05m | 0.12m |
