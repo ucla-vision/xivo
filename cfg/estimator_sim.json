@@ -1,0 +1,77 @@
+{
+  "simulation": true,
+  "gravity": [0, 0, -9.8],
+  // Initial State
+  "X" : {
+    "W"   : [0, 0, 0],
+    "T"   : [0, 0, 0],
+    "V"   : [0, 0, 0],
+    "bg"  : [0, 0, 0],
+    "ba"  : [0, 0, 0],
+    "Wbc" : [[-0.99952504,  0.00750192, -0.02989013],
+             [0.02961534, -0.03439736, -0.99896935],
+             [-0.00852233, -0.99938008,  0.03415885]],
+    "Tbc": [0.04557484, -0.0711618, -0.04468125],
+    "Wg"  : [0, 0]
+  },
+
+  "P" : {
+    "W"   : 0.0000,
+    "T"   : 0.000,
+    "V"   : 0.0,
+    "bg"  : 0.005,
+    "ba"  : 0.05,
+    "Wbc" : 0.005,
+    "Tbc" : 0.05,
+    "Wg"  : 0.0
+  },
+
+  "Qmodel" : {
+    "W"   : 0.000,
+    "T"   : 0.0,
+    "V"   : 0.0,
+    "wb"  : 0.0000,
+    "ab"  : 0.000,
+    "Wbc" : 0.000,
+    "Tbc" : 0.0,
+    "Wg"  : 0.000
+  },
+
+  "Qimu": {
+    "gyro": 3e-3,
+    "accel":3e-2
+  },
+
+  // initial std on feature state
+  "initial_z": 2.0, // meter
+  "initial_std_x": 0.1, // pixel
+  "initial_std_y": 0.1, // pixel
+  "initial_std_z": 1.0,  // meter
+
+  // std of visuale measurement, in pixels
+  "visual_meas_std":  1.5,
+  "subfilter_visual_meas_std":  1.5,
+  "max_depth": 5.0,
+  "min_depth": 0.05,
+  "max_depth_init_steps": 2,
+  "depth_opt_iters": 10,
+  "depth_opt_eps": 0.001,
+  "depth_opt_damping": 1e-4,
+  "inn_thresh": 20,
+
+
+  "imu_calib": {
+    "Cas": [1, 1, 1],
+    "Car": [[1, 0, 0], 
+            [0, 1, 0], 
+            [0, 0, 1]],
+    "Cgs": [1, 1, 1],
+    "Cgr": [[1, 0, 0], 
+            [0, 1, 0], 
+            [0, 0, 1]]
+  },
+  "imu_init_counter": 10,
+
+  "camera_cfg": "../cfg/equidistant.json", //   atan
+  "tracker_cfg": "../cfg/tracker.json"
+}

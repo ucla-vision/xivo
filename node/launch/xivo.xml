@@ -1,0 +1,28 @@
+<launch>
+
+  <!-- Launch Corvis Filter Node  -->
+  <!-- launch-prefix="xterm -e gdb \-\-args" for debugging -->
+
+  <!-- launch-prefix="xterm -e gdb \-\-args" for debugging -->
+  <!-- launch-prefix="xterm -ex gdb \-\-args" for debugging while executing on start -->
+  <!-- launch-prefix="valgrind" for using valgrind -->
+  <!-- launch-prefix="GLOG_v=0 GLOG_logtostderr=-1 GLOG_log_dir=log" logging options -->
+
+  <node pkg="xivo" type="mynode" name="xivo" output="screen" >
+    <param name="config_path" value="$(find xivo)/../cfg/pointgrey_xsens.json"/>
+    <param name="viewer_config_path" value="$(find xivo)/../cfg/pointgrey_xsens_viewer.json"/>
+    <param name="estimator_queue_size" value="1000" />
+    <param name="image_topic"   value="/camera/image_raw" />
+    <param name="imu_topic"   value="/imu/data" />
+    <param name="viewer_type" value="pangolin" />
+    <!-- <param name="viewer_type" value="ros" /> -->
+  </node>
+
+  <!--
+  <node pkg="image_view" type="image_view" name="image_view" launch-prefix="nice -n -20" >
+    <remap from="image" to="TrackerView" />
+  </node>
+  -->
+
+
+</launch>

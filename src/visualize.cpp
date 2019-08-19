@@ -1,0 +1,119 @@
+#include "absl/strings/str_format.h"
+#include "opencv2/imgproc/imgproc.hpp"
+
+#include "feature.h"
+#include "visualize.h"
+
+namespace feh {
+
+std::unique_ptr<Canvas> Canvas::instance_ = nullptr;
+
+// BGR
+static cv::Scalar kColorPink(203, 192, 255);
+static cv::Scalar kColorCyan(255, 192, 203);
+static cv::Scalar kColorRed(0, 0, 255);
+static cv::Scalar kColorGreen(0, 255, 0);
+static cv::Scalar kColorYellow(0, 255, 255);
+static cv::Scalar kColorBlue(255, 0, 0);
+static cv::Scalar kColorLakeBlue(219, 152, 52);
+
+CanvasPtr Canvas::instance() {
+  if (instance_ == nullptr) {
+    instance_ = std::unique_ptr<Canvas>(new Canvas());
+  }
+  return instance_.get();
+}
+
+void Canvas::Update(const cv::Mat &img) {
+  if (img.empty()) {
+    return;
+  }
+  if (img.channels() == 1) {
+    cv::cvtColor(img, disp_, CV_GRAY2RGB);
+  } else {
+    img.copyTo(disp_);
+  }
+}
+
+void Canvas::Draw(const FeaturePtr f) {
+  if (disp_.empty()) {
+    return;
+  }
+
+  auto pos(f->xp());
+  cv::Scalar color;
+  if (f->track_status() == TrackStatus::TRACKED) {
+    Vec2 last_pos(f->front());
+    for (auto pos : *f) {
+      if (pos != f->xp()) {
+        last_pos = pos;
+      } else
+        break;
+    }
+
+    // draw the trace
+    cv::line(disp_, cv::Point2d(pos[0], pos[1]),
+             cv::Point2d(last_pos[0], last_pos[1]), kColorYellow, 1);
+
+    if (f->instate()) {
+      cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorGreen,
+                     cv::MARKER_CROSS, 10, 2);
+    } else {
+      cv::circle(disp_, cv::Point2d(pos[0], pos[1]), 2, kColorRed, -1);
+    }
+  } else if (f->track_status() == TrackStatus::REJECTED ||
+             f->track_status() == TrackStatus::DROPPED) {
+
+#define DEBUG_VIEW
+#ifdef DEBUG_VIEW
+    cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,
+                   cv::MARKER_TRIANGLE_UP, 20, 5);
+#endif
+
+  } else if (f->track_status() == TrackStatus::CREATED) {
+    // cv::circle(disp_, cv::Point2d(pos[0], pos[1]), 3, kColorYellow, -1);
+  } else {
+    // LOG(WARNING) << "Feature status NOT recognized.";
+  }
+
+// overwrite rejected features
+#ifdef DEBUG_VIEW
+  // if (f->status() == FeatureStatus::REJECTED_BY_TRACKER) {
+  //   cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,
+  //   cv::MARKER_TRIANGLE_UP, 20, 5);
+  // } else
+
+  if (f->status() == FeatureStatus::REJECTED_BY_FILTER) {
+    cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorCyan,
+                   cv::MARKER_DIAMOND, 20, 5);
+  }
+#endif
+}
+
+void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
+                              int thickness, double font_scale) {
+  if (disp_.empty()) {
+    return;
+  }
+
+  cv::putText(disp_, absl::StrFormat("Tsb=[%0.4f, %0.4f, %0.4f]", X.Tsb(0),
+                                     X.Tsb(1), X.Tsb(2)),
+              cv::Point(hspace, vspace * 1), CV_FONT_HERSHEY_PLAIN, font_scale,
+              kColorLakeBlue, thickness);
+
+  cv::putText(disp_, absl::StrFormat("Vsb=[%0.4f, %0.4f, %0.4f]", X.Vsb(0),
+                                     X.Vsb(1), X.Vsb(2)),
+              cv::Point(hspace, vspace * 2), CV_FONT_HERSHEY_PLAIN, font_scale,
+              kColorLakeBlue, thickness);
+
+  cv::putText(disp_, absl::StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
+                                     X.bg(1), X.bg(2)),
+              cv::Point(hspace, vspace * 3), CV_FONT_HERSHEY_PLAIN, font_scale,
+              kColorLakeBlue, thickness);
+
+  cv::putText(disp_, absl::StrFormat("ba=[%0.4f, %0.4f, %0.4f]", X.ba(0),
+                                     X.ba(1), X.ba(2)),
+              cv::Point(hspace, vspace * 4), CV_FONT_HERSHEY_PLAIN, font_scale,
+              kColorLakeBlue, thickness);
+}
+}
