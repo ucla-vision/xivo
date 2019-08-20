@@ -1,6 +1,6 @@
 # X Inertial-aided Visual Odometry
 
-I started writing this software as a hobby project in winter 2018. The motivation behind this is in part that I want to have a (hopefully) minimal implementation of EKF-based Visual-Inertial Odometry and to play with some new C++ language features (C++ 14/17) and coding techniques (templates, design patterns, etc.). The project was paused for months due to job hunting, paper submission, defense and vacation, etc. Fortunately, I was able to spend more time on it before I leave UCLA.
+I started writing this software as a hobby project in the winter of 2018. The motivation behind this is in part that I want to have a (hopefully) minimal implementation of EKF-based Visual-Inertial Odometry and to play with some new C++ language features (C++ 14/17) and coding techniques (templates, design patterns, etc.). The project was paused for months due to job hunting, paper submission, defense, and vacation, etc. Fortunately, I was able to spend more time on it before I leave UCLA.
 
 This is still work in progress, and under no circumstances, it can be considered as done. However, with readability and maintainability in mind when writing this piece of software, I believe it still has some value for people who want to dive into the world of VIO. Besides, the performance of the system in terms of ATE (Absolute Trajectory Error) and RPE (Relative Pose Error) is comparable to other open-source VIO systems (see the performance section). 
 
@@ -11,11 +11,11 @@ Have fun!
 
 ## Install
 
-To install the state estiamtor and dependencies, execute the `build.sh` script in the root directory of the project.
+To install the state estimator and dependencies, execute the `build.sh` script in the root directory of the project.
 
 ## Usage
 
-The current implementation supports two executation modes: Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
+The current implementation supports two execution modes: Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
 
 ### Dataset
 
@@ -29,7 +29,7 @@ where on my machine `/home/Data/tumvi/exported/euroc/512_16` hosts folders of da
 
 ### Run
 
-In the project root directory, you can run the estimator with configuration specified by the `-cfg cfg/vio.json` option on images captured by camera 0 (`-cam_id 0`) of 6-th room sequence (`-seq room6`) of the TUMVI dataset (`-dataset tumvi`) which resides in `$TUMVIROOT` (option `-root $TUMVIROOT`) as follows:
+In the project root directory, you can run the estimator with configuration specified by the `-cfg cfg/vio.json` option on images captured by camera 0 (`-cam_id 0`) of the 6-th room sequence (`-seq room6`) of the TUMVI dataset (`-dataset tumvi`) which resides in `$TUMVIROOT` (option `-root $TUMVIROOT`) as follows:
 
 ```
 bin/st_vio -cfg cfg/vio.json -root $TUMVIROOT -dataset tumvi -seq room6 -cam_id 0 -out out_state
@@ -37,7 +37,7 @@ bin/st_vio -cfg cfg/vio.json -root $TUMVIROOT -dataset tumvi -seq room6 -cam_id 
 
 where estimated states are saved to the output file `out_state`.
 
-For detailed usage of the application, see the flags defined at the begining of the application source file `src/app/singlethread_vio.cpp`. 
+For detailed usage of the application, see the flags defined at the beginning of the application source file `src/app/singlethread_vio.cpp`. 
 
 
 ### Evaluation
@@ -46,7 +46,7 @@ For detailed usage of the application, see the flags defined at the begining of 
 **DEPRECATED: USE THE PYTHON EVALUATION SCRIPT FROM TUM RGBD BENCHMARK INSTEAD**
 
 
-A C++ implementation of RPE (Relative Pose Error) and ATE (Absolute Trajectory Error) is provided. Once you have run the estimator on one of the TUM-VI sequence and have the estimated states saved in a file, say, `out_state`, evaluation can be done as follows:
+A C++ implementation of RPE (Relative Pose Error) and ATE (Absolute Trajectory Error) is provided. Once you have run the estimator on one of the TUM-VI sequences and have the estimated states saved in a file, say, `out_state`, evaluation can be done as follows:
 
 ```
 bin/eval -root $TUMVIROOT -seq room6 -result out_state -resolution 0.001
@@ -60,7 +60,7 @@ We provide a python script `scripts/run_and_eval_pyxivo.py` to run the estimator
 ```
 python scripts/run_and_eval_pyxivo.py -root $TUMVIROOT -seq room6 -stdout -out_dir tmp -use_viewer
 ```
-the `-seq` and `-root` options are the same as explained above. If the `-stdout` option is on, the script will print out the benchmarked performance to the terminal; `-out_dir` specifies the directory to save state estimates; `-use_viewer` option will turn on a 3D visualization. For detailed usage about the script, see the options defined at the begining of the script.
+The `-seq` and `-root` options are the same as explained above. If the `-stdout` option is on, the script will print out the benchmarked performance to the terminal; `-out_dir` specifies the directory to save state estimates; `-use_viewer` option will turn on a 3D visualization. For detailed usage about the script, see the options defined at the beginning of the script.
 
 ### Log to file for debugging
 
@@ -85,9 +85,9 @@ We provide some python scripts in `scripts` folder to diagnose the behavior of t
 python scripts/compareTraj.py room6 out_state_aligned
 ```
 
-Note, you can change `out_state_aligned` to another name as long as it is consistent with the filename you provide to the `-out` option when your run the vio application. Also `room6` is the sequence name to perform the comparison, and it should be the same as the one used when you run your application.
+Note, you can change `out_state_aligned` to another name as long as it is consistent with the filename you provide to the `-out` option when you run the vio application. Also `room6` is the sequence name to perform the comparison, and it should be the same as the one used when you run your application.
 
-If the script works fine, you will be able to see a figure of three panels with each of which showing the x, y and z components of the estimated translation state. The blue trajectory is the ground truth, and the red one is your estimation.
+If the script works fine, you will be able to see a figure of three panels with each of which showing the x, y, and z components of the estimated translation state. The blue trajectory is the ground truth, and the red one is your estimation.
 -->
 
 ## Rosbag mode
@@ -126,25 +126,23 @@ See [gperftools](https://gperftools.github.io/gperftools/cpuprofile.html) from G
 
 A simple python binding is provided by wrapping some public interfaces of the estimator via [`pybind11`](https://github.com/pybind/pybind11). Check out `pybind11/pyxivo.cpp` for the available interfaces in python. With pybind11, it is relatively easy if you want to expose more interfaces of the C++ implementation to python.
 
-An example of using the python binding is available in `scripts/pyxivo.py`, which demonstrates estimator creation, data loading, and visualization in python.
+An example of using the Python binding is available in `scripts/pyxivo.py`, which demonstrates estimator creation, data loading, and visualization in python.
 
-To run the demo, simply execute:
+To run the demo, execute:
 
 ```
 python scripts/pyxivo.py -root $TUMVIROOT -seq room6 -cam_id 0
 ```
 
-in the project root directory. The command line options are more or less same as the C++ executable. For detailed usage, you can look at the options defined at the begining of the script `scripts/pyxivo.py`. Note you might need to install some python dependencies:
+in the project root directory. The command-line options are more or less the same as the C++ executable. For detailed usage, you can look at the options defined at the beginning of the script `scripts/pyxivo.py`. Note you might need to install some python dependencies by executing the following in the project root directory:
 
 ```
 pip install -r requirements.txt
 ```
 
-executed in the project root directory.
-
 ## Performance
 
-The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems (slightly worse than optimization-based OKVIS and VINS-Mono and on par with EKF-based ROVIO). Also, our system runs at more than 100 Hz on a desktop PC with a Core i7 6th gen CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
+The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems (slightly worse than optimization-based OKVIS and VINS-Mono and on par with EKF-based ROVIO). Also, our system runs at more than 100 Hz on a desktop PC with a Core i7 6th gen CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
 
 
 | Sequence | length | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
@@ -170,6 +168,9 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 
 *Table 2. RMSE RPE* in meters (translation) and degrees (rotation).
 
+## Acknowledgement
+
+This implementation is inspired and partially based on *Corvis* of Konstantine Tsotsos, who is a good friend and mentor.
 
 ---
 
@@ -184,32 +185,3 @@ If you find this software useful and use it in your work, please cite:
   howpublished = "\url{https://github.com/feixh/xivo}",
 }
 ```
-
-<!--
-and related papers which this implementation is based on:
-
-```
-@article{jones2011visual,
-  title={Visual-inertial navigation, mapping and localization: A scalable real-time causal approach},
-  author={Jones, Eagle S and Soatto, Stefano},
-  journal={The International Journal of Robotics Research},
-  volume={30},
-  number={4},
-  pages={407--430},
-  year={2011},
-  publisher={SAGE Publications Sage UK: London, England}
-}
-```
-or 
-```
-@inproceedings{tsotsos2015robust,
-  title={Robust inference for visual-inertial sensor fusion},
-  author={Tsotsos, Konstantine and Chiuso, Alessandro and Soatto, Stefano},
-  booktitle={2015 IEEE International Conference on Robotics and Automation (ICRA)},
-  pages={5203--5210},
-  year={2015},
-  organization={IEEE}
-}
-```
-
--->
