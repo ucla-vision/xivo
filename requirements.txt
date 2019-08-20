@@ -1,5 +1,4 @@
 transforms3d
-mayavi
 numpy
 glog
 

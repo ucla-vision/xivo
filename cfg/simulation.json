@@ -1,8 +1,0 @@
-{
-  "simulator_cfg": "../cfg/simulator.json",
-  "estimator_cfg": "../cfg/estimator_sim.json",
-
-  "add_noise_to_init_state": true,
-  "enable_update": true,
-  "visualize": false
-}
