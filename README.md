@@ -1,4 +1,4 @@
-# X Inertial-aided Visual Odometry
+# XIVO: X Inertial-aided Visual Odometry
 
 I started writing this software as a hobby project in the winter of 2018. The motivation behind this is in part that I want to have a (hopefully) minimal implementation of EKF-based Visual-Inertial Odometry and to play with some new C++ language features (C++ 14/17) and coding techniques (templates, design patterns, etc.). The project was paused for months due to job hunting, paper submission, defense, and vacation, etc. Fortunately, I was able to spend more time on it before I leave UCLA.
 
@@ -9,9 +9,9 @@ A detailed technical report of the implementation will follow. Stay tuned.
 
 Have fun!
 
-## Install
+## Build
 
-To install the state estimator and dependencies, execute the `build.sh` script in the root directory of the project.
+To build the state estimator and dependencies, execute the `build.sh` script in the root directory of the project.
 
 ## Usage
 
