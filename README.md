@@ -5,9 +5,13 @@ I started writing this software as a hobby project in the winter of 2018. The mo
 This is still work in progress, and under no circumstances can it be considered as done. However, with readability and maintainability in mind when writing this piece of software, I believe it still has some value for people who want to dive into the world of VIO. Besides, the performance of the system in terms of ATE (Absolute Trajectory Error) and RPE (Relative Pose Error) is comparable to other open-source VIO systems (see the performance section). 
 
 
-A detailed technical report of the implementation will follow. Stay tuned.
+A detailed technical report of the implementation will follow. Stay tuned. 
 
 Have fun!
+
+![Demo](misc/demo.gif)
+
+*Demo on TUM-VI room4 sequence. (downsampled video, not actual framerate)*
 
 ## Build
 
