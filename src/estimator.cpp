@@ -861,7 +861,6 @@ void Estimator::Predict(std::list<FeaturePtr> &features) {
 
 void Estimator::UpdateJosephForm() {
 
-  S_.setZero(H_.rows(), H_.cols());
   S_ = H_ * P_ * H_.transpose();
 
   for (int i = 0; i < diagR_.size(); ++i) {
@@ -869,12 +868,19 @@ void Estimator::UpdateJosephForm() {
   }
 
   K_.setZero(err_.size(), H_.rows());
-  K_.transpose() = S_.llt().solve(H_ * P_);
+  K_.transpose() = S_.ldlt().solve(H_ * P_);
   err_ = K_ * inn_;
-  I_KH_.setZero(P_.rows(), P_.cols());
-  I_KH_ = -K_ * H_;
+
+  // I_KH_.noalias() = -K_ * H_;
+  // for (int i = 0; i < err_.size(); ++i) {
+  //   I_KH_(i, i) += 1;
+  // }
+  
+  // Here, I_KH is actually KH - I, but since
+  // update of P is quadratic in I_KH, so it does not matter.
+  I_KH_ = K_ * H_;
   for (int i = 0; i < err_.size(); ++i) {
-    I_KH_(i, i) += 1;
+    I_KH_(i, i) -= 1;
   }
   P_ = I_KH_ * P_ * I_KH_.transpose();
 
@@ -883,8 +889,7 @@ void Estimator::UpdateJosephForm() {
   for (int i = 0; i < kc; ++i) {
     K_.block(0, i, kr, 1) *= sqrt(diagR_(i));
   }
-
-  P_ = P_ + K_ * K_.transpose();
+  P_.noalias() +=  K_ * K_.transpose();
 }
 
 std::tuple<number_t, bool> Estimator::HuberOnInnovation(const Vec2 &inn,

@@ -97,7 +97,12 @@ public:
   // FIXME: make the following private
   void ComputeOOSJacobianInternal(const Obs &obs, const Mat3 &Rbc,
                                   const Vec3 &Tbc);
-  void FillJacobian(MatX &H, Vec2 &inn);
+
+  // fill-in the corresponding jacobian block
+  // H: the big jacobian matrix of all measurements
+  // offset: of the block in H
+  void FillJacobianBlock(MatX &H, int offset);
+
   const Eigen::Matrix<number_t, 2, kFullSize> &J() const { return J_; }
   const Vec2 &inn() const { return inn_; }
 

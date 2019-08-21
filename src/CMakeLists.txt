@@ -60,6 +60,7 @@ add_library(estimator SHARED
         update.cpp
         graph.cpp
         feature.cpp
+        oos.cpp
         group.cpp
         core.cpp
         helpers.cpp

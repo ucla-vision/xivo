@@ -1,8 +1,9 @@
 {
   // verbose
   "simulation": false,
-  "print_timing": false,
+  "print_timing": true,
   "use_canvas": true,
+  "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
 
   // algorithmic-level knobs
@@ -12,7 +13,6 @@
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,   
   "use_compression": true,  // measurement compression
-  "use_debug_view": false,  // show rejected & dropped features
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
   "max_group_lifetime": 30,
