@@ -29,8 +29,8 @@ void Estimator::Update() {
   for (auto f : instate_features_) {
     f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
                        X_.bg, X_.Vsb, X_.td);
-    auto J = f->J();
-    auto res = f->inn();
+    const auto &J = f->J();
+    const auto &res = f->inn();
 
     // Mahalanobis gating
     Mat2 S = J * P_ * J.transpose();
@@ -98,14 +98,13 @@ void Estimator::Update() {
   }
 
   int total_size = 2 * inliers.size() + total_oos_jac_size;
-  H_.resize(total_size, err_.size());
-  inn_.resize(total_size);
+  H_.setZero(total_size, err_.size());
+  inn_.setZero(total_size);
   diagR_.resize(total_size);
 
   for (int i = 0; i < inliers.size(); ++i) {
-    H_.block(2 * i, 0, 2, err_.size()) = inliers[i]->J();
+    inliers[i]->FillJacobianBlock(H_, 2 * i); 
     inn_.segment<2>(2 * i) = inliers[i]->inn();
-
     // if (outlier_thresh_ > 1.0) {
     //   auto [robust_R, is_outlier] = HuberOnInnovation(inliers[i]->inn(), R_);
     //   diagR_.segment<2>(2 * i) << robust_R, robust_R;
