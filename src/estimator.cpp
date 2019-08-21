@@ -488,8 +488,8 @@ void Estimator::ComputeMotionJacobianAt(
     dW_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
-  Eigen::Matrix<ftype, 3, 9> dV_dRCa = dAB_dA(Mat3{}, accel);
-  Eigen::Matrix<ftype, 9, 9> dRCa_dCafm = dAB_dB(R, Mat3{}); // fm: full matrix
+  Eigen::Matrix<ftype, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
+  Eigen::Matrix<ftype, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
   Eigen::Matrix<ftype, 9, 6> dCafm_dCa =
       dA_dAu(Mat3{}); // full matrix w.r.t. upper triangle
   Eigen::Matrix<ftype, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;

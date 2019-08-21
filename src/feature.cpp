@@ -307,7 +307,7 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 
   // since imu.Cg is used here, also need to compute jacobian block w.r.t. Cg
   auto dXcn_dW =
-      dAB_dB(Rbc_t * hat(Rsb_t * cache_.Xs) * td, Vec3{}); // W=Cg * Wm
+      dAB_dB<3, 1>(Rbc_t * hat(Rsb_t * cache_.Xs) * td); // W=Cg * Wm
 #ifdef USE_ONLINE_IMU_CALIB
   Eigen::Matrix<ftype, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {

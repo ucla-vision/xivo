@@ -101,6 +101,32 @@ dAt_dA(const Eigen::MatrixBase<Derived> &A) {
                 Derived::ColsAtCompileTime>();
 }
 
+template <int RowA, int ColA, typename Derived>
+Eigen::Matrix<typename Derived::Scalar,
+              RowA * Derived::ColsAtCompileTime,
+              RowA * ColA>
+dAB_dA(const Eigen::MatrixBase<Derived> &B) {
+
+  using T = typename Derived::Scalar;
+  constexpr int N = RowA;
+  constexpr int M = ColA;
+  constexpr int P = Derived::ColsAtCompileTime;
+
+  static_assert(M == Derived::RowsAtCompileTime,
+                "Columns of A should match rows of B.");
+
+  Eigen::Matrix<T, N * P, N * M> D;
+  D.setZero();
+  for (int n = 0; n < N; ++n) {
+    for (int p = 0; p < P; ++p) {
+      for (int m = 0; m < M; ++m) {
+        D(n * P + p, n * M + m) += B(m, p);
+      }
+    }
+  }
+  return D;
+}
+
 // Note, by default the Eigen matrices arrange data in RowMajor order.
 // This does not affect the way we index the element via () operator.
 // But when using Map<> function to map raw internal data to matrices/vectors,
@@ -113,6 +139,9 @@ Eigen::Matrix<typename Derived::Scalar,
 dAB_dA(const Eigen::MatrixBase<Derived> &A,
        const Eigen::MatrixBase<OtherDerived> &B) {
 
+  return dAB_dA<Derived::RowsAtCompileTime, Derived::ColsAtCompileTime>(B);
+
+  /*
   using T = typename Derived::Scalar;
   constexpr int N = Derived::RowsAtCompileTime;
   constexpr int M = Derived::ColsAtCompileTime;
@@ -133,7 +162,36 @@ dAB_dA(const Eigen::MatrixBase<Derived> &A,
     }
   }
   return D;
+  */
 }
+
+
+template <int RowB, int ColB, typename Derived>
+Eigen::Matrix<typename Derived::Scalar,
+              Derived::RowsAtCompileTime * ColB,
+              RowB * ColB>
+dAB_dB(const Eigen::MatrixBase<Derived> &A) {
+
+  using T = typename Derived::Scalar;
+  constexpr int N = Derived::RowsAtCompileTime;
+  constexpr int M = Derived::ColsAtCompileTime;
+  constexpr int P = ColB;
+  static_assert(M == Derived::RowsAtCompileTime,
+                "Columns of A should match rows of B.");
+
+  Eigen::Matrix<T, N * P, M * P> D;
+  D.setZero();
+  for (int n = 0; n < N; ++n) {
+    for (int p = 0; p < P; ++p) {
+      for (int m = 0; m < M; ++m) {
+        D(n * P + p, m * P + p) += A(n, m);
+      }
+    }
+  }
+  return D;
+}
+
+
 
 // dC_{n,p}/dB_{m,p}=A_{n,m}
 template <typename Derived, typename OtherDerived>
@@ -143,6 +201,9 @@ Eigen::Matrix<typename Derived::Scalar,
 dAB_dB(const Eigen::MatrixBase<Derived> &A,
        const Eigen::MatrixBase<OtherDerived> &B) {
 
+  return dAB_dB<OtherDerived::RowsAtCompileTime, OtherDerived::ColsAtCompileTime>(A);
+
+  /*
   using T = typename Derived::Scalar;
   constexpr int N = Derived::RowsAtCompileTime;
   constexpr int M = Derived::ColsAtCompileTime;
@@ -162,6 +223,7 @@ dAB_dB(const Eigen::MatrixBase<Derived> &A,
     }
   }
   return D;
+  */
 }
 
 template <typename Derived>
@@ -196,7 +258,7 @@ rodrigues(const Eigen::MatrixBase<Derived> &w,
   if (dR_dw) {
     Eigen::Matrix<T, 9, 3> dR_du =
         sin_th * dhat(u) +
-        (1 - cos_th) * (dAB_dA(uhat, uhat) + dAB_dB(uhat, uhat)) * dhat(u);
+        (1 - cos_th) * (dAB_dA<3, 3>(uhat) + dAB_dB<3, 3>(uhat)) * dhat(u);
     Eigen::Matrix<T, 3, 3> du_dw =
         inv_th * (Eigen::Matrix<T, 3, 3>::Identity() - u * u.transpose());
     Eigen::Matrix<T, 9, 1> dR_dth = Eigen::Map<Eigen::Matrix<T, 9, 1>>(
