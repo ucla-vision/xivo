@@ -3,6 +3,7 @@
 
 #include "feature.h"
 #include "visualize.h"
+#include "param.h"
 
 namespace feh {
 
@@ -40,6 +41,8 @@ void Canvas::Draw(const FeaturePtr f) {
     return;
   }
 
+  bool use_debug_view{ParameterServer::instance()->get("use_debug_view", false).asBool()};
+
   auto pos(f->xp());
   cv::Scalar color;
   if (f->track_status() == TrackStatus::TRACKED) {
@@ -64,11 +67,10 @@ void Canvas::Draw(const FeaturePtr f) {
   } else if (f->track_status() == TrackStatus::REJECTED ||
              f->track_status() == TrackStatus::DROPPED) {
 
-#define DEBUG_VIEW
-#ifdef DEBUG_VIEW
-    cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,
-                   cv::MARKER_TRIANGLE_UP, 20, 5);
-#endif
+    if (use_debug_view) {
+      cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,
+          cv::MARKER_TRIANGLE_UP, 20, 5);
+    }
 
   } else if (f->track_status() == TrackStatus::CREATED) {
     // cv::circle(disp_, cv::Point2d(pos[0], pos[1]), 3, kColorYellow, -1);
@@ -76,18 +78,18 @@ void Canvas::Draw(const FeaturePtr f) {
     // LOG(WARNING) << "Feature status NOT recognized.";
   }
 
-// overwrite rejected features
-#ifdef DEBUG_VIEW
-  // if (f->status() == FeatureStatus::REJECTED_BY_TRACKER) {
-  //   cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,
-  //   cv::MARKER_TRIANGLE_UP, 20, 5);
-  // } else
+  if (use_debug_view) {
+    // overwrite rejected features
+    // if (f->status() == FeatureStatus::REJECTED_BY_TRACKER) {
+    //   cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,
+    //   cv::MARKER_TRIANGLE_UP, 20, 5);
+    // } else
 
-  if (f->status() == FeatureStatus::REJECTED_BY_FILTER) {
-    cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorCyan,
-                   cv::MARKER_DIAMOND, 20, 5);
+    if (f->status() == FeatureStatus::REJECTED_BY_FILTER) {
+      cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorCyan,
+          cv::MARKER_DIAMOND, 20, 5);
+    }
   }
-#endif
 }
 
 void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
@@ -96,24 +98,33 @@ void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
     return;
   }
 
+  int line_counter{0};
+
   cv::putText(disp_, absl::StrFormat("Tsb=[%0.4f, %0.4f, %0.4f]", X.Tsb(0),
                                      X.Tsb(1), X.Tsb(2)),
-              cv::Point(hspace, vspace * 1), CV_FONT_HERSHEY_PLAIN, font_scale,
+              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
   cv::putText(disp_, absl::StrFormat("Vsb=[%0.4f, %0.4f, %0.4f]", X.Vsb(0),
                                      X.Vsb(1), X.Vsb(2)),
-              cv::Point(hspace, vspace * 2), CV_FONT_HERSHEY_PLAIN, font_scale,
+              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+              kColorLakeBlue, thickness);
+
+  auto Wsb{X.Rsb.log()};
+  cv::putText(disp_, absl::StrFormat("Wsb=[%0.4f, %0.4f, %0.4f]", Wsb(0),
+                                     Wsb(1), Wsb(2)),
+              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
   cv::putText(disp_, absl::StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
                                      X.bg(1), X.bg(2)),
-              cv::Point(hspace, vspace * 3), CV_FONT_HERSHEY_PLAIN, font_scale,
+              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
   cv::putText(disp_, absl::StrFormat("ba=[%0.4f, %0.4f, %0.4f]", X.ba(0),
                                      X.ba(1), X.ba(2)),
-              cv::Point(hspace, vspace * 4), CV_FONT_HERSHEY_PLAIN, font_scale,
+              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 }
+
 }
