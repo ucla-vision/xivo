@@ -41,16 +41,16 @@ set(deps
         common
         )
 
-add_library(application SHARED
+add_library(xapp SHARED
         estimator_process.cpp
         tumvi.cpp
         geometry.cpp
         metrics.cpp
         publisher.cpp
         viewer.cpp)
-target_link_libraries(application ${deps})
+target_link_libraries(xapp ${deps})
 
-add_library(estimator SHARED
+add_library(xest SHARED
         estimator.cpp
         princedormand.cpp
         rk4.cpp
@@ -69,13 +69,34 @@ add_library(estimator SHARED
         mm.cpp
         camera_manager.cpp
         imu.cpp)
-target_link_libraries(estimator ${deps}) # profiler)
+target_link_libraries(xest ${deps}) # profiler)
+
+set(libxivo xest xapp)
+
+if (BUILD_G2O)
+  include_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o)
+  link_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o/lib)
+
+  list(APPEND deps
+    g2o_core
+    g2o_solver_cholmod
+    g2o_types_slam3d
+    g2o_types_sba
+    g2o_stuff)
+
+  add_library(xopt
+    optimizer.cpp
+  )
+
+  target_link_libraries(xopt xest ${deps})
+  list(APPEND libxivo xopt)
+endif(BUILD_G2O)
 
 add_executable(vio app/vio.cpp)
-target_link_libraries(vio estimator application gflags::gflags)
+target_link_libraries(vio ${libxivo} gflags::gflags)
 
 add_executable(st_vio app/singlethread_vio.cpp)
-target_link_libraries(st_vio estimator application gflags::gflags)
+target_link_libraries(st_vio ${libxivo} gflags::gflags)
 
 ################################################################################
 # TOOLING
