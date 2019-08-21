@@ -74,15 +74,20 @@ target_link_libraries(xest ${deps}) # profiler)
 set(libxivo xest xapp)
 
 if (BUILD_G2O)
-  include_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o)
+  include_directories(${CMAKE_SOURCE_DIR}/build/thirdparty/g2o) # config.h resides here
+  include_directories(
+    /usr/include/suitesparse
+    ${CMAKE_SOURCE_DIR}/thirdparty/g2o)
   link_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o/lib)
 
   list(APPEND deps
     g2o_core
     g2o_solver_cholmod
+    g2o_solver_csparse
     g2o_types_slam3d
     g2o_types_sba
-    g2o_stuff)
+    g2o_types_icp
+    cholmod)
 
   add_library(xopt
     optimizer.cpp
