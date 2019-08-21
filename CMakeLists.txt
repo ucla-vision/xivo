@@ -55,7 +55,7 @@ enable_testing()
 add_subdirectory(thirdparty/googletest)
 add_subdirectory(thirdparty/gflags)
 add_subdirectory(thirdparty/abseil-cpp)
-# add_subdirectory(thirdparty/xfeatures2d)
+add_subdirectory(thirdparty/g2o)
 
 # feh
 add_subdirectory(common)
@@ -63,7 +63,6 @@ add_subdirectory(src)
 if (BUILD_ROSNODE)
   add_subdirectory(node)
 endif(BUILD_ROSNODE)
-# add_subdirectory(experimental)
 
 ########################################
 # PYTHON BINDING

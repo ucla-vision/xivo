@@ -10,8 +10,9 @@
   "use_OOS": false, // update with Out-Of-State features
   "use_depth_opt": true,  // depth optimization
   "use_MH_gating": true,
-  "use_1pt_RANSAC": false,  
+  "use_1pt_RANSAC": false,   
   "use_compression": true,  // measurement compression
+  "use_debug_view": false,  // show rejected & dropped features
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
   "max_group_lifetime": 30,

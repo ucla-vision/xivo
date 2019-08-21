@@ -54,7 +54,6 @@ add_library(estimator SHARED
         estimator.cpp
         princedormand.cpp
         rk4.cpp
-        # simulator.cpp
         visualize.cpp
         tracker.cpp
         manager.cpp
@@ -82,10 +81,6 @@ target_link_libraries(st_vio estimator application gflags::gflags)
 ################################################################################
 # add_executable(eval app/evaluate.cpp)
 # target_link_libraries(eval estimator application gflags::gflags)
-
-# add_executable(simulation app/simulation.cpp )
-# target_link_libraries(simulation estimator)
-
 
 ################################################################################
 # TESTS
