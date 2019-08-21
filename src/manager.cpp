@@ -307,10 +307,10 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
            (f->status() == FeatureStatus::READY && f->lifetime() > 5);
   });
   if (!depth_features.empty()) {
-    std::vector<ftype> depth(depth_features.size());
+    std::vector<number_t> depth(depth_features.size());
     std::transform(depth_features.begin(), depth_features.end(), depth.begin(),
                    [](FeaturePtr f) { return f->z(); });
-    ftype median_depth = depth[depth.size() >> 1];
+    number_t median_depth = depth[depth.size() >> 1];
     init_z_ = 0.01 * init_z_ + 0.99 * median_depth;
     // init_z_ = median_depth;
     VLOG(0) << "Adaptive initial depth=" << init_z_;

@@ -22,9 +22,9 @@ void SlowGivens(const MatX &Hf, MatX &Hx) {
 
 // Matrix computation. Golub & Loan.
 // page 240, Algorithm 5.1.3
-static Mat2 givens(ftype a, ftype b) {
+static Mat2 givens(number_t a, number_t b) {
   Mat2 G;
-  ftype c, s, t;
+  number_t c, s, t;
   if (fabs(b) < eps) {
     c = 1;
     s = 0;

@@ -1,3 +1,6 @@
+// The feature tracking module;
+// Multi-scale Lucas-Kanade tracker from OpenCV.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include <fstream>
 
 #include "absl/strings/str_format.h"
@@ -9,8 +12,6 @@
 #include "feature.h"
 #include "tracker.h"
 #include "visualize.h"
-
-// FIXME: move to config
 
 namespace feh {
 
@@ -306,13 +307,13 @@ void Tracker::Update(const cv::Mat &image) {
 ////////////////////////////////////////
 void ResetMask(cv::Mat mask) { mask.setTo(255); }
 
-void MaskOut(cv::Mat mask, ftype x, ftype y, int mask_size) {
+void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size) {
   static int half_size = (mask_size >> 1);
   cv::rectangle(mask, cv::Point2d(x - half_size, y - half_size),
                 cv::Point2d(x + half_size, y + half_size), cv::Scalar(0), -1);
 }
 
-bool MaskValid(const cv::Mat &mask, ftype x, ftype y) {
+bool MaskValid(const cv::Mat &mask, number_t x, number_t y) {
   int col = static_cast<int>(x);
   int row = static_cast<int>(y);
   if (col < 0 || col >= mask.cols || row < 0 || row >= mask.rows)

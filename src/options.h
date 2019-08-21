@@ -1,4 +1,6 @@
-// options objects for various depth-related algorithms
+// Options objects for various depth-related algorithms,
+// and policies for feature selection, etc.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "core.h"
 
@@ -11,17 +13,17 @@ struct RefinementOptions {
 
   bool two_view;
   int max_iters;      // maximal iterations to perform
-  ftype eps;          // epsilon tolerance to stop optimization
-  ftype damping;      // optional damping factor
-  ftype max_res_norm; // maximal per observation residual norm
+  number_t eps;          // epsilon tolerance to stop optimization
+  number_t damping;      // optional damping factor
+  number_t max_res_norm; // maximal per observation residual norm
 };
 
 // depth subfilter options
 struct SubfilterOptions {
   SubfilterOptions() : Rtri{3.5}, MH_thresh{5.991}, ready_steps{5} {}
 
-  ftype Rtri;      // measurement covariance for triangulation
-  ftype MH_thresh; // Mahalanobis gating threshold in depth-subfilter
+  number_t Rtri;      // measurement covariance for triangulation
+  number_t MH_thresh; // Mahalanobis gating threshold in depth-subfilter
   int ready_steps; // feature initialized with this amount of attempts is turned
                    // to ready status
 };
@@ -31,7 +33,7 @@ struct TriangulateOptions {
   TriangulateOptions() : method{1}, zmin{0.05}, zmax{5.0} {}
 
   int method;
-  ftype zmin, zmax;
+  number_t zmin, zmax;
 };
 
 struct Criteria {

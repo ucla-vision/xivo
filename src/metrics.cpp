@@ -5,13 +5,13 @@
 
 namespace feh {
 
-static std::tuple<ftype, SE3>
+static std::tuple<number_t, SE3>
 AbsoluteTrajectoryError(const std::vector<Vec3> &Y,
                         const std::vector<Vec3> &X) {
   auto gYX = TrajectoryAlignment(Y, X);
 
   LOG(INFO) << "computing ATE";
-  ftype res{0};
+  number_t res{0};
   for (int i = 0; i < X.size(); ++i) {
     // AR=RB
     Vec3 r = Y[i] - gYX * X[i];
@@ -22,8 +22,8 @@ AbsoluteTrajectoryError(const std::vector<Vec3> &Y,
   return std::make_tuple(res, gYX);
 }
 
-std::tuple<ftype, SE3> ComputeATE(const std::vector<msg::Pose> &est,
-                                  const std::vector<msg::Pose> &gt, ftype res) {
+std::tuple<number_t, SE3> ComputeATE(const std::vector<msg::Pose> &est,
+                                  const std::vector<msg::Pose> &gt, number_t res) {
   using std::chrono::abs;
 
   auto it_est = est.begin();
@@ -47,21 +47,21 @@ std::tuple<ftype, SE3> ComputeATE(const std::vector<msg::Pose> &est,
       ++it_gt;
     }
   }
-  auto packet = X.empty() ? std::make_tuple(ftype(-1), SE3{})
+  auto packet = X.empty() ? std::make_tuple(number_t(-1), SE3{})
                           : AbsoluteTrajectoryError(Y, X);
   return packet;
 }
 
-std::tuple<ftype, ftype> ComputeRPE(const std::vector<msg::Pose> &est,
-                                    const std::vector<msg::Pose> &gt, ftype dt,
-                                    ftype res) {
+std::tuple<number_t, number_t> ComputeRPE(const std::vector<msg::Pose> &est,
+                                    const std::vector<msg::Pose> &gt, number_t dt,
+                                    number_t res) {
   using std::chrono::abs;
 
   auto it_est = est.begin();
   auto it_gt = gt.begin();
 
   // positional and rotational RPE
-  ftype rpe_pos{0}, rpe_rot{0};
+  number_t rpe_pos{0}, rpe_rot{0};
   int counter{0};
   while (it_est < est.end() && next(it_gt) < gt.end()) {
     if (it_est->ts_ >= it_gt->ts_ && it_est->ts_ < next(it_gt)->ts_) {

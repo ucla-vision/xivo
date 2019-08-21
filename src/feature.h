@@ -1,3 +1,5 @@
+// The feature class.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <functional>
 #include <memory>
@@ -27,9 +29,9 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   Track() : status_(TrackStatus::CREATED) {}
-  Track(ftype x, ftype y) { Reset(x, y); }
+  Track(number_t x, number_t y) { Reset(x, y); }
 
-  void Reset(ftype x, ftype y) {
+  void Reset(number_t x, number_t y) {
     clear();
     status_ = TrackStatus::CREATED;
     push_back(Vec2(x, y));
@@ -53,29 +55,25 @@ protected:
   cv::Mat descriptor_;
 };
 
-struct XYlogZ {
-  using Tangent = Vec3;
-};
-
-class Feature : public Component<Feature, XYlogZ>, public Track {
+class Feature : public Component<Feature, Vec3>, public Track {
   friend class MemoryManager;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  static FeaturePtr Create(ftype x, ftype y);
+  static FeaturePtr Create(number_t x, number_t y);
   static void Delete(FeaturePtr f);
 
-  void UpdateTrack(ftype x, ftype y) { emplace_back(x, y); }
+  void UpdateTrack(number_t x, number_t y) { emplace_back(x, y); }
   void UpdateTrack(const Vec2 &pt) { UpdateTrack(pt(0), pt(1)); }
 
   // quick predictor of instate status
   bool instate() const;
   // score of the potential goodness of being an instate feature
   // The higher, the better.
-  ftype score() const;
-  ftype outlier_counter() const { return outlier_counter_; }
+  number_t score() const;
+  number_t outlier_counter() const { return outlier_counter_; }
   // get depth
-  ftype z() const;
+  number_t z() const;
   const Vec3 &x() const { return x_; }
   const Mat3 &P() const { return P_; }
   Vec3 &x() { return x_; }
@@ -90,7 +88,7 @@ public:
   // return (2M-3) as the dimension of the measurement
   void ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                        const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
-                       const Vec3 &bg, const Vec3 &Vsb, ftype td);
+                       const Vec3 &bg, const Vec3 &Vsb, number_t td);
 
   int oos_inn_size() const { return oos_jac_counter_; }
 
@@ -100,7 +98,7 @@ public:
   void ComputeOOSJacobianInternal(const Obs &obs, const Mat3 &Rbc,
                                   const Vec3 &Tbc);
   void FillJacobian(MatX &H, Vec2 &inn);
-  const Eigen::Matrix<ftype, 2, kFullSize> &J() const { return J_; }
+  const Eigen::Matrix<number_t, 2, kFullSize> &J() const { return J_; }
   const Vec2 &inn() const { return inn_; }
 
   const Vec2 &xp() const { return back(); }
@@ -118,7 +116,7 @@ public:
   VecX ro() const { return oos_.inn.head(oos_jac_counter_); }
   MatX Ho() const { return oos_.Hx.topRows(oos_jac_counter_); }
 
-  void Initialize(ftype z0, const Vec3 &std_xyz);
+  void Initialize(number_t z0, const Vec3 &std_xyz);
 
   FeatureStatus status() const { return status_; }
   void SetStatus(FeatureStatus status) { status_ = status; }
@@ -154,11 +152,11 @@ private:
   Feature(const Feature &) = delete;
   // default constructor used memory manager's pre-allocation
   Feature() = default;
-  // Feature(ftype x, ftype y) {
+  // Feature(number_t x, number_t y) {
   //   Reset(x, y);
   //   LOG(INFO) << "feature #" << id_ << " created";
   // }
-  void Reset(ftype x, ftype y);
+  void Reset(number_t x, number_t y);
 
 private:
   static int counter_;
@@ -172,14 +170,14 @@ private:
   Mat3 P_;      // covariance
   Vec2 pred_;   // predicted pixel coordinates
 
-  Eigen::Matrix<ftype, 2, kFullSize> J_;
+  Eigen::Matrix<number_t, 2, kFullSize> J_;
   Vec2 inn_;
   Mat23 Hx_;
 
   // outlier rejection
   int init_counter_;
   bool inlier_;
-  ftype outlier_counter_;
+  number_t outlier_counter_;
 
   static JacobianCache cache_; // in-state measurement jacobian cache
   OOSJacobian oos_;            // out-of-state measurement jacobian cache
@@ -191,7 +189,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Vec3 Xs;
     Vec2 xp, xc;
-    ftype z;
+    number_t z;
     int lifetime;
   } sim_;
 };

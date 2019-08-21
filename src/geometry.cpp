@@ -15,9 +15,9 @@ namespace feh {
 SO3 HandEyeCalibration(const std::vector<SO3> &A, const std::vector<SO3> &B) {
   int n = A.size();
 
-  Eigen::SparseMatrix<ftype, Eigen::RowMajor> M(3 * n, 9);
+  Eigen::SparseMatrix<number_t, Eigen::RowMajor> M(3 * n, 9);
   using ordering = Eigen::COLAMDOrdering<int>;
-  Eigen::SparseQR<Eigen::SparseMatrix<ftype>, ordering> solver;
+  Eigen::SparseQR<Eigen::SparseMatrix<number_t>, ordering> solver;
   VecX y(3 * n);
   // solve Mx = y
   for (int i = 0; i < n; ++i) {
@@ -46,7 +46,7 @@ SO3 HandEyeCalibration(const std::vector<SO3> &A, const std::vector<SO3> &B) {
   auto R = SO3::project(X);
 
   // compute residuals
-  ftype res(0);
+  number_t res(0);
   for (int i = 0; i < n; ++i) {
     // AR=RB
     Vec3 r = SO3::log(A[i] * R * (R * B[i]).inv());
@@ -81,9 +81,9 @@ SE3 TrajectoryAlignment(const std::vector<Vec3> &Y,
     }
   }
 
-  Eigen::SparseMatrix<ftype, Eigen::RowMajor> M(3 * dX.size(), 9);
+  Eigen::SparseMatrix<number_t, Eigen::RowMajor> M(3 * dX.size(), 9);
   using ordering = Eigen::COLAMDOrdering<int>;
-  Eigen::SparseQR<Eigen::SparseMatrix<ftype>, ordering> solver;
+  Eigen::SparseQR<Eigen::SparseMatrix<number_t>, ordering> solver;
 
   LOG(INFO) << "building coefficient matrix M for M x = y";
   VecX rhs(3 * dY.size());

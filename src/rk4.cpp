@@ -2,9 +2,9 @@
 
 namespace feh {
 
-void Estimator::RK4(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
+void Estimator::RK4(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
   static bool rk4_initialized{false};
-  static ftype stepsize{-1};
+  static number_t stepsize{-1};
   if (!rk4_initialized) {
     stepsize = cfg_["RK4"].get("stepsize", 0.002).asDouble();
     rk4_initialized = true;
@@ -13,11 +13,11 @@ void Estimator::RK4(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
   if (stepsize < 0) {
     RK4Step(gyro0, accel0, dt);
   } else {
-    ftype total_step = 0;
+    number_t total_step = 0;
 
     Vec3 gyro{gyro0}, accel{accel0};
     while (total_step < dt) {
-      ftype h = stepsize;
+      number_t h = stepsize;
       if (total_step + h > dt) {
         h = dt - total_step;
       } else if (total_step + h + 0.5 * h > dt) {
@@ -32,17 +32,17 @@ void Estimator::RK4(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
   }
 }
 
-void Estimator::RK4Step(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
-  ftype halfstep = 0.5 * dt;
+void Estimator::RK4Step(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
+  number_t halfstep = 0.5 * dt;
 
   static State X0;
   static Vec3 K1, K2, K3, K4;
   static MatX FK1, FK2, FK3, FK4;
   static MatX PK1, PK2, PK3, PK4;
 
-  Eigen::Matrix<ftype, 6, 1> slope;
+  Eigen::Matrix<number_t, 6, 1> slope;
   slope << slope_gyro_, slope_accel_;
-  Eigen::Matrix<ftype, 6, 1> gyro_accel, gyro_accel0;
+  Eigen::Matrix<number_t, 6, 1> gyro_accel, gyro_accel0;
   gyro_accel0 << gyro0, accel0;
 
   X0 = X_;

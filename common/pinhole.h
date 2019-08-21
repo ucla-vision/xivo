@@ -1,3 +1,5 @@
+// Plain Pinhole camera model.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "camera.h"
 

@@ -1,3 +1,6 @@
+// Drawing functions to overlay feature tracks & system
+// info on input images.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "absl/strings/str_format.h"
 #include "opencv2/imgproc/imgproc.hpp"
 

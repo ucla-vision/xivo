@@ -35,8 +35,8 @@ private:
   // viewport attributes
   int height_, width_;
   Mat3 K_, Kinv_;
-  ftype fx_, fy_, cx_, cy_;
-  ftype znear_, zfar_;
+  number_t fx_, fy_, cx_, cy_;
+  number_t znear_, zfar_;
 
   cv::Mat image_;
 

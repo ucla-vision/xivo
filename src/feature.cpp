@@ -20,7 +20,7 @@ JacobianCache Feature::cache_ = {};
 ////////////////////////////////////////
 // FACTORY METHODS
 ////////////////////////////////////////
-FeaturePtr Feature::Create(ftype x, ftype y) {
+FeaturePtr Feature::Create(number_t x, number_t y) {
   auto f = MemoryManager::instance()->GetFeature();
   CHECK(f);
   f->Reset(x, y);
@@ -31,7 +31,7 @@ void Feature::Delete(FeaturePtr f) {
   MemoryManager::instance()->ReturnFeature(f);
 }
 
-void Feature::Reset(ftype x, ftype y) {
+void Feature::Reset(number_t x, number_t y) {
   id_ = counter_++;
   sind_ = -1;
   init_counter_ = 0;
@@ -74,7 +74,7 @@ Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) const {
   return Ps;
 }
 
-ftype Feature::z() const {
+number_t Feature::z() const {
 #ifdef USE_INVDEPTH
   // FIXME: ensure depth is positive
   return 1.0 / x_(2);
@@ -86,7 +86,7 @@ ftype Feature::z() const {
 
 bool Feature::instate() const { return status_ == FeatureStatus::INSTATE; }
 
-ftype Feature::score() const {
+number_t Feature::score() const {
   CHECK(!instate())
       << "score function should only be called for feature not-instate yet";
   // TODO: come up with better scoring
@@ -95,7 +95,7 @@ ftype Feature::score() const {
   return -P_(2, 2);
 }
 
-void Feature::Initialize(ftype z0, const Vec3 &std_xyz) {
+void Feature::Initialize(number_t z0, const Vec3 &std_xyz) {
   x_.head<2>() = Camera::instance()->UnProject(back());
 #ifdef USE_INVDEPTH
   x_(2) = 1.0 / z0;
@@ -103,11 +103,11 @@ void Feature::Initialize(ftype z0, const Vec3 &std_xyz) {
   x_(2) = log(z0);
 #endif
 
-  // ftype rho = 1.0 / z0;
-  // ftype rho_max = std::max(1.0 / (z0 - std_xyz(2)), 0.10);  // 0.10 is
+  // number_t rho = 1.0 / z0;
+  // number_t rho_max = std::max(1.0 / (z0 - std_xyz(2)), 0.10);  // 0.10 is
   // inverse of max possible depth
-  // ftype rho_min = 1.0 / (z0 + std_xyz(2));
-  // ftype std_rho = std::max(fabs(rho - rho_min), fabs(rho - rho_max));
+  // number_t rho_min = 1.0 / (z0 + std_xyz(2));
+  // number_t std_rho = std::max(fabs(rho - rho_min), fabs(rho - rho_max));
 
   P_ << std_xyz(0), 0, 0, 0, std_xyz(1), 0, 0, 0, std_xyz(2);
   P_ *= P_;
@@ -160,11 +160,11 @@ void Feature::SubfilterUpdate(const SE3 &gsb, const SE3 &gbc,
   Vec2 inn = this->xp() - xp;
 
   Mat2 S = H * P_ * H.transpose();
-  ftype Rtri = options.Rtri;
+  number_t Rtri = options.Rtri;
   S(0, 0) += Rtri;
   S(1, 1) += Rtri;
 
-  ftype ratio{inn.dot(S.llt().solve(inn)) / options.MH_thresh};
+  number_t ratio{inn.dot(S.llt().solve(inn)) / options.MH_thresh};
 
   if (ratio > 1) {
     S(0, 0) += Rtri * (ratio - 1);
@@ -205,7 +205,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
   Mat3 FtF;
   Vec3 Ftr;           // F.transpose() * residual
-  ftype res_norm0{0}; // norm of residual corresponding to optimal state
+  number_t res_norm0{0}; // norm of residual corresponding to optimal state
 
   for (int iter = 0; iter < options.max_iters; ++iter) {
     Mat3 dXs_dx;
@@ -213,7 +213,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
     FtF.setZero();
     Ftr.setZero();
-    ftype res_norm{0};
+    number_t res_norm{0};
 
     for (const auto &obs : views) {
       // skip reference group
@@ -273,7 +273,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
 void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                               const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
-                              const Vec3 &bg, const Vec3 &Vsb, ftype td) {
+                              const Vec3 &bg, const Vec3 &Vsb, number_t td) {
 
   Mat3 Rsb_t = Rsb.transpose();
   Mat3 Rbc_t = Rbc.transpose();
@@ -309,7 +309,7 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   auto dXcn_dW =
       dAB_dB<3, 1>(Rbc_t * hat(Rsb_t * cache_.Xs) * td); // W=Cg * Wm
 #ifdef USE_ONLINE_IMU_CALIB
-  Eigen::Matrix<ftype, 3, 9> dW_dCg;
+  Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {
     dW_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
@@ -330,7 +330,7 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   cache_.xcn = project(cache_.Xcn, &cache_.dxcn_dXcn);
 
 #ifdef USE_ONLINE_CAMERA_CALIB
-  Eigen::Matrix<ftype, 2, -1> jacc;
+  Eigen::Matrix<number_t, 2, -1> jacc;
   cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn, &jacc);
 #endif
 

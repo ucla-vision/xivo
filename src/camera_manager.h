@@ -1,3 +1,5 @@
+// Singleton camera manager to create and manage different camera models.  
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <ostream>
 #include <variant>
@@ -15,14 +17,14 @@
 
 namespace feh {
 
-template <typename T> using UnknownCamera = T;
+template <typename T> using UnknownCamera = T;  // dummy ...
 
 class CameraManager {
 public:
-  using Unknown = UnknownCamera<ftype>;
+  using Unknown = UnknownCamera<number_t>;
   using ATAN = A_ATANCamera;
   using EquiDist = A_EquidistantCamera;
-  // using EquiDist = EquidistantCamera<ftype>;
+  // using EquiDist = EquidistantCamera<number_t>;
   using RadTan = A_RadialTangentialCamera;
   using Pinhole = A_PinholeCamera;
 
@@ -111,13 +113,13 @@ public:
     fl_ = std::sqrt(0.5 * (fx_ * fx_ + fy_ * fy_));
   }
 
-  ftype GetFocalLength() const { return fl_; }
+  number_t GetFocalLength() const { return fl_; }
   int rows() const { return rows_; }
   int cols() const { return cols_; }
-  ftype fx() const { return fx_; }
-  ftype fy() const { return fy_; }
-  ftype cx() const { return cx_; }
-  ftype cy() const { return cy_; }
+  number_t fx() const { return fx_; }
+  number_t fy() const { return fy_; }
+  number_t cx() const { return cx_; }
+  number_t cy() const { return cy_; }
   int dim() const { return dim_; }
 
 private:
@@ -128,8 +130,8 @@ private:
   static std::unique_ptr<CameraManager> instance_;
 
   int rows_, cols_;
-  ftype fx_, fy_, cx_, cy_;
-  ftype fl_; // focal length
+  number_t fx_, fy_, cx_, cy_;
+  number_t fl_; // focal length
   std::variant<Unknown, ATAN, EquiDist, RadTan, Pinhole> model_;
   int dim_; // number of intrinsic parameters
 };

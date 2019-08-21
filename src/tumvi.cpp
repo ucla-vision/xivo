@@ -1,3 +1,5 @@
+// Dataloader for the TUM-VI dataset.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -77,7 +79,7 @@ TUMVILoader::LoadGroundTruthState(const std::string &state_dir) {
           T(i) = std::stod(content[i + 1]);
         for (int i = 0; i < 4; ++i)
           Q(i) = std::stod(content[i + 4]);
-        Eigen::Quaternion<ftype> q(Q(0), Q(1), Q(2), Q(3));
+        Eigen::Quaternion<number_t> q(Q(0), Q(1), Q(2), Q(3));
         SE3 gsb{SO3{q.normalized().toRotationMatrix()}, T};
 
         poses_.emplace_back(ts, gsb);

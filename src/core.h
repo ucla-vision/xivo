@@ -1,4 +1,8 @@
-// Core data structures
+// Core data structures include: 
+// 1) timestamp types
+// 2) representation of the nominal state (State)
+// 3) layout of the error state (Index and other offsets)
+// 4) status of components, etc.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <chrono>
@@ -98,9 +102,9 @@ struct State {
   Vec3 Tbc;
   SO3 Rg;
 
-  ftype td;
+  number_t td;
 
-  using Tangent = Eigen::Matrix<ftype, kMotionSize, 1>;
+  using Tangent = Eigen::Matrix<number_t, kMotionSize, 1>;
   State &operator+=(const Tangent &dX) {
     Rsb *= SO3::exp(dX.segment<3>(Index::Wsb));
     Tsb += dX.segment<3>(Index::Tsb);

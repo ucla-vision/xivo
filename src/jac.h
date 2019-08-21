@@ -39,7 +39,7 @@ struct JacobianCache {
   Mat3 dXcn_dTbc, dXcn_dWbc; // w.r.t. cam2body alignment
   Mat3 dXcn_dx;
   Vec3 dXcn_dtd;                       // w.r.t. temporal offset
-  Eigen::Matrix<ftype, 3, 9> dXcn_dCg; // w.r.t. gyroscope intrinsics
+  Eigen::Matrix<number_t, 3, 9> dXcn_dCg; // w.r.t. gyroscope intrinsics
   Mat3 dXcn_dbg;
 
   Vec2 xcn;        // camera coordinates in the "new" group

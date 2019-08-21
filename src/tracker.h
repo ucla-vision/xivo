@@ -56,7 +56,7 @@ private:
   int win_size_;
   int max_level_;
   int max_iter_;
-  ftype eps_;
+  number_t eps_;
 
   // fast params
   int num_features_min_;
@@ -68,7 +68,7 @@ private:
 
 // helpers
 void ResetMask(cv::Mat mask);
-void MaskOut(cv::Mat mask, ftype x, ftype y, int mask_size = 15);
-bool MaskValid(const cv::Mat &mask, ftype x, ftype y);
+void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size = 15);
+bool MaskValid(const cv::Mat &mask, number_t x, number_t y);
 
 } // namespace feh

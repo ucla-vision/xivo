@@ -1,3 +1,5 @@
+// Singleton camera manager to create and manage different camera models.  
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "camera_manager.h"
 
 namespace feh {
@@ -15,21 +17,21 @@ CameraManager::CameraManager(const Json::Value &cfg) : model_{Unknown{}} {
   auto cam_model = cfg["model"].asString();
   int rows = cfg["rows"].asInt();
   int cols = cfg["cols"].asInt();
-  ftype fx = cfg["fx"].asDouble();
-  ftype fy = cfg["fy"].asDouble();
-  ftype cx = cfg["cx"].asDouble();
-  ftype cy = cfg["cy"].asDouble();
+  number_t fx = cfg["fx"].asDouble();
+  number_t fy = cfg["fy"].asDouble();
+  number_t cx = cfg["cx"].asDouble();
+  number_t cy = cfg["cy"].asDouble();
 
   if (cam_model == "atan") {
     fx = cols * fx;
     fy = rows * fy;
     cx = cols * cx;
     cy = rows * cy;
-    ftype w = cfg["w"].asDouble();
+    number_t w = cfg["w"].asDouble();
     model_ = ATAN{rows, cols, fx, fy, cx, cy, w};
     dim_ = ATAN::DIM;
   } else if (cam_model == "equidistant") {
-    auto k0123 = GetVectorFromJson<ftype, 4>(cfg, "k0123");
+    auto k0123 = GetVectorFromJson<number_t, 4>(cfg, "k0123");
     int max_iter = cfg.get("max_iter", 15).asInt();
 
     model_ = EquiDist{rows,     cols,     fx,       fy,       cx,      cy,

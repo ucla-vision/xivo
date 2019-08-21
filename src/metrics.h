@@ -20,9 +20,9 @@ namespace feh {
 //  resolution: if estimate exactly at t+dt cannot be found, return the closest
 //  one within +/- resolution seconds
 // Returns: ATE
-std::tuple<ftype, SE3> ComputeATE(const std::vector<msg::Pose> &est,
+std::tuple<number_t, SE3> ComputeATE(const std::vector<msg::Pose> &est,
                                   const std::vector<msg::Pose> &gt,
-                                  ftype res = 0.005);
+                                  number_t res = 0.005);
 // Compute Relative Pose Error given estimated trajectory and ground truth
 // Args:
 //  est, gt: Estimated (Groundtruth) trajectories
@@ -30,8 +30,8 @@ std::tuple<ftype, SE3> ComputeATE(const std::vector<msg::Pose> &est,
 //  resolution: if estimate exactly at t+dt cannot be found, return the closest
 //  one within +/- resolution seconds
 // Returns: RPE
-std::tuple<ftype, ftype> ComputeRPE(const std::vector<msg::Pose> &est,
+std::tuple<number_t, number_t> ComputeRPE(const std::vector<msg::Pose> &est,
                                     const std::vector<msg::Pose> &gt,
-                                    ftype dt = 1.0, ftype res = 0.005);
+                                    number_t dt = 1.0, number_t res = 0.005);
 
 } // namespace feh

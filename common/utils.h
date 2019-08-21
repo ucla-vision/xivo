@@ -1,7 +1,5 @@
-//
-// Created by feixh on 10/25/17.
-//
-// Common utilities.
+// Utilities including timer, file IO, manipulation JSON files, etc.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "alias.h"
 
@@ -65,11 +63,11 @@ public:
   /// table.
   float Tock(const std::string &event) {
     float timing(Elapsed(event).count());
-    if (look_up_table_.count(event)) {
-      look_up_table_[event] += timing;
+    if (lookups_.count(event)) {
+      lookups_[event] += timing;
       counter_[event] += 1;
     } else {
-      look_up_table_[event] = timing;
+      lookups_[event] = timing;
       counter_[event] = 1;
     }
     return timing * 1e-6;
@@ -77,25 +75,25 @@ public:
 
   void Reset() {
     start_.clear();
-    look_up_table_.clear();
+    lookups_.clear();
     counter_.clear();
   }
 
   float LookUp(const std::string &event, const Unit unit = MILLISEC,
                bool average = false) const {
-    if (!look_up_table_.count(event))
+    if (!lookups_.count(event))
       return -1;
     switch (unit) {
     case MILLISEC:
-      return look_up_table_.at(event) * 1e-6 /
+      return lookups_.at(event) * 1e-6 /
              (average ? counter_.at(event) + 0.01 : 1.0);
       break;
     case MICROSEC:
-      return look_up_table_.at(event) * 1e-3 /
+      return lookups_.at(event) * 1e-3 /
              (average ? counter_.at(event) + 0.01 : 1.0);
       break;
     case NANOSEC:
-      return look_up_table_.at(event) /
+      return lookups_.at(event) /
              (average ? counter_.at(event) + 0.01 : 1.0);
       break;
     default:
@@ -115,7 +113,7 @@ private:
   std::unordered_map<std::string,
                      std::chrono::high_resolution_clock::time_point>
       start_;
-  std::map<std::string, float> look_up_table_;
+  std::map<std::string, float> lookups_;
   std::unordered_map<std::string, int> counter_;
   std::string module_name_;
 
@@ -125,14 +123,14 @@ public:
 
 /// \brief generate a random matrix of dimension N x M
 template <int N, int M = N>
-Eigen::Matrix<ftype, N, M>
-RandomMatrix(ftype meanVal = 0.0, ftype stdVal = 1.0,
+Eigen::Matrix<number_t, N, M>
+RandomMatrix(number_t meanVal = 0.0, number_t stdVal = 1.0,
              std::shared_ptr<std::knuth_b> p_engine = nullptr) {
 
-  using ftype = ftype;
+  using number_t = number_t;
 
-  std::normal_distribution<ftype> dist(meanVal, stdVal);
-  Eigen::Matrix<ftype, N, M> v;
+  std::normal_distribution<number_t> dist(meanVal, stdVal);
+  Eigen::Matrix<number_t, N, M> v;
   if (p_engine == nullptr) {
     std::default_random_engine engine;
     for (int i = 0; i < N; ++i)
@@ -150,14 +148,14 @@ RandomMatrix(ftype meanVal = 0.0, ftype stdVal = 1.0,
 
 /// \brief generate a random vecotr of dimension N
 template <int N>
-Eigen::Matrix<ftype, N, 1>
-RandomVector(ftype meanVal = 0.0, ftype stdVal = 1.0,
+Eigen::Matrix<number_t, N, 1>
+RandomVector(number_t meanVal = 0.0, number_t stdVal = 1.0,
              std::shared_ptr<std::knuth_b> p_engine = nullptr) {
 
-  using ftype = ftype;
+  using number_t = number_t;
 
-  std::normal_distribution<ftype> dist(meanVal, stdVal);
-  Eigen::Matrix<ftype, N, 1> v;
+  std::normal_distribution<number_t> dist(meanVal, stdVal);
+  Eigen::Matrix<number_t, N, 1> v;
   if (p_engine == nullptr) {
     std::default_random_engine engine;
     for (int i = 0; i < N; ++i) {
@@ -272,7 +270,7 @@ enum class JsonMatLayout { OneDim, RowMajor, ColMajor };
 /// \param key: the key
 /// \param layout: Whether the matrix is arranged as an one-dim array or two-dim
 /// matrix.
-template <typename T = ftype, int N = 3, int M = N>
+template <typename T = number_t, int N = 3, int M = N>
 Eigen::Matrix<T, N, M>
 GetMatrixFromJson(const Json::Value &v, const std::string &key,
                   JsonMatLayout layout = JsonMatLayout::OneDim) {
@@ -291,7 +289,7 @@ GetMatrixFromJson(const Json::Value &v, const std::string &key,
 }
 
 /// \brief load N-dim double vector from json file
-template <typename T = ftype, int N>
+template <typename T = number_t, int N>
 Eigen::Matrix<T, N, 1> GetVectorFromJson(const Json::Value &v,
                                          const std::string &key) {
 

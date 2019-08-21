@@ -15,7 +15,7 @@ public:
   Mat3 Ca; // accel scaling (diagonal) and misalignment (upper triangle)
   Mat3 Cg; // gyro scaling (diagonal) and misalignment (upper & lower triangle)
 
-  using Tangent = Eigen::Matrix<ftype, 15, 1>;
+  using Tangent = Eigen::Matrix<number_t, 15, 1>;
   IMUState &operator+=(const Tangent &dX);
 
 private:

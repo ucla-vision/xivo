@@ -1,3 +1,5 @@
+// Dataloader for the TUM-VI dataset.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <memory>
 #include <string>

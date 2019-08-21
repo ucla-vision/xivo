@@ -1,3 +1,6 @@
+// Radial-Tangential camera model.
+// Reference: OpenCV documentation.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "camera.h"
 

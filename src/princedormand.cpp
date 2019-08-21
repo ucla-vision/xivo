@@ -4,13 +4,13 @@
 
 namespace feh {
 
-void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
+void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
   // reference 1:
   // http://www.mymathlib.com/c_source/diffeq/embedded_runge_kutta/embedded_prince_dormand_v3_4_5.c
   // reference 2:
   // http://depa.fquim.unam.mx/amyd/archivero/DormandPrince_19856.pdf
   static bool pd_initialized{false}, control_stepsize{false};
-  static ftype tolerance, min_scale_factor, max_scale_factor, h, h0;
+  static number_t tolerance, min_scale_factor, max_scale_factor, h, h0;
   static int attempts;
 
   if (!pd_initialized) {
@@ -27,7 +27,7 @@ void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
 
   if (control_stepsize) {
 
-    ftype total_step = 0.0, scale = 1.0;
+    number_t total_step = 0.0, scale = 1.0;
 
     if (h < 1e-6) {
       h = h0;
@@ -36,7 +36,7 @@ void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
     h = std::min(h, dt);
 
     while (total_step < dt) {
-      ftype err = PrinceDormandStep(gyro0 + slope_gyro_ * total_step,
+      number_t err = PrinceDormandStep(gyro0 + slope_gyro_ * total_step,
                                     accel0 + slope_accel_ * total_step, h);
       total_step += h;
       if (err == 0.0) {
@@ -62,11 +62,11 @@ void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
     if (h0 < 0) {
       PrinceDormandStep(gyro0, accel0, dt);
     } else {
-      ftype total_step = 0;
+      number_t total_step = 0;
 
       Vec3 gyro{gyro0}, accel{accel0};
       while (total_step < dt) {
-        ftype h = h0; // this shadows the static variable h
+        number_t h = h0; // this shadows the static variable h
         if (total_step + h > dt) {
           h = dt - total_step;
         } else if (total_step + h + 0.5 * h > dt) {
@@ -82,25 +82,25 @@ void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
   }
 }
 
-ftype Estimator::PrinceDormandStep(const Vec3 &gyro0, const Vec3 &accel0,
-                                   ftype dt) {
-  static const ftype r_9 = 1.0 / 9.0;
-  static const ftype r_2_9 = 2.0 / 9.0;
-  static const ftype r_12 = 1.0 / 12.0;
-  static const ftype r_324 = 1.0 / 324.0;
-  static const ftype r_330 = 1.0 / 330.0;
-  static const ftype r_28 = 1.0 / 28.0;
-  static const ftype r_400 = 1.0 / 400.0;
+number_t Estimator::PrinceDormandStep(const Vec3 &gyro0, const Vec3 &accel0,
+                                   number_t dt) {
+  static const number_t r_9 = 1.0 / 9.0;
+  static const number_t r_2_9 = 2.0 / 9.0;
+  static const number_t r_12 = 1.0 / 12.0;
+  static const number_t r_324 = 1.0 / 324.0;
+  static const number_t r_330 = 1.0 / 330.0;
+  static const number_t r_28 = 1.0 / 28.0;
+  static const number_t r_400 = 1.0 / 400.0;
 
   static State X0;
   static Vec3 K1, K2, K3, K4, K5, K6, K7;
   static MatX FK1, FK2, FK3, FK4, FK5, FK6, FK7;
   static MatX PK1, PK2, PK3, PK4, PK5, PK6, PK7;
 
-  ftype step;
-  Eigen::Matrix<ftype, 6, 1> slope;
+  number_t step;
+  Eigen::Matrix<number_t, 6, 1> slope;
   slope << slope_gyro_, slope_accel_;
-  Eigen::Matrix<ftype, 6, 1> gyro_accel0, gyro_accel;
+  Eigen::Matrix<number_t, 6, 1> gyro_accel0, gyro_accel;
   gyro_accel0 << gyro0, accel0;
 
   X0 = X_;
@@ -218,6 +218,6 @@ ftype Estimator::PrinceDormandStep(const Vec3 &gyro0, const Vec3 &accel0,
   static MatX diffK;
   diffK = 0.0002 * (44.0 * K1 - 330.0 * K3 + 891.0 * K4 - 660.0 * K5 -
                     45.0 * K6 + 100.0 * K7);
-  return std::max<ftype>(fabs(diffK.minCoeff()), fabs(diffK.maxCoeff()));
+  return std::max<number_t>(fabs(diffK.minCoeff()), fabs(diffK.maxCoeff()));
 }
 }

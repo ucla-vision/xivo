@@ -1,3 +1,5 @@
+// The update step.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -20,7 +22,7 @@ void Estimator::Update() {
 
   timer_.Tick("update");
   std::vector<FeaturePtr> inliers; // individually compatible matches
-  std::vector<ftype> dist,
+  std::vector<number_t> dist,
       inlier_dist; // MH distance of features & inlier features
 
   timer_.Tick("jacobian");
@@ -34,7 +36,7 @@ void Estimator::Update() {
     Mat2 S = J * P_ * J.transpose();
     S(0, 0) += R_;
     S(1, 1) += R_;
-    ftype mh_dist = res.dot(S.llt().solve(res));
+    number_t mh_dist = res.dot(S.llt().solve(res));
     dist.push_back(mh_dist);
   }
   timer_.Tock("jacobian");
@@ -43,7 +45,7 @@ void Estimator::Update() {
 
   if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
 
-    ftype mh_thresh = MH_thresh_;
+    number_t mh_thresh = MH_thresh_;
     while (inliers.size() < min_required_inliers_) {
       // reset states
       for (auto f : instate_features_) {
@@ -230,7 +232,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     }
     if (inliers.size() > max_inliers.size()) {
       max_inliers = inliers;
-      ftype eps = 1 - max_inliers.size() / float(mh_inliers.size());
+      number_t eps = 1 - max_inliers.size() / float(mh_inliers.size());
       n_hyp = int(log(1 - ransac_prob_) / log(eps + 1e-5)) + 1;
     }
 

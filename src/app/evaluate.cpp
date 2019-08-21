@@ -32,8 +32,8 @@ namespace feh {
 std::vector<msg::Pose> LoadEstimatedState(const std::string &path) {
   std::ifstream istream(path, std::ios::in);
   int64_t ts;       // timestamp
-  ftype x, y, z;    // translation
-  ftype w0, w1, w2; // rotation in exponential coordinates
+  number_t x, y, z;    // translation
+  number_t w0, w1, w2; // rotation in exponential coordinates
   std::vector<msg::Pose> out;
   while (istream >> ts >> x >> y >> z >> w0 >> w1 >> w2) {
     auto R = SO3::exp({w0, w1, w2});
@@ -62,13 +62,13 @@ int main(int argc, char **argv) {
 
   LOG(INFO) << "Estimated trajectory loaded";
   // Absolute Trajectory Error
-  ftype ate;
+  number_t ate;
   SE3 g_est_gt;
   std::tie(ate, g_est_gt) = ComputeATE(traj_est, traj_gt, FLAGS_resolution);
   LOG(INFO) << "ATE computed";
 
   // Relative Position Error
-  ftype rpe_pos, rpe_rot;
+  number_t rpe_pos, rpe_rot;
   std::tie(rpe_pos, rpe_rot) =
       ComputeRPE(traj_est, traj_gt, FLAGS_RPE_interval, FLAGS_resolution);
   LOG(INFO) << "RPE computed";

@@ -20,7 +20,7 @@ TEST_F(EstimatorTest, Inertial) {
   for (int i = 0; i < 100; ++i) {
     Vec3 static_acc = 0.1 * RandomVector<3>();
     static_acc += Vec3{0.0, 0.0, 9.8};
-    ftype ts = i*0.01;
+    number_t ts = i*0.01;
     est_->InertialMeas(ts, static_acc, Vec3::Random());
     if (est_->gravity_initialized_) {
       // std::cout << err_.segment<3>(Index::T).transpose() << std::endl;

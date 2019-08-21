@@ -1,3 +1,6 @@
+// Camera models with adjustable intrinsic parameters
+// used for online calibration.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 
 #include "alias.h"
@@ -7,13 +10,13 @@
 namespace feh {
 
 class A_RadialTangentialCamera
-    : public RadialTangentialCamera<ftype>,
+    : public RadialTangentialCamera<number_t>,
       public Component<
           A_RadialTangentialCamera,
-          Eigen::Matrix<ftype, RadialTangentialCamera<ftype>::DIM, 1>> {
+          Eigen::Matrix<number_t, RadialTangentialCamera<number_t>::DIM, 1>> {
 
 public:
-  using f_t = ftype;
+  using f_t = number_t;
   using MyBase = RadialTangentialCamera<f_t>;
   static constexpr int DIM = MyBase::DIM;
 
@@ -22,7 +25,7 @@ public:
                            int max_iter = 15)
       : MyBase{rows, cols, fx, fy, cx, cy, p1, p2, k1, k2, k3, max_iter} {}
 
-  void UpdateState(const Eigen::Matrix<ftype, DIM, 1> &dX) {
+  void UpdateState(const Eigen::Matrix<number_t, DIM, 1> &dX) {
     fx_ += dX(0);
     fy_ += dX(1);
     cx_ += dX(2);
@@ -54,19 +57,19 @@ protected:
 };
 
 class A_PinholeCamera
-    : public PinholeCamera<ftype>,
+    : public PinholeCamera<number_t>,
       public Component<A_PinholeCamera,
-                       Eigen::Matrix<ftype, PinholeCamera<ftype>::DIM, 1>> {
+                       Eigen::Matrix<number_t, PinholeCamera<number_t>::DIM, 1>> {
 
 public:
-  using f_t = ftype;
+  using f_t = number_t;
   using MyBase = PinholeCamera<f_t>;
   static constexpr int DIM = MyBase::DIM;
 
   A_PinholeCamera(int rows, int cols, f_t fx, f_t fy, f_t cx, f_t cy)
-      : PinholeCamera<ftype>{rows, cols, fx, fy, cx, cy} {}
+      : PinholeCamera<number_t>{rows, cols, fx, fy, cx, cy} {}
 
-  void UpdateState(const Eigen::Matrix<ftype, DIM, 1> &dX) {
+  void UpdateState(const Eigen::Matrix<number_t, DIM, 1> &dX) {
     fx_ += dX(0);
     fy_ += dX(1);
     cx_ += dX(2);
@@ -83,19 +86,19 @@ protected:
 };
 
 class A_ATANCamera
-    : public ATANCamera<ftype>,
+    : public ATANCamera<number_t>,
       public Component<A_ATANCamera,
-                       Eigen::Matrix<ftype, ATANCamera<ftype>::DIM, 1>> {
+                       Eigen::Matrix<number_t, ATANCamera<number_t>::DIM, 1>> {
 
 public:
-  using f_t = ftype;
+  using f_t = number_t;
   using MyBase = ATANCamera<f_t>;
   static constexpr int DIM = MyBase::DIM;
 
   A_ATANCamera(int rows, int cols, f_t fx, f_t fy, f_t cx, f_t cy, f_t w)
       : ATANCamera<f_t>{rows, cols, fx, fy, cx, cy, w} {}
 
-  void UpdateState(const Eigen::Matrix<ftype, DIM, 1> &dX) {
+  void UpdateState(const Eigen::Matrix<number_t, DIM, 1> &dX) {
     fx_ += dX(0);
     fy_ += dX(1);
     cx_ += dX(2);
@@ -120,12 +123,12 @@ protected:
 };
 
 class A_EquidistantCamera
-    : public EquidistantCamera<ftype>,
+    : public EquidistantCamera<number_t>,
       public Component<A_EquidistantCamera,
-                       Eigen::Matrix<ftype, EquidistantCamera<ftype>::DIM, 1>> {
+                       Eigen::Matrix<number_t, EquidistantCamera<number_t>::DIM, 1>> {
 
 public:
-  using f_t = ftype;
+  using f_t = number_t;
   using MyBase = EquidistantCamera<f_t>;
   static constexpr int DIM = MyBase::DIM;
 
@@ -133,7 +136,7 @@ public:
                       f_t k0, f_t k1, f_t k2, f_t k3, int max_iter = 15)
       : EquidistantCamera<f_t>{rows, cols, fx, fy, cx, cy, k0, k1, k2, k3} {}
 
-  void UpdateState(const Eigen::Matrix<ftype, DIM, 1> &dX) {
+  void UpdateState(const Eigen::Matrix<number_t, DIM, 1> &dX) {
     fx_ += dX(0);
     fy_ += dX(1);
     cx_ += dX(2);

@@ -1,3 +1,7 @@
+// Base class for camera models.
+// Use CRTP (Curiously Recurring Template Pattern) to implement compile-time
+// polymorphism.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 
 #include "Eigen/Dense"

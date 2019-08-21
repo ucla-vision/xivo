@@ -1,3 +1,6 @@
+// A process where the estimator resides.
+// Also allows the estimator to talk publishers.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 // stl
 #include <fstream>

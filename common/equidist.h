@@ -1,3 +1,8 @@
+// Equidistant camera model. 
+// Reference:
+//  A Generic Camera Model and Calibration Method ...
+//  http://www.ee.oulu.fi/research/mvmp/mvg/files/pdf/pdf_697.pdf
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "camera.h"
 

@@ -1,4 +1,5 @@
-// Visualization utilities.
+// Drawing functions to overlay feature tracks & system
+// info on input images.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <list>

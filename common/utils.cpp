@@ -1,6 +1,5 @@
-//
-// Created by feixh on 10/25/17.
-//
+// Utilities including timer, file IO, manipulation JSON files, etc.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 // unix
 #include "dirent.h"
 // stl
@@ -28,7 +27,7 @@ const std::string TermColor::endl = "\033[0m\n";
 std::ostream &operator<<(std::ostream &os, const Timer &obj) {
   os << "....." << std::endl;
   // write obj to stream
-  for (auto it = obj.look_up_table_.begin(); it != obj.look_up_table_.end();
+  for (auto it = obj.lookups_.begin(); it != obj.lookups_.end();
        ++it) {
     float elapsed = obj.report_average ? it->second / obj.counter_.at(it->first)
                                        : it->second;

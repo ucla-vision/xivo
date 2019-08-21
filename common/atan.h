@@ -1,3 +1,8 @@
+// ATAN camera model.
+// Reference:
+//  Straight lines have to be straight ...
+//  https://hal.inria.fr/inria-00267247/file/distcalib.pdf
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "camera.h"
 

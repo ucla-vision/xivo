@@ -1,4 +1,5 @@
-// Group structure.
+// Group structure which are anchors to which
+// the features are attached.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <functional>

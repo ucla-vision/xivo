@@ -1,6 +1,5 @@
-//
-// Created by feixh on 10/29/18.
-//
+// SE(3) groups.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 
 #include "rodrigues.h"

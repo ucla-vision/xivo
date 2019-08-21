@@ -1,3 +1,6 @@
+// A wrapper of JsonCpp's Value class
+// using as a globally accessible parameter server.
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "param.h"
 #include "glog/logging.h"
 

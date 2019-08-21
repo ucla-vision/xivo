@@ -73,7 +73,7 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_["depth_opt"].get("max_res_norm", 2.0).asDouble();
 
   // depth-initialization subfilter options
-  ftype tri_std = cfg_["subfilter"].get("visual_meas_std", 3.5).asDouble();
+  number_t tri_std = cfg_["subfilter"].get("visual_meas_std", 3.5).asDouble();
   subfilter_options_.Rtri = tri_std * tri_std;
   subfilter_options_.MH_thresh =
       cfg_["subfilter"].get("MH_thresh", 5.991).asDouble();
@@ -91,14 +91,14 @@ Estimator::Estimator(const Json::Value &cfg)
   auto imu_calib = cfg_["imu_calib"];
   // load accel axis misalignment first as a 3x3 matrix
   Mat3 Ca =
-      GetMatrixFromJson<ftype, 3, 3>(imu_calib, "Car", JsonMatLayout::RowMajor);
+      GetMatrixFromJson<number_t, 3, 3>(imu_calib, "Car", JsonMatLayout::RowMajor);
   // then overwrite the diagonal with scaling
-  Ca.diagonal() = GetVectorFromJson<ftype, 3>(imu_calib, "Cas");
+  Ca.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cas");
   // load gyro axis misalignment first as 3x3 matrix
   Mat3 Cg =
-      GetMatrixFromJson<ftype, 3, 3>(imu_calib, "Cgr", JsonMatLayout::RowMajor);
+      GetMatrixFromJson<number_t, 3, 3>(imu_calib, "Cgr", JsonMatLayout::RowMajor);
   // hen overwrite the diagonal with scaling
-  Cg.diagonal() = GetVectorFromJson<ftype, 3>(imu_calib, "Cgs");
+  Cg.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cgs");
   // now update the IMU component
   imu_ = IMU{Ca, Cg};
   LOG(INFO) << "Imu calibration loaded";
@@ -110,7 +110,7 @@ Estimator::Estimator(const Json::Value &cfg)
   Camera::Create(cam_cfg);
   LOG(INFO) << "Camera created";
 
-  g_ = GetMatrixFromJson<ftype, 3, 1>(cfg_, "gravity");
+  g_ = GetMatrixFromJson<number_t, 3, 1>(cfg_, "gravity");
   LOG(INFO) << "gravity loaded:" << g_.transpose();
 
   // /////////////////////////////
@@ -118,25 +118,25 @@ Estimator::Estimator(const Json::Value &cfg)
   // /////////////////////////////
   auto X = cfg_["X"];
   try {
-    X_.Rsb = SO3::exp(GetVectorFromJson<ftype, 3>(X, "W"));
+    X_.Rsb = SO3::exp(GetVectorFromJson<number_t, 3>(X, "W"));
   } catch (const Json::LogicError &e) {
     X_.Rsb =
-        SO3(GetMatrixFromJson<ftype, 3, 3>(X, "W", JsonMatLayout::RowMajor));
+        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "W", JsonMatLayout::RowMajor));
   }
-  X_.Tsb = GetVectorFromJson<ftype, 3>(X, "T");
-  X_.Vsb = GetVectorFromJson<ftype, 3>(X, "V");
-  X_.bg = GetVectorFromJson<ftype, 3>(X, "bg");
-  X_.ba = GetVectorFromJson<ftype, 3>(X, "ba");
+  X_.Tsb = GetVectorFromJson<number_t, 3>(X, "T");
+  X_.Vsb = GetVectorFromJson<number_t, 3>(X, "V");
+  X_.bg = GetVectorFromJson<number_t, 3>(X, "bg");
+  X_.ba = GetVectorFromJson<number_t, 3>(X, "ba");
   try {
-    X_.Rbc = SO3::exp(GetVectorFromJson<ftype, 3>(X, "Wbc"));
+    X_.Rbc = SO3::exp(GetVectorFromJson<number_t, 3>(X, "Wbc"));
   } catch (const Json::LogicError &e) {
     X_.Rbc =
-        SO3(GetMatrixFromJson<ftype, 3, 3>(X, "Wbc", JsonMatLayout::RowMajor));
+        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wbc", JsonMatLayout::RowMajor));
   }
-  X_.Tbc = GetVectorFromJson<ftype, 3>(X, "Tbc");
+  X_.Tbc = GetVectorFromJson<number_t, 3>(X, "Tbc");
   Vec3 Wg;
-  // Wg.head<2>() = GetVectorFromJson<ftype, 2>(X, "Wg");
-  Wg = GetVectorFromJson<ftype, 3>(X, "Wg");
+  // Wg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wg");
+  Wg = GetVectorFromJson<number_t, 3>(X, "Wg");
   X_.Rg = SO3::exp(Wg);
 // temporal offset
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -337,8 +337,8 @@ bool Estimator::InitializeGravity() {
     // we need R * accel + Rg * g_ == 0
     // And R = Identity
     // so accel = Rg * (-g_)
-    Eigen::AngleAxis<ftype> AAg(
-        Eigen::Quaternion<ftype>::FromTwoVectors(-g_, accel_calib));
+    Eigen::AngleAxis<number_t> AAg(
+        Eigen::Quaternion<number_t>::FromTwoVectors(-g_, accel_calib));
     Vec3 Wg(AAg.axis() * AAg.angle());
     // Wg(2) = 0;
     auto Rg = SO3::exp(Wg);
@@ -406,10 +406,10 @@ void Estimator::Propagate(bool visual_meas) {
 
   timer_.Tick("propagation");
 
-  ftype dt;
+  number_t dt;
   Vec3 accel0, gyro0; // initial condition for integration
 
-  dt = std::chrono::duration<ftype>(curr_time_ - last_time_).count();
+  dt = std::chrono::duration<number_t>(curr_time_ - last_time_).count();
   if (dt == 0) {
     LOG(WARNING) << "measurement timestamps coincide?";
     return;
@@ -450,13 +450,13 @@ void Estimator::Propagate(bool visual_meas) {
   timer_.Tock("propagation");
 }
 
-void Estimator::Fehlberg(const Vec3 &gyro0, const Vec3 &accel0, ftype dt) {
+void Estimator::Fehlberg(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
   throw NotImplemented();
 }
 
 void Estimator::ComposeMotion(State &X, const Vec3 &V,
-                              const Eigen::Matrix<ftype, 6, 1> &gyro_accel,
-                              ftype dt) {
+                              const Eigen::Matrix<number_t, 6, 1> &gyro_accel,
+                              number_t dt) {
   Vec3 gyro = gyro_accel.head<3>();
   Vec3 accel = gyro_accel.tail<3>();
 
@@ -470,7 +470,7 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
 }
 
 void Estimator::ComputeMotionJacobianAt(
-    const State &X, const Eigen::Matrix<ftype, 6, 1> &gyro_accel) {
+    const State &X, const Eigen::Matrix<number_t, 6, 1> &gyro_accel) {
 
   Vec3 gyro = gyro_accel.head<3>();
   Vec3 accel = gyro_accel.tail<3>();
@@ -481,18 +481,18 @@ void Estimator::ComputeMotionJacobianAt(
   // jacobian w.r.t. error state
   Mat3 R = X.Rsb.matrix();
 
-  Eigen::Matrix<ftype, 3, 9> dW_dCg;
+  Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {
     // NOTE: use the raw measurement (gyro) here. NOT the calibrated one
     // (gyro_calib)!!!
     dW_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
-  Eigen::Matrix<ftype, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  Eigen::Matrix<ftype, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
-  Eigen::Matrix<ftype, 9, 6> dCafm_dCa =
+  Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
+  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
+  Eigen::Matrix<number_t, 9, 6> dCafm_dCa =
       dA_dAu(Mat3{}); // full matrix w.r.t. upper triangle
-  Eigen::Matrix<ftype, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
+  Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
   Mat3 dW_dW = -hat(gyro_calib);
   Mat3 dW_dbg = -Mat3::Identity();
@@ -689,7 +689,7 @@ void Estimator::AddFeatureToState(FeaturePtr f) {
     // P_.block<3, 3>(offset, offset) =
     //     f->P() * cfg_.get("feature_P0_damping", 100).asDouble(); // damping
     P_.block<3, 3>(offset, offset) = f->P();
-    ftype damping = cfg_.get("feature_P0_damping", 10).asDouble();
+    number_t damping = cfg_.get("feature_P0_damping", 10).asDouble();
     P_.block<2, 1>(offset, offset + 2) *= damping;
     P_.block<1, 2>(offset + 2, offset) *= damping;
     P_(offset + 2, offset + 2) *= (damping * damping);
@@ -730,7 +730,7 @@ void Estimator::AbsorbError(const VecX &err) {
 
 #ifdef USE_ONLINE_IMU_CALIB
   // update IMU state
-  Eigen::Matrix<ftype, 15, 1> dCaCg;
+  Eigen::Matrix<number_t, 15, 1> dCaCg;
   dCaCg << err.segment<6>(Index::Ca), err.segment<9>(Index::Cg);
   imu_.UpdateState(dCaCg);
 #endif
@@ -887,13 +887,13 @@ void Estimator::UpdateJosephForm() {
   P_ = P_ + K_ * K_.transpose();
 }
 
-std::tuple<ftype, bool> Estimator::HuberOnInnovation(const Vec2 &inn,
-                                                     ftype Rviz) {
+std::tuple<number_t, bool> Estimator::HuberOnInnovation(const Vec2 &inn,
+                                                     number_t Rviz) {
 
-  ftype robust_Rviz{Rviz}; // robustified measurement variance
+  number_t robust_Rviz{Rviz}; // robustified measurement variance
   bool outlier{false};     // consider this measurement as an outlier?
 
-  if (ftype ratio{inn.squaredNorm() / (2 * Rviz) / outlier_thresh_};
+  if (number_t ratio{inn.squaredNorm() / (2 * Rviz) / outlier_thresh_};
       ratio > 1.0) {
     ratio = sqrt(ratio);
     robust_Rviz *= ratio;
@@ -953,7 +953,7 @@ void Estimator::SwitchRefGroup() {
                          [this](const GroupPtr g1, const GroupPtr g2) -> bool {
                            int offset1 = kGroupBegin + 6 * g1->sind();
                            int offset2 = kGroupBegin + 6 * g2->sind();
-                           ftype cov1{0}, cov2{0};
+                           number_t cov1{0}, cov2{0};
                            for (int i = 0; i < 6; ++i) {
                              cov1 += P_(offset1 + i, offset1 + i);
                              cov2 += P_(offset2 + i, offset2 + i);
