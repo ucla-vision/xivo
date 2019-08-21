@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 project(feh)
 
 option(BUILD_ROSNODE "wrap the system in a rosnode" OFF)
+option(BUILD_G2O "build with g2o support" OFF)
 
-# set(CMAKE_CC_COMPILER "/usr/bin/gcc-7")
-# set(CMAKE_CXX_COMPILER "/usr/bin/g++-7")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++17 -Wno-narrowing -Wno-register -g -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
 set(CMAKE_BUILD_TYPE "Release")
@@ -55,7 +54,9 @@ enable_testing()
 add_subdirectory(thirdparty/googletest)
 add_subdirectory(thirdparty/gflags)
 add_subdirectory(thirdparty/abseil-cpp)
-add_subdirectory(thirdparty/g2o)
+if (BUILD_G2O)
+  add_subdirectory(thirdparty/g2o)
+endif(BUILD_G2O)
 
 # feh
 add_subdirectory(common)

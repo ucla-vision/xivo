@@ -36,11 +36,18 @@ struct has_tangent<T, std::void_t<typename T::Tangent>> : std::true_type {};
 // S: the nominal state for the local parameters.
 // Error: the error state for the local parameters.
 template <typename Derived, typename State> struct Component {
+
+  // use the SFINAE (Substitution Failure Is Not An Error) trick
+  // so if the state class does not have a tangent type defined,
+  // we use the state type itself as the tangent.
+  // Since for Euclidean space, the tangent space coincides with 
+  // the ambient space, i.e., the Euclidean space.
   std::enable_if_t<has_tangent<State>::value, void>
   UpdateState(const typename State::Tangent &dX) {
     static_cast<Derived *>(this)->UpdateState(dX);
   }
 
+  // no tangent type defined, use the type of state
   std::enable_if_t<!has_tangent<State>::value, void>
   UpdateState(const State &dX) {
     static_cast<Derived *>(this)->UpdateState(dX);
