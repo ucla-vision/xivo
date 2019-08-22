@@ -46,8 +46,14 @@ The current implementation supports two execution modes: Batch, requiring a fold
 Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
 -->
 
-### Dataset
+### Datasets
 
+- XIVO 1:
+- XIVO 2:
+...
+- TUM-VI:
+
+<!--
 Assume the environment variable `$TUMVIROOT` has been set to the root directory of your [TUMVI](https://vision.in.tum.de/data/datasets/visual-inertial-dataset) dataset. For example,
 
 ```
@@ -55,10 +61,11 @@ export TUMVIROOT=/home/Data/tumvi/exported/euroc/512_16
 ```
 
 where on my machine `/home/Data/tumvi/exported/euroc/512_16` hosts folders of data, such as `dataset-room1_512_16`, `dataset-corridor1_512_16`, etc.
+-->
 
 ### Run
 
-In the project root directory, you can run the estimator with configuration specified by the `-cfg cfg/vio.json` option on images captured by camera 0 (`-cam_id 0`) of the 6-th room sequence (`-seq room6`) of the TUMVI dataset (`-dataset tumvi`) which resides in `$TUMVIROOT` (option `-root $TUMVIROOT`) as follows:
+From the project root directory, run the estimator with configuration specified by the `-cfg cfg/vio.json` option on images captured by camera 0 (`-cam_id 0`) of the 6-th room sequence (`-seq room6`) of the TUMVI dataset (`-dataset tumvi`) which resides in `$TUMVIROOT` (option `-root $TUMVIROOT`) as follows:
 
 ```
 bin/st_vio -cfg cfg/vio.json -root $TUMVIROOT -dataset tumvi -seq room6 -cam_id 0 -out out_state
@@ -70,19 +77,6 @@ For detailed usage of the application, see the flags defined at the beginning of
 
 
 ### Evaluation
-
-<!--
-**DEPRECATED: USE THE PYTHON EVALUATION SCRIPT FROM TUM RGBD BENCHMARK INSTEAD**
-
-
-A C++ implementation of RPE (Relative Pose Error) and ATE (Absolute Trajectory Error) is provided. Once you have run the estimator on one of the TUM-VI sequences and have the estimated states saved in a file, say, `out_state`, evaluation can be done as follows:
-
-```
-bin/eval -root $TUMVIROOT -seq room6 -result out_state -resolution 0.001
-```
-
-where `resolution` specifies the temporal interval over which RPE is measured.
--->
 
 We provide a python script `scripts/run_and_eval_pyxivo.py` to run the estimator on a specified TUM-VI sequence and benchmark the performance in terms ATE (Absolute Trajectory Error) and RPE (Relative Pose Error). To use it, execute the following in the project root directory:
 
@@ -105,21 +99,7 @@ By default, log is suppressed by setting `add_definitions(-DGOOGLE_STRIP_LOG=1)`
 
 For more details on how to use glog, see [the tutorial here](http://rpg.ifi.uzh.ch/docs/glog.html).
 
-<!--
-### Python scripts for diagnosis
-
-We provide some python scripts in `scripts` folder to diagnose the behavior of the system. By default, the vio application will dump state to a text file named `out_state_aligned`. To compare the state estimates and the ground-truth states, you can do the following:
-
-```
-python scripts/compareTraj.py room6 out_state_aligned
-```
-
-Note, you can change `out_state_aligned` to another name as long as it is consistent with the filename you provide to the `-out` option when you run the vio application. Also `room6` is the sequence name to perform the comparison, and it should be the same as the one used when you run your application.
-
-If the script works fine, you will be able to see a figure of three panels with each of which showing the x, y, and z components of the estimated translation state. The blue trajectory is the ground truth, and the red one is your estimation.
--->
-
-## Rosbag mode
+## ROS bag mode
 
 ### Build
 
