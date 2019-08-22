@@ -1,17 +1,5 @@
 # XIVO: X Inertial-aided Visual Odometry
 
-<!--
-I started writing this software as a hobby project in the winter of 2018. The motivation behind this is in part that I want to have a (hopefully) minimal implementation of EKF-based Visual-Inertial Odometry and to play with some new C++ language features (C++ 14/17) and coding techniques (templates, design patterns, etc.). The project was paused for months due to job hunting, paper submission, defense, and vacation, etc. Fortunately, I was able to spend more time on it before I leave UCLA.
-
-
-This is still work in progress, and under no circumstances can it be considered as done. However, with readability and maintainability in mind when writing this piece of software, I believe it still has some value for people who want to dive into the world of VIO. Besides, the performance of the system in terms of ATE (Absolute Trajectory Error) and RPE (Relative Pose Error) is comparable to other open-source VIO systems (see the performance section). 
-
-
-A detailed technical report of the implementation will follow. Stay tuned. 
-
-Have fun!
-
--->
 
 ![Demo](misc/demo.gif)
 
@@ -175,21 +163,3 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 |room6| **0.012**m/0.49<sup>o</sup> | 0.014m/**0.44**<sup>o</sup> | 0.019m/0.50<sup>o</sup> | 0.031m/0.53<sup>o</sup> |
 
 *Table 2. RMSE RPE* in meters (translation) and degrees (rotation).
-
-## Acknowledgement
-
-This implementation is inspired and partially based on *Corvis* of Konstantine Tsotsos, who is a good friend and mentor.
-
----
-
-## Reference
-
-If you find this software useful and use it in your work, please cite:
-
-```
-@misc{feiS19xivo,
-  author = {Xiaohan Fei, and Stefano Soatto},
-  title = {XIVO: X Inertial-aided Visual Odometry},
-  howpublished = "\url{https://github.com/feixh/xivo}",
-}
-```
