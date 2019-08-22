@@ -36,6 +36,23 @@ To build, in Ubuntu 18.04, execute the `build.sh` script in the root directory o
 
 This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied, according to the terms linked [here](https://github.com/feixh/xivo/edit/master/LICENSE). For commercial use, please contact [UCLA TDG](tdg.ucla.edu).
 
+## Acknowledgment
+
+If you make use of any part of this code or the datasets provided, please acknoledge this repository by citing the follows:
+
+```
+@article{fei2019geo,
+  title={Geo-supervised visual depth prediction},
+  author={Fei, Xiaohan and Wong, Alex and Soatto, Stefano},
+  journal={IEEE Robotics and Automation Letters},
+  volume={4},
+  number={2},
+  pages={1661--1668},
+  year={2019},
+  publisher={IEEE}
+}
+```
+
 ---
 
 ## Usage
