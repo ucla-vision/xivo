@@ -13,7 +13,7 @@
 namespace feh {
 
 // Feature
-int Feature::counter_ = 0;
+int Feature::counter_ = Feature::counter0;
 JacobianCache Feature::cache_ = {};
 
 ////////////////////////////////////////
@@ -56,21 +56,22 @@ void Feature::Reset(number_t x, number_t y) {
 ////////////////////////////////////////
 Vec3 Feature::Xc(Mat3 *J) const {
 #ifdef USE_INVDEPTH
-  return unproject_invz(x_, J);
+  Xc_ = unproject_invz(x_, J);
 #else
-  return unproject_logz(x_, J);
+  Xc_ = unproject_logz(x_, J);
 #endif
+  return Xc_;
 }
 
 Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) const {
   // Rsb * (Rbc*Xc + Tbc) + Tsb
   CHECK(ref_) << "feature #" << id_ << " null ref";
   SE3 gsc = ref_->gsb() * gbc;
-  Vec3 Ps = gsc * Xc(J); // J = dXc_dx, where x is the local parametrization
+  Xs_ = gsc * Xc(J); // J = dXc_dx, where x is the local parametrization
   if (J) {
     *J = gsc.R().matrix() * (*J);
   }
-  return Ps;
+  return Xs_;
 }
 
 number_t Feature::z() const {
