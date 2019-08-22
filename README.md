@@ -9,6 +9,29 @@
 
 To build the state estimator and dependencies, execute the `build.sh` script in the root directory of the project.
 
+## Dependencies
+
+- Pangolin:
+- Eigen:
+- g2o:
+- abseil-cpp:
+- googletest:
+- glog:
+- gflags:
+- jsoncpp:
+- pybind11:
+
+Dependencies are included in the `thirdparty` directory.
+
+## Requirements
+
+This software is built and tested on Ubuntu 16.04 and 18.04 with compiler g++ 7.4.0.
+
+## License and Disclaimer
+
+This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied according to the license linked [here](https://github.com/feixh/xivo/edit/master/LICENSE). For commercial use, please contact [UCLA TDG](tdg.ucla.edu).
+
+
 ## Usage
 
 The current implementation supports two execution modes: Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
