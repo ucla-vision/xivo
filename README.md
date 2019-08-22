@@ -151,7 +151,7 @@ pip install -r requirements.txt
 
 ## Performance
 
-The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems (slightly worse than optimization-based OKVIS and VINS-Mono and on par with EKF-based ROVIO). Also, our system runs at more than 100 Hz on a desktop PC with a Core i7 6th gen CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
+The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems. Also, our system runs at more than 100 Hz on a desktop PC with a Core i7 6th gen CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
 
 
 | Sequence | length | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
