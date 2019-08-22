@@ -3,6 +3,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <memory>
+#include <tuple>
 
 // g2o
 #include "g2o/config.h"
@@ -19,6 +20,8 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
 #include "json/json.h"
+
+#include "alias.h"
 
 namespace feh {
 
@@ -42,10 +45,7 @@ public:
     SE3 gsb;  // body to spatial transformation
   };
 
-  struct ObsAdapter {
-    GroupAdapter* g;
-    Vec2 xp;  // pixel coordinates
-  };
+  using ObsAdapter = std::tuple<GroupAdapter, Vec2>;
 
 public:
   ~Optimizer();

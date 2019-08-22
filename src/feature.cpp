@@ -54,7 +54,7 @@ void Feature::Reset(number_t x, number_t y) {
 ////////////////////////////////////////
 // SOME ACCESSORS
 ////////////////////////////////////////
-Vec3 Feature::Xc(Mat3 *J) const {
+Vec3 Feature::Xc(Mat3 *J) {
 #ifdef USE_INVDEPTH
   Xc_ = unproject_invz(x_, J);
 #else
@@ -63,7 +63,7 @@ Vec3 Feature::Xc(Mat3 *J) const {
   return Xc_;
 }
 
-Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) const {
+Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) {
   // Rsb * (Rbc*Xc + Tbc) + Tsb
   CHECK(ref_) << "feature #" << id_ << " null ref";
   SE3 gsc = ref_->gsb() * gbc;

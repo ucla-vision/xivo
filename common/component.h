@@ -34,7 +34,7 @@ struct has_tangent<T, std::void_t<typename T::Tangent>> : std::true_type {};
 }
 
 template <typename T>
-using has_tangent<T> = traits::has_tangent<T>::value;
+constexpr bool has_tangent = traits::has_tangent<T>::value;
 
 // CRTP pattern for static polymorphism
 // Derived: Derived class to enforce the implementation of UpdateState

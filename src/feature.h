@@ -74,9 +74,9 @@ public:
   void BackupState() { x0_ = x_; }
   void RestoreState() { x_ = x0_; }
   // get 3D coordinates in reference camera frame
-  Vec3 Xc(Mat3 *dXc_dx = nullptr) const;
+  Vec3 Xc(Mat3 *dXc_dx = nullptr);
   // get 3D coordinates in spatial frame, cam2body alignment is required
-  Vec3 Xs(const SE3 &gbc, Mat3 *dXs_dx = nullptr) const;
+  Vec3 Xs(const SE3 &gbc, Mat3 *dXs_dx = nullptr);
   const Vec3& Xs() const { return Xs_; }
 
   // return (2M-3) as the dimension of the measurement
