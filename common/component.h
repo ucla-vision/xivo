@@ -21,6 +21,7 @@
 
 namespace feh {
 
+namespace traits {
 // helper function to check whehter the given "State" type has a "Tangent" type
 // defined.
 // referene:
@@ -30,6 +31,10 @@ template <class, class = std::void_t<>> struct has_tangent : std::false_type {};
 
 template <class T>
 struct has_tangent<T, std::void_t<typename T::Tangent>> : std::true_type {};
+}
+
+template <typename T>
+using has_tangent<T> = traits::has_tangent<T>::value;
 
 // CRTP pattern for static polymorphism
 // Derived: Derived class to enforce the implementation of UpdateState
@@ -42,13 +47,13 @@ template <typename Derived, typename State> struct Component {
   // we use the state type itself as the tangent.
   // Since for Euclidean space, the tangent space coincides with 
   // the ambient space, i.e., the Euclidean space.
-  std::enable_if_t<has_tangent<State>::value, void>
+  std::enable_if_t<has_tangent<State>, void>
   UpdateState(const typename State::Tangent &dX) {
     static_cast<Derived *>(this)->UpdateState(dX);
   }
 
   // no tangent type defined, use the type of state
-  std::enable_if_t<!has_tangent<State>::value, void>
+  std::enable_if_t<!has_tangent<State>, void>
   UpdateState(const State &dX) {
     static_cast<Derived *>(this)->UpdateState(dX);
   }
