@@ -178,4 +178,6 @@ private:
   SO3Type<Type> R_;
   Eigen::Matrix<Type, 3, 1> T_;
 };
+
+
 }

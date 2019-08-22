@@ -43,47 +43,81 @@ Optimizer::Optimizer(const Json::Value &cfg) {
   optimizer_.setAlgorithm(algorithm_.get());
 }
 
-void Optimizer::AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapter> &obs) {
+
+FeatureVertex* Optimizer::CreateFeatureVertex(const FeatureAdapter &f) {
+  auto fv = new FeatureVertex();
+  fv->setId(f.id);
+  fv->setMarginalized(true);
+  fv->setEstimate(f.Xs);
+  fvertices_[f.id] = fv;
+  optimizer_.addVertex(fv);
+  return fv;
+}
+
+GroupVertex* Optimizer::CreateGroupVertex(const GroupAdapter &g) {
+  auto gv = new GroupVertex();
+  gv->setId(g.id);
+  gv->setEstimate(g.gsb);
+  gv->setAll(); // set aux transforms, may not need this
+  // FIXME (xfei): to fix gauge freedom
+  // gv->setFixed(true);  
+  optimizer_.addVertex(gv);
+  return gv;
+}
+
+Edge* Optimizer::CreateEdge(FeatureVertex *fv, GroupVertex *gv, const Vec2 &xp, const Mat2 &IM) {
+  auto e = new Edge();
+  e->vertices()[0] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(fv);
+  e->vertices()[1] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(gv);
+  e->setMeasurement(xp);
+  if (IM.isZero(0)) {
+    e->information().setIdentity();
+  } else {
+    e->information() = IM;  // IM = Information Matrix
+  }
+
+  if (use_robust_kernel_) {
+    auto rk = new g2o::RobustKernelHuber();
+    e->setRobustKernel(rk);
+  }
+  optimizer_.addEdge(e);
+  return e;
+}
+
+void Optimizer::AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapterG> &obs) {
   // CHECK(!fvertices_.count(f->id()) << "Feature #" << f->id() << " already in optimization graph";
 
   if (!fvertices_.count(f.id)) {
     // feature vertex not exist, create one
-    auto fv = new FeatureVertex();
-    fv->setId(f.id);
-    fv->setMarginalized(true);
-    fv->setEstimate(f.Xs);
-    fvertices_[f.id] = fv;
+    CreateFeatureVertex(f);
   }
   auto fv = fvertices_.at(f.id);
 
-  /*
-  for (auto [g, xp]: obs) {
+  for (auto [g, xp, IM]: obs) {
     if (!gvertices_.count(g.id)) {
       // group vertex not exist, create one
-      auto gv = new GroupVertex();
-      gv->setId(g.id);
-      // FIXME (xfei): set pose here, convert to SO3 x R3 to proper type
-      gv->setEstimate();
-      gv->setAll(); // set aux transforms, may not need this
-      // gv->setFixed(true);  // to fix gauge freedom
-      optimizer_.addVertex(gv);
+      CreateGroupVertex(g);
     }
     auto gv = gvertices_.at(g.id);
-
     // FIXME (xfei): make sure no duplicate edges are added
-    auto e = new Edge ();
-    e->vertices()[0] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(fv);
-    e->vertices()[1] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(gv);
-    e->setMeasurement(xp);
-    e->information() = Mat3::Identity();  // FIXME (xfei): set proper information matrix
-
-    if (use_robust_kernel_) {
-      auto rk = new g2o::RobustKernelHuber();
-      e->setRobustKernel(rk);
-    }
-    optimizer_.addEdge(e);
+    CreateEdge(fv, gv, xp, IM);
   }
-  */
+}
+
+void Optimizer::AddGroup(const GroupAdapter &g, const std::vector<ObsAdapterF> &obs) {
+  if (!gvertices_.count(g.id)) {
+    CreateGroupVertex(g);
+  }
+  auto gv = gvertices_.at(g.id);
+
+  for (auto [f, xp, IM]: obs) {
+    if (!fvertices_.count(f.id)) {
+      CreateFeatureVertex(f);
+    }
+    auto fv = fvertices_.at(f.id);
+    CreateEdge(fv, gv, xp, IM);
+  }
+
 }
 
 

@@ -14,11 +14,13 @@
 namespace feh {
 
 struct SO3xR3 {
+  static constexpr int DIM = 6;
+  using Tangent = Eigen::Matrix<number_t, DIM, 1>;
+
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   SO3 Rsb;
   Vec3 Tsb;
 
-  using Tangent = Vec6;
   SO3xR3 &operator+=(const Tangent &dX) {
     Rsb *= SO3::exp(dX.head<3>());
     Tsb += dX.tail<3>();
