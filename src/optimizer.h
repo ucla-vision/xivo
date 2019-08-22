@@ -18,7 +18,7 @@
 #include "g2o/solvers/cholmod/linear_solver_cholmod.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
-#include "core.h"
+#include "json/json.h"
 
 namespace feh {
 
@@ -32,20 +32,36 @@ public:
   using GroupVertex = g2o::VertexCam;
   using Edge = g2o::EdgeProjectP2MC;
 
+  struct FeatureAdapter {
+    int id;
+    Vec3 Xs;  // 3D coordinates in spatial frame
+  };
+
+  struct GroupAdapter {
+    int id;
+    SE3 gsb;  // body to spatial transformation
+  };
+
+  struct ObsAdapter {
+    GroupAdapter* g;
+    Vec2 xp;  // pixel coordinates
+  };
+
 public:
   ~Optimizer();
-  static OptimizerPtr Create(const Config &cfg);
+  static OptimizerPtr Create(const Json::Value &cfg);
   static OptimizerPtr instance();
   void Solve(int iters=1);
-  void AddFeature(FeaturePtr f, const std::vector<Obs> &obs);
-  void AddGroup(GroupPtr g, const std::vector<FeaturePtr> &obs);
+
+  void AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapter> &obs);
+  void AddGroup(const GroupAdapter &g, const std::vector<FeatureAdapter> &obs);
 
 private:
   Optimizer() = delete;
   Optimizer(const Optimizer &) = delete;
-  Optimizer &operator=(const MemoryManager &) = delete;
+  Optimizer &operator=(const Optimizer &) = delete;
 
-  Optimizer(const Config &cfg);
+  Optimizer(const Json::Value &cfg);
 
   // the instance class memeber
   static std::unique_ptr<Optimizer> instance_;

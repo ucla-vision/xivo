@@ -41,10 +41,9 @@ Optimizer::Optimizer(const Config &cfg) {
       g2o::make_unique<g2o::BlockSolver_6_3>(std::move(solver_)));
 
   optimizer_.setAlgorithm(algorithm_.get());
-
 }
 
-void Optimizer::AddFeature(FeaturePtr f, const std::vector<Obs> &vobs) {
+void Optimizer::AddFeature(std::remove_reference<F> f, const std::vector<OObs> &obs) {
   // CHECK(!fvertices_.count(f->id()) << "Feature #" << f->id() << " already in optimization graph";
   int fid = f->id();
 
@@ -74,7 +73,6 @@ void Optimizer::AddFeature(FeaturePtr f, const std::vector<Obs> &vobs) {
     }
     auto gv = gvertices_.at(gid);
 
-
     // FIXME (xfei): make sure no duplicate edges are added
     auto e = new Edge ();
     e->vertices()[0] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(fv);
@@ -88,9 +86,7 @@ void Optimizer::AddFeature(FeaturePtr f, const std::vector<Obs> &vobs) {
     }
     optimizer_.addEdge(e);
   }
-
-
-
 }
+
 
 } // namespace feh
