@@ -1,6 +1,8 @@
 # XIVO: X Inertial-aided Visual Odometry
 
+<!--
 I started writing this software as a hobby project in the winter of 2018. The motivation behind this is in part that I want to have a (hopefully) minimal implementation of EKF-based Visual-Inertial Odometry and to play with some new C++ language features (C++ 14/17) and coding techniques (templates, design patterns, etc.). The project was paused for months due to job hunting, paper submission, defense, and vacation, etc. Fortunately, I was able to spend more time on it before I leave UCLA.
+-->
 
 This is still work in progress, and under no circumstances can it be considered as done. However, with readability and maintainability in mind when writing this piece of software, I believe it still has some value for people who want to dive into the world of VIO. Besides, the performance of the system in terms of ATE (Absolute Trajectory Error) and RPE (Relative Pose Error) is comparable to other open-source VIO systems (see the performance section). 
 
