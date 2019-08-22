@@ -16,13 +16,6 @@
 
 namespace feh {
 
-struct Observation {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  GroupPtr g;
-  Vec2 xp;
-};
-
-using Obs = Observation;
 
 class Track : public std::vector<Vec2, Eigen::aligned_allocator<Vec2>> {
 public:
@@ -84,6 +77,7 @@ public:
   Vec3 Xc(Mat3 *dXc_dx = nullptr) const;
   // get 3D coordinates in spatial frame, cam2body alignment is required
   Vec3 Xs(const SE3 &gbc, Mat3 *dXs_dx = nullptr) const;
+  const Vec3& Xs() const { return Xs_; }
 
   // return (2M-3) as the dimension of the measurement
   void ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
@@ -165,6 +159,7 @@ private:
 
 private:
   static int counter_;
+  static constexpr int counter0 = 10000;  // feature counter to start with, to guarantee feature id and group id do not coincide  FIXME (xfei): need to ensure group counter does not hit this number
   int id_;
   int sind_; // state index
   FeatureStatus status_;
@@ -174,6 +169,9 @@ private:
   Vec3 x_, x0_; // state: (x, y, inv_z)
   Mat3 P_;      // covariance
   Vec2 pred_;   // predicted pixel coordinates
+
+  Vec3 Xc_; // cached camera coordinates
+  Vec3 Xs_; // cached spatial coordinates
 
   Eigen::Matrix<number_t, 2, kFullSize> J_;
   Vec2 inn_;

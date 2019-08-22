@@ -25,12 +25,20 @@ namespace feh {
 class Optimizer;
 using OptimizerPtr = Optimizer*;
 
+
 class Optimizer {
+public:
+  using FeatureVertex = g2o::VertexSBAPointXYZ;
+  using GroupVertex = g2o::VertexCam;
+  using Edge = g2o::EdgeProjectP2MC;
+
 public:
   ~Optimizer();
   static OptimizerPtr Create(const Config &cfg);
   static OptimizerPtr instance();
   void Solve(int iters=1);
+  void AddFeature(FeaturePtr f, const std::vector<Obs> &obs);
+  void AddGroup(GroupPtr g, const std::vector<FeaturePtr> &obs);
 
 private:
   Optimizer() = delete;
@@ -43,6 +51,12 @@ private:
   static std::unique_ptr<Optimizer> instance_;
 
   // flags
+  
+  // graph structure: features & groups as vertices
+  // std::unordered_map<int, std::unique_ptr<FeatureVertex>> fvertices_;
+  // std::unordered_map<int, std::unique_ptr<GroupVertex>> gvertices_;
+  std::unordered_map<int, FeatureVertex*> fvertices_;
+  std::unordered_map<int, GroupVertex*> gvertices_;
 
   // g2o variables
   g2o::SparseOptimizer optimizer_;

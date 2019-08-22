@@ -171,4 +171,12 @@ struct NotImplemented : public std::exception {
   virtual char const *what() noexcept { return "NOT implemented"; }
 };
 
+struct Observation {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  GroupPtr g;
+  Vec2 xp;
+};
+
+using Obs = Observation;
+
 } // namespace feh
