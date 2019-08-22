@@ -5,6 +5,10 @@
 
 *Demo on TUM-VI room4 sequence. (downsampled video, not actual framerate)*
 
+## Overview
+
+
+
 ## Build
 
 To build the state estimator and dependencies, execute the `build.sh` script in the root directory of the project.
@@ -29,7 +33,7 @@ This software is built and tested on Ubuntu 16.04 and 18.04 with compiler g++ 7.
 
 ## License and Disclaimer
 
-This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied according to the license linked [here](https://github.com/feixh/xivo/edit/master/LICENSE). For commercial use, please contact [UCLA TDG](tdg.ucla.edu).
+This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied, according to the terms linked [here](https://github.com/feixh/xivo/edit/master/LICENSE). For commercial use, please contact [UCLA TDG](tdg.ucla.edu).
 
 
 ## Usage
