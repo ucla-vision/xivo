@@ -10,7 +10,7 @@ namespace feh {
 
 std::unique_ptr<Optimizer> Optimizer::instance_ = nullptr;
 
-OptimizerPtr Optimizer::Create(const Config &cfg) {
+OptimizerPtr Optimizer::Create(const Json::Value &cfg) {
   if (instance_) {
     LOG(WARNING) << 
       "Optimizer instance already created! Returning existing one ...";
@@ -24,7 +24,7 @@ OptimizerPtr Optimizer::instance() {
   return instance_.get();
 }
 
-Optimizer::Optimizer(const Config &cfg) {
+Optimizer::Optimizer(const Json::Value &cfg) {
   if (auto solver_type{cfg.get("solver", "cholmod").asString()};
       solver_type == "cholmod") {
     // _6_3: poses are parametrized by 6-dim vectors and landmarks by 3-dim vectors
@@ -43,41 +43,38 @@ Optimizer::Optimizer(const Config &cfg) {
   optimizer_.setAlgorithm(algorithm_.get());
 }
 
-void Optimizer::AddFeature(std::remove_reference<F> f, const std::vector<OObs> &obs) {
+void Optimizer::AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapter> &obs) {
   // CHECK(!fvertices_.count(f->id()) << "Feature #" << f->id() << " already in optimization graph";
-  int fid = f->id();
 
-  if (!fvertices_.count(fid)) {
+  if (!fvertices_.count(f.id)) {
     // feature vertex not exist, create one
     auto fv = new FeatureVertex();
-    fv->setId(fid);
+    fv->setId(f.id);
     fv->setMarginalized(true);
-    fv->setEstimate(f->Xs());
-    fvertices_[fid] = fv;
-    optimizer_.addVertex(fv.get());
+    fv->setEstimate(f.Xs);
+    fvertices_[f.id] = fv;
   }
-  auto fv = fvertices_.at(fid);
+  auto fv = fvertices_.at(f.id);
 
-  for (const auto &obs : vobs) {
-    auto g = obs.g;
-    int gid = g->id();
-    if (!gvertices_.count(gid)) {
+  /*
+  for (auto [g, xp]: obs) {
+    if (!gvertices_.count(g.id)) {
       // group vertex not exist, create one
       auto gv = new GroupVertex();
-      gv->setId(gid);
+      gv->setId(g.id);
       // FIXME (xfei): set pose here, convert to SO3 x R3 to proper type
       gv->setEstimate();
       gv->setAll(); // set aux transforms, may not need this
       // gv->setFixed(true);  // to fix gauge freedom
       optimizer_.addVertex(gv);
     }
-    auto gv = gvertices_.at(gid);
+    auto gv = gvertices_.at(g.id);
 
     // FIXME (xfei): make sure no duplicate edges are added
     auto e = new Edge ();
     e->vertices()[0] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(fv);
     e->vertices()[1] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(gv);
-    e->setMeasurement(obs.xp);
+    e->setMeasurement(xp);
     e->information() = Mat3::Identity();  // FIXME (xfei): set proper information matrix
 
     if (use_robust_kernel_) {
@@ -86,6 +83,7 @@ void Optimizer::AddFeature(std::remove_reference<F> f, const std::vector<OObs> &
     }
     optimizer_.addEdge(e);
   }
+  */
 }
 
 
