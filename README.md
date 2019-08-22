@@ -9,9 +9,9 @@
 
 
 
-## Build
+## Requirements
 
-To build the state estimator and dependencies, execute the `build.sh` script in the root directory of the project.
+This software is built and tested on Ubuntu 16.04 and 18.04 with compiler g++ 7.4.0.
 
 ## Dependencies
 
@@ -27,18 +27,24 @@ To build the state estimator and dependencies, execute the `build.sh` script in 
 
 Dependencies are included in the `thirdparty` directory.
 
-## Requirements
+## Build
 
-This software is built and tested on Ubuntu 16.04 and 18.04 with compiler g++ 7.4.0.
+To build, in Ubuntu 18.04, execute the `build.sh` script in the root directory of the project.
+
 
 ## License and Disclaimer
 
 This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied, according to the terms linked [here](https://github.com/feixh/xivo/edit/master/LICENSE). For commercial use, please contact [UCLA TDG](tdg.ucla.edu).
 
+---
 
 ## Usage
 
-The current implementation supports two execution modes: Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
+The current implementation supports two execution modes: Batch, requiring a folder of image sequences and a text file of time-stamped inertial measurements, or online using a ROS bag. The format for the image sequences and text files are described [here](placeholder).
+
+<!--
+Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
+-->
 
 ### Dataset
 
