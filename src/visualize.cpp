@@ -101,6 +101,8 @@ void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
     return;
   }
 
+  bool print_bias_info{ParameterServer::instance()->get("print_bias_info", false).asBool()};
+
   int line_counter{0};
 
   cv::putText(disp_, absl::StrFormat("Tsb=[%0.4f, %0.4f, %0.4f]", X.Tsb(0),
@@ -119,15 +121,18 @@ void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
-  cv::putText(disp_, absl::StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
-                                     X.bg(1), X.bg(2)),
-              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
-              kColorLakeBlue, thickness);
+  if (print_bias_info) {
+    cv::putText(disp_, absl::StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
+          X.bg(1), X.bg(2)),
+        cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+        kColorLakeBlue, thickness);
 
-  cv::putText(disp_, absl::StrFormat("ba=[%0.4f, %0.4f, %0.4f]", X.ba(0),
-                                     X.ba(1), X.ba(2)),
-              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
-              kColorLakeBlue, thickness);
+    cv::putText(disp_, absl::StrFormat("ba=[%0.4f, %0.4f, %0.4f]", X.ba(0),
+          X.ba(1), X.ba(2)),
+        cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+        kColorLakeBlue, thickness);
+  }
+
 }
 
 }
