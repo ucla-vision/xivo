@@ -56,6 +56,22 @@ add_subdirectory(thirdparty/gflags)
 add_subdirectory(thirdparty/abseil-cpp)
 if (BUILD_G2O)
   add_subdirectory(thirdparty/g2o)
+
+  include_directories(
+    /usr/include/suitesparse
+    ${CMAKE_SOURCE_DIR}/build/thirdparty/g2o  # config.h
+    ${CMAKE_SOURCE_DIR}/thirdparty/g2o)
+  link_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o/lib)
+
+  list(APPEND deps
+    g2o_core
+    g2o_solver_cholmod
+    g2o_solver_csparse
+    g2o_types_slam3d
+    g2o_types_sba
+    g2o_types_icp
+    cholmod)
+
 endif(BUILD_G2O)
 
 # feh
@@ -76,4 +92,8 @@ endif(BUILD_ROSNODE)
 set(PYBIND11_CPP_STANDARD -std=c++17)
 add_subdirectory(thirdparty/pybind11)
 pybind11_add_module(pyxivo MODULE pybind11/pyxivo.cpp)
-target_link_libraries(pyxivo PRIVATE common estimator application)
+set(libxivo common xest xapp)
+if (BUILD_G2O)
+  list(APPEND libxivo xopt)
+endif(BUILD_G2O)
+target_link_libraries(pyxivo PRIVATE ${libxivo})

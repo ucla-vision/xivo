@@ -23,6 +23,7 @@
 
 #include "alias.h"
 #include "group.h"
+#include "project.h"
 
 namespace feh {
 
@@ -31,55 +32,55 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   GroupVertex();
 
-  virtual void setToOriginImpl() override {
+  virtual void setToOriginImpl() {
     _estimate = SE3{};  // gsb: body-to-spatial
   }
 
-  virtual void oplusImpl(double* update) override {
-    _estimate.R() *= SO3::exp(Eigen::Map<Vec3>(update));
-    _estimate.T() += Eigen::Map<Vec3>(update+3);
+  virtual void oplusImpl(const double* update) {
+    _estimate.R() *= SO3::exp(Eigen::Map<const Vec3>(update));
+    _estimate.T() += Eigen::Map<const Vec3>(update+3);
   }
 
-  virtual bool read(std::istream& is) override {
-    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+  virtual bool read(std::istream& is) {
+    std::cerr << __PRETTY_FUNCTION__ << " not implemented yet" << std::endl;
     return false;
   }
-  virtual bool write(std::ostream& os) const override {
-    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+  virtual bool write(std::ostream& os) const {
+    std::cerr << __PRETTY_FUNCTION__ << " not implemented yet" << std::endl;
     return false;
   }
 };
 
-class FeatureVertex: public <3, Vec3> {
+class FeatureVertex: public g2o::BaseVertex<3, Vec3> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   FeatureVertex();
 
-  virtual void setToOriginImpl() override {
+  virtual void setToOriginImpl() {
     _estimate.setZero();
   }
 
-  virtual void oplusImpl(double* update) override {
+  virtual void oplusImpl(const double* update) {
     for (int i = 0; i < 3; ++i)
       _estimate[i] += update[i];
   }
 
-  virtual bool read(std::istream& is) override {
-    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+  virtual bool read(std::istream& is) {
+    std::cerr << __PRETTY_FUNCTION__ << " not implemented yet" << std::endl;
     return false;
   }
-  virtual bool write(std::ostream& os) const override {
-    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+  virtual bool write(std::ostream& os) const {
+    std::cerr << __PRETTY_FUNCTION__ << " not implemented yet" << std::endl;
     return false;
   }
 };
 
-class Edge: public BaseBinaryEdge<2, Vec2,  FeatureVertex, GroupVertex> {
+class Edge: public g2o::BaseBinaryEdge<2, Vec2,  FeatureVertex, GroupVertex> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Edge();
 
-  void computeError() override {
+  void computeError() {
     const FeatureVertex* fv = static_cast<const FeatureVertex*>(_vertices[0]);
     const GroupVertex* gv = static_cast<const GroupVertex*>(_vertices[1]);
     // gsb.inv -> gbs
@@ -101,20 +102,20 @@ public:
     Vec3 Xb = Rsb_t * (Xs - Tsb);
     Mat23 derror_dXb;
     project(Xb, &derror_dXb);
-    dXb_dXs = Rsb_t;
-    dXb_dWsb = -Rsb_t * hat(Xs);
-    dXb_dTsb = -Rsb_t;
+    Mat3 dXb_dXs = Rsb_t;
+    Mat3 dXb_dWsb = -Rsb_t * hat(Xs);
+    Mat3 dXb_dTsb = -Rsb_t;
     _jacobianOplusXi = derror_dXb * dXb_dXs;
     _jacobianOplusXj << derror_dXb * dXb_dWsb, derror_dXb * dXb_dTsb;
   }
 
-  virtual bool read(std::istream& is) override {
-    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+  virtual bool read(std::istream& is) {
+    std::cerr << __PRETTY_FUNCTION__ << " not implemented yet" << std::endl;
     return false;
   }
 
-  virtual bool write(std::ostream& os) const override {
-    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+  virtual bool write(std::ostream& os) const {
+    std::cerr << __PRETTY_FUNCTION__ << " not implemented yet" << std::endl;
     return false;
   }
 };
@@ -129,8 +130,8 @@ struct GroupAdapter {
   SE3 gsb;  // body to spatial transformation
 };
 
-struct ObsAdapterG: std::tuple<GroupAdapter, Vec2, Mat2>;
-struct ObsAdapterF: std::tuple<FeatureAdapter, Vec2, Mat2>;
+using ObsAdapterG = std::tuple<GroupAdapter, Vec2, Mat2>;
+using ObsAdapterF = std::tuple<FeatureAdapter, Vec2, Mat2>;
 
 
 class Optimizer;
@@ -165,10 +166,11 @@ private:
   static std::unique_ptr<Optimizer> instance_;
 
   // flags
+  bool verbose_;
+  std::string solver_type_;
+  bool use_robust_kernel_;
   
   // graph structure: features & groups as vertices
-  // std::unordered_map<int, std::unique_ptr<FeatureVertex>> fvertices_;
-  // std::unordered_map<int, std::unique_ptr<GroupVertex>> gvertices_;
   std::unordered_map<int, FeatureVertex*> fvertices_;
   std::unordered_map<int, GroupVertex*> gvertices_;
 

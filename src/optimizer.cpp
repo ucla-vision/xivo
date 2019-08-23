@@ -24,23 +24,31 @@ OptimizerPtr Optimizer::instance() {
   return instance_.get();
 }
 
-Optimizer::Optimizer(const Json::Value &cfg) {
-  if (auto solver_type{cfg.get("solver", "cholmod").asString()};
-      solver_type == "cholmod") {
+Optimizer::Optimizer(const Json::Value &cfg) 
+  : verbose_{false}, solver_type_{"cholmod"}, use_robust_kernel_{false} 
+
+{
+  // setup flags
+  verbose_ = cfg.get("verbose", true).asBool();
+  solver_type_ = cfg.get("solver", "cholmod").asString();
+  use_robust_kernel_ = cfg.get("use_robust_kernel", true).asBool();
+
+  if (solver_type_ == "cholmod") {
     // _6_3: poses are parametrized by 6-dim vectors and landmarks by 3-dim vectors
     solver_ = g2o::make_unique<g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>>();
-  } else if (solver_type == "csparse") {
+  } else if (solver_type_ == "csparse") {
     solver_ = g2o::make_unique<g2o::LinearSolverCSparse<g2o::BlockSolver_6_3::PoseMatrixType>>();
-  } else if (solver_type == "dense") {
+  } else if (solver_type_ == "dense") {
     solver_ = g2o::make_unique<g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>>();
   }
 
-  optimizer_.setVerbose(cfg.get("verbose", true).asBool());
+  optimizer_.setVerbose(verbose_);
 
   algorithm_ = std::make_unique<g2o::OptimizationAlgorithmLevenberg>(
       g2o::make_unique<g2o::BlockSolver_6_3>(std::move(solver_)));
 
   optimizer_.setAlgorithm(algorithm_.get());
+
 }
 
 
@@ -58,7 +66,6 @@ GroupVertex* Optimizer::CreateGroupVertex(const GroupAdapter &g) {
   auto gv = new GroupVertex();
   gv->setId(g.id);
   gv->setEstimate(g.gsb);
-  gv->setAll(); // set aux transforms, may not need this
   // FIXME (xfei): to fix gauge freedom
   // gv->setFixed(true);  
   optimizer_.addVertex(gv);
