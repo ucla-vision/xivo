@@ -30,7 +30,7 @@ namespace feh {
 class GroupVertex: public g2o::BaseVertex<6, SE3> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  GroupVertex();
+  GroupVertex() = default;
 
   virtual void setToOriginImpl() {
     _estimate = SE3{};  // gsb: body-to-spatial
@@ -54,7 +54,7 @@ public:
 class FeatureVertex: public g2o::BaseVertex<3, Vec3> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  FeatureVertex();
+  FeatureVertex() = default;
 
   virtual void setToOriginImpl() {
     _estimate.setZero();
@@ -78,7 +78,7 @@ public:
 class Edge: public g2o::BaseBinaryEdge<2, Vec2,  FeatureVertex, GroupVertex> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Edge();
+  Edge() = default;
 
   void computeError() {
     const FeatureVertex* fv = static_cast<const FeatureVertex*>(_vertices[0]);

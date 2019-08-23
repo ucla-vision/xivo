@@ -25,7 +25,6 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/glog/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib
         # ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
         /usr/local/lib
         # /opt/ros/kinetic/lib/x86_64-linux-gnu
@@ -42,8 +41,6 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen3/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o
         ${JSONCPP_INCLUDE_DIRS}
         /usr/local/include/opencv2
         /usr/include/suitesparse
@@ -59,19 +56,17 @@ add_subdirectory(thirdparty/googletest)
 add_subdirectory(thirdparty/gflags)
 add_subdirectory(thirdparty/abseil-cpp)
 if (BUILD_G2O)
+  link_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/lib)
+  include_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/include)
   list(APPEND deps
     g2o_core
     g2o_solver_dense
     g2o_solver_cholmod
     g2o_solver_csparse
     g2o_csparse_extension
-    g2o_solver_eigen
-    g2o_solver_pcg
-    g2o_stuff
-    g2o_interface
     g2o_types_slam3d
     g2o_types_sba
-    g2o_types_icp
+    g2o_stuff
     cholmod
     cxsparse
     )

@@ -96,6 +96,7 @@ target_link_libraries(st_vio ${libxivo} gflags::gflags)
 ################################################################################
 # TESTS
 ################################################################################
+message(INFO ${libxivo})
 add_executable(test_optimizer test/test_optimizer.cpp)
 target_link_libraries(test_optimizer ${libxivo})
 

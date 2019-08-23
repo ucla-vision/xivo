@@ -1,4 +1,30 @@
-#!/bin/sh
+#!/bin/bash
+
+# parsing options
+BUILD_ROSNODE=false
+BUILD_G2O=false
+
+for arg in "$@"
+do
+  if [ "$arg" == "ros" ]; then
+    BUILD_ROSNODE=true
+  fi
+
+  if [ "$arg" == "g2o" ]; then
+    BUILD_G2O=true
+  fi
+done
+
+if [ "$BUILD_ROSNODE" = true ]; then
+  echo "BUILD WITH ROS SUPPORT"
+fi
+
+if [ "$BUILD_G2O" = true ]; then
+  echo "BUILD WITH G2O SUPPORT"
+fi
+
+
+# build dependencies
 PROJECT_DIR=$(pwd)
 echo $PROJECT_DIR
 
@@ -45,14 +71,26 @@ make install -j
 # ./configure --prefix=$PROJECT_DIR/thirdparty/gperftools
 # make install
 
-cd $PROJECT_DIR/thirdparty/g2o
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
+if [ "$BUILD_G2O" = true ]; then
+  cd $PROJECT_DIR/thirdparty/g2o
+  mkdir build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=../release
+  make install -j
+fi
 
 
+# build xivo
 mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
-cmake ..
+
+if [ "$BUILD_G2O" = true ] && [ "$BUILD_ROSNODE" = true ]; then
+  cmake .. -DBUILD_G2O=TRUE -DBUILD_ROSNODE=TRUE
+elif [ "$BUILD_G2O" = true ]; then
+  cmake .. -DBUILD_G2O=TRUE
+elif [ "$BUILD_ROSNODE" = true ]; then
+  cmake .. -DBUILD_ROSNODE=TRUE
+else
+  cmake ..
+fi
 make -j
