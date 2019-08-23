@@ -14,9 +14,6 @@ add_definitions(-DUSE_ONLINE_IMU_CALIB)
 add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
 add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 
-# disable logging whose severity level is below the given integer
-add_definitions(-DGOOGLE_STRIP_LOG=1)
-
 include_directories(
   ${PROJECT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/common)

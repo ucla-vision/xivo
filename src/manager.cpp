@@ -354,7 +354,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     Canvas::instance()->OverlayStateInfo(X_);
   }
 
-  if (print_timing_) {
+  static int print_counter{0};
+  if (print_timing_ && ++print_counter % 50 == 0) {
+    std::cout << print_counter << std::endl;
     std::cout << timer_;
   }
 }

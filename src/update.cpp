@@ -149,10 +149,6 @@ void Estimator::Update() {
   timer_.Tock("update");
 
   LOG(INFO) << "Error state absorbed";
-
-  if (print_timing_) {
-    std::cout << timer_;
-  }
 }
 
 std::vector<FeaturePtr>
