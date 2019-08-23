@@ -4,7 +4,7 @@
 //  https://hal.inria.fr/inria-00267247/file/distcalib.pdf
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
-#include "camera.h"
+#include "camera_base.h"
 
 namespace feh {
 

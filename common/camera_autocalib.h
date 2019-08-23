@@ -5,10 +5,16 @@
 
 #include "alias.h"
 #include "component.h"
-#include "equidist.h"
+
+#include "camera_atan.h"
+#include "camera_equidist.h"
+#include "camera_pinhole.h"
+#include "camera_radtan.h"
 
 namespace feh {
 
+  // Naming convention: 
+  // A_XXX Camera model XXX with autocalibration capability
 class A_RadialTangentialCamera
     : public RadialTangentialCamera<number_t>,
       public Component<

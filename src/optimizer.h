@@ -24,7 +24,6 @@
 #include "json/json.h"
 
 #include "alias.h"
-#include "group.h"
 #include "project.h"
 
 namespace feh {

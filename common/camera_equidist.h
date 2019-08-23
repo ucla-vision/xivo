@@ -4,7 +4,7 @@
 //  http://www.ee.oulu.fi/research/mvmp/mvg/files/pdf/pdf_697.pdf
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
-#include "camera.h"
+#include "camera_base.h"
 
 namespace feh {
 

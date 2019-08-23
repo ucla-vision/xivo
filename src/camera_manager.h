@@ -4,12 +4,7 @@
 #include <ostream>
 #include <variant>
 
-#include "atan.h"
-#include "equidist.h"
-#include "pinhole.h"
-#include "radtan.h"
-
-#include "adjustable_cameras.h"
+#include "camera_autocalib.h"
 #include "alias.h"
 #include "glog/logging.h"
 #include "utils.h"

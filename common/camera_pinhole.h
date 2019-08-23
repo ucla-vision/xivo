@@ -1,7 +1,7 @@
 // Plain Pinhole camera model.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
-#include "camera.h"
+#include "camera_base.h"
 
 namespace feh {
 
