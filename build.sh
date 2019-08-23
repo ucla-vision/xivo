@@ -26,12 +26,6 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j
 
-cd $PROJECT_DIR/thirdparty/Sophus
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
-
 cd $PROJECT_DIR/thirdparty/Pangolin
 mkdir build
 cd build

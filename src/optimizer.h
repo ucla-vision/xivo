@@ -31,17 +31,23 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   GroupVertex();
 
-  virtual void setToOriginImpl() {
+  virtual void setToOriginImpl() override {
     _estimate = SE3{};  // gsb: body-to-spatial
   }
 
-  virtual void oplusImpl(double* update) {
+  virtual void oplusImpl(double* update) override {
     _estimate.R() *= SO3::exp(Eigen::Map<Vec3>(update));
     _estimate.T() += Eigen::Map<Vec3>(update+3);
   }
 
-  virtual bool read(std::istream& is);
-  virtual bool write(std::ostream& os) const;
+  virtual bool read(std::istream& is) override {
+    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+    return false;
+  }
+  virtual bool write(std::ostream& os) const override {
+    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+    return false;
+  }
 };
 
 class FeatureVertex: public <3, Vec3> {
@@ -49,17 +55,23 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   FeatureVertex();
 
-  virtual void setToOriginImpl() {
+  virtual void setToOriginImpl() override {
+    _estimate.setZero();
   }
 
-  virtual void oplusImpl(double* update) {
-    for (int i = 0; i < 3; ++i) {
+  virtual void oplusImpl(double* update) override {
+    for (int i = 0; i < 3; ++i)
       _estimate[i] += update[i];
-    }
   }
 
-  virtual bool read(std::istream& is);
-  virtual bool write(std::ostream& os) const;
+  virtual bool read(std::istream& is) override {
+    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+    return false;
+  }
+  virtual bool write(std::ostream& os) const override {
+    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+    return false;
+  }
 };
 
 class Edge: public BaseBinaryEdge<2, Vec2,  FeatureVertex, GroupVertex> {
@@ -67,16 +79,44 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Edge();
 
-  void computeError() {
+  void computeError() override {
     const FeatureVertex* fv = static_cast<const FeatureVertex*>(_vertices[0]);
     const GroupVertex* gv = static_cast<const GroupVertex*>(_vertices[1]);
     // gsb.inv -> gbs
     Vec3 Xb = gv->estimate().inv() * fv->estimate();
-    _error = Xb.head<2>() / Xb(2);
+    _error = Xb.head<2>() / Xb(2) - _measurement;
   }
 
-  virtual bool read(std::istream& is);
-  virtual bool write(std::ostream& os) const;
+  void linearizeOplus() override {
+    const FeatureVertex* fv = static_cast<const FeatureVertex*>(_vertices[0]);
+    const GroupVertex* gv = static_cast<const GroupVertex*>(_vertices[1]);
+
+    const Mat3& Rsb = gv->estimate().R().matrix();
+    Mat3 Rsb_t = Rsb.transpose();
+    const Vec3& Tsb = gv->estimate().T();
+
+    const Vec3& Xs = fv->estimate();
+
+    // Vec3 Xb = gv->estimate().inv() * fv->estimate();
+    Vec3 Xb = Rsb_t * (Xs - Tsb);
+    Mat23 derror_dXb;
+    project(Xb, &derror_dXb);
+    dXb_dXs = Rsb_t;
+    dXb_dWsb = -Rsb_t * hat(Xs);
+    dXb_dTsb = -Rsb_t;
+    _jacobianOplusXi = derror_dXb * dXb_dXs;
+    _jacobianOplusXj << derror_dXb * dXb_dWsb, derror_dXb * dXb_dTsb;
+  }
+
+  virtual bool read(std::istream& is) override {
+    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+    return false;
+  }
+
+  virtual bool write(std::ostream& os) const override {
+    cerr << __PRETTY_FUNCTION__ << " not implemented yet" << endl;
+    return false;
+  }
 };
 
 struct FeatureAdapter {
