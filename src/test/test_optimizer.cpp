@@ -38,7 +38,7 @@ double Sample::gaussian(double sigma){
 }
 
 int main() {
-  double PIXEL_NOISE{0.1};
+  double PIXEL_NOISE{0.01};
   Json::Value cfg{};
   auto optimizer = Optimizer::Create(cfg);
 
@@ -70,10 +70,11 @@ int main() {
         Sample::gaussian(PIXEL_NOISE)};
       obs.push_back(std::make_tuple(
             GroupAdapter{j, gsb[j]},
-            noisy_xp, Mat2::Identity()));
+            noisy_xp,  Mat2::Identity() /(PIXEL_NOISE * PIXEL_NOISE)));
     }
     optimizer->AddFeature(FeatureAdapter{gsb.size() + i, noisy_pt}, obs);
   }
 
+  optimizer->Solve(10);
 
 }

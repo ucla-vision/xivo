@@ -1,5 +1,7 @@
 // Bundle Adjustment/Pose Graph Optimization module.
 // Run in the background, trigger every ... seconds?
+// Reference:
+//  g2o/examples/bal/bal_demo.cpp
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <memory>
@@ -103,7 +105,7 @@ public:
     Mat23 derror_dXb;
     project(Xb, &derror_dXb);
     Mat3 dXb_dXs = Rsb_t;
-    Mat3 dXb_dWsb = -Rsb_t * hat(Xs);
+    Mat3 dXb_dWsb = hat(Rsb_t * (Xs - Tsb));
     Mat3 dXb_dTsb = -Rsb_t;
     _jacobianOplusXi = derror_dXb * dXb_dXs;
     _jacobianOplusXj << derror_dXb * dXb_dWsb, derror_dXb * dXb_dTsb;

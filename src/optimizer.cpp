@@ -143,6 +143,9 @@ void Optimizer::Solve(int max_iters) {
     initialized_ = true;
   }
 
+  // for (auto fid : fvertices_) {
+  //   Vec3 optimizer_.vertex(fid)->estimate();
+  // }
   optimizer_.setVerbose(verbose_);
   optimizer_.optimize(max_iters);
 }
