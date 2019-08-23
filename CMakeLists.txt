@@ -6,7 +6,7 @@ option(BUILD_G2O "build with g2o support" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++17 -Wno-narrowing -Wno-register -g -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 add_definitions(-DNDEBUG)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)

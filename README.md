@@ -9,7 +9,10 @@
 
 XIVO is an open-source repository for visual-inertial odometry/mapping. It is a simplified version of Corvis, designed for pedagogical purposes, and incorporates odometry (relative motion of the sensor platform), local mapping (pose relative to a reference frame of the oldest visible features), and global mapping (pose relative to a global frame, including loop-closure and global re-localization — this feature not yet incorporated).
 
-Corvis is optimized for speed, running at 200FPS on a commodity laptop computer, whereas XIVO runs at 100FPS. XIVO incorporates most of the core features of Corvis, including having 3D structure in the state, serving as short-term memory, performing auto-calibration (pose of the camera relative to the IMU, and time-stamp shift). It requires the camera to have calibrated intrinsics, which can be accomplished using any open-source package such as OpenCV prior to using Corvis. Corvis does require time-stamps, which can be done through the ROS drivers. Please refer to [link](http://wiki.ros.org/xsens_driver) for details on how to format the data for real-time use.
+Corvis is optimized for speed, running at 200FPS on a commodity laptop computer, whereas XIVO runs at 100FPS. XIVO incorporates most of the core features of Corvis, including having 3D structure in the state, serving as short-term memory, performing auto-calibration (pose of the camera relative to the IMU, and time-stamp shift). It requires the camera to have calibrated intrinsics, which can be accomplished using any open-source package such as OpenCV prior to using Corvis. Corvis does require time-stamps, which can be done through the ROS drivers. Please refer to the ROS message interfaces ([imu][imu_msg],[image][image_msg]) for details on how to format the data for real-time use.
+
+[imu_msg]: https://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
+[image_msg]: https://docs.ros.org/api/sensor_msgs/html/msg/Image.html
 
 We provide several recorded sequences, and the ability to run XIVO off-line in batch mode, for comparison with other methods. Note that some of these methods operate in a non-causal fashion, by performing batch optimization relative to keyframe, or in a sliding window mode, introducing latency. XIVO is causal, and processes only the last image frame received.
 
@@ -31,7 +34,7 @@ The first public demonstration of real-time visual odometry on commercial off-th
 
 Corvis is based on the analysis of [Jones-Vedaldi-Soatto][jonesVS_07] and was first demonstrated in 2008. The journal version of the paper describing the system was submitted in 2009 \[[ijrr][jones_ijrr11]\]. It differed from contemporaneous approaches using the MS-EKF in that it incorporated structure in the state of the filter, serving both as a reference for scale - not present in the MS-EKF - as well as a memory that enables mapping and re-localization, making it a hybrid odometry/mapping solution. One can of course also include in the model out-of-state feature constraints, in the manner introduced in the Essential Filter \[[Soatto 1996][soatto_eccv94]\](is this 94 or 96?), or the MS-EKF.
 
-XIVO builds on Corvis, has features in the state and can incorporate out-of-state constraints and loop-closure, represents features in co-visibile groups, as in [Favaro][favaro_iccv01], and includes auto-calibration as in [Jones-Vedaldi][jonesVS_07]. XIVO was also part of the first ever visual-inertial-semantic mapping in the literature [Jingming-Xiaohan][dong_cvpr17].
+XIVO builds on Corvis, has features in the state and can incorporate out-of-state constraints and loop-closure, represents features in co-visibile groups, as in [Favaro][favaro_iccv01], and includes auto-calibration as in [Jones-Vedaldi-Soatto][jonesVS_07]. XIVO was also part of the first ever visual-inertial-semantic mapping in the literature [Dong-Fei][dong_cvpr17].
 
 [soatto_eccv94]: https://link.springer.com/chapter/10.1007/BFb0028335
 [hailin_cvpr00]: http://vision.ucla.edu/papers/jinFS00.pdf

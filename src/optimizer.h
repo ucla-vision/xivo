@@ -177,9 +177,7 @@ private:
 
   // g2o variables
   g2o::SparseOptimizer optimizer_;
-  // _6_3: poses are parametrized by 6-dim vectors and landmarks by 3-dim vectors
-  std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> solver_;
-  std::unique_ptr<g2o::OptimizationAlgorithmLevenberg> algorithm_;
+
 };
 
 } // namespace feh

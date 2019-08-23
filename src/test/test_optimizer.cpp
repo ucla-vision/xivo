@@ -40,37 +40,39 @@ double Sample::gaussian(double sigma){
 int main() {
   double PIXEL_NOISE{0.1};
   Json::Value cfg{};
-  auto optimizer = Optimizer::Create(cfg);
+  // auto optimizer = Optimizer::Create(cfg);
 
-  vector<Vector3d> true_points;
+  vector<Vec3> pts;
   for (int i=0;i<500; ++i) {
-    true_points.push_back(Vector3d((Sample::uniform()-0.5)*3,
-                                   Sample::uniform()-0.5,
-                                   Sample::uniform()+3));
+    pts.push_back(Vec3{(Sample::uniform()-0.5)*3,
+          Sample::uniform()-0.5,
+          Sample::uniform()+3});
   }
 
-  vector<SE3> true_poses;
+  vector<SE3> gsb;
   for (int i=0; i<15; ++i) {
-    Vector3d trans(i*0.04-1.,0,0);
+    Vec3 trans(i*0.04-1.,0,0);
     SE3 pose{SO3{}, trans};
-    true_poses.push_back(pose);
+    gsb.push_back(pose);
   }
 
-  for (int i = 0; i < true_points.size(); ++i) {
-    Vector3d noisy_point = true_points[i] + Vector3d(Sample::gaussian(1),
-                                Sample::gaussian(1),
-                                Sample::gaussian(1));
+  for (int i = 0; i < pts.size(); ++i) {
+    const Vec3& pt{pts[i]};
+    Vec3 noisy_pt = pt + Vec3{Sample::gaussian(1),
+      Sample::gaussian(1),
+      Sample::gaussian(1)};
 
-    std::vector<ObsAdapterG> obs;
-    for (int j = 0; j < true_poses.size(); ++j) {
-      Vec3 Xb = true_poses[j] * true_points[i];
+    vector<ObsAdapterG> obs;
+    for (int j = 0; j < gsb.size(); ++j) {
+      Vec3 Xb = gsb[j].inv() * pt;
       Vec2 xp = Xb.head<2>() / Xb(2);
       Vec2 noisy_xp = xp + Vec2{Sample::gaussian(PIXEL_NOISE),
         Sample::gaussian(PIXEL_NOISE)};
-      obs.push_back(std::make_tuple(GroupAdapter{j, true_poses[j]},
+      obs.push_back(std::make_tuple(
+            GroupAdapter{j, gsb[j]},
             noisy_xp, Mat2::Identity()));
     }
-    optimizer->AddFeature(FeatureAdapter{i, noisy_point}, obs);
+    // optimizer->AddFeature(FeatureAdapter{true_poses.size() + i, noisy_pt}, obs);
   }
 
 

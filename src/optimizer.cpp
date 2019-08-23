@@ -36,21 +36,27 @@ Optimizer::Optimizer(const Json::Value &cfg)
   solver_type_ = cfg.get("solver", "cholmod").asString();
   use_robust_kernel_ = cfg.get("use_robust_kernel", true).asBool();
 
+  // _6_3: poses are parametrized by 6-dim vectors and landmarks by 3-dim vectors
+  std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> solver;
   if (solver_type_ == "cholmod") {
-    solver_ = g2o::make_unique<g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>>();
+    solver = g2o::make_unique<g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>>();
   } else if (solver_type_ == "csparse") {
-    solver_ = g2o::make_unique<g2o::LinearSolverCSparse<g2o::BlockSolver_6_3::PoseMatrixType>>();
+    solver = g2o::make_unique<g2o::LinearSolverCSparse<g2o::BlockSolver_6_3::PoseMatrixType>>();
   } else if (solver_type_ == "dense") {
-    solver_ = g2o::make_unique<g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>>();
+    solver = g2o::make_unique<g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>>();
+  } else {
+    // default to cholmod
+    LOG(WARNING) << "unknown linear solver type; default to cholmod";
+    solver = g2o::make_unique<g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>>();
   }
+
 
   optimizer_.setVerbose(verbose_);
 
-  algorithm_ = std::make_unique<g2o::OptimizationAlgorithmLevenberg>(
-      g2o::make_unique<g2o::BlockSolver_6_3>(std::move(solver_)));
+  auto algorithm = new g2o::OptimizationAlgorithmLevenberg(
+      g2o::make_unique<g2o::BlockSolver_6_3>(std::move(solver)));
 
-  optimizer_.setAlgorithm(algorithm_.get());
-
+  optimizer_.setAlgorithm(algorithm);
 }
 
 
@@ -124,6 +130,7 @@ void Optimizer::AddGroup(const GroupAdapter &g, const std::vector<ObsAdapterF> &
       CreateFeatureVertex(f);
     }
     auto fv = fvertices_.at(f.id);
+    // FIXME (xfei): make sure no duplicate edges are added
     CreateEdge(fv, gv, xp, IM);
   }
 
