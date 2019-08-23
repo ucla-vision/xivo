@@ -40,10 +40,16 @@ make install -j
 
 # to build gperftools, need to install autoconf and libtool first
 # sudo apt-get install autoconf libtool
-cd $PROJECT_DIR/thirdparty/gperftools
-./autogen.sh
-./configure --prefix=$PROJECT_DIR/thirdparty/gperftools
-make install
+# cd $PROJECT_DIR/thirdparty/gperftools
+# ./autogen.sh
+# ./configure --prefix=$PROJECT_DIR/thirdparty/gperftools
+# make install
+
+cd $PROJECT_DIR/thirdparty/g2o
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=..
+make install -j
 
 
 mkdir ${PROJECT_DIR}/build

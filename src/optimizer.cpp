@@ -24,8 +24,11 @@ OptimizerPtr Optimizer::instance() {
   return instance_.get();
 }
 
+Optimizer::~Optimizer() {
+}
+
 Optimizer::Optimizer(const Json::Value &cfg) 
-  : verbose_{false}, solver_type_{"cholmod"}, use_robust_kernel_{false} 
+  : verbose_{false}, solver_type_{"cholmod"}, use_robust_kernel_{false}, initialized_{false}
 
 {
   // setup flags
@@ -34,7 +37,6 @@ Optimizer::Optimizer(const Json::Value &cfg)
   use_robust_kernel_ = cfg.get("use_robust_kernel", true).asBool();
 
   if (solver_type_ == "cholmod") {
-    // _6_3: poses are parametrized by 6-dim vectors and landmarks by 3-dim vectors
     solver_ = g2o::make_unique<g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>>();
   } else if (solver_type_ == "csparse") {
     solver_ = g2o::make_unique<g2o::LinearSolverCSparse<g2o::BlockSolver_6_3::PoseMatrixType>>();
@@ -74,13 +76,13 @@ GroupVertex* Optimizer::CreateGroupVertex(const GroupAdapter &g) {
 
 Edge* Optimizer::CreateEdge(FeatureVertex *fv, GroupVertex *gv, const Vec2 &xp, const Mat2 &IM) {
   auto e = new Edge();
-  e->vertices()[0] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(fv);
-  e->vertices()[1] = dynamic_cast<g2o::OptimizableGraph::Vertex*>(gv);
+  e->setVertex(0, fv);
+  e->setVertex(1, gv);
   e->setMeasurement(xp);
   if (IM.isZero(0)) {
-    e->information().setIdentity();
+    e->setInformation(Mat2::Identity());
   } else {
-    e->information() = IM;  // IM = Information Matrix
+    e->setInformation(IM);  // IM = Information Matrix
   }
 
   if (use_robust_kernel_) {
@@ -125,6 +127,16 @@ void Optimizer::AddGroup(const GroupAdapter &g, const std::vector<ObsAdapterF> &
     CreateEdge(fv, gv, xp, IM);
   }
 
+}
+
+void Optimizer::Solve(int max_iters) {
+  if (!initialized_) {
+    optimizer_.initializeOptimization();
+    initialized_ = true;
+  }
+
+  optimizer_.setVerbose(verbose_);
+  optimizer_.optimize(max_iters);
 }
 
 

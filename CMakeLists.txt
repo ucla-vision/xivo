@@ -25,11 +25,12 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/glog/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib
         # ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
         /usr/local/lib
         # /opt/ros/kinetic/lib/x86_64-linux-gnu
         # /usr/lib
-        # /usr/lib/x86_64-linux-gnu
+        /usr/lib/x86_64-linux-gnu
 )
 
 include_directories(
@@ -41,8 +42,11 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen3/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/include
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o
         ${JSONCPP_INCLUDE_DIRS}
         /usr/local/include/opencv2
+        /usr/include/suitesparse
         # /opt/ros/kinetic/include/opencv-3.3.1-dev
         # ${PROJECT_SOURCE_DIR}/thirdparty/libigl/include
         # ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
@@ -55,23 +59,22 @@ add_subdirectory(thirdparty/googletest)
 add_subdirectory(thirdparty/gflags)
 add_subdirectory(thirdparty/abseil-cpp)
 if (BUILD_G2O)
-  add_subdirectory(thirdparty/g2o)
-
-  include_directories(
-    /usr/include/suitesparse
-    ${CMAKE_SOURCE_DIR}/build/thirdparty/g2o  # config.h
-    ${CMAKE_SOURCE_DIR}/thirdparty/g2o)
-  link_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o/lib)
-
   list(APPEND deps
     g2o_core
+    g2o_solver_dense
     g2o_solver_cholmod
     g2o_solver_csparse
+    g2o_csparse_extension
+    g2o_solver_eigen
+    g2o_solver_pcg
+    g2o_stuff
+    g2o_interface
     g2o_types_slam3d
     g2o_types_sba
     g2o_types_icp
-    cholmod)
-
+    cholmod
+    cxsparse
+    )
 endif(BUILD_G2O)
 
 # feh

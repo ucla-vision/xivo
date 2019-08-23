@@ -169,6 +169,7 @@ private:
   bool verbose_;
   std::string solver_type_;
   bool use_robust_kernel_;
+  bool initialized_;
   
   // graph structure: features & groups as vertices
   std::unordered_map<int, FeatureVertex*> fvertices_;
@@ -176,6 +177,7 @@ private:
 
   // g2o variables
   g2o::SparseOptimizer optimizer_;
+  // _6_3: poses are parametrized by 6-dim vectors and landmarks by 3-dim vectors
   std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> solver_;
   std::unique_ptr<g2o::OptimizationAlgorithmLevenberg> algorithm_;
 };
