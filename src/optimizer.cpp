@@ -76,6 +76,7 @@ GroupVertex* Optimizer::CreateGroupVertex(const GroupAdapter &g) {
   gv->setEstimate(g.gsb);
   // FIXME (xfei): to fix gauge freedom
   // gv->setFixed(true);  
+  gvertices_[g.id] = gv;
   optimizer_.addVertex(gv);
   return gv;
 }

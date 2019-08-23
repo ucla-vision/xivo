@@ -40,7 +40,7 @@ double Sample::gaussian(double sigma){
 int main() {
   double PIXEL_NOISE{0.1};
   Json::Value cfg{};
-  // auto optimizer = Optimizer::Create(cfg);
+  auto optimizer = Optimizer::Create(cfg);
 
   vector<Vec3> pts;
   for (int i=0;i<500; ++i) {
@@ -72,7 +72,7 @@ int main() {
             GroupAdapter{j, gsb[j]},
             noisy_xp, Mat2::Identity()));
     }
-    // optimizer->AddFeature(FeatureAdapter{true_poses.size() + i, noisy_pt}, obs);
+    optimizer->AddFeature(FeatureAdapter{gsb.size() + i, noisy_pt}, obs);
   }
 
 
