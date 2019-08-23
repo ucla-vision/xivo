@@ -17,6 +17,14 @@ Corvis has been developed since 2007, with contributors including Eagle Jones [c
 
 While the ‘map’ produced by SLAM is only functional to localization, consisting of a sparse set of attributed point features, with the attributes sufficient for detection in an image, XIVO has been used as a building block for semantic mapping [cite], where the scene is populated by objects, bounded by dense surfaces. Research code for semantic mapping using XIVO can be found [here].
 
+## Background
+
+The first public demonstration of real-time visual odometry on commercial off-the-shelf hardware was given by [Hailin] at CVPR 2000. It use for visual augmentation (augmented reality) was demonstrated at ICCV 2001[Favaro], and ECCV 2002. While visual odometry and SLAM are sometimes considered different, they are equivalent if structure is represented in the state and stored for later re-localization. This feature has been present in the work above since 2004 using feature group parametrization [Favaro]. Later public demonstrations of real-time visual odometry/SLAM include [Andrew Davison] and [David Nister, 2005].
+
+Corvis is based on the analysis of [Jones-Vedaldi-Soatto] and was first demonstrated in 2008. The journal version of the paper describing the system was submitted in 2009 [IJRR]. It differed from contemporaneous approaches using the MS-EKF in that it incorporated structure in the state of the filter, serving both as a reference for scale - not present in the MS-EKF - as well as a memory that enables mapping and re-localization, making it a hybrid odometry/mapping solution. One can of course also include in the model out-of-state feature constraints, in the manner introduced in the Essential Filter [Soatto 1996], or the MS-EKF.
+
+XIVO builds on Corvis, has features in the state and can incorporate out-of-state constraints and loop-closure, represents features in co-visibile groups, as in [Favaro], and includes auto-calibration as in [Jones-Vedaldi]. XIVO was also part of the first ever visual-inertial-semantic mapping in the literature [Jingming-Xiaon].
+
 
 ## Requirements
 
