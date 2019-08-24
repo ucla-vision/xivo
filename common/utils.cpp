@@ -24,21 +24,6 @@ const std::string TermColor::bold = "\033[1m";
 const std::string TermColor::end = "\033[0m";
 const std::string TermColor::endl = "\033[0m\n";
 
-std::ostream &operator<<(std::ostream &os, const Timer &obj) {
-  os << "....." << std::endl;
-  // write obj to stream
-  for (auto it = obj.lookups_.begin(); it != obj.lookups_.end();
-       ++it) {
-    float elapsed = obj.report_average ? it->second / obj.counter_.at(it->first)
-                                       : it->second;
-    os << "[" << TermColor::bold + TermColor::green << obj.module_name_
-       << TermColor::end << "]" << TermColor::cyan << it->first
-       << TermColor::end << ":" << elapsed * 1e-6 << " ms" << std::endl;
-  }
-  os << "....." << std::endl;
-  return os;
-}
-
 bool Glob(const std::string &directory, const std::string &extension,
           std::vector<std::string> &filenames) {
   std::string suffix((extension[0] == '.' ? "" : ".") + extension);

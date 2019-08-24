@@ -16,6 +16,8 @@
 #include "opencv2/core/core.hpp"
 #include "json/json.h"
 
+#include "timer.h"
+
 namespace feh {
 
 template <typename T> using own = T;
@@ -38,88 +40,6 @@ private:
   TermColor() = delete;
 };
 
-/// \brief timer
-class Timer {
-public:
-  enum Unit { MILLISEC, MICROSEC, NANOSEC };
-
-public:
-  friend std::ostream &operator<<(std::ostream &os, const Timer &obj);
-
-  Timer() : module_name_("default"), report_average(true) {}
-
-  Timer(std::string module_name_)
-      : module_name_(module_name_), report_average(true) {}
-
-  void Tick() { Tick("anonymous event"); }
-
-  void Tick(const std::string &event) {
-    start_[event] = std::chrono::high_resolution_clock::now();
-  }
-
-  float Tock() { return Tock("anonymous event"); }
-
-  /// \param: Return timing in milliseconds. Also record timing in look up
-  /// table.
-  float Tock(const std::string &event) {
-    float timing(Elapsed(event).count());
-    if (lookups_.count(event)) {
-      lookups_[event] += timing;
-      counter_[event] += 1;
-    } else {
-      lookups_[event] = timing;
-      counter_[event] = 1;
-    }
-    return timing * 1e-6;
-  }
-
-  void Reset() {
-    start_.clear();
-    lookups_.clear();
-    counter_.clear();
-  }
-
-  float LookUp(const std::string &event, const Unit unit = MILLISEC,
-               bool average = false) const {
-    if (!lookups_.count(event))
-      return -1;
-    switch (unit) {
-    case MILLISEC:
-      return lookups_.at(event) * 1e-6 /
-             (average ? counter_.at(event) + 0.01 : 1.0);
-      break;
-    case MICROSEC:
-      return lookups_.at(event) * 1e-3 /
-             (average ? counter_.at(event) + 0.01 : 1.0);
-      break;
-    case NANOSEC:
-      return lookups_.at(event) /
-             (average ? counter_.at(event) + 0.01 : 1.0);
-      break;
-    default:
-      return -1;
-      break;
-    }
-  }
-
-  std::chrono::nanoseconds Elapsed(std::string event) const {
-    auto tmp = std::chrono::high_resolution_clock::now();
-    assert(start_.count(event) && ("event[" + event + "] not found").c_str());
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(
-        tmp - start_.at(event));
-  }
-
-private:
-  std::unordered_map<std::string,
-                     std::chrono::high_resolution_clock::time_point>
-      start_;
-  std::map<std::string, float> lookups_;
-  std::unordered_map<std::string, int> counter_;
-  std::string module_name_;
-
-public:
-  bool report_average;
-};
 
 /// \brief generate a random matrix of dimension N x M
 template <int N, int M = N>
