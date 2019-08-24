@@ -196,15 +196,10 @@ Estimator::Estimator(const Json::Value &cfg)
   G_.setZero();
 
   auto Qmodel = cfg_["Qmodel"];
-  Qmodel_.setIdentity(kMotionSize, kMotionSize);
-  Qmodel_.block<3, 3>(Index::W, Index::W) *= Qmodel["W"].asDouble();
-  Qmodel_.block<3, 3>(Index::T, Index::T) *= Qmodel["T"].asDouble();
-  Qmodel_.block<3, 3>(Index::V, Index::V) *= Qmodel["V"].asDouble();
-  Qmodel_.block<3, 3>(Index::bg, Index::bg) *= Qmodel["bg"].asDouble();
-  Qmodel_.block<3, 3>(Index::ba, Index::ba) *= Qmodel["ba"].asDouble();
-  Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) *= Qmodel["Wbc"].asDouble();
-  Qmodel_.block<3, 3>(Index::Tbc, Index::Tbc) *= Qmodel["Tbc"].asDouble();
-  Qmodel_.block<3, 3>(Index::Wg, Index::Wg) *= Qmodel["Wg"].asDouble();
+  Qmodel_.setZero(kMotionSize, kMotionSize);
+  Qmodel_.block<3, 3>(Index::W, Index::W) = I3 * Qmodel["W"].asDouble();
+  Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) = I3 * Qmodel["Wbc"].asDouble();
+  Qmodel_.block<3, 3>(Index::Wg, Index::Wg) = I3 * Qmodel["Wg"].asDouble();
   Qmodel_.block<kMotionSize, kMotionSize>(0, 0) *=
       Qmodel_.block<kMotionSize, kMotionSize>(0, 0);
   LOG(INFO) << "Covariance of process noises loaded";
@@ -450,6 +445,8 @@ void Estimator::Propagate(bool visual_meas) {
   } else {
     LOG(FATAL) << "Unknown integration method";
   }
+
+  // P_.block<kMotionSize, kMotionSize>(0, 0).noalias() += Qmodel_;
   timer_.Tock("propagation");
 }
 

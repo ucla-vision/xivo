@@ -72,14 +72,14 @@
   },
 
   "Qmodel" : {
-    "W"   : 0.000,
+    "W"   : 1e-5,
     "T"   : 0.0,
     "V"   : 0.0,
     "wb"  : 0.0000,
     "ab"  : 0.000,
-    "Wbc" : 0.000,
+    "Wbc" : 1e-5,
     "Tbc" : 0.0,
-    "Wg"  : 0.000
+    "Wg"  : 1e-5
   },
 
   // // exact densities provided by TUM-VI dataset

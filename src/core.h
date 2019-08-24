@@ -96,6 +96,9 @@ constexpr int kFullSize = kFeatureBegin + kFeatureSize * kMaxFeature;
 struct State {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   // nominal state
+  State(): counter{0} {}
+
+  int counter;
   SO3 Rsb;       // body to spatial rotation
   Vec3 Tsb, Vsb; // body to spatial translation and velocity
   Vec3 bg, ba;   // gyro and accl bias
@@ -121,6 +124,12 @@ struct State {
 #ifdef USE_ONLINE_TEMPORAL_CALIB
     td += dX(Index::td);
 #endif
+
+    if (++counter % 100 == 0) {
+      Rsb = SO3::project(Rsb.matrix());
+      Rbc = SO3::project(Rbc.matrix());
+      Rg = SO3::project(Rg.matrix());
+    }
     return *this;
   }
 };
