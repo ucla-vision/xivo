@@ -20,6 +20,7 @@
 #include "utils.h"
 
 namespace feh {
+
 ////////////////////////////////////////
 // TYPES FOR TIME
 ////////////////////////////////////////
@@ -90,6 +91,10 @@ constexpr int kMaxGroup = 10;  // NOTE: the number of features will also be limi
 constexpr int kGroupBegin = kCameraBegin + kMaxCameraIntrinsics;
 constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;
 constexpr int kFullSize = kFeatureBegin + kFeatureSize * kMaxFeature;
+
+// frequency to project rotation matrices to SO3 to get rid of the accumulated numeric error
+constexpr int kEnforceSO3Freq = 100;  
+
 ////////////////////////////////////////
 // STATE
 ////////////////////////////////////////
@@ -110,6 +115,7 @@ struct State {
   number_t td;
 
   using Tangent = Eigen::Matrix<number_t, kMotionSize, 1>;
+
   State &operator+=(const Tangent &dX) {
     Rsb *= SO3::exp(dX.segment<3>(Index::Wsb));
     Tsb += dX.segment<3>(Index::Tsb);
@@ -125,17 +131,33 @@ struct State {
     td += dX(Index::td);
 #endif
 
-    if (++counter % 100 == 0) {
-      Rsb = SO3::project(Rsb.matrix());
-      Rbc = SO3::project(Rbc.matrix());
-      Rg = SO3::project(Rg.matrix());
+    if constexpr(kEnforceSO3Freq > 0) {
+      if (++counter % kEnforceSO3Freq == 0) {
+        Rsb = SO3::project(Rsb.matrix());
+        Rbc = SO3::project(Rbc.matrix());
+        Rg = SO3::project(Rg.matrix());
+      }
     }
+
     return *this;
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const State &s) {
+    os << "\n=====\n";
+    os << "Rsb=\n" << s.Rsb.matrix();
+    os << "\nTsb=\n" << s.Tsb.transpose();
+    os << "\nVsb=\n" << s.Vsb.transpose();
+    os << "\nbg=\n" << s.bg.transpose();
+    os << "\nba=\n" << s.ba.transpose();
+    os << "\nRbc=\n" << s.Rbc.matrix();
+    os << "\nTbc=\n" << s.Tbc.transpose();
+    os << "\nRg=\n" << s.Rg.matrix();
+    os << "\n=====\n";
+    return os;
+  }
+
 };
 
-State operator-(const State &s1, const State &s2);
-std::ostream &operator<<(std::ostream &out, const State &s);
 ////////////////////////////////////////
 // STATUS
 ////////////////////////////////////////

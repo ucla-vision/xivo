@@ -2,6 +2,7 @@
   // verbose
   "simulation": false,
   "print_timing": true,
+  "print_bias_info": true,
   "use_canvas": true,
   "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking

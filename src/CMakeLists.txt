@@ -59,7 +59,6 @@ add_library(xest SHARED
         feature.cpp
         oos.cpp
         group.cpp
-        core.cpp
         helpers.cpp
         options.cpp
         param.cpp
