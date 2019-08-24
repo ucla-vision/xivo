@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "group.h"
 
-namespace feh {
+namespace xivo {
 
 int Feature::ComputeOOSJacobian(const std::vector<Observation> &vobs,
                                 const Mat3 &Rbc, const Vec3 &Tbc) {
@@ -74,4 +74,4 @@ void Feature::ComputeOOSJacobianInternal(const Observation &obs,
   ++oos_jac_counter_;
 }
 
-} // namespace feh
+} // namespace xivo

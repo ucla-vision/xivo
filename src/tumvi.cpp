@@ -11,7 +11,7 @@
 #include "message_types.h"
 #include "tumvi.h"
 
-namespace feh {
+namespace xivo {
 
 TUMVILoader::TUMVILoader(const std::string &image_dir,
                          const std::string &imu_dir) {
@@ -120,4 +120,4 @@ GetDirs(const std::string dataset, const std::string root,
   }
 }
 
-} // namespace feh
+} // namespace xivo

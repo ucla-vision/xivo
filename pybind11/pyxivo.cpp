@@ -10,7 +10,7 @@
 #include "visualize.h"
 
 namespace py = pybind11;
-using namespace feh;
+using namespace xivo;
 
 class EstimatorWrapper {
 public:

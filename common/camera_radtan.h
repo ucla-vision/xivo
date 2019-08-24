@@ -4,7 +4,7 @@
 #pragma once
 #include "camera_base.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename T>
 class RadialTangentialCamera : public BaseCamera<T, RadialTangentialCamera<T>> {
@@ -134,4 +134,4 @@ protected:
   int max_iter_;
 };
 
-} // namespace feh
+} // namespace xivo

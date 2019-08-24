@@ -12,7 +12,7 @@
 #include "group.h"
 #include "tracker.h"
 
-namespace feh {
+namespace xivo {
 
 void Estimator::ProcessTracks(const timestamp_t &ts,
                               std::list<FeaturePtr> &tracks) {
@@ -372,4 +372,4 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   }
 }
 
-} // namespace feh
+} // namespace xivo

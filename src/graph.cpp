@@ -3,7 +3,7 @@
 #include "feature.h"
 #include "group.h"
 
-namespace feh {
+namespace xivo {
 
 void FeatureAdj::Add(const Observation &obs) { insert({obs.g->id(), obs.xp}); }
 void FeatureAdj::Remove(int id) { erase(id); }
@@ -316,4 +316,4 @@ void Graph::CleanIsolatedNodes() {
   CleanIsolatedGroups();
 }
 
-} // namespace feh
+} // namespace xivo

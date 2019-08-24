@@ -4,7 +4,7 @@
 #include "options.h"
 #include "feature.h"
 
-namespace feh {
+namespace xivo {
 
 bool Criteria::Candidate(FeaturePtr f) {
   number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
@@ -25,4 +25,4 @@ bool Criteria::CandidateComparison(FeaturePtr f1, FeaturePtr f2) {
   return (s1 > s2) || (s1 == s2 && f1->score() > f2->score());
 }
 
-} // namespace feh
+} // namespace xivo

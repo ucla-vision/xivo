@@ -28,7 +28,7 @@ DEFINE_double(resolution, 0.001,
 DEFINE_double(RPE_interval, 1.0,
               "Interval, in seconds, over which to compute RPE.");
 
-namespace feh {
+namespace xivo {
 std::vector<msg::Pose> LoadEstimatedState(const std::string &path) {
   std::ifstream istream(path, std::ios::in);
   int64_t ts;       // timestamp
@@ -44,7 +44,7 @@ std::vector<msg::Pose> LoadEstimatedState(const std::string &path) {
 }
 }
 
-using namespace feh;
+using namespace xivo;
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);

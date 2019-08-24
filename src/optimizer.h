@@ -26,7 +26,7 @@
 #include "alias.h"
 #include "project.h"
 
-namespace feh {
+namespace xivo {
 
 class GroupVertex: public g2o::BaseVertex<6, SE3> {
 public:
@@ -181,4 +181,4 @@ private:
 
 };
 
-} // namespace feh
+} // namespace xivo

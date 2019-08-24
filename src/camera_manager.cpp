@@ -2,7 +2,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "camera_manager.h"
 
-namespace feh {
+namespace xivo {
 std::unique_ptr<CameraManager> CameraManager::instance_ = nullptr;
 
 CameraManager *CameraManager::Create(const Json::Value &cfg) {
@@ -55,4 +55,4 @@ CameraManager::CameraManager(const Json::Value &cfg) : model_{Unknown{}} {
   fl_ = 0.5 * std::sqrt(fx * fx + fy * fy);
 }
 
-} // namespace feh
+} // namespace xivo

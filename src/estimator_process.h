@@ -6,13 +6,13 @@
 #include <fstream>
 #include <string>
 #include <vector>
-// feh
+// xivo
 #include "alias.h"
 #include "estimator.h"
 #include "message_types.h"
 #include "process.h"
 
-namespace feh {
+namespace xivo {
 
 class Publisher {
 public:
@@ -97,4 +97,4 @@ private:
   Publisher *publisher_; // non-owned
 };                       // EstimatorProcess
 
-} // namespace feh
+} // namespace xivo

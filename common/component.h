@@ -19,7 +19,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 
-namespace feh {
+namespace xivo {
 
 namespace traits {
 // helper function to check whehter the given "State" type has a "Tangent" type
@@ -61,4 +61,4 @@ template <typename Derived, typename State> struct Component {
 
 // example usage: see src/imu.h
 
-} // namespace feh
+} // namespace xivo

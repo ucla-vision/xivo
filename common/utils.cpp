@@ -10,7 +10,7 @@
 
 #include "utils.h"
 
-namespace feh {
+namespace xivo {
 
 const std::string TermColor::red = "\033[91m";
 const std::string TermColor::green = "\033[92m";
@@ -130,4 +130,4 @@ void SaveJson(const Json::Value &value, const std::string &filename) {
   out.close();
 }
 
-} // namespace feh
+} // namespace xivo

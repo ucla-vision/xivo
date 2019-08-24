@@ -8,7 +8,7 @@
 #include "visualize.h"
 #include "param.h"
 
-namespace feh {
+namespace xivo {
 
 std::unique_ptr<Canvas> Canvas::instance_ = nullptr;
 

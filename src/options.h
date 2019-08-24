@@ -4,7 +4,7 @@
 #pragma once
 #include "core.h"
 
-namespace feh {
+namespace xivo {
 // depth refinement options
 struct RefinementOptions {
   RefinementOptions()
@@ -44,4 +44,4 @@ struct Criteria {
   static bool CandidateComparison(FeaturePtr f1, FeaturePtr f2);
 };
 
-} // namespace feh
+} // namespace xivo

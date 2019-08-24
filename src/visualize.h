@@ -8,7 +8,7 @@
 
 #include "core.h"
 
-namespace feh {
+namespace xivo {
 
 class Canvas;
 using CanvasPtr = Canvas *;

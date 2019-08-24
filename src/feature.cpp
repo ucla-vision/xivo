@@ -10,7 +10,7 @@
 #include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
-namespace feh {
+namespace xivo {
 
 // Feature
 int Feature::counter_ = Feature::counter0;
@@ -419,4 +419,4 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
   }
 }
 
-} // feh
+} // xivo

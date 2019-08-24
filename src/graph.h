@@ -9,7 +9,7 @@
 #include "core.h"
 #include "feature.h"
 
-namespace feh {
+namespace xivo {
 
 struct FeatureAdj : public std::unordered_map<int, Vec2> {
   void Add(const Observation &obs);
@@ -76,4 +76,4 @@ private:
   std::unordered_map<int, GroupAdj> group_adj_;
 };
 
-} // namespace feh
+} // namespace xivo

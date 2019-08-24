@@ -27,7 +27,7 @@
 #include "tracker.h"
 #include "visualize.h"
 
-namespace feh {
+namespace xivo {
 
 namespace internal {
 class Message {
@@ -242,4 +242,4 @@ private:
   std::unique_ptr<std::default_random_engine> rng_;
 };
 
-} // feh
+} // xivo

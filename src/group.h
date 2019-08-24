@@ -11,7 +11,7 @@
 #include "component.h"
 #include "core.h"
 
-namespace feh {
+namespace xivo {
 
 struct SO3xR3 {
   static constexpr int DIM = 6;
@@ -80,4 +80,4 @@ private:
   SO3xR3 X_, X0_;
 };
 
-} // namespace feh
+} // namespace xivo

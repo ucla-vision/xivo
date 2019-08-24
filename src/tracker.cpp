@@ -13,7 +13,7 @@
 #include "tracker.h"
 #include "visualize.h"
 
-namespace feh {
+namespace xivo {
 
 std::unique_ptr<Tracker> Tracker::instance_ = nullptr;
 
@@ -321,4 +321,4 @@ bool MaskValid(const cv::Mat &mask, number_t x, number_t y) {
   return static_cast<bool>(mask.at<uint8_t>(row, col));
 }
 
-} // namespace feh
+} // namespace xivo

@@ -2,7 +2,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "estimator.h"
 
-namespace feh {
+namespace xivo {
 
 void Estimator::PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
   // reference 1:

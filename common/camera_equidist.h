@@ -6,7 +6,7 @@
 #pragma once
 #include "camera_base.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename T>
 class EquidistantCamera : public BaseCamera<T, EquidistantCamera<T>> {
@@ -177,4 +177,4 @@ protected:
   int max_iter_;
 };
 
-} // namespace feh
+} // namespace xivo

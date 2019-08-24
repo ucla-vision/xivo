@@ -1,7 +1,7 @@
 #include "group.h"
 #include "mm.h"
 
-namespace feh {
+namespace xivo {
 
 int Group::counter_ = 0;
 
@@ -31,4 +31,4 @@ bool Group::instate() const {
   return status_ == GroupStatus::INSTATE || status_ == GroupStatus::GAUGE;
 }
 
-} // namespace feh
+} // namespace xivo

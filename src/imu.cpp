@@ -2,7 +2,7 @@
 
 #include "imu.h"
 
-namespace feh {
+namespace xivo {
 
 IMUState &IMUState::operator+=(const Tangent &dX) {
   int idx{0};
@@ -24,4 +24,4 @@ IMU::IMU(const Mat3 &Ca, const Mat3 &Cg) : X_{Ca, Cg} {
   CHECK(Ca(1, 0) == 0 && Ca(2, 0) == 0 && Ca(2, 1) == 0);
 }
 
-} // namespace feh
+} // namespace xivo

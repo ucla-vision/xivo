@@ -11,7 +11,7 @@
 #include "camera_pinhole.h"
 #include "camera_radtan.h"
 
-namespace feh {
+namespace xivo {
 
   // Naming convention: 
   // A_XXX Camera model XXX with autocalibration capability
@@ -169,4 +169,4 @@ private:
   using MyBase::k3_;
 };
 
-} // namespace feh
+} // namespace xivo

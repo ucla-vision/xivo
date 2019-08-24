@@ -4,7 +4,7 @@
 #include "estimator_process.h"
 #include "viewer.h"
 
-namespace feh {
+namespace xivo {
 
 class ViewMessage {
 public:
@@ -59,4 +59,4 @@ private:
   virtual bool Handle(ViewMessage *message) override;
   Viewer viewer_;
 };
-} // namespace feh
+} // namespace xivo

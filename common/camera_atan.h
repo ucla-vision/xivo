@@ -6,7 +6,7 @@
 #pragma once
 #include "camera_base.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename T> class ATANCamera : public BaseCamera<T, ATANCamera<T>> {
 public:
@@ -144,4 +144,4 @@ protected:
   T w_, invw_, w2_;
 };
 
-} // namespace feh
+} // namespace xivo

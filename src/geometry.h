@@ -4,7 +4,7 @@
 #include "alias.h"
 #include <vector>
 
-namespace feh {
+namespace xivo {
 
 // Solve the hand-eye calibration problem: AX=XB
 // where A, B and X \in SO(3); A & B are known, X is to solve
@@ -20,4 +20,4 @@ SE3 HandEyeCalibration(const std::vector<SE3> &A, const std::vector<SE3> &B);
 //  G \in SE3 such that Y = G X
 SE3 TrajectoryAlignment(const std::vector<Vec3> &Y, const std::vector<Vec3> &X);
 
-} // namespace feh
+} // namespace xivo

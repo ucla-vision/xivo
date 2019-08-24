@@ -4,7 +4,7 @@
 
 #include <ostream>
 
-namespace feh {
+namespace xivo {
 
 /// \brief timer
 class Timer {

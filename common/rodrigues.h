@@ -3,7 +3,7 @@
 #include "math.h"
 #include <type_traits>
 
-namespace feh {
+namespace xivo {
 
 constexpr int Sum1ToN(int N) { return (N * (N + 1)) >> 1; }
 

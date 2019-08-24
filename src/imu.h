@@ -7,7 +7,7 @@
 #include "alias.h"
 #include "component.h"
 
-namespace feh {
+namespace xivo {
 
 struct IMUState {
 public:
@@ -39,4 +39,4 @@ private:
   IMUState X_;
 };
 
-} // namespace feh
+} // namespace xivo

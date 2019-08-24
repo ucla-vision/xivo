@@ -1,7 +1,7 @@
 #include <iostream>
 #include "helpers.h"
 
-using namespace feh;
+using namespace xivo;
 
 int main() {
   int M = 4;

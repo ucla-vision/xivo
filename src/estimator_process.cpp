@@ -1,12 +1,12 @@
 // 3rdparty
 #include "opencv2/highgui/highgui.hpp"
-// feh
+// xivo
 #include "absl/strings/str_format.h"
 #include "estimator_process.h"
 #include "tracker.h"
 #include "visualize.h"
 
-namespace feh {
+namespace xivo {
 
 bool operator<(const std::unique_ptr<EstimatorMessage> &m1,
                const std::unique_ptr<EstimatorMessage> &m2) {
@@ -56,4 +56,4 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
   return false;
 }
 
-} // namespace feh
+} // namespace xivo

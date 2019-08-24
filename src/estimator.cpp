@@ -16,7 +16,7 @@
 #include "param.h"
 #include "tracker.h"
 
-namespace feh {
+namespace xivo {
 
 static const Mat3 I3{Mat3::Identity()};
 static const Mat3 nI3{-I3};
@@ -987,4 +987,4 @@ void Estimator::SwitchRefGroup() {
   }
 }
 
-} // feh
+} // xivo

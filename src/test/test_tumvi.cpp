@@ -3,7 +3,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/core/core.hpp"
 
-using namespace feh;
+using namespace xivo;
 
 static std::string tumvi_root = "/local2/Data/tumvi/exported/euroc/512_16/";
 static std::string euroc_root = "/local2/Data/EuRoC/ASL_format/";

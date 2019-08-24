@@ -7,7 +7,7 @@
 #include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
-namespace feh {
+namespace xivo {
 
 // Reference:
 // http://www.math.usm.edu/lambers/mat610/sum10/lecture9.pdf
@@ -149,4 +149,4 @@ Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   return x;
 }
 
-} // namespace feh
+} // namespace xivo

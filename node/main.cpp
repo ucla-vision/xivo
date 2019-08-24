@@ -5,7 +5,7 @@
 // xivo
 #include "simple_node.h"
 
-using namespace feh;
+using namespace xivo;
 
 int main(int argc, char ** argv)
 {

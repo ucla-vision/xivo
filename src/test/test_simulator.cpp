@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "simulator.h"
 
-using namespace feh;
+using namespace xivo;
 
 class SimulatorTest: public ::testing::Test {
 protected:

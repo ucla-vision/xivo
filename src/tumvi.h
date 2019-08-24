@@ -8,7 +8,7 @@
 #include "core.h"
 #include "message_types.h"
 
-namespace feh {
+namespace xivo {
 
 class TUMVILoader {
 public:
@@ -32,4 +32,4 @@ std::tuple<std::string, std::string, std::string>
 GetDirs(const std::string dataset, const std::string root,
         const std::string seq, int cam_id);
 
-} // namespace feh
+} // namespace xivo

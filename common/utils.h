@@ -18,7 +18,7 @@
 
 #include "timer.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename T> using own = T;
 
@@ -273,4 +273,4 @@ void WriteMatrixToFile(const std::string &filename,
   ostream.close();
 }
 
-} // namespace feh
+} // namespace xivo

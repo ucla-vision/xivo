@@ -1,7 +1,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "publisher.h"
 
-namespace feh {
+namespace xivo {
 
 void ViewPublisher::Publish(const timestamp_t &ts, const cv::Mat &image) {
   Enqueue(std::move(std::make_unique<ViewDisplayMessage>(ts, image)));
@@ -31,4 +31,4 @@ bool ViewPublisher::Handle(ViewMessage *message) {
   return true;
 }
 
-} // namespace feh
+} // namespace xivo

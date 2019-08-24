@@ -6,7 +6,7 @@
 #include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
-namespace feh {
+namespace xivo {
 
 std::unique_ptr<MemoryManager> MemoryManager::instance_ = nullptr;
 
@@ -77,4 +77,4 @@ GroupPtr MemoryManager::GetGroup() {
 
 void MemoryManager::ReturnGroup(GroupPtr g) { gslots_.at(g) = false; }
 
-} // namespace feh
+} // namespace xivo

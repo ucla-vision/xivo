@@ -8,7 +8,7 @@
 #include "estimator_process.h"
 #include "publisher.h"
 
-namespace feh
+namespace xivo
 {
 
 // Size of the small buffer used for sorting messages based on timestamps.

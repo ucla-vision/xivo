@@ -12,7 +12,7 @@
 
 #include "message_types.h"
 
-namespace feh {
+namespace xivo {
 
 // Compute Absolute Trajectory Error given estimated trajectory and ground truth
 // Args:
@@ -34,4 +34,4 @@ std::tuple<number_t, number_t> ComputeRPE(const std::vector<msg::Pose> &est,
                                     const std::vector<msg::Pose> &gt,
                                     number_t dt = 1.0, number_t res = 0.005);
 
-} // namespace feh
+} // namespace xivo

@@ -4,7 +4,7 @@
 #include "param.h"
 #include "glog/logging.h"
 
-namespace feh {
+namespace xivo {
 
 std::unique_ptr<ParameterServer> ParameterServer::instance_ = nullptr;
 
@@ -20,4 +20,4 @@ ParameterServerPtr ParameterServer::Create(const Json::Value &value) {
 ParameterServer::ParameterServer(const Json::Value &value)
     : Json::Value{value} {}
 
-} // namespace feh
+} // namespace xivo

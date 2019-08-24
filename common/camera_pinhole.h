@@ -3,7 +3,7 @@
 #pragma once
 #include "camera_base.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename T>
 class PinholeCamera : public BaseCamera<T, PinholeCamera<T>> {
@@ -68,4 +68,4 @@ protected:
   using MyBase::cy_;
 };
 
-} // namespace feh
+} // namespace xivo

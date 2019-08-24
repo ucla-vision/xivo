@@ -3,10 +3,10 @@
 // 3rdparty
 #include "glog/logging.h"
 
-// feh
+// xivo
 #include "optimizer.h"
 
-namespace feh {
+namespace xivo {
 
 std::unique_ptr<Optimizer> Optimizer::instance_ = nullptr;
 
@@ -151,4 +151,4 @@ void Optimizer::Solve(int max_iters) {
 }
 
 
-} // namespace feh
+} // namespace xivo

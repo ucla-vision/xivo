@@ -14,7 +14,7 @@
 #include "group.h"
 #include "tracker.h"
 
-namespace feh {
+namespace xivo {
 
 void Estimator::Update() {
   if (instate_features_.empty() && oos_features_.empty())
@@ -331,4 +331,4 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   return max_inliers;
 }
 
-} // namespace feh
+} // namespace xivo

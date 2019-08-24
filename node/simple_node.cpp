@@ -5,7 +5,7 @@
 
 #include "utils.h"
 
-namespace feh
+namespace xivo
 {
 
 void ROSPublisherAdapter::Publish(ftype ts, const cv::Mat &disp) {
@@ -132,5 +132,5 @@ void SimpleNode::ImageMsgCallback(sensor_msgs::ImageConstPtr msg)
   est_proc_->Enqueue(std::move(std::make_unique<VisualMeas>(ts, image, viz_)));
 }
 
-} // namespace feh
+} // namespace xivo
 

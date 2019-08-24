@@ -5,7 +5,7 @@
 #include "rodrigues.h"
 #include "se3.h"
 
-namespace feh {
+namespace xivo {
 
 using number_t = double;
 
@@ -69,4 +69,4 @@ using SO3d = SO3Type<double>;
 
 static const number_t eps = 1e-4f;
 
-} // namespace feh
+} // namespace xivo

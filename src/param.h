@@ -5,7 +5,7 @@
 #include "json/json.h"
 #include <memory>
 
-namespace feh {
+namespace xivo {
 
 class ParameterServer;
 using ParameterServerPtr = ParameterServer *;
@@ -23,4 +23,4 @@ private:
   static std::unique_ptr<ParameterServer> instance_;
 };
 
-} // namespace feh
+} // namespace xivo

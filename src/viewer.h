@@ -10,7 +10,7 @@
 
 #include "core.h"
 
-namespace feh {
+namespace xivo {
 
 using XYZRGB = std::array<float, 6>;
 
@@ -47,4 +47,4 @@ private:
   static int counter_;
 };
 
-} // feh
+} // xivo

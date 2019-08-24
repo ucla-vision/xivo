@@ -6,7 +6,7 @@
 
 #include "alias.h"
 
-namespace feh {
+namespace xivo {
 
 // Project matrix Hx onto the left nullspace of Hf via Givens rotations.
 // i.e., A' * Hf = 0 and we compute Hx <- A' * Hx
@@ -42,4 +42,4 @@ Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 // interface same as triangulation method1 above
 Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
-} // namespace feh
+} // namespace xivo

@@ -5,7 +5,7 @@
 #include "core.h"
 #include <array>
 
-namespace feh {
+namespace xivo {
 
 struct OOSJacobian {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -51,4 +51,4 @@ struct JacobianCache {
   Vec2 inn;      // innovation
 };
 
-} // namespace feh
+} // namespace xivo

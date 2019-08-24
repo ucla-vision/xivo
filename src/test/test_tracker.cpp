@@ -5,7 +5,7 @@
 #include "tracker.h"
 #include "tumvi.h"
 
-using namespace feh;
+using namespace xivo;
 
 static std::string dataroot = "/home/feixh/Data/tumvi/exported/euroc/512_16/";
 

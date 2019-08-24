@@ -10,7 +10,7 @@
 // own
 #include "utils.h"
 
-namespace feh {
+namespace xivo {
 
 // my little process wrapper of
 // the single producer single consumer queue
@@ -88,4 +88,4 @@ private:
       queue_; // the queue owns the pointers and need to delete them after use
 };
 
-} // namespace feh
+} // namespace xivo

@@ -8,7 +8,7 @@
 using number_t = double;
 const number_t eps = 1e-8;
 
-using namespace feh;
+using namespace xivo;
 
 class MatrixDifferentialTest : public ::testing::Test {
 protected:

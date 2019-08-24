@@ -4,7 +4,7 @@
 
 #include "rodrigues.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename Type> class SO3Type {
 public:

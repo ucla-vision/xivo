@@ -1,6 +1,6 @@
 #include "optimizer.h"
 
-using namespace feh;
+using namespace xivo;
 using namespace std;
 using namespace Eigen;
 

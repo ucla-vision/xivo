@@ -7,7 +7,7 @@
 
 #include "geometry.h"
 
-namespace feh {
+namespace xivo {
 
 // Reference:
 // Frank C. Park, Bryan J. Martin
@@ -157,4 +157,4 @@ SE3 TrajectoryAlignment(const std::vector<Vec3> &Y,
   return g;
 }
 
-} // namespace feh
+} // namespace xivo

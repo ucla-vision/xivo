@@ -1,6 +1,6 @@
 #include "estimator.h"
 
-namespace feh {
+namespace xivo {
 
 void Estimator::RK4(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
   static bool rk4_initialized{false};
@@ -102,4 +102,4 @@ void Estimator::RK4Step(const Vec3 &gyro0, const Vec3 &accel0, number_t dt) {
       F_.transpose();
 }
 
-} // namespace feh
+} // namespace xivo

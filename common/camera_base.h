@@ -6,7 +6,7 @@
 
 #include "Eigen/Dense"
 
-namespace feh {
+namespace xivo {
 
 template <typename T, typename D> class BaseCamera {
 public:
@@ -78,4 +78,4 @@ bool OutOfView(const Eigen::MatrixBase<Derived> &xp, const Cam &cam) {
   return OutOfView(xp(0), xp(1), cam);
 }
 
-} // feh
+} // xivo

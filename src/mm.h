@@ -9,7 +9,7 @@
 #include "core.h"
 #include "jac.h"
 
-namespace feh {
+namespace xivo {
 
 class MemoryManager {
 public:
@@ -35,4 +35,4 @@ private:
   std::unordered_map<GroupPtr, bool> gslots_;
 };
 
-} // namespace feh
+} // namespace xivo

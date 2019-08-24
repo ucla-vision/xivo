@@ -3,7 +3,7 @@
 #include "geometry.h"
 #include "metrics.h"
 
-namespace feh {
+namespace xivo {
 
 static std::tuple<number_t, SE3>
 AbsoluteTrajectoryError(const std::vector<Vec3> &Y,
@@ -129,4 +129,4 @@ std::tuple<number_t, number_t> ComputeRPE(const std::vector<msg::Pose> &est,
   return std::make_tuple(rpe_pos, rpe_rot);
 }
 
-} // namespace feh
+} // namespace xivo

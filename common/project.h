@@ -5,7 +5,7 @@
 
 #include "Eigen/Core"
 
-namespace feh {
+namespace xivo {
 // perspective projection
 // Xc=[x, y, z]
 // returns xc=[x/z, y/z]
@@ -92,4 +92,4 @@ Eigen::Matrix<typename Derived::Scalar, 3, 1> unproject_logz(
   return Xc;
 }
 
-} // namespace feh
+} // namespace xivo

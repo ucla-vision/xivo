@@ -8,7 +8,7 @@
 #include "estimator.h"
 #include "viewer.h"
 
-namespace feh {
+namespace xivo {
 
 const static Vec3f kYellow{1., 1., 0};
 const static Vec3f kGreen{0, 1., 0};
@@ -161,4 +161,4 @@ void Viewer::Refresh() {
   pangolin::GetBoundWindow()->RemoveCurrent();
 }
 
-} // namespace feh
+} // namespace xivo

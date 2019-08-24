@@ -19,7 +19,7 @@
 #include "se3.h"
 #include "utils.h"
 
-namespace feh {
+namespace xivo {
 
 ////////////////////////////////////////
 // TYPES FOR TIME
@@ -216,4 +216,4 @@ using Obs = Observation;
 template <class T>
 using plain = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 
-} // namespace feh
+} // namespace xivo

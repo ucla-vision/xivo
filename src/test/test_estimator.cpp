@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "estimator.h"
 
-using namespace feh;
+using namespace xivo;
 
 class EstimatorTest: public ::testing::Test {
 protected:

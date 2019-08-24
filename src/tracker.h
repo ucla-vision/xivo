@@ -12,7 +12,7 @@
 
 #include "core.h"
 
-namespace feh {
+namespace xivo {
 
 class Tracker {
 public:
@@ -71,4 +71,4 @@ void ResetMask(cv::Mat mask);
 void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size = 15);
 bool MaskValid(const cv::Mat &mask, number_t x, number_t y);
 
-} // namespace feh
+} // namespace xivo

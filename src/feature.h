@@ -14,7 +14,7 @@
 #include "options.h"
 #include "project.h"
 
-namespace feh {
+namespace xivo {
 
 
 class Track : public std::vector<Vec2, Eigen::aligned_allocator<Vec2>> {
@@ -197,4 +197,4 @@ public:
   } sim_;
 };
 
-} // namespace feh
+} // namespace xivo

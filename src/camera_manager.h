@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "json/json.h"
 
-namespace feh {
+namespace xivo {
 
 template <typename T> using UnknownCamera = T;  // dummy ...
 
@@ -131,4 +131,4 @@ private:
   int dim_; // number of intrinsic parameters
 };
 
-} // namespace feh
+} // namespace xivo

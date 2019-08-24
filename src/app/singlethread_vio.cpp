@@ -27,7 +27,7 @@ DEFINE_string(seq, "room1", "Sequence of TUM VI benchmark to play with.");
 DEFINE_int32(cam_id, 0, "Camera id.");
 DEFINE_string(out, "out_state", "Output file path.");
 
-using namespace feh;
+using namespace xivo;
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);

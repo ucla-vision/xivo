@@ -7,7 +7,7 @@
 
 #include "core.h"
 
-namespace feh {
+namespace xivo {
 
 namespace msg {
 
@@ -54,4 +54,4 @@ struct Pose : public Message {
 
 } // namespace msg
 
-} // namespace feh
+} // namespace xivo
