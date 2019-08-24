@@ -22,6 +22,19 @@ dA_dAu(const Eigen::MatrixBase<Derived> &A) {
   return D;
 }
 
+template <typename T, int N = 3>
+Eigen::Matrix<T, N * N, Sum1ToN(N)>
+dA_dAu() {
+  Eigen::Matrix<T, N * N, Sum1ToN(N)> D;
+  int idx_u{0}; // indexing to the upper triangular part of the matrix
+  for (int i = 0; i < N; ++i) {
+    for (int j = i; j < N; ++j) {
+      D(i * N + j, idx_u++) = 1;
+    }
+  }
+  return D;
+}
+
 template <typename Derived, int M = 3, int N = 3>
 Eigen::Matrix<typename Derived::Scalar, M, N>
 unstack(const Eigen::MatrixBase<Derived> &u, int major = Eigen::RowMajor) {

@@ -46,7 +46,7 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j
 
-cd $PROJECT_DIR/thirdparty/eigen3
+cd $PROJECT_DIR/thirdparty/eigen-3.3.7
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..

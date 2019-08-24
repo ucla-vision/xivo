@@ -18,6 +18,9 @@
 
 namespace feh {
 
+static const Mat3 I3{Mat3::Identity()};
+static const Mat3 nI3{-I3};
+
 static bool cmp(const std::unique_ptr<internal::Message> &m1,
                 const std::unique_ptr<internal::Message> &m2) {
   return m1->ts() > m2->ts();
@@ -472,87 +475,90 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
 void Estimator::ComputeMotionJacobianAt(
     const State &X, const Eigen::Matrix<number_t, 6, 1> &gyro_accel) {
 
-  Vec3 gyro = gyro_accel.head<3>();
-  Vec3 accel = gyro_accel.tail<3>();
+  static Vec3 gyro = gyro_accel.head<3>();
+  static Vec3 accel = gyro_accel.tail<3>();
 
-  Vec3 gyro_calib = imu_.Cg() * gyro - X.bg;   // \hat\omega in the doc
-  Vec3 accel_calib = imu_.Ca() * accel - X.ba; // \hat\alpha in the doc
+  static Vec3 gyro_calib = imu_.Cg() * gyro - X.bg;   // \hat\omega in the doc
+  static Vec3 accel_calib = imu_.Ca() * accel - X.ba; // \hat\alpha in the doc
 
   // jacobian w.r.t. error state
-  Mat3 R = X.Rsb.matrix();
+  static Mat3 R = X.Rsb.matrix();
 
-  Eigen::Matrix<number_t, 3, 9> dW_dCg;
+  static Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {
     // NOTE: use the raw measurement (gyro) here. NOT the calibrated one
     // (gyro_calib)!!!
     dW_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
-  Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
-  Eigen::Matrix<number_t, 9, 6> dCafm_dCa =
-      dA_dAu(Mat3{}); // full matrix w.r.t. upper triangle
-  Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
+  static Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
+  static Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
+  static Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
+  static Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
-  Mat3 dW_dW = -hat(gyro_calib);
-  Mat3 dW_dbg = -Mat3::Identity();
+  static Mat3 dW_dW = -hat(gyro_calib);
+  // static Mat3 dW_dbg = -I3;
 
-  Mat3 dT_dV = Mat3::Identity();
+  // static Mat3 dT_dV = I3;
 
-  Mat3 dV_dW = -R * hat(accel_calib);
-  Mat3 dV_dba = -R;
-  Mat3 tmp = -R * hat(g_); // 3x3
+  static Mat3 dV_dW = -R * hat(accel_calib);
+  static Mat3 dV_dba = -R;
+
+  // static Mat3 tmp = -R * hat(g_); // 3x3
   // Mat32 dV_dWg = tmp.block<3, 3>(0, 0); // 3x2
-  //
-  Mat3 dV_dWg = -R * hat(g_);
+  
+  static Mat3 dV_dWg = -R * hat(g_);
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
 
   for (int j = 0; j < 3; ++j) {
+    F_.coeffRef(Index::W + j, Index::bg + j) = -1;  // dW_dbg
+    F_.coeffRef(Index::T + j, Index::V + j) = 1;  // dT_dV
+
     for (int i = 0; i < 3; ++i) {
       // W
-      F_.coeffRef(Index::W + i, Index::W + j) += dW_dW(i, j);
-      F_.coeffRef(Index::W + i, Index::bg + j) += dW_dbg(i, j);
+      F_.coeffRef(Index::W + i, Index::W + j) = dW_dW(i, j);
+      // F_.coeffRef(Index::W + i, Index::bg + j) = dW_dbg(i, j);
       // T
-      F_.coeffRef(Index::T + i, Index::V + j) += dT_dV(i, j);
+      // F_.coeffRef(Index::T + i, Index::V + j) = dT_dV(i, j);
 
       // V
-      F_.coeffRef(Index::V + i, Index::W + j) += dV_dW(i, j);
-      F_.coeffRef(Index::V + i, Index::ba + j) += dV_dba(i, j);
+      F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
+      F_.coeffRef(Index::V + i, Index::ba + j) = dV_dba(i, j);
 
       // if (j < 2)
-      F_.coeffRef(Index::V + i, Index::Wg + j) += dV_dWg(i, j);
+      F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i, j);
     }
   }
 
 #ifdef USE_ONLINE_IMU_CALIB
   for (int j = 0; j < 9; ++j) {
     for (int i = 0 ; i < 3; ++i) {
-      F_.coeffRef(Index::W + i, Index::Cg + j) += dW_dCg(i, j);
+      F_.coeffRef(Index::W + i, Index::Cg + j) = dW_dCg(i, j);
     }
   }
   for (int j = 0; j < 6; ++j) {
     for (int i = 0; i < 3; ++i) {
-      F_.coeffRef(Index::V + i, Index::Ca + j) += dV_dCa(i, j);
+      F_.coeffRef(Index::V + i, Index::Ca + j) = dV_dCa(i, j);
     }
   }
 #endif
 
-  Mat3 dW_dng = -Mat3::Identity();
-  Mat3 dV_dna = -R;
-  Mat3 dbg_dnbg = Mat3::Identity();
-  Mat3 dba_dnba = Mat3::Identity();
+  // Mat3 dW_dng = -I3;
+  // Mat3 dV_dna = -R;
+  // Mat3 dbg_dnbg = I3;
+  // Mat3 dba_dnba = I3;
 
   // jacobian w.r.t. noise
   G_.setZero();
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
-      G_.coeffRef(Index::W + i, j) += dW_dng(i, j);
-      G_.coeffRef(Index::V + i, 3 + j) += dV_dna(i, j);
-      G_.coeffRef(Index::bg + i, 6 + j) += dbg_dnbg(i, j);
-      G_.coeffRef(Index::ba + i, 9 + j) += dba_dnba(i, j);
+      G_.coeffRef(Index::V + i, 3 + j) = -R(i, j);  // dW_dna
     }
+    G_.coeffRef(Index::W + j, j) = -1;  // dW_dng
+    G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
+    G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
   }
 }
 

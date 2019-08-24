@@ -15,7 +15,7 @@
   "use_compression": true,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
-  "max_group_lifetime": 30,
+  "max_group_lifetime": 60,
 
   "PrinceDormand": {
     "control_stepsize": false,
@@ -63,11 +63,11 @@
     "ba"  : 0.001,
     "Wbc" : 0.0001,
     "Tbc" : 0.001,
-    "Wg"  : 0.01,
+    "Wg"  : 3.01,
     "td"  : 1e-5, // 1ms
     "Cg"  : 1e-5,
     "Ca"  : 1e-5,
-    "FC"  : 50,
+    "FC"  : 10,
     "distortion": 1e-3
   },
 
@@ -123,7 +123,7 @@
   "initial_std_z": 1.0,  // meter
 
   // std of visuale measurement, in pixels
-  "visual_meas_std":  1.5,
+  "visual_meas_std":  2.5,
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 5.0,
@@ -193,7 +193,7 @@
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
     "num_features_min": 30,
-    "num_features_max": 60,
+    "num_features_max": 45,
     "max_pixel_displacement": 64,
     "normalize": false,
 
