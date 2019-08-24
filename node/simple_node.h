@@ -18,7 +18,7 @@ class ROSPublisherAdapter: public Publisher {
 public:
   ROSPublisherAdapter(ros::Publisher &rospub): Publisher{}, rospub_{rospub}
   {}
-  virtual void Publish(ftype ts, const cv::Mat &disp);
+  virtual void Publish(number_t ts, const cv::Mat &disp);
 private:
   ros::Publisher &rospub_;
 };

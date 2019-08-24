@@ -8,7 +8,7 @@
 namespace xivo
 {
 
-void ROSPublisherAdapter::Publish(ftype ts, const cv::Mat &disp) {
+void ROSPublisherAdapter::Publish(number_t ts, const cv::Mat &disp) {
   if (!disp.empty()) {
     DLOG(INFO) << "Display image is ready";
     cv_bridge::CvImage cv_msg;

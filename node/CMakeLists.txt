@@ -47,10 +47,15 @@ link_directories(
   /opt/ros/kinetic/lib/x86_64-linux-gnu
 )
 
+set(libxivo xest xapp)
+if (BUILD_G2O)
+  list(APPEND libxivo xopt)
+endif(BUILD_G2O)
+
+
 add_executable(mynode main.cpp simple_node.cpp simple_node.h)
 target_link_libraries(mynode
-  application
-  estimator
+  ${libxivo}
   gflags::gflags
   glog
   jsoncpp
