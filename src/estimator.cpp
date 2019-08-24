@@ -509,30 +509,35 @@ void Estimator::ComputeMotionJacobianAt(
 
   F_.setZero(); // wipe out the delta added to F in the previous step
 
-  for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < 3; ++j) {
+  for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < 3; ++i) {
       // W
       F_.coeffRef(Index::W + i, Index::W + j) += dW_dW(i, j);
       F_.coeffRef(Index::W + i, Index::bg + j) += dW_dbg(i, j);
-
       // T
       F_.coeffRef(Index::T + i, Index::V + j) += dT_dV(i, j);
 
       // V
       F_.coeffRef(Index::V + i, Index::W + j) += dV_dW(i, j);
       F_.coeffRef(Index::V + i, Index::ba + j) += dV_dba(i, j);
+
       // if (j < 2)
       F_.coeffRef(Index::V + i, Index::Wg + j) += dV_dWg(i, j);
     }
+  }
+
 #ifdef USE_ONLINE_IMU_CALIB
-    for (int j = 0; j < 9; ++j) {
+  for (int j = 0; j < 9; ++j) {
+    for (int i = 0 ; i < 3; ++i) {
       F_.coeffRef(Index::W + i, Index::Cg + j) += dW_dCg(i, j);
     }
-    for (int j = 0; j < 6; ++j) {
+  }
+  for (int j = 0; j < 6; ++j) {
+    for (int i = 0; i < 3; ++i) {
       F_.coeffRef(Index::V + i, Index::Ca + j) += dV_dCa(i, j);
     }
-#endif
   }
+#endif
 
   Mat3 dW_dng = -Mat3::Identity();
   Mat3 dV_dna = -R;
@@ -541,8 +546,8 @@ void Estimator::ComputeMotionJacobianAt(
 
   // jacobian w.r.t. noise
   G_.setZero();
-  for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < 3; ++j) {
+  for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < 3; ++i) {
       G_.coeffRef(Index::W + i, j) += dW_dng(i, j);
       G_.coeffRef(Index::V + i, 3 + j) += dV_dna(i, j);
       G_.coeffRef(Index::bg + i, 6 + j) += dbg_dnbg(i, j);
