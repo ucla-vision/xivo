@@ -467,44 +467,45 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
   X.Tsb += V * dt; //+ 0.5 * a * dt * dt;
   X.Vsb += (X.Rsb * accel_calib + X.Rg * g_) * dt;
   X.Rsb *= SO3::exp(gyro_calib * dt);
+  // X.Rsb = SO3::project(X.Rsb.matrix());
 }
 
 void Estimator::ComputeMotionJacobianAt(
     const State &X, const Eigen::Matrix<number_t, 6, 1> &gyro_accel) {
 
-  static Vec3 gyro = gyro_accel.head<3>();
-  static Vec3 accel = gyro_accel.tail<3>();
+  Vec3 gyro = gyro_accel.head<3>();
+  Vec3 accel = gyro_accel.tail<3>();
 
-  static Vec3 gyro_calib = imu_.Cg() * gyro - X.bg;   // \hat\omega in the doc
-  static Vec3 accel_calib = imu_.Ca() * accel - X.ba; // \hat\alpha in the doc
+  Vec3 gyro_calib = imu_.Cg() * gyro - X.bg;   // \hat\omega in the doc
+  Vec3 accel_calib = imu_.Ca() * accel - X.ba; // \hat\alpha in the doc
 
   // jacobian w.r.t. error state
-  static Mat3 R = X.Rsb.matrix();
+  Mat3 R = X.Rsb.matrix();
 
-  static Eigen::Matrix<number_t, 3, 9> dW_dCg;
+  Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {
     // NOTE: use the raw measurement (gyro) here. NOT the calibrated one
     // (gyro_calib)!!!
     dW_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
-  static Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  static Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
-  static Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
-  static Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
+  Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
+  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
+  Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
+  Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
-  static Mat3 dW_dW = -hat(gyro_calib);
+  Mat3 dW_dW = -hat(gyro_calib);
   // static Mat3 dW_dbg = -I3;
 
   // static Mat3 dT_dV = I3;
 
-  static Mat3 dV_dW = -R * hat(accel_calib);
-  static Mat3 dV_dba = -R;
+  Mat3 dV_dW = -R * hat(accel_calib);
+  Mat3 dV_dba = -R;
 
   // static Mat3 tmp = -R * hat(g_); // 3x3
   // Mat32 dV_dWg = tmp.block<3, 3>(0, 0); // 3x2
   
-  static Mat3 dV_dWg = -R * hat(g_);
+  Mat3 dV_dWg = -R * hat(g_);
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
@@ -550,12 +551,14 @@ void Estimator::ComputeMotionJacobianAt(
   // jacobian w.r.t. noise
   G_.setZero();
   for (int j = 0; j < 3; ++j) {
-    for (int i = 0; i < 3; ++i) {
-      G_.coeffRef(Index::V + i, 3 + j) = -R(i, j);  // dW_dna
-    }
+
     G_.coeffRef(Index::W + j, j) = -1;  // dW_dng
     G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
     G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
+
+    for (int i = 0; i < 3; ++i) {
+      G_.coeffRef(Index::V + i, 3 + j) = -R(i, j);  // dV_dna
+    }
   }
 }
 

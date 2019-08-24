@@ -51,14 +51,15 @@ This software is built and tested on Ubuntu 16.04 and 18.04 with compiler g++ 7.
 
 - [OpenCV][opencv]: Feature detection and tracking.
 - [Eigen][eigen]: Linear algebra.
-- [g2o][g2o]: Pose graph optimization.
 - [Pangolin][pangolin]: Lightweight visualization.
 - [abseil-cpp][absl]: General utilities.
-- [googletest][gtest]: Unit tests.
 - [glog][glog]: Logging.
 - [gflags][gflags]: Command-line options.
 - [jsoncpp][jsoncpp]: Configuration.
 - [pybind11][pybind11]: Python binding.
+- (optional) [googletest][gtest]: Unit tests.
+- (optional) [g2o][g2o]: To use pose graph optimization.
+- (optional) [ROS][ros]: To use in live mode with ROS.
 
 Dependencies are included in the `thirdparty` directory.
 
@@ -72,6 +73,7 @@ Dependencies are included in the `thirdparty` directory.
 [gflags]: https://github.com/gflags/gflags
 [jsoncpp]: https://github.com/open-source-parsers/jsoncpp
 [pybind11]: https://github.com/pybind/pybind11
+[ros]: https://www.ros.org/
 
 ## Build
 

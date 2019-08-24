@@ -60,8 +60,8 @@
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 0.0001,
-    "ba"  : 0.001,
+    "bg"  : 1e-5,
+    "ba"  : 1e-4,
     "Wbc" : 0.0001,
     "Tbc" : 0.001,
     "Wg"  : 3.01,
@@ -119,8 +119,8 @@
 
   // initial std on feature state
   "initial_z": 2.5, // meter
-  "initial_std_x": 3.5, // pixel
-  "initial_std_y": 3.5, // pixel
+  "initial_std_x": 1.5, // pixel
+  "initial_std_y": 1.5, // pixel
   "initial_std_z": 1.0,  // meter
 
   // std of visuale measurement, in pixels
