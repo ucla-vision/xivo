@@ -192,8 +192,8 @@
     "use_prediction": true,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 90,
-    "num_features_max": 120,
+    "num_features_min": 30,
+    "num_features_max": 60,
     "max_pixel_displacement": 64,
     "normalize": false,
 

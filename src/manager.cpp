@@ -104,20 +104,22 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     return f->status() == FeatureStatus::INSTATE;
   });
 
-  if (instate_features_.size() < kMaxFeature) {
+  if (instate_features_.size() < kMinFeature) {
+    int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
 
     // choose the instate-candidate criterion
     auto criterion =
-        vision_counter_ < 5 ? Criteria::Candidate : Criteria::CandidateStrict;
+      vision_counter_ < 5 ? Criteria::Candidate : Criteria::CandidateStrict;
     auto candidates = graph_.GetFeaturesIf(criterion);
 
     MakePtrVectorUnique(candidates);
     std::sort(candidates.begin(), candidates.end(),
-              Criteria::CandidateComparison);
+        Criteria::CandidateComparison);
 
     std::vector<FeaturePtr> bad_features;
+
     for (auto it = candidates.begin();
-         it != candidates.end() && instate_features_.size() < kMaxFeature;) {
+        it != candidates.end() && instate_features_.size() < kMinFeature;) {
 
       auto f = *it;
 
@@ -137,6 +139,13 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         }
       }
 
+      if (!f->ref()->instate() && free_slots <= 0) {
+        // If we turn this feature to instate, its reference group should
+        // also be instate, which out-number the available group slots ...
+        ++it;
+        continue;
+      }
+
       instate_features_.push_back(f);
       AddFeatureToState(f); // insert f to state vector and covariance
       if (!f->ref()->instate()) {
@@ -145,6 +154,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         CHECK(graph_.GetFeatureAdj(f).count(f->ref()->id()));
         // need to add reference group to state if it's not yet instate
         AddGroupToState(f->ref());
+        // use up one more free slot
+        --free_slots;
       }
     }
     DiscardFeatures(bad_features);

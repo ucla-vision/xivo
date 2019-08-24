@@ -83,8 +83,9 @@ constexpr int kMaxCameraIntrinsics =
 constexpr int kGroupSize = 6;
 constexpr int kFeatureSize = 3;
 
-constexpr int kMaxFeature = 20;
-constexpr int kMaxGroup = kMaxFeature;  // worst case, each feature is attached to a different reference group
+constexpr int kMaxFeature = 30;
+constexpr int kMinFeature = 20;
+constexpr int kMaxGroup = 10;  // NOTE: the number of features will also be limited by the number of groups
 
 constexpr int kGroupBegin = kCameraBegin + kMaxCameraIntrinsics;
 constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;
