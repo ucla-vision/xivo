@@ -39,7 +39,7 @@
 
 
   // gravity constant
-  "gravity": [0, 0, -9.8],
+  "gravity": [0, 0, -9.81],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],

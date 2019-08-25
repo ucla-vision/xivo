@@ -3,6 +3,8 @@
 #pragma once
 
 #include <ostream>
+#include <chrono>
+#include <memory>
 
 namespace xivo {
 
@@ -53,16 +55,31 @@ public:
   void Reset() {
     data_.clear();
   }
+  virtual ~Timer() = default;
 
-private:
+protected:
   std::chrono::nanoseconds SingleOccurrenceDuration(const std::string &event) const {
     auto tmp = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
         tmp - data_.at(event).latest);
   }
-private:
+
   std::unordered_map<std::string, Event> data_;
   std::string name_;
+};
+
+class GlobalTimer: public Timer {
+public:
+  static GlobalTimer* instance() {
+    if (!instance_) {
+      instance_ = std::unique_ptr<GlobalTimer>();
+    }
+    return instance_.get();
+  }
+
+private:
+  GlobalTimer(): Timer{"global"} {}
+  static std::unique_ptr<GlobalTimer> instance_;
 };
 
 }

@@ -111,32 +111,28 @@ pip install -r requirements.txt
 
 ## Evaluation
 
-### Algorithm categories
+### Algorithm Categories
 
 OKVIS and VINS-Mono are optimization based, ROVIO and Ours-XIVO are filtering based.
-OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into the category of ''direct'' methods where raw image patches are used.
-
-ROVIO uses IEKF (Iterative Extended Kalman Filter), intensity difference as innovation,
-update 12.25 ms with 25 features
-
+OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into the category of ''direct'' methods where photometric error instead of geometric error is directly minimized.
 
 
 ### Computational Cost
 
+We benchmark the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop machine equipped with an Intel Core i7 CPU @ 3.6 GHz. The table below shows the runtime of the feature processing and state update modules.
+
 | Module | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
-|:---       | :---:   | :---:       | :---:   | :---:  |
-| Feature detection \& matching   | 15ms | 20ms |  | 4 ms|
-| State update | 42ms | 50m | | 9 ms |
+|:---       | :---   | :---       | :---   | :---  |
+| Feature detection \& matching   | 15ms | 20ms | 1ms (only detection) | 4 ms|
+| State update | 42ms | 50m | 13ms | 9 ms |
 
 OKVIS and VINS-Mono perform iterative nonlinear least square for state estimation, and thus are much slower in the state update step.
 
-ROVIO is a ''direct'' method that instead of detect and match feature points as measurements, it skips the feature processing step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
-
-BUT ROVIO still detects features?
+ROVIO is a ''direct'' method that skips the feature matching step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
 
 ### Accuracy 
 
-The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems. Also, our system runs at more than 100 Hz on a desktop PC with a Core i7 6th gen CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
+The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems. Also, our system runs at more than 100 Hz on a Intel Core i7 CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
 
 
 | Sequence | length | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
