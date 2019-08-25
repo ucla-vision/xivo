@@ -114,8 +114,7 @@ pip install -r requirements.txt
 ### Algorithm categories
 
 OKVIS and VINS-Mono are optimization based, ROVIO and Ours-XIVO are filtering based.
-OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into "direct methods" where raw image patches are used.
-
+OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into the category of ''direct'' methods where raw image patches are used.
 
 ROVIO uses IEKF (Iterative Extended Kalman Filter), intensity difference as innovation,
 update 12.25 ms with 25 features
@@ -126,11 +125,14 @@ update 12.25 ms with 25 features
 
 | Module | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
 |:---       | :---:   | :---:       | :---:   | :---:  |
-| Image processing   | | 20ms |  | 3.61ms|
-| State update | | 50m | | 9.34ms |
+| Feature detection \& matching   | 15ms | 20ms |  | 4 ms|
+| State update | 42ms | 50m | | 9 ms |
 
-For OKVIS
+OKVIS and VINS-Mono perform iterative nonlinear least square for state estimation, and thus are much slower in the state update step.
 
+ROVIO is a ''direct'' method that instead of detect and match feature points as measurements, it skips the feature processing step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
+
+BUT ROVIO still detects features?
 
 ### Accuracy 
 
