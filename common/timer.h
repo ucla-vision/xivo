@@ -68,20 +68,6 @@ protected:
   std::string name_;
 };
 
-class GlobalTimer: public Timer {
-public:
-  static GlobalTimer* instance() {
-    if (!instance_) {
-      instance_ = std::unique_ptr<GlobalTimer>();
-    }
-    return instance_.get();
-  }
-
-private:
-  GlobalTimer(): Timer{"global"} {}
-  static std::unique_ptr<GlobalTimer> instance_;
-};
-
 }
 
 

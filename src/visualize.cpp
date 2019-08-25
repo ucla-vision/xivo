@@ -45,10 +45,13 @@ void Canvas::Draw(const FeaturePtr f) {
   }
 
   bool use_debug_view{ParameterServer::instance()->get("use_debug_view", false).asBool()};
+  bool draw_OOS{ParameterServer::instance()->get("draw_OOS", false).asBool()};
 
   auto pos(f->xp());
   cv::Scalar color;
-  if (f->track_status() == TrackStatus::TRACKED) {
+  if (f->track_status() == TrackStatus::TRACKED
+      && (f->instate() || draw_OOS) ) {
+
     Vec2 last_pos(f->front());
     for (auto pos : *f) {
       if (pos != f->xp()) {

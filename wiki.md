@@ -126,7 +126,7 @@ We benchmark the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop m
 | Module | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
 |:---       | :---   | :---       | :---   | :---  |
 | Feature detection \& matching   | 15ms | 20ms | 1ms (only detection) | 4 ms|
-| State update | 42ms | 50m | 13ms | 9 ms |
+| State update | 42ms | 50m | 13ms | 7 ms |
 
 OKVIS and VINS-Mono perform iterative nonlinear least square for state estimation, and thus are much slower in the state update step.
 

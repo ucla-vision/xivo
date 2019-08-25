@@ -8,15 +8,21 @@ namespace xivo {
 
 bool Criteria::Candidate(FeaturePtr f) {
   number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
-  return (f->status() == FeatureStatus::READY ||
+  bool good = (f->status() == FeatureStatus::READY ||
           f->status() == FeatureStatus::INITIALIZING) &&
          (f->outlier_counter() < max_outlier_counter);
+  // FIXME: use zmin, zmax parameters
+  good = good && (f->z() > 0.05 && f->z() < 5.0);
+  return good;
 }
 
 bool Criteria::CandidateStrict(FeaturePtr f) {
   number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
-  return f->status() == FeatureStatus::READY &&
+  bool good = f->status() == FeatureStatus::READY &&
          (f->outlier_counter() < max_outlier_counter);
+  // FIXME: use zmin, zmax parameters
+  good = good && (f->z() > 0.05 && f->z() < 5.0);
+  return good;
 }
 
 bool Criteria::CandidateComparison(FeaturePtr f1, FeaturePtr f2) {

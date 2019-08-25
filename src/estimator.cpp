@@ -311,7 +311,9 @@ void Estimator::Run() {
 }
 
 bool Estimator::Finished() {
+#ifndef NDEBUG
   CHECK(async_run_);
+#endif
   std::scoped_lock lck(buf_.mtx);
   return buf_.empty();
 }
@@ -399,8 +401,10 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
 }
 
 void Estimator::Propagate(bool visual_meas) {
+#ifndef NDEBUG
   CHECK(gravity_initialized_)
       << "state progagation with un-initialized imu module";
+#endif
 
   timer_.Tick("propagation");
 
@@ -596,13 +600,15 @@ void Estimator::UpdateSystemClock(const timestamp_t &now) {
 }
 
 void Estimator::RemoveGroupFromState(GroupPtr g) {
+#ifndef NDEBUG
   CHECK(g->instate()) << "free a group not instate";
   CHECK(g->sind() != -1) << "invalid state index";
+  CHECK(gsel_[g->sind()]) << "Group not in state?!";
+#endif
 
   VLOG(0) << "removing group #" << g->id();
   // change the covariance and error state
   int index = g->sind();
-  CHECK(gsel_[index]) << "Group not in state?!";
 
   gsel_[index] = false;
   g->SetSind(-1);
@@ -618,14 +624,16 @@ void Estimator::RemoveGroupFromState(GroupPtr g) {
 
 void Estimator::RemoveFeatureFromState(FeaturePtr f) {
 
+#ifndef NDEBUG
   CHECK((f->instate() && (f->track_status() == TrackStatus::REJECTED ||
                           f->track_status() == TrackStatus::DROPPED)) ||
         f->status() == FeatureStatus::REJECTED_BY_FILTER);
   CHECK(f->sind() != -1) << "invalid state index";
+  CHECK(fsel_[f->sind()]) << "Feature not in state?!";
+#endif
 
   VLOG(0) << "removing feature #" << f->id();
   int index = f->sind();
-  CHECK(fsel_[index]) << "Feature not in state?!";
 
   fsel_[index] = false;
   f->SetSind(-1);
@@ -639,8 +647,10 @@ void Estimator::RemoveFeatureFromState(FeaturePtr f) {
 }
 
 void Estimator::AddGroupToState(GroupPtr g) {
+#ifndef NDEBUG
   CHECK(!g->instate()) << "group already in state";
   CHECK(g->sind() == -1) << "group slot already allocated";
+#endif
 
   // change the covariance and error state
   int index;
@@ -676,8 +686,10 @@ void Estimator::AddGroupToState(GroupPtr g) {
 }
 
 void Estimator::AddFeatureToState(FeaturePtr f) {
+#ifndef NDEBUG
   CHECK(!f->instate()) << "feature already in state";
   CHECK(f->sind() == -1) << "feature slot already allocated";
+#endif
 
   // change the covariance and error state
   int index;
@@ -721,14 +733,18 @@ void Estimator::PrintErrorStateNorm() {
       err_.segment<3>(Index::ba).norm(), err_.segment<3>(Index::Wbc).norm(),
       err_.segment<3>(Index::Tbc).norm(), err_.segment<3>(Index::Wg).norm());
   for (auto g : instate_groups_) {
+#ifndef NDEBUG
     CHECK(gsel_[g->sind()]) << "instate group not actually instate";
+#endif
     VLOG(0) << absl::StrFormat(
         "g#%d |W|=%0.8f, |T|=%0.8f\n", g->id(),
         err_.segment<3>(kGroupBegin + 6 * g->sind()).norm(),
         err_.segment<3>(kGroupBegin + 6 * g->sind() + 3).norm());
   }
   for (auto f : instate_features_) {
+#ifndef NDEBUG
     CHECK(fsel_[f->sind()]) << "instate feature not yet instate";
+#endif
     VLOG(0) << absl::StrFormat(
         "f#%d |X|=%0.8f\n", f->id(),
         err_.segment<3>(kFeatureBegin + 3 * f->sind()).norm());
@@ -758,7 +774,9 @@ void Estimator::AbsorbError(const VecX &err) {
 
   // augmented state
   for (auto g : instate_groups_) {
+#ifndef NDEBUG
     CHECK(g->sind() != -1);
+#endif
     int offset = kGroupBegin + 6 * g->sind();
     g->UpdateState(err.segment<6>(offset));
 
@@ -768,7 +786,9 @@ void Estimator::AbsorbError(const VecX &err) {
     // }
   }
   for (auto f : instate_features_) {
+#ifndef NDEBUG
     CHECK(f->sind() != -1);
+#endif
     int offset = kFeatureBegin + 3 * f->sind();
     f->UpdateState(err.segment<3>(offset));
   }

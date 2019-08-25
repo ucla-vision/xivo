@@ -75,18 +75,18 @@ if __name__ == '__main__':
             estimator.VisualMeas(ts, content)
             estimator.Visualize()
 
-        now = estimator.now()
-        gsb = np.array(estimator.gsb())
-        Tsb = gsb[:, 3]
+            now = estimator.now()
+            gsb = np.array(estimator.gsb())
+            Tsb = gsb[:, 3]
 
-        # print gsb[:3, :3]
-        try:
-            q = mat2quat(gsb[:3, :3])  # [w, x, y, z]
-            # format compatible with tumvi rgbd benchmark scripts
-            results.append(
-                [now * 1e-9, Tsb[0], Tsb[1], Tsb[2], q[1], q[2], q[3], q[0]])
-        except np.linalg.linalg.LinAlgError:
-            pass
+            # print gsb[:3, :3]
+            try:
+                q = mat2quat(gsb[:3, :3])  # [w, x, y, z]
+                # format compatible with tumvi rgbd benchmark scripts
+                results.append(
+                    [now * 1e-9, Tsb[0], Tsb[1], Tsb[2], q[1], q[2], q[3], q[0]])
+            except np.linalg.linalg.LinAlgError:
+                pass
 
 
     np.savetxt(

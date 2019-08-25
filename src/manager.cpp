@@ -71,12 +71,16 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       }
       it = tracks.erase(it);
     } else {
+#ifndef NDEBUG
       CHECK(f->track_status() == TrackStatus::TRACKED);
+#endif
       if (f->instate()) {
         // instate feature being tracked -- use in measurement update later on
         ++it;
       } else {
+#ifndef NDEBUG
         CHECK(!f->instate());
+#endif
 
         // perform triangulation before
         if (triangulate_pre_subfilter_ && f->size() == 2) {
@@ -148,9 +152,11 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       instate_features_.push_back(f);
       AddFeatureToState(f); // insert f to state vector and covariance
       if (!f->ref()->instate()) {
+#ifndef NDEBUG
         CHECK(graph_.HasGroup(f->ref()));
         CHECK(graph_.GetGroupAdj(f->ref()).count(f->id()));
         CHECK(graph_.GetFeatureAdj(f).count(f->ref()->id()));
+#endif
         // need to add reference group to state if it's not yet instate
         AddGroupToState(f->ref());
         // use up one more free slot
@@ -189,7 +195,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // remove oos features
   for (auto f : oos_features_) {
+#ifndef NDEBUG
     CHECK(!f->instate());
+#endif
     graph_.RemoveFeature(f);
     Feature::Delete(f);
   }
@@ -211,7 +219,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   }
   // LOG(INFO) << "#rejected features=" << rejected_features.size();
   for (auto f : rejected_features) {
+#ifndef NDEBUG
     CHECK(f->ref() != nullptr);
+#endif
     affected_groups.insert(f->ref());
   }
   graph_.RemoveFeatures(rejected_features);
@@ -283,9 +293,11 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     // distinguish two cases:
     // 1) feature is truely just created
     // 2) feature just lost its reference
+#ifndef NDEBUG
     CHECK(f->track_status() == TrackStatus::CREATED &&
           f->status() == FeatureStatus::CREATED);
     CHECK(f->ref() == nullptr);
+#endif
     f->SetRef(g);
     f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
 
@@ -301,7 +313,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     return f->track_status() == TrackStatus::TRACKED;
   });
   for (auto f : tracked_features) {
+#ifndef NDEBUG
     CHECK(f->ref() != nullptr);
+#endif
 
     // attach the new group to all the features being tracked
     graph_.AddFeatureToGroup(f, g);
@@ -338,7 +352,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
             })) {
           // for groups which have no reference features, they cannot be instate
           // anyway
+#ifndef NDEBUG
           CHECK(!g->instate());
+#endif
 
           graph_.RemoveGroup(g);
           Group::Delete(g);

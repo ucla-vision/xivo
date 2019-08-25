@@ -2,10 +2,13 @@
   // verbose
   "simulation": false,
   "print_timing": true,
-  "print_bias_info": true,
   "use_canvas": true,
   "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
+
+  // visualization (tracker view) option
+  "print_bias_info": true,
+  "draw_OOS": false,
 
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
@@ -39,7 +42,7 @@
 
 
   // gravity constant
-  "gravity": [0, 0, -9.82912],
+  "gravity": [0, 0, -9.81],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],
@@ -108,12 +111,20 @@
   //   "accel_bias": 17.2e-5
   // },
 
-  // inflated by 3 times
+  // // inflated by 3 times
+  // "Qimu": {
+  //   "gyro": 24.0e-5,
+  //   "gyro_bias": 6.6e-6,
+  //   "accel": 4.2e-3,
+  //   "accel_bias": 25.8e-5
+  // },
+
+  // inflated by 10 times
   "Qimu": {
-    "gyro": 24.0e-5,
-    "gyro_bias": 6.6e-6,
-    "accel": 4.2e-3,
-    "accel_bias": 25.8e-5
+    "gyro": 8.0e-4,
+    "gyro_bias": 2.2e-5,
+    "accel":1.4e-2,
+    "accel_bias": 8.6e-4
   },
 
 
@@ -191,7 +202,7 @@
 
   "tracker_cfg": {
     "use_prediction": true,
-    "mask_size": 15,
+    "mask_size": 21,
     "margin": 8, // image boundary to mask out
     "num_features_min": 45,
     "num_features_max": 60,
