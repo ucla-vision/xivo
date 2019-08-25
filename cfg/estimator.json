@@ -71,7 +71,7 @@
     "td"  : 1e-5, // 1ms
     "Cg"  : 1e-5,
     "Ca"  : 1e-5,
-    "FC"  : 10,
+    "FC"  : 50,
     "distortion": 1e-3
   },
 
@@ -164,7 +164,7 @@
     "max_res_norm": 2.5 // maximal norm of per observation residuals
   },
 
-  "feature_P0_damping": 10.0, // 10.0 seems most appropriate
+  "feature_P0_damping": 1.0, // 10.0 seems most appropriate
 
   "imu_calib": {
     "Cas": [1, 1, 1],
