@@ -142,7 +142,6 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       if (!f->ref()->instate() && free_slots <= 0) {
         // If we turn this feature to instate, its reference group should
         // also be instate, which out-number the available group slots ...
-        ++it;
         continue;
       }
 

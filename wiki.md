@@ -111,6 +111,8 @@ pip install -r requirements.txt
 
 ## Evaluation
 
+TODO: overall observation here
+
 ### Algorithm Categories
 
 OKVIS and VINS-Mono are optimization based, ROVIO and Ours-XIVO are filtering based.
