@@ -42,7 +42,7 @@
 
 
   // gravity constant
-  "gravity": [0, 0, -9.81],
+  "gravity": [0, 0, -9.8],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],
@@ -67,11 +67,11 @@
     "ba"  : 1e-3,
     "Wbc" : 0.0001,
     "Tbc" : 0.001,
-    "Wg"  : 0.01,
+    "Wg"  : 3.01,
     "td"  : 1e-5, // 1ms
     "Cg"  : 1e-5,
     "Ca"  : 1e-5,
-    "FC"  : 50,
+    "FC"  : 10,
     "distortion": 1e-3
   },
 
@@ -111,27 +111,27 @@
   //   "accel_bias": 17.2e-5
   // },
 
-  // // inflated by 3 times
-  // "Qimu": {
-  //   "gyro": 24.0e-5,
-  //   "gyro_bias": 6.6e-6,
-  //   "accel": 4.2e-3,
-  //   "accel_bias": 25.8e-5
-  // },
-
-  // inflated by 10 times
+  // inflated by 3 times
   "Qimu": {
-    "gyro": 8.0e-4,
-    "gyro_bias": 2.2e-5,
-    "accel":1.4e-2,
-    "accel_bias": 8.6e-4
+    "gyro": 24.0e-5,
+    "gyro_bias": 6.6e-6,
+    "accel": 4.2e-3,
+    "accel_bias": 25.8e-5
   },
+
+  // // inflated by 10 times
+  // "Qimu": {
+  //   "gyro": 8.0e-4,
+  //   "gyro_bias": 2.2e-5,
+  //   "accel":1.4e-2,
+  //   "accel_bias": 8.6e-4
+  // },
 
 
   // initial std on feature state
   "initial_z": 2.5, // meter
-  "initial_std_x": 1.5, // pixel
-  "initial_std_y": 1.5, // pixel
+  "initial_std_x": 1.0, // pixel
+  "initial_std_y": 1.0, // pixel
   "initial_std_z": 1.0,  // meter
 
   // std of visuale measurement, in pixels
@@ -164,7 +164,7 @@
     "max_res_norm": 2.5 // maximal norm of per observation residuals
   },
 
-  "feature_P0_damping": 100.0, // 10.0 seems most appropriate
+  "feature_P0_damping": 10.0, // 10.0 seems most appropriate
 
   "imu_calib": {
     "Cas": [1, 1, 1],
