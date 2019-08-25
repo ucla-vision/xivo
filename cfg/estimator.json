@@ -39,7 +39,7 @@
 
 
   // gravity constant
-  "gravity": [0, 0, -9.81],
+  "gravity": [0, 0, -9.82912],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],
@@ -68,7 +68,7 @@
     "td"  : 1e-5, // 1ms
     "Cg"  : 1e-5,
     "Ca"  : 1e-5,
-    "FC"  : 10,
+    "FC"  : 50,
     "distortion": 1e-3
   },
 
@@ -150,10 +150,10 @@
     "max_iters": 5,
     "eps": 1e-3,
     "damping": 1e-3,
-    "max_res_norm": 2.0 // maximal norm of per observation residuals
+    "max_res_norm": 2.5 // maximal norm of per observation residuals
   },
 
-  "feature_P0_damping": 10.0, // 10.0 seems most appropriate
+  "feature_P0_damping": 100.0, // 10.0 seems most appropriate
 
   "imu_calib": {
     "Cas": [1, 1, 1],
@@ -193,8 +193,8 @@
     "use_prediction": true,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 90,
-    "num_features_max": 120,
+    "num_features_min": 45,
+    "num_features_max": 60,
     "max_pixel_displacement": 64,
     "normalize": false,
 
