@@ -104,7 +104,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     return f->status() == FeatureStatus::INSTATE;
   });
 
-  if (instate_features_.size() < kMinFeature) {
+  if (instate_features_.size() < kMaxFeature) {
     int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
 
     // choose the instate-candidate criterion
@@ -119,7 +119,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     std::vector<FeaturePtr> bad_features;
 
     for (auto it = candidates.begin();
-        it != candidates.end() && instate_features_.size() < kMinFeature;) {
+        it != candidates.end() && instate_features_.size() < kMaxFeature;) {
 
       auto f = *it;
 

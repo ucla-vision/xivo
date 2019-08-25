@@ -85,8 +85,8 @@ constexpr int kGroupSize = 6;
 constexpr int kFeatureSize = 3;
 
 constexpr int kMaxFeature = 30;
-constexpr int kMinFeature = 25;
-constexpr int kMaxGroup = 10;  // NOTE: the number of features will also be limited by the number of groups
+// constexpr int kMinFeature = 20;  // NOTE: the number of features will also be limited by the number of groups
+constexpr int kMaxGroup = 15;  // NOTE: the number of features will also be limited by the number of groups
 
 constexpr int kGroupBegin = kCameraBegin + kMaxCameraIntrinsics;
 constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;

@@ -64,7 +64,7 @@
     "ba"  : 1e-3,
     "Wbc" : 0.0001,
     "Tbc" : 0.001,
-    "Wg"  : 3.01,
+    "Wg"  : 0.01,
     "td"  : 1e-5, // 1ms
     "Cg"  : 1e-5,
     "Ca"  : 1e-5,
@@ -124,7 +124,7 @@
   "initial_std_z": 1.0,  // meter
 
   // std of visuale measurement, in pixels
-  "visual_meas_std":  2.5,
+  "visual_meas_std":  1.5,
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 5.0,
@@ -193,8 +193,8 @@
     "use_prediction": true,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 30,
-    "num_features_max": 45,
+    "num_features_min": 90,
+    "num_features_max": 120,
     "max_pixel_displacement": 64,
     "normalize": false,
 
