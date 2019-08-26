@@ -63,6 +63,8 @@ private:
 } // namespace internal
 
 class Estimator : public Component<Estimator, State> {
+  friend class internal::Visual;
+  friend class internal::Inertial;
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -72,11 +74,8 @@ public:
   void Run();
   // process inertial measurements
   void InertialMeas(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel);
-  void InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
-                            const Vec3 &accel);
   // perform tracking/matching to generate tracks
   void VisualMeas(const timestamp_t &ts, const cv::Mat &img);
-  void VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img);
 
   // accessors
   SE3 gbc() const { return SE3{X_.Rbc, X_.Tbc}; }
@@ -88,6 +87,11 @@ public:
 
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }
+
+  void InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
+                            const Vec3 &accel);
+
+  void VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img);
 
   // initialize gravity with initial stationary samples
   bool InitializeGravity();
@@ -228,7 +232,7 @@ private:
   // measurements buffer
   struct InternalBuffer
       : public std::vector<std::unique_ptr<internal::Message>> {
-    static constexpr int MAX_SIZE = 5;
+    static constexpr int MAX_SIZE = 10;
     InternalBuffer() : initialized{false} {}
     std::mutex mtx;
     bool initialized;

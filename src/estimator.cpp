@@ -34,11 +34,15 @@ void Inertial::Execute(Estimator *est) {
 void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
 } // namespace internal
 
+// destructor
 Estimator::~Estimator() {
   std::cout << "===== Auto-Calibration =====\n";
   std::cout << "Rbc=\n" << X_.Rbc << std::endl;
+  std::cout << "Wbc=" << SO3::log(X_.Rbc).transpose() << std::endl;
   std::cout << "Tbc=" << X_.Tbc.transpose() << std::endl;
   std::cout << "td=" << X_.td << std::endl;
+  std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
+  std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
 
   if (worker_) {
     worker_->join();
@@ -105,15 +109,17 @@ Estimator::Estimator(const Json::Value &cfg)
   // load imu calibration
   auto imu_calib = cfg_["imu_calib"];
   // load accel axis misalignment first as a 3x3 matrix
-  Mat3 Ca =
+  Mat3 Ka =
       GetMatrixFromJson<number_t, 3, 3>(imu_calib, "Car", JsonMatLayout::RowMajor);
-  // then overwrite the diagonal with scaling
-  Ca.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cas");
+  Mat3 Ta;  // accel scaling
+  Ta.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cas");
+  Mat3 Ca{Ta * Ka};
   // load gyro axis misalignment first as 3x3 matrix
-  Mat3 Cg =
+  Mat3 Kg =
       GetMatrixFromJson<number_t, 3, 3>(imu_calib, "Cgr", JsonMatLayout::RowMajor);
-  // hen overwrite the diagonal with scaling
-  Cg.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cgs");
+  Mat3 Tg;  // gyro scaling
+  Tg.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cgs");
+  Mat3 Cg{Tg * Kg};
   // now update the IMU component
   imu_ = IMU{Ca, Cg};
   LOG(INFO) << "Imu calibration loaded";
@@ -142,6 +148,16 @@ Estimator::Estimator(const Json::Value &cfg)
   X_.Vsb = GetVectorFromJson<number_t, 3>(X, "V");
   X_.bg = GetVectorFromJson<number_t, 3>(X, "bg");
   X_.ba = GetVectorFromJson<number_t, 3>(X, "ba");
+
+  if (cfg_.get("imu_tk_convention", false).asBool()) {
+    // For biases obtained by IMU-TK library,
+    // the calibrated meaurement is a_calib = K(a_raw + a_bias)
+    // whereas in our model a_calib=K * a_raw - a_bias
+    // thus we need convert that. 
+    X_.bg = -imu_.Cg() * X_.bg;
+    X_.ba = -imu_.Ca() * X_.ba;
+  }
+
   try {
     X_.Rbc = SO3::exp(GetVectorFromJson<number_t, 3>(X, "Wbc"));
   } catch (const Json::LogicError &e) {

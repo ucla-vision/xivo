@@ -5,6 +5,7 @@
   "use_canvas": true,
   "use_debug_view": true,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
+  "imu_tk_convention": true,
 
   // visualization (tracker view) option
   "print_bias_info": true,
@@ -48,30 +49,31 @@
     "W"   : [0, 0, 0],
     "T"   : [0, 0, 0],
     "V"   : [0, 0, 0],
-    "bg"  : [-0.05163, 0.0108186, 0.0188156],
-    "ba"  : [-0.00342173, -0.00861755, 0.0218768],
-    "Wbc" : [[0, 0, 1],
-             [-1, 0, 0],
-             [0, -1, 0]],
-    "Tbc": [0.0, 0.0, 0.0],
+
+    "bg"  : [-0.054323, 0.0132175, 0.0239967],
+    "ba"  : [-0.020052, -0.0302357, 0.052445],
+
+    "Wbc" : [-1.569, 1.428, -1.139],
+    "Tbc": [-0.15, -0.01, 0.01],
     "Wg"  : [0, 0, 0],
     "td"  : 0.0309
   },
 
   "P" : {
+    // to be precise, these are standard deviation
     "W"   : 0.0001,
     "T"   : 0.001,
-    "V"   : 0.001,
-    "bg"  : 0.001,
-    "ba"  : 0.01,
-    "Wbc" : 3.001,
-    "Tbc" : 0.01,
+    "V"   : 0.5,
+    "bg"  : 1e-5,
+    "ba"  : 1e-4,
+    "Wbc" : 0.01,
+    "Tbc" : 0.02,
     "Wg"  : 0.01,
     "td"  : 0, // 1e-3, // 1ms
-    "Cg"  : 0, //1e-5,
-    "Ca"  : 0, // 1e-5,
-    "FC"  : 50,
-    "distortion": 1e-3
+    "Cg"  : 5e-6,
+    "Ca"  : 5e-6,
+    "FC"  :  50,
+    "distortion": 5e-6
   },
 
   "Qmodel" : {
@@ -112,10 +114,10 @@
 
   // inflated by 3 times
   "Qimu": {
-    "gyro": 24.0e-5,
-    "gyro_bias": 6.6e-6,
-    "accel": 4.2e-3,
-    "accel_bias": 25.8e-5
+    "gyro": 0.0001,
+    "gyro_bias": 1e-4,
+    "accel": 0.04,
+    "accel_bias": 1e-4
   },
 
   // // inflated by 10 times
@@ -129,12 +131,12 @@
 
   // initial std on feature state
   "initial_z": 1.5, // meter
-  "initial_std_x": 1.0, // pixel
-  "initial_std_y": 1.0, // pixel
+  "initial_std_x": 1.5, // pixel
+  "initial_std_y": 1.5, // pixel
   "initial_std_z": 1.0,  // meter
 
   // std of visuale measurement, in pixels
-  "visual_meas_std":  3.5,
+  "visual_meas_std":  10.5,
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 5.0,
@@ -143,7 +145,7 @@
 
   // depth sub-filter setting
   "subfilter": {
-    "visual_meas_std":  3.5,
+    "visual_meas_std":  13.5,
     "ready_steps": 2,
     "MH_thresh": 58.991
   },
@@ -167,14 +169,14 @@
   "feature_P0_damping": 1.0, // 10.0 seems most appropriate
 
   "imu_calib": {
-    "Cas": [1.00056, 1.00062, 1.00136],
-    "Car": [[1, -0.000914275, -0.000414882], 
-            [0, 1, -0.0000350183], 
+    "Cas": [1.0006, 0.999813, 0.999727],
+    "Car": [[1, 0.00338124, -0.000695698], 
+            [0, 1, -4.07264e-5],
             [0, 0, 1]],
-    "Cgs": [0.999823, 1.00412, 0.987355],
-    "Cgr": [[1, -0.00224194, 0.0120628], 
-            [0.00306442, 1, -0.000998032], 
-            [0.00285738, -0.0154485, 1]]
+    "Cgs": [1.00545, 1.00405, 0.979816],
+    "Cgr": [[1, -0.0037559, -0.0385856],
+            [-0.000336565, 1, -0.0256083],
+            [0.00909891, -0.0108916, 1]]
   },
   "gravity_init_counter": 20,
 
@@ -206,8 +208,8 @@
     "use_prediction": false,
     "mask_size": 35,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 60,
+    "num_features_min": 90,
+    "num_features_max": 120,
     "max_pixel_displacement": 64,
     "normalize": false,
 
