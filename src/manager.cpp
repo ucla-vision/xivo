@@ -42,9 +42,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   for (auto it = tracks.begin(); it != tracks.end();) {
     auto f = *it;
 
-    if (use_canvas_) {
-      Canvas::instance()->Draw(f);
-    }
+    // if (use_canvas_) {
+    //   Canvas::instance()->Draw(f);
+    // }
 
     if (f->track_status() == TrackStatus::CREATED) {
       // just created, must not included in the graph yet
@@ -377,6 +377,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // }
 
   if (use_canvas_) {
+    for (auto f : tracks) 
+      Canvas::instance()->Draw(f);
+
     Canvas::instance()->OverlayStateInfo(X_);
   }
 

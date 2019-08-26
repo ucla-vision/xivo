@@ -10,7 +10,9 @@ int Group::counter_ = 0;
 ////////////////////////////////////////
 GroupPtr Group::Create(const SO3 &Rsb, const Vec3 &Tsb) {
   auto g = MemoryManager::instance()->GetGroup();
+#ifndef NDEBUG
   CHECK(g);
+#endif
   g->Reset(Rsb, Tsb);
   return g;
 }

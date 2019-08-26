@@ -91,10 +91,11 @@ RandomVector(number_t meanVal = 0.0, number_t stdVal = 1.0,
 
 /// \brief detect if any compoennt of a matrix is nan
 template <typename Derived> bool anynan(const Eigen::MatrixBase<Derived> &m) {
-  for (int i = 0; i < m.rows(); ++i)
-    for (int j = 0; j < m.cols(); ++j)
-      if (std::isnan(m(i, j)))
+  for (int i = 0; i < Derived::RowsAtCompileTime; ++i)
+    for (int j = 0; j < Derived::ColsAtCompileTime; ++j)
+      if (std::isnan(m(i, j))) {
         return true;
+      }
   return false;
 };
 

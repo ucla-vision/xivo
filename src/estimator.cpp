@@ -43,6 +43,12 @@ Estimator::~Estimator() {
 
 Estimator::Estimator(const Json::Value &cfg)
     : cfg_{cfg}, gauge_group_{-1}, worker_{nullptr}, timer_{"estimator"} {
+
+  // initialize paramter server
+  // so that other modules can use parameters right away
+  ParameterServer::Create(cfg_);
+  LOG(INFO) << "Parameter server created";
+
   // /////////////////////////////
   // Component flags
   // /////////////////////////////
@@ -64,6 +70,14 @@ Estimator::Estimator(const Json::Value &cfg)
   ransac_prob_ = cfg_.get("1pt_RANSAC_prob", 0.95).asDouble();
   ransac_Chi2_ = cfg_.get("1pt_RANSAC_Chi2", 5.89).asDouble();
 
+  // depth-initialization subfilter options
+  number_t tri_std = cfg_["subfilter"].get("visual_meas_std", 3.5).asDouble();
+  subfilter_options_.Rtri = tri_std * tri_std;
+  subfilter_options_.MH_thresh =
+      cfg_["subfilter"].get("MH_thresh", 5.991).asDouble();
+  subfilter_options_.ready_steps =
+      cfg_["subfilter"].get("ready_steps", 5).asInt();
+
   // depth optimization options
   use_depth_opt_ = cfg_.get("use_depth_opt", false).asBool();
   refinement_options_.two_view =
@@ -74,14 +88,7 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_["depth_opt"].get("damping", 1e-3).asDouble();
   refinement_options_.max_res_norm =
       cfg_["depth_opt"].get("max_res_norm", 2.0).asDouble();
-
-  // depth-initialization subfilter options
-  number_t tri_std = cfg_["subfilter"].get("visual_meas_std", 3.5).asDouble();
-  subfilter_options_.Rtri = tri_std * tri_std;
-  subfilter_options_.MH_thresh =
-      cfg_["subfilter"].get("MH_thresh", 5.991).asDouble();
-  subfilter_options_.ready_steps =
-      cfg_["subfilter"].get("ready_steps", 5).asInt();
+  refinement_options_.Rtri = subfilter_options_.Rtri;
 
   triangulate_pre_subfilter_ =
       cfg_.get("triangulate_pre_subfilter", false).asBool();
@@ -220,12 +227,6 @@ Estimator::Estimator(const Json::Value &cfg)
   MemoryManager::Create(cfg_["memory"].get("max_features", 256).asInt(),
                         cfg_["memory"].get("max_groups", 128).asInt());
   LOG(INFO) << "Memory management unit created";
-
-  // FIXME: better to make the usage consistent
-  // i.e., replace cfg_ with the parameter server totally
-  // initialize paramter server
-  ParameterServer::Create(cfg_);
-  LOG(INFO) << "Parameter server created";
 
   // initialize tracker
   auto tracker_cfg = cfg_["tracker_cfg"].isString()

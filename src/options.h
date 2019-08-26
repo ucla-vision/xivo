@@ -16,6 +16,7 @@ struct RefinementOptions {
   number_t eps;          // epsilon tolerance to stop optimization
   number_t damping;      // optional damping factor
   number_t max_res_norm; // maximal per observation residual norm
+  number_t Rtri;  // measuremnt covariance for depth triangulation 
 };
 
 // depth subfilter options

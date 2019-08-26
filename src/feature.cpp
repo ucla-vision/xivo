@@ -21,7 +21,9 @@ JacobianCache Feature::cache_ = {};
 ////////////////////////////////////////
 FeaturePtr Feature::Create(number_t x, number_t y) {
   auto f = MemoryManager::instance()->GetFeature();
+#ifndef NDEBUG
   CHECK(f);
+#endif
   f->Reset(x, y);
   return f;
 }
@@ -65,7 +67,9 @@ Vec3 Feature::Xc(Mat3 *J) {
 
 Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) {
   // Rsb * (Rbc*Xc + Tbc) + Tsb
+#ifndef NDEBUG
   CHECK(ref_) << "feature #" << id_ << " null ref";
+#endif
   SE3 gsc = ref_->gsb() * gbc;
   Xs_ = gsc * Xc(J); // J = dXc_dx, where x is the local parametrization
   if (J) {
@@ -87,8 +91,10 @@ number_t Feature::z() const {
 bool Feature::instate() const { return status_ == FeatureStatus::INSTATE; }
 
 number_t Feature::score() const {
+#ifndef NDEBUG
   CHECK(!instate())
       << "score function should only be called for feature not-instate yet";
+#endif
   // TODO: come up with better scoring
   // confidence (negative uncertainty) in depth as score
   // return -P_(0, 0) * P_(1, 1) * P_(2, 2);
@@ -115,7 +121,9 @@ void Feature::Initialize(number_t z0, const Vec3 &std_xyz) {
 }
 
 void Feature::SetRef(GroupPtr ref) {
+#ifndef NDEBUG
   CHECK(ref_ == nullptr) << "reference already set!";
+#endif
   // be very careful when reset references
   VLOG(0) << "ref group# " << ref->id() << " -> feature #" << id_;
   ref_ = ref;
@@ -139,9 +147,11 @@ void Feature::ResetRef(GroupPtr nref) {
 void Feature::SubfilterUpdate(const SE3 &gsb, const SE3 &gbc,
                               const SubfilterOptions &options) {
 
+#ifndef NDEBUG
   CHECK(track_status() == TrackStatus::TRACKED);
   CHECK(status_ == FeatureStatus::INITIALIZING ||
         status_ == FeatureStatus::READY);
+#endif
 
   init_counter_++;
   // depth sub-filter update
@@ -164,7 +174,7 @@ void Feature::SubfilterUpdate(const SE3 &gsb, const SE3 &gbc,
   S(0, 0) += Rtri;
   S(1, 1) += Rtri;
 
-  number_t ratio{inn.dot(S.llt().solve(inn)) / options.MH_thresh};
+  number_t ratio{inn.dot(S.ldlt().solve(inn)) / options.MH_thresh};
 
   if (ratio > 1) {
     S(0, 0) += Rtri * (ratio - 1);
@@ -203,16 +213,21 @@ bool Feature::RefineDepth(const SE3 &gbc,
     views = observations;
   }
 
-  Mat3 FtF;
-  Vec3 Ftr;           // F.transpose() * residual
+  Mat3 H, H0; // F'* invC *F, where F is measurement Jacobian, invC is inverse of measurement covariance
+  Vec3 b;           // F' * invC * residual
+
   number_t res_norm0{0}; // norm of residual corresponding to optimal state
+  // information matrix
+  Mat2 invC;
+  invC(0, 0) = 1. / options.Rtri;
+  invC(1, 1) = 1. / options.Rtri;
 
   for (int iter = 0; iter < options.max_iters; ++iter) {
     Mat3 dXs_dx;
     Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
 
-    FtF.setZero();
-    Ftr.setZero();
+    H.setZero();
+    b.setZero();
     number_t res_norm{0};
 
     for (const auto &obs : views) {
@@ -234,11 +249,11 @@ bool Feature::RefineDepth(const SE3 &gbc,
       Mat23 dxp_dx = dxp_dxcn * dxcn_dXcn * dXcn_dx;
       // std::cout << dxp_dx << std::endl;
 
-      FtF += dxp_dx.transpose() * dxp_dx;
+      H += (dxp_dx.transpose() * invC * dxp_dx) / (views.size() - 1);
       Vec2 res = obs.xp - xp;
-      Ftr += dxp_dx.transpose() * res;
+      b += dxp_dx.transpose() * invC * res / (views.size() - 1);
 
-      res_norm += res.norm();
+      res_norm += res.norm() / (views.size() - 1);
     }
 
     if (iter > 0 && res_norm > res_norm0) {
@@ -250,7 +265,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
     VLOG_IF(0, iter > 0) << absl::StrFormat("iter=%d; |res|:%0.4f->%0.4f", iter,
                                             res_norm0, res_norm);
 
-    Vec3 delta = FtF.ldlt().solve(Ftr);
+    Vec3 delta = H.ldlt().solve(b);
     BackupState();
     x_ += delta;
     res_norm0 = res_norm;
@@ -261,13 +276,21 @@ bool Feature::RefineDepth(const SE3 &gbc,
     }
   }
 
-  if (auto res_norm_per_obs{res_norm0 / observations.size()};
-      res_norm_per_obs > options.max_res_norm) {
+  if (res_norm0 > options.max_res_norm) {
     VLOG(0) << absl::StrFormat("feature #%d; status=%d; |res|=%f\n", id_,
-                               as_integer(status_), res_norm_per_obs);
+                               as_integer(status_), res_norm0);
     return false;
   } else {
-    return true;
+    // std::cout << "H=\n" << H << std::endl;
+    // std::cout << "H.inv=\n" << H.inverse() << std::endl;
+    // std::cout << "P=\n" << P_ << std::endl;
+    auto Hinv = H.inverse();
+    if (anynan(Hinv)) {
+      return false;
+    } else {
+      P_ = Hinv;
+      return true;
+    }
   }
 }
 
@@ -349,8 +372,11 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 #endif
   J_.block<2, 3>(0, Index::bg) = cache_.dxp_dXcn * cache_.dXcn_dbg;
 #endif
+
+#ifndef NDEBUG
   CHECK(ref_->sind() != -1);
   CHECK(sind() != -1);
+#endif
   int goff = kGroupBegin + 6 * ref_->sind();
   int foff = kFeatureBegin + 3 * sind();
 
@@ -399,7 +425,9 @@ void Feature::FillJacobianBlock(MatX &H, int offset) {
 
 void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
                           const TriangulateOptions &options) {
+#ifndef NDEBUG
   CHECK(size() == 2);
+#endif
   Vec2 xc1 = CameraManager::instance()->UnProject(front());
   Vec2 xc2 = CameraManager::instance()->UnProject(back());
   SE3 g12 = (ref_->gsb() * gbc).inv() * (gsb * gbc);
