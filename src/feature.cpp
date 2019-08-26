@@ -280,18 +280,44 @@ bool Feature::RefineDepth(const SE3 &gbc,
     VLOG(0) << absl::StrFormat("feature #%d; status=%d; |res|=%f\n", id_,
                                as_integer(status_), res_norm0);
     return false;
-  } else {
+  } 
     // std::cout << "H=\n" << H << std::endl;
     // std::cout << "H.inv=\n" << H.inverse() << std::endl;
     // std::cout << "P=\n" << P_ << std::endl;
+
+  if (options.use_hessian) {
     auto Hinv = H.inverse();
-    if (anynan(Hinv)) {
-      return false;
-    } else {
-      P_ = Hinv;
-      return true;
+    if (anynan(Hinv)) return false;
+    P_ = Hinv;
+
+#ifdef APPROXIMATE_INIT_CORRELATION
+    // compute correlation blocks
+    Mat3 dXs_dx;
+    Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
+    for (const auto &obs : views) {
+      SE3 g_cn_s = (obs.g->gsb() * gbc).inv(); // spatial -> camera new
+      Vec3 Xcn = g_cn_s * Xs; // alias: gtot = g_cn_s
+      // Mat3 dXc_dXs = gcs.rotation();
+      Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
+
+      Mat23 dxcn_dXcn;
+      Vec2 xcn = project(Xcn, &dxcn_dXcn);
+
+      Mat2 dxp_dxcn;
+      Vec2 xp = Camera::instance()->Project(xcn, &dxp_dxcn);
+
+      Mat23 dxp_dx = dxp_dxcn * dxcn_dXcn * dXcn_dx;
+      // std::cout << dxp_dx << std::endl;
+
+      H += (dxp_dx.transpose() * invC * dxp_dx) / (views.size() - 1);
+      Vec2 res = obs.xp - xp;
+      b += dxp_dx.transpose() * invC * res / (views.size() - 1);
+
+      res_norm += res.norm() / (views.size() - 1);
     }
+#endif
   }
+  return true;
 }
 
 void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,

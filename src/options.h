@@ -8,10 +8,11 @@ namespace xivo {
 // depth refinement options
 struct RefinementOptions {
   RefinementOptions()
-      : two_view{false}, max_iters{5}, eps{1e-5}, damping{1e-3},
+      : two_view{false}, use_hessian{false}, max_iters{5}, eps{1e-5}, damping{1e-3},
         max_res_norm{5.0} {}
 
   bool two_view;
+  bool use_hessian; // overwrite feature covariance with inverse of Hessian from depth refinement
   int max_iters;      // maximal iterations to perform
   number_t eps;          // epsilon tolerance to stop optimization
   number_t damping;      // optional damping factor

@@ -158,6 +158,7 @@
 
   "depth_opt": {
     "two_view": false,
+    "use_hessian": true,
     "max_iters": 5,
     "eps": 1e-3,
     "damping": 1e-3,
