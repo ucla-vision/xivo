@@ -202,8 +202,8 @@
   "1pt_RANSAC_Chi2": 5.89,
 
   "tracker_cfg": {
-    "use_prediction": true,
-    "mask_size": 21,
+    "use_prediction": false,
+    "mask_size": 15,
     "margin": 8, // image boundary to mask out
     "num_features_min": 45,
     "num_features_max": 60,
