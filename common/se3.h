@@ -2,6 +2,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 
+#include <ostream>
 #include "rodrigues.h"
 
 namespace xivo {
@@ -75,6 +76,11 @@ public:
 
   // conversion to 3x3 matrix
   operator Eigen::Matrix<Type, 3, 3>() const { return R_.matrix(); }
+
+  friend std::ostream& operator<<(std::ostream& os, const SO3Type& so3) {
+    os << so3.matrix();
+    return os;
+  }
 
 private:
   Mat3 R_;
@@ -172,6 +178,11 @@ public:
     Eigen::Matrix<Type, 3, 3> R = Rin.template cast<Type>();
     Eigen::Matrix<Type, 3, 1> T = Tin.template cast<Type>();
     return SE3Type(R, T);
+  }
+
+  friend std::ostream& operator<<(std::ostream &os, const SE3Type& se3) {
+    os << se3.matrix3x4();
+    return os;
   }
 
 private:

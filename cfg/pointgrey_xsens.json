@@ -1,0 +1,286 @@
+{
+  // verbose
+  "simulation": false,
+  "print_timing": true,
+  "use_canvas": true,
+  "use_debug_view": true,  // draw rejected & dropped features on canvas
+  "async_run": false, // turn this off in benchmarking
+
+  // visualization (tracker view) option
+  "print_bias_info": true,
+  "draw_OOS": false,
+
+  // algorithmic-level knobs
+  "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
+  "use_OOS": false, // update with Out-Of-State features
+  "use_depth_opt": false,  // depth optimization
+  "use_MH_gating": false,
+  "use_1pt_RANSAC": false,   
+  "use_compression": true,  // measurement compression
+  "triangulate_pre_subfilter": true,
+  "compression_trigger_ratio": 1.5,
+  "max_group_lifetime": 60,
+
+  "PrinceDormand": {
+    "control_stepsize": false,
+    "tolerance": 1e-15,
+    "attempts": 12,
+    "min_scale_factor": 0.125,
+    "max_scale_factor": 4.0,
+    "stepsize": 0.002
+  },
+
+  "RK4": {
+    "stepsize": 0.002
+  },
+
+  // memory
+  "memory": {
+    "max_features": 256,
+    "max_groups": 256  // max groups should increase as allowed group lifetime increases
+  },
+
+
+  // gravity constant
+  "gravity": [0, 0, -9.8],
+  // Initial State
+  "X" : {
+    "W"   : [0, 0, 0],
+    "T"   : [0, 0, 0],
+    "V"   : [0, 0, 0],
+    "bg"  : [-0.05163, 0.0108186, 0.0188156],
+    "ba"  : [-0.00342173, -0.00861755, 0.0218768],
+    "Wbc" : [[0, 0, 1],
+             [-1, 0, 0],
+             [0, -1, 0]],
+    "Tbc": [0.0, 0.0, 0.0],
+    "Wg"  : [0, 0, 0],
+    "td"  : 0.0309
+  },
+
+  "P" : {
+    "W"   : 0.0001,
+    "T"   : 0.001,
+    "V"   : 0.001,
+    "bg"  : 0.001,
+    "ba"  : 0.01,
+    "Wbc" : 3.001,
+    "Tbc" : 0.01,
+    "Wg"  : 0.01,
+    "td"  : 0, // 1e-3, // 1ms
+    "Cg"  : 0, //1e-5,
+    "Ca"  : 0, // 1e-5,
+    "FC"  : 50,
+    "distortion": 1e-3
+  },
+
+  "Qmodel" : {
+    "W"   : 0,
+    "T"   : 0.0,
+    "V"   : 0.0,
+    "wb"  : 0.0000,
+    "ab"  : 0.000,
+    "Wbc" : 0,
+    "Tbc" : 0.0,
+    "Wg"  : 0
+  },
+
+  // // exact densities provided by TUM-VI dataset
+  // // https://vision.in.tum.de/data/datasets/visual-inertial-dataset
+  // "Qimu": {
+  //   "gyro": 8.0e-5,
+  //   "gyro_bias": 2.2e-6,
+  //   "accel":1.4e-3,
+  //   "accel_bias": 8.6e-5
+  // },
+
+  // // inflated by sqrt(3) times 
+  // "Qimu": {
+  //   "gyro": 14.0e-5,
+  //   "gyro_bias": 3.8e-6,
+  //   "accel": 2.4e-3,
+  //   "accel_bias": 14.9e-5
+  // },
+
+  // // doubled 
+  // "Qimu": {
+  //   "gyro": 16.0e-5,
+  //   "gyro_bias": 4.4e-6,
+  //   "accel":2.8e-3,
+  //   "accel_bias": 17.2e-5
+  // },
+
+  // inflated by 3 times
+  "Qimu": {
+    "gyro": 24.0e-5,
+    "gyro_bias": 6.6e-6,
+    "accel": 4.2e-3,
+    "accel_bias": 25.8e-5
+  },
+
+  // // inflated by 10 times
+  // "Qimu": {
+  //   "gyro": 8.0e-4,
+  //   "gyro_bias": 2.2e-5,
+  //   "accel":1.4e-2,
+  //   "accel_bias": 8.6e-4
+  // },
+
+
+  // initial std on feature state
+  "initial_z": 1.5, // meter
+  "initial_std_x": 1.0, // pixel
+  "initial_std_y": 1.0, // pixel
+  "initial_std_z": 1.0,  // meter
+
+  // std of visuale measurement, in pixels
+  "visual_meas_std":  3.5,
+  "outlier_thresh": 1.1,
+  "oos_meas_std": 3.5,
+  "max_depth": 5.0,
+  "min_depth": 0.05,
+
+
+  // depth sub-filter setting
+  "subfilter": {
+    "visual_meas_std":  3.5,
+    "ready_steps": 2,
+    "MH_thresh": 58.991
+  },
+
+  // pre-subfilter triangulation options
+  "triangulation": {
+    "method": 1,
+    "zmin": 0.05,
+    "zmax": 5.0
+  },
+
+  "depth_opt": {
+    "two_view": false,
+    "use_hessian": true,
+    "max_iters": 5,
+    "eps": 1e-3,
+    "damping": 1e-3,
+    "max_res_norm": 2.5 // maximal norm of per observation residuals
+  },
+
+  "feature_P0_damping": 1.0, // 10.0 seems most appropriate
+
+  "imu_calib": {
+    "Cas": [1.00056, 1.00062, 1.00136],
+    "Car": [[1, -0.000914275, -0.000414882], 
+            [0, 1, -0.0000350183], 
+            [0, 0, 1]],
+    "Cgs": [0.999823, 1.00412, 0.987355],
+    "Cgr": [[1, -0.00224194, 0.0120628], 
+            [0.00306442, 1, -0.000998032], 
+            [0.00285738, -0.0154485, 1]]
+  },
+  "gravity_init_counter": 20,
+
+  "camera_cfg": {
+    "model": "equidistant",
+    "rows": 500, 
+    "cols": 960,
+
+    "fx": 401.0800303194151, 
+    "fy": 394.0526819089363, 
+    "cx": 488.2662380826424, 
+    "cy": 252.10591709202782,
+    "k0123": [-0.03967313852932258, 0.6342817994728427, -0.6661106116097131, 0.26908730180381796],
+
+    "max_iter": 15,
+    "comment": "pointgrey"
+  },
+
+  "min_inliers": 5, // minimum number of inlier measurements
+
+  "MH_thresh": 55.991, // 8.991
+  "MH_adjust_factor": 1.15,
+
+  "1pt_RANSAC_thresh": 1.5,
+  "1pt_RANSAC_prob": 0.95,
+  "1pt_RANSAC_Chi2": 5.89,
+
+  "tracker_cfg": {
+    "use_prediction": false,
+    "mask_size": 35,
+    "margin": 8, // image boundary to mask out
+    "num_features_min": 45,
+    "num_features_max": 60,
+    "max_pixel_displacement": 64,
+    "normalize": false,
+
+    "KLT": {
+      "win_size": 15,
+      "max_level": 5,
+      "max_iter": 30,
+      "eps": 0.01
+    },
+
+    "extract_descriptor": false,
+    "descriptor_distance_thresh": -1, // -1 to disable descriptor check
+    "default_descriptor": "BRIEF",
+
+    // "detector": "BRISK",
+    "detector": "FAST",
+    // "detector": "ORB",
+    // "detector": "AGAST",
+    // "detector": "GFTT",
+
+    "FAST": {
+      // https://docs.opencv.org/3.4/df/d74/classcv_1_1FastFeatureDetector.html
+      "threshold": 20,
+      "nonmaxSuppression": true
+    },
+
+    "BRISK": {
+      // https://docs.opencv.org/3.4/de/dbf/classcv_1_1BRISK.html
+      "thresh": 25,
+      "octaves": 3,
+      "patternScale": 1.0
+    },
+
+    "ORB": {
+      // https://docs.opencv.org/3.3.0/db/d95/classcv_1_1ORB.html
+      "nfeatures": 500,
+      "scaleFactor": 1.2,
+      "nlevels": 4,
+      "edgeThreshold": 31,
+      "firstLevel": 0,
+      "WTA_K": 2,
+      "patchSize": 31,
+      "fastThreshold": 20
+    },
+
+    "AGAST": {
+      // https://docs.opencv.org/3.4/d7/d19/classcv_1_1AgastFeatureDetector.html
+      "threshold": 10,
+      "nonmaxSuppression": true
+    },
+
+    "GFTT": {
+      // Good Feature To Track 
+      // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
+      "maxCorners": 1000,
+      "qualityLevel": 0.01,
+      "minDistance": 1.0,
+      "blockSize": 3,
+      "useHarrisDetector": false,
+      "k": 0.04
+    },
+
+    "BRIEF": {
+      "bytes": 64,
+      "use_orientation": false
+    },
+
+    "FREAK": {
+      "orientationNormalized": true,
+      "scaleNormalized": true,
+      "patternScale": 22.0,
+      "nOctaves": 4
+    }
+  } 
+
+}

@@ -141,6 +141,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
           // FIXME: if not observation, should also skip
           ++it;
         }
+      } else {
+        ++it;
       }
 
       if (!f->ref()->instate() && free_slots <= 0) {

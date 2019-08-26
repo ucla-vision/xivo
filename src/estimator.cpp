@@ -35,6 +35,11 @@ void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
 } // namespace internal
 
 Estimator::~Estimator() {
+  std::cout << "===== Auto-Calibration =====\n";
+  std::cout << "Rbc=\n" << X_.Rbc << std::endl;
+  std::cout << "Tbc=" << X_.Tbc.transpose() << std::endl;
+  std::cout << "td=" << X_.td << std::endl;
+
   if (worker_) {
     worker_->join();
     delete worker_;
