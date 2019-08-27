@@ -28,7 +28,7 @@
     "attempts": 12,
     "min_scale_factor": 0.125,
     "max_scale_factor": 4.0,
-    "stepsize": 0.004
+    "stepsize": -1
   },
 
   "RK4": {
@@ -43,7 +43,7 @@
 
 
   // gravity constant
-  "gravity": [0, 0, -9.8],
+  "gravity": [0, 0, -9.796],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],
@@ -56,6 +56,9 @@
     "Wbc" : [-1.38, 1.37, -1.14],
     "Tbc": [-0.1475, -0.0172, 0.0050],  
 
+    // From Corvis
+    // "Tbc": [-0.07, -0.00, 0.10],  
+
     "Wg"  : [0, 0, 0],
     "td"  : 0.0309
   },
@@ -65,14 +68,14 @@
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 3e-3,
-    "ba"  : 2e-2,
-    "Wbc" : 0.01,
-    "Tbc" : 0.001,
+    "bg"  : 3e-4,
+    "ba"  : 3e-3,
+    "Wbc" : 0.1,
+    "Tbc" : 0.02,
     "Wg"  : 0.01,
-    "td"  : 1e-3, // 1ms
-    "Cg"  : 5e-3,
-    "Ca"  : 5e-3,
+    "td"  : 1e-4, // 1ms
+    "Cg"  : 5e-6,
+    "Ca"  : 5e-6,
     "FC"  :  50, // 50,
     "distortion": 0.1 // 5e-6
   },
@@ -109,7 +112,7 @@
   "Qimu": {
     "gyro": 0.003, // 1e-5 in Corvis
     "gyro_bias": 0,
-    "accel": 0.02,  // 0.004 in Corvis
+    "accel": 0.01,  // 0.004 in Corvis
     "accel_bias": 0
   },
 
