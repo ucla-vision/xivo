@@ -488,8 +488,8 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
   Vec3 gyro = gyro_accel.head<3>();
   Vec3 accel = gyro_accel.tail<3>();
 
-  Vec3 gyro_calib = imu_.Ca() * gyro - X.bg;
-  Vec3 accel_calib = imu_.Cg() * accel - X.ba;
+  Vec3 gyro_calib = imu_.Cg() * gyro - X.bg;
+  Vec3 accel_calib = imu_.Ca() * accel - X.ba;
 
   // integrate the nominal state
   X.Tsb += V * dt; //+ 0.5 * a * dt * dt;
