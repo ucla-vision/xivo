@@ -29,10 +29,10 @@ int main(int argc, char** argv)
   
   MultiPosCalibration mp_calib;
     
-  mp_calib.setInitStaticIntervalDuration(40.0);
+  mp_calib.setInitStaticIntervalDuration(50.0);
   mp_calib.setInitAccCalibration( init_acc_calib );
   mp_calib.setInitGyroCalibration( init_gyro_calib );  
-  mp_calib.setGravityMagnitude(9.80);  // gravity at los angeles
+  mp_calib.setGravityMagnitude(9.796);  // gravity at los angeles
   mp_calib.enableVerboseOutput(true);
   mp_calib.enableAccUseMeans(false);
   //mp_calib.setGyroDataPeriod(0.01);
