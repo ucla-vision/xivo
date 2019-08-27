@@ -54,15 +54,19 @@
 
     "bg": [-0.054323, 0.0132175, 0.0239967],
 
-    "Wbc" : [-1.00, 1.00, -1.12],
+    // "Wbc" : [-1.00, 1.00, -1.12],
     // "Wbc" : [-0.78, 1.41, -0.45],
-    "Tbc": [-0.1475, -0.0172, 0.0050],  
+    "Wbc" : [-0.50, 1.40, 0.40],
+
+    // "Tbc": [-0.1475, -0.0172, 0.0050],  
+    // "Tbc": [0, 0, 0],
 
     // From Corvis
     // "Tbc": [-0.15, -0.00, 0.10],  
+    "Tbc": [0.08, 0.09, -0.11],  
 
     "Wg"  : [0, 0, 0],
-    "td"  : 0.0167
+    "td"  : 0.00 // 0.0167
   },
 
   "P" : {
@@ -72,7 +76,7 @@
     "V"   : 0.5,
     "bg"  : 3e-4,
     "ba"  : 3e-3,
-    "Wbc" : 1.1,
+    "Wbc" : 0.1,
     "Tbc" : 0.01,
     "Wg"  : 0.01,
     "td"  : 1e-4, // 1ms
@@ -93,32 +97,22 @@
     "Wg"  : 0
   },
 
-  // noise densities from the MTi data sheet
-  // http://wiki.icub.org/images/8/82/XsensMtx.pdf
+  // noise densities obtained by using the Allan toolkit from
+  // https://github.com/GAVLab/allan_variance
   // "Qimu": {
-  //   "gyro": 1.7e-3,
-  //   "gyro_bias": 0.087,
-  //   "accel": 1e-3,
-  //   "accel_bias": 0.02
+  //   "gyro": [0.000741, 0.000744, 0.000789],
+  //   "gyro_bias": [0.000172, 0.000127, 0.000193],
+  //   "accel": [0.000963, 0.00107, 0.00114],
+  //   "accel_bias": [0.000391, 0.000478, 0.000241]
   // },
 
-  // // inflated by 3
-  // "Qimu": {
-  //   "gyro": 5.1e-3,
-  //   "gyro_bias": 0.261,
-  //   "accel": 3e-3,
-  //   "accel_bias": 0.06
-  // },
-
-  // densities from data sheet, bias 
+  // inflated by 3
   "Qimu": {
-    "gyro": 0.003, // 1e-5 in Corvis
-    "gyro_bias": 0,
-    "accel": 0.01,  // 0.004 in Corvis
-    "accel_bias": 0
+    "gyro": 0.003,
+    "gyro_bias": 0.0006,
+    "accel": 0.003,
+    "accel_bias": 0.0015
   },
-
-
 
   // initial std on feature state
   "initial_z": 2.5, // meter
