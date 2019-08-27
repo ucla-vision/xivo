@@ -80,6 +80,7 @@
     <node pkg="xsens_driver" type="mtnode.py" name="xsens_driver" output="screen" launch-prefix="nice -n -15">
       <param name="frame_id" value="/imu" />
       <param name="timeout" value="0.002" />
+      <param name="baudrate" value="921600" />
     </node>
   </group>
 
