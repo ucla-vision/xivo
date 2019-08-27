@@ -18,7 +18,7 @@
   "use_MH_gating": false,
   "use_1pt_RANSAC": false,   
   "use_compression": true,  // measurement compression
-  "triangulate_pre_subfilter": false,
+  "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
   "max_group_lifetime": 60,
 
@@ -28,7 +28,7 @@
     "attempts": 12,
     "min_scale_factor": 0.125,
     "max_scale_factor": 4.0,
-    "stepsize": 0.004
+    "stepsize": 0.002
   },
 
   "RK4": {
@@ -50,14 +50,15 @@
     "T"   : [0, 0, 0],
     "V"   : [0, 0, 0],
 
-    "ba": [-0.00342173, -0.00861755, 0.0218768],
-    "bg": [-0.05163, 0.0108186, 0.0188156],
+    // "bg"  : [-0.0616584, -0.00444514, 9.13742e-05],
+    // "ba"  : [0.0420552, -0.0056537, -0.147421],
+    "bg"  : [0, 0, 0],
+    "ba"  : [0, 0, 0],
 
-    "Wbc" : [-1.38, 1.37, -1.14],
-    "Tbc": [-0.1475, -0.0172, 0.0050],  
-
+    "Wbc" : [1.21, 1.13, 1.19],
+    "Tbc": [-0.05, 0.0, 0.0],
     "Wg"  : [0, 0, 0],
-    "td"  : 0.0309
+    "td"  : 0.0
   },
 
   "P" : {
@@ -65,16 +66,16 @@
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 3e-3,
-    "ba"  : 2e-2,
-    "Wbc" : 0.01,
-    "Tbc" : 0.001,
-    "Wg"  : 0.01,
-    "td"  : 1e-3, // 1ms
-    "Cg"  : 5e-3,
-    "Ca"  : 5e-3,
-    "FC"  :  50, // 50,
-    "distortion": 0.1 // 5e-6
+    "bg"  : 1e-6,
+    "ba"  : 1e-6,
+    "Wbc" : 0.1,
+    "Tbc" : 0.01,
+    "Wg"  : 3.01,
+    "td"  : 0, // 1ms
+    "Cg"  : 0, // 5e-6,
+    "Ca"  : 0, // 5e-6,
+    "FC"  :  0, // 50,
+    "distortion": 0 // 5e-6
   },
 
   "Qmodel" : {
@@ -88,37 +89,37 @@
     "Wg"  : 0
   },
 
-  // noise densities from the MTi data sheet
-  // http://wiki.icub.org/images/8/82/XsensMtx.pdf
+  // // exact densities provided by TUM-VI dataset
+
+  // noise and random walk density from the data sheet
+  // https://www.vectornav.com/products/vn-100/specifications
   // "Qimu": {
-  //   "gyro": 1.7e-3,
-  //   "gyro_bias": 0.087,
-  //   "accel": 1e-3,
-  //   "accel_bias": 0.02
+  //   "gyro": 6e-5,
+  //   "gyro_bias": 4.8e-5,
+  //   "accel": 1.4e-4,
+  //   "accel_bias": 4e-5
   // },
 
-  // // inflated by 3
+  // // inflated 10 times
   // "Qimu": {
-  //   "gyro": 5.1e-3,
-  //   "gyro_bias": 0.261,
-  //   "accel": 3e-3,
-  //   "accel_bias": 0.06
+  //   "gyro": 60e-5,
+  //   "gyro_bias": 48e-5,
+  //   "accel": 14e-4,
+  //   "accel_bias": 40e-5
   // },
 
-  // densities from data sheet, bias 
+  // inflated 3 times
   "Qimu": {
-    "gyro": 0.003, // 1e-5 in Corvis
-    "gyro_bias": 0,
-    "accel": 0.02,  // 0.004 in Corvis
-    "accel_bias": 0
+    "gyro": 18e-5,
+    "gyro_bias": 14.4e-5,
+    "accel": 4.2e-4,
+    "accel_bias": 12e-5
   },
-
-
 
   // initial std on feature state
   "initial_z": 2.5, // meter
-  "initial_std_x": 0.5, // pixel
-  "initial_std_y": 0.5, // pixel
+  "initial_std_x": 1.5, // pixel
+  "initial_std_y": 1.5, // pixel
   "initial_std_z": 2.0,  // meter
 
   // std of visuale measurement, in pixels
@@ -132,8 +133,8 @@
   // depth sub-filter setting
   "subfilter": {
     "visual_meas_std":  3.5,
-    "ready_steps": 5,
-    "MH_thresh": 18.991
+    "ready_steps": 2,
+    "MH_thresh": 58.991
   },
 
   // pre-subfilter triangulation options
@@ -155,17 +156,25 @@
   "feature_P0_damping": 1.0, // 10.0 seems most appropriate
 
   "imu_calib": {
-    "Cas": [1.00056, 1.00062, 1.00136],
+    // "Cas": [1.00048, 1.00064, 1.00258], 
+    // "Car": [[1,  -0.00200616, -0.000486113],
+    //         [0,            1,  0.000587865],
+    //         [0,            0,            1]],
 
-    "Car": [[1, -0.000914275, -0.000414882],
-            [0, 1,  -0.0000350183],
+    // "Cgs": [0.99743, 1.00135, 0.990112],
+    // "Cgr": [[1,   0.0047483,  0.00433422],
+    //         [0.000403228,           1,  0.00014769],
+    //         [0.00207887, -0.00912525,           1]]
+
+    "Cas": [1, 1, 1],
+    "Car": [[1, 0, 0],
+            [0, 1, 0],
             [0, 0, 1]],
-    "Cgs": [0.999823, 1.00412, 0.987355],
 
-      
-    "Cgr": [[1, -0.00224194, 0.0120628], 
-            [0.00306442, 1,  -0.000998032],
-            [0.00285738, -0.0154485, 1]]
+    "Cgs": [1, 1, 1],
+    "Cgr": [[1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]]
   },
   "gravity_init_counter": 20,
 
@@ -173,6 +182,7 @@
     "model": "equidistant",
     "rows": 500, 
     "cols": 960,
+
 
     "fx": 572.39477586,
     "fy": 575.3033304,
@@ -187,7 +197,7 @@
 
   "min_inliers": 5, // minimum number of inlier measurements
 
-  "MH_thresh": 8.991, // 8.991
+  "MH_thresh": 55.991, // 8.991
   "MH_adjust_factor": 1.15,
 
   "1pt_RANSAC_thresh": 1.5,

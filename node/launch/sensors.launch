@@ -5,6 +5,7 @@
 
  <arg name="imxCam" default="true"/>
  <arg name="ethNode" default="true"/>
+ <arg name="vectornav" default="false" />
 
  <!-- Optional RealSense RGB-D sensor-->
  <arg name="realsense" default="false"/>
@@ -43,6 +44,33 @@
       <param name="trigger_polarity" type="int" value="0"/>
       <param name="strobe_control" type="int" value="-1"/>
       <param name="strobe_polarity" type="int" value="0"/>
+    </node>
+  </group>
+
+
+  <!-- Launch IMU -->
+  <group if="$(arg vectornav)">
+    <node pkg="imu_vn_100" type="imu_vn_100_node" name="imu" output="screen">
+    <remap from="/imu/imu" to="/imu/data" />
+      <param name="baudrate" type="int" value="921600"/>
+      <param name="frame_id" type="string" value="imu"/>
+      <param name="imu_rate" type="int" value="200"/>
+      <param name="binary_output" type="bool" value="true"/>
+      <param name="binary_async_mode" type="int" value="1"/>
+      <param name="imu_compensated" type="bool" value="false" />
+
+      <param name="enable_mag" type="bool" value="false"/>
+      <param name="enable_pres" type="bool" value="false"/>
+      <param name="enable_temp" type="bool" value="false"/>
+      <param name="enable_rpy" type="bool" value="false"/>
+
+      <param name="sync_rate" type="int" value="200" />
+      <param name="sync_pulse_width_us" type="int" value="1000" />
+
+      <param name="vpe/enable" type="bool" value="false" />
+      <param name="vpe/heading_mode" type="int" value="1" />
+      <param name="vpe/filtering_mode" type="int" value="0" />
+      <param name="vpe/tuning_mode" type="int" value="0" />
     </node>
   </group>
 

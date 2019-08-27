@@ -10,7 +10,7 @@
 
   <node pkg="xivo" type="mynode" name="xivo" output="screen" >
     <param name="config_path" value="$(find xivo)/../cfg/pointgrey_xsens.json"/>
-    <param name="viewer_config_path" value="$(find xivo)/../cfg/pointgrey_xsens_viewer.json"/>
+    <param name="viewer_config_path" value="$(find xivo)/../cfg/pointgrey_viewer.json"/>
     <param name="estimator_queue_size" value="1000" />
     <param name="image_topic"   value="/camera/image_raw" />
     <param name="imu_topic"   value="/imu/data" />

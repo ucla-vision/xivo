@@ -109,16 +109,16 @@ Estimator::Estimator(const Json::Value &cfg)
   // load imu calibration
   auto imu_calib = cfg_["imu_calib"];
   // load accel axis misalignment first as a 3x3 matrix
-  Mat3 Ka =
+  Mat3 Ta =
       GetMatrixFromJson<number_t, 3, 3>(imu_calib, "Car", JsonMatLayout::RowMajor);
-  Mat3 Ta;  // accel scaling
-  Ta.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cas");
+  Mat3 Ka;  // accel scaling
+  Ka.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cas");
   Mat3 Ca{Ta * Ka};
   // load gyro axis misalignment first as 3x3 matrix
-  Mat3 Kg =
+  Mat3 Tg =
       GetMatrixFromJson<number_t, 3, 3>(imu_calib, "Cgr", JsonMatLayout::RowMajor);
-  Mat3 Tg;  // gyro scaling
-  Tg.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cgs");
+  Mat3 Kg;  // gyro scaling
+  Kg.diagonal() = GetVectorFromJson<number_t, 3>(imu_calib, "Cgs");
   Mat3 Cg{Tg * Kg};
   // now update the IMU component
   imu_ = IMU{Ca, Cg};
@@ -213,8 +213,10 @@ Estimator::Estimator(const Json::Value &cfg)
            kMaxCameraIntrinsics - dim) *= 0;
 #endif
   // standard deviation -> covariance
-  P_.block<kMotionSize, kMotionSize>(0, 0) *=
-      P_.block<kMotionSize, kMotionSize>(0, 0);
+  // P_.block<kMotionSize, kMotionSize>(0, 0) *=
+  //     P_.block<kMotionSize, kMotionSize>(0, 0);
+  P_ *= P_;
+
   LOG(INFO) << "Initial covariance loaded";
 
   // allocate spaces for Jacobians
@@ -353,7 +355,7 @@ bool Estimator::InitializeGravity() {
                                       gravity_init_buf_.end(), Vec3{0, 0, 0});
     mean_accel /= gravity_init_buf_.size();
 
-    Vec3 accel_calib = imu_.Ca() * (mean_accel - X_.ba);
+    Vec3 accel_calib = imu_.Ca() * mean_accel - X_.ba;
 
     // FromTwoVectors(a, b): returns R such that b=R*a
     // we need R * accel + Rg * g_ == 0

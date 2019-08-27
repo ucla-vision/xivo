@@ -54,10 +54,10 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
   nh_priv.param("image_topic", image_topic, image_topic);
 
   // subscribe to topics
-  imu_sub_ = nh_.subscribe(imu_topic, 0, &SimpleNode::ImuMsgCallback, this);
+  imu_sub_ = nh_.subscribe(imu_topic, 1000, &SimpleNode::ImuMsgCallback, this);
   LOG(INFO) << "Subscribed to IMU topic: " << imu_topic;
 
-  image_sub_ = nh_.subscribe(image_topic, 0, &SimpleNode::ImageMsgCallback, this);
+  image_sub_ = nh_.subscribe(image_topic, 1000, &SimpleNode::ImageMsgCallback, this);
   LOG(INFO) << "Subscribed to image topic: " << image_topic;
 
   // estimator process
