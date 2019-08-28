@@ -338,6 +338,10 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
                    [](FeaturePtr f) { return f->z(); });
     number_t median_depth = depth[depth.size() >> 1];
     init_z_ = 0.01 * init_z_ + 0.99 * median_depth;
+    if (init_z_ < min_z_ || init_z_ > max_z_) {
+      init_z_ = cfg_.get("initial_z", 2.5).asDouble();
+      VLOG(0) << "Adaptive depth out of bounds, reset to default value";
+    } 
     // init_z_ = median_depth;
     VLOG(0) << "Adaptive initial depth=" << init_z_;
   }

@@ -86,7 +86,7 @@ constexpr int kFeatureSize = 3;
 
 constexpr int kMaxFeature = 30;
 constexpr int kMinFeature = 25;  // NOTE: the number of features will also be limited by the number of groups
-constexpr int kMaxGroup = 30;  // NOTE: the number of features will also be limited by the number of groups
+constexpr int kMaxGroup = 10;  // NOTE: the number of features will also be limited by the number of groups
 
 constexpr int kGroupBegin = kCameraBegin + kMaxCameraIntrinsics;
 constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;
@@ -131,13 +131,13 @@ struct State {
     td += dX(Index::td);
 #endif
 
-    if constexpr(kEnforceSO3Freq > 0) {
-      if (++counter % kEnforceSO3Freq == 0) {
-        Rsb = SO3::project(Rsb.matrix());
-        Rbc = SO3::project(Rbc.matrix());
-        Rg = SO3::project(Rg.matrix());
-      }
-    }
+    // if constexpr(kEnforceSO3Freq > 0) {
+    //   if (++counter % kEnforceSO3Freq == 0) {
+    //     Rsb = SO3::project(Rsb.matrix());
+    //     Rbc = SO3::project(Rbc.matrix());
+    //     Rg = SO3::project(Rg.matrix());
+    //   }
+    // }
 
     return *this;
   }

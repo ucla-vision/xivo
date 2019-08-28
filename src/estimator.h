@@ -183,6 +183,7 @@ private:
 
   // measurement noise
   number_t init_z_, init_std_x_, init_std_y_, init_std_z_;
+  number_t min_z_, max_z_;
 
   // jacobians
   Eigen::SparseMatrix<number_t> F_, G_;

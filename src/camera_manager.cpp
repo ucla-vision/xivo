@@ -22,11 +22,7 @@ CameraManager::CameraManager(const Json::Value &cfg) : model_{Unknown{}} {
   number_t cx = cfg["cx"].asDouble();
   number_t cy = cfg["cy"].asDouble();
 
-  if (cam_model == "atan") {
-    fx = cols * fx;
-    fy = rows * fy;
-    cx = cols * cx;
-    cy = rows * cy;
+  if (cam_model == "atan" || cam_model == "fov") {
     number_t w = cfg["w"].asDouble();
     model_ = ATAN{rows, cols, fx, fy, cx, cy, w};
     dim_ = ATAN::DIM;
