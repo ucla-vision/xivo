@@ -1,34 +1,32 @@
 ## Usage
 
-The current implementation supports two execution modes: Batch, requiring a folder of image sequences and a text file of time-stamped inertial measurements, or online using a ROS bag. The format for the image sequences and text files are described [here](placeholder).
+The current implementation supports two execution modes: Batch, requiring a folder of image sequences and a text file of time-stamped inertial measurements, or online using a ROS bag. The format for the image sequences and text files are described [here](dataformat.md). The format of the ROS messages is described here ([imu][imu_msg],[image][image_msg]).
 
-<!--
-Either run on a folder of image sequences and a text file of inertial measurements (like what provided by the EuRoC and TUM-VI datasets), or a rosbag (TUM-VI also provides rosbags).
--->
+[imu_msg]: https://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
+[image_msg]: https://docs.ros.org/api/sensor_msgs/html/msg/Image.html
+
 
 ### Datasets
 
-- XIVO 1:
-- XIVO 2:
-...
-- TUM-VI:
+We provide X sequences recorded by a [Tango](https://en.wikipedia.org/wiki/Tango_(platform)) phone. The images are recorded at 30 Hz in VGA (640x480) size, and the inertial measurements are recorded at 100 Hz. You can download the sequences [here](placeholder).
 
-<!--
-Assume the environment variable `$TUMVIROOT` has been set to the root directory of your [TUMVI](https://vision.in.tum.de/data/datasets/visual-inertial-dataset) dataset. For example,
+### Setup
+
+Once you have downloaded the data as compressed `.tar` files, uncompress them into the directory of your choice and set the environment variable `$DATAROOT` to that directory as follows:
 
 ```
-export TUMVIROOT=/home/Data/tumvi/exported/euroc/512_16
+export DATAROOT=/DIRECTORY/OF/YOUR/CHOICE
 ```
 
-where on my machine `/home/Data/tumvi/exported/euroc/512_16` hosts folders of data, such as `dataset-room1_512_16`, `dataset-corridor1_512_16`, etc.
--->
+Note, the `$DATAROOT` directory should contain datasets structured in the format described [here](dataformat.md).
 
-### Run
 
-From the project root directory, run the estimator with configuration specified by the `-cfg cfg/vio.json` option on images captured by camera 0 (`-cam_id 0`) of the 6-th room sequence (`-seq room6`) of the TUMVI dataset (`-dataset tumvi`) which resides in `$TUMVIROOT` (option `-root $TUMVIROOT`) as follows:
+### Example
+
+From the project root directory, run the estimator with configuration specified by the option `-cfg cfg/vio.json` on the `room6` sequence (option `-seq room6`) which resides in directory `$DATAROOT` (option `-root $DATAROOT`) as follows:
 
 ```
-bin/st_vio -cfg cfg/vio.json -root $TUMVIROOT -dataset tumvi -seq room6 -cam_id 0 -out out_state
+bin/st_vio -cfg cfg/vio.json -root $DATAROOT -seq room6 -out out_state
 ```
 
 where estimated states are saved to the output file `out_state`.
@@ -36,34 +34,31 @@ where estimated states are saved to the output file `out_state`.
 For detailed usage of the application, see the flags defined at the beginning of the application source file `src/app/singlethread_vio.cpp`. 
 
 
-### Evaluation
+### System logging
 
-We provide a python script `scripts/run_and_eval_pyxivo.py` to run the estimator on a specified TUM-VI sequence and benchmark the performance in terms ATE (Absolute Trajectory Error) and RPE (Relative Pose Error). To use it, execute the following in the project root directory:
-
-```
-python scripts/run_and_eval_pyxivo.py -root $TUMVIROOT -seq room6 -stdout -out_dir tmp -use_viewer
-```
-The `-seq` and `-root` options are the same as explained above. If the `-stdout` option is on, the script will print out the benchmarked performance to the terminal; `-out_dir` specifies the directory to save state estimates; `-use_viewer` option will turn on a 3D visualization. For detailed usage about the script, see the options defined at the beginning of the script.
-
-### Log to file for debugging
-
-We use [glog](https://github.com/google/glog) for system logging. If you want to log debug information to a file for inspection later,
+We use [glog](https://github.com/google/glog) for system logging. If you want to log runtime information to a text file for inspection later, first create a directory to hold logs
 
 ```
-GLOG_log_dir=log GLOG_v=0 bin/st_vio -cfg cfg/vio.json -root $TUMVIROOT
+mkdir /YOUR/LOG/DIRECTORY/HERE
 ```
 
-Note, the directory `log`, which is where the logs are kept, should be created first (simply `mkdir log`). 
+and then run the estimator with a prefix to specify the log directory:
 
-By default, log is suppressed by setting `add_definitions(-DGOOGLE_STRIP_LOG=1)` in `src/CMakeLists.txt`. To enable log, simply comment out that line and re-build.
+```
+GLOG_log_dir=/YOUR/LOG/DIRECTORY/HERE bin/st_vio -cfg cfg/vio.json -root $DATAROOT
+```
 
-For more details on how to use glog, see [the tutorial here](http://rpg.ifi.uzh.ch/docs/glog.html).
+Note, by default, log is suppressed for runtime speed by setting `add_definitions(-DGOOGLE_STRIP_LOG=1)` in `src/CMakeLists.txt`. To enable log, simply comment out that line and re-build.
 
-## ROS bag mode
+For more details on glog, see the tutorial [here](http://rpg.ifi.uzh.ch/docs/glog.html).
+
+## ROS support
 
 ### Build
 
-By default the ROS wrapper of the system will not be built, to build the ROS support, you need to turn on the `BUILD_ROSNODE` option when generating the makefile: In `build` directory of the project root, do the following:
+By default the ROS node of the system will not be built in case that your operating system does not have ROS installed. 
+
+However, if you want to use the system with ROS support, you need to first install ROS (see instructions [here](http://wiki.ros.org/ROS/Installation)), and then turn on the `BUILD_ROSNODE` option when generating the makefile: In `build` directory of the project root, do the following:
 
 ```
 cmake .. -DBUILD_ROSNODE=ON
@@ -71,11 +66,11 @@ cmake .. -DBUILD_ROSNODE=ON
 
 followed by `make` to build with ROS support.
 
-### Run
+### Launch
 
 1. In the project root directory, `source build/devel/setup.zsh`. If another shell, such as bash/sh, is used, please source the corresponding shell script (`setup.bash`/`setup.sh`) respectively.
 2. `roslaunch node/launch/xivo.launch` to launch the ros node, which subscribes to `/imu0` and `/cam0/image_raw` topics.
-3. In antoher terminal, playback rosbags from the TUM-VI dataset, e.g., `rosbag play PATH/TO/YOUR/ROSBAG` .
+3. In antoher terminal, playback the rosbag of your choice, e.g., `rosbag play /PATH/TO/YOUR/ROSBAG` .
 
 <!-- ## Profiling
 
@@ -100,7 +95,7 @@ An example of using the Python binding is available in `scripts/pyxivo.py`, whic
 To run the demo, execute:
 
 ```
-python scripts/pyxivo.py -root $TUMVIROOT -seq room6 -cam_id 0
+python scripts/pyxivo.py -root $DATAROOT -seq room6
 ```
 
 in the project root directory. The command-line options are more or less the same as the C++ executable. For detailed usage, you can look at the options defined at the beginning of the script `scripts/pyxivo.py`. Note you might need to install some python dependencies by executing the following in the project root directory:
@@ -109,32 +104,44 @@ in the project root directory. The command-line options are more or less the sam
 pip install -r requirements.txt
 ```
 
+<!-- ### Evaluation
+
+We provide a python script `scripts/run_and_eval_pyxivo.py` to run the estimator on a specified TUM-VI sequence and benchmark the performance in terms ATE (Absolute Trajectory Error) and RPE (Relative Pose Error). To use it, execute the following in the project root directory:
+
+```
+python scripts/run_and_eval_pyxivo.py -root $TUMVIROOT -seq room6 -stdout -out_dir tmp -use_viewer
+```
+The `-seq` and `-root` options are the same as explained above. If the `-stdout` option is on, the script will print out the benchmarked performance to the terminal; `-out_dir` specifies the directory to save state estimates; `-use_viewer` option will turn on a 3D visualization. For detailed usage about the script, see the options defined at the beginning of the script. -->
+
 ## Evaluation
 
-TODO: overall observation here
+We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS, VINS-Mono and ROVIO, on publicly available datasets. Our implementation achieves comparable accuracy at a much lower computational cost. 
+
 
 ### Algorithm Categories
 
-OKVIS and VINS-Mono are optimization based, ROVIO and Ours-XIVO are filtering based.
-OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into the category of ''direct'' methods where photometric error instead of geometric error is directly minimized.
+OKVIS and VINS-Mono are optimization based, which means they operate on keyframes in an iterative manner, which in general results in more accurate pose estimates at the price of higher latency and computational cost. ROVIO and Ours-XIVO are filtering based, which are causal and much cheap in terms of computatioanl cost. Yet, they produce pose estimates comparable to optimization based methods.
+
+<!-- 
+OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into the category of ''direct'' methods where photometric error instead of geometric error is directly minimized. -->
 
 
 ### Computational Cost
 
-We benchmark the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop machine equipped with an Intel Core i7 CPU @ 3.6 GHz. The table below shows the runtime of the feature processing and state update modules.
+We benchmarked the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop machine equipped with an Intel Core i7 CPU @ 3.6 GHz. The table below shows the runtime of the feature processing and state update modules.
 
 | Module | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
 |:---       | :---   | :---       | :---   | :---  |
-| Feature detection \& matching   | 15ms | 20ms | 1ms (only detection) | 3 ms|
-| State update | 42ms | 50m | 13ms | 3 ms |
+| Feature detection \& matching   | 15ms | 20ms | 1ms (detection only) | 3 ms|
+| State update | 42ms | 50m | 13ms | 4 ms |
 
 OKVIS and VINS-Mono perform iterative nonlinear least square for state estimation, and thus are much slower in the state update step.
 
 ROVIO is a ''direct'' method that skips the feature matching step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
 
-### Accuracy 
+### TUM-VI
 
-The benchmark performance of this software on TUM-VI dataset is comparable to other open-source VIO systems. Also, our system runs at more than 100 Hz on a Intel Core i7 CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. Ours XIVO is obtained by using the aforementioned evaluation script.
+The benchmark performance of this software on TUM-VI dataset is comparable to other top-performing open-source VIO systems. Also, our system runs at more than 100 Hz on a Intel Core i7 CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. The evaluation script of Ours-XIVO can be found in `misc/run_all.sh`.
 
 
 | Sequence | length | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
@@ -158,4 +165,8 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 |room5 | **0.012**m/**0.47**<sup>o</sup> | 0.026m/**0.47**<sup>o</sup> | 0.031m/0.60<sup>o</sup> | 0.030m/0.60<sup>o</sup> |
 |room6| **0.012**m/0.49<sup>o</sup> | 0.014m/**0.44**<sup>o</sup> | 0.019m/0.50<sup>o</sup> | 0.020m/0.52<sup>o</sup> |
 
-*Table 2. RMSE RPE* in meters (translation) and degrees (rotation).
+*Table 2. RMSE RPE* in translation (meters) and rotation (degrees).
+
+### EuRoC
+
+Benchmark results on the EuRoC dataset will be available soon.

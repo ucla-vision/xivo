@@ -79,7 +79,7 @@ Dependencies are included in the `thirdparty` directory.
 
 To build, in Ubuntu 18.04, execute the `build.sh` script in the root directory of the project. 
 
-For detailed usage of the software, see the [wiki](https://github.com/feixh/xivo/wiki/HowTo).
+For detailed usage of the software, see the [wiki](wiki.md).
 
 
 ## License and Disclaimer
