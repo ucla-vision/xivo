@@ -151,7 +151,7 @@ The following table shows the performance on 6 indoor sequences where ground-tru
 | Sequence | length | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---    | :---:   | :---:       | :---:   | :---:  |
 |room1     | 156m   | **0.06m** | 0.07m | 0.16m | 0.13m |
-|room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.11 |
+|room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.11m |
 |room3     | 135m   | **0.07m**  | 0.11m | 0.15m | 0.17m |
 |room4     | 68m    | **0.03m** | 0.04m | 0.09m | 0.09m |
 |room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.10m |
