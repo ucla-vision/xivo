@@ -1,10 +1,5 @@
 <!-- -*- mode: XML -*- -->
 <launch>
-   <!-- Launch Rviz -->
-  <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d  $(find vlcore2)/misc/vlCore.rviz" /> -->
-
-   <!-- Get the covis Node -->
   <include file="$(find xivo)/launch/xivo.xml" />
-  
 </launch>
 

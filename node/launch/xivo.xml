@@ -1,6 +1,5 @@
 <launch>
 
-  <!-- Launch Corvis Filter Node  -->
   <!-- launch-prefix="xterm -e gdb \-\-args" for debugging -->
 
   <!-- launch-prefix="xterm -e gdb \-\-args" for debugging -->
@@ -9,11 +8,11 @@
   <!-- launch-prefix="GLOG_v=0 GLOG_logtostderr=-1 GLOG_log_dir=log" logging options -->
 
   <node pkg="xivo" type="mynode" name="xivo" output="screen" >
-    <param name="config_path" value="$(find xivo)/../cfg/pointgrey_xsens.json"/>
-    <param name="viewer_config_path" value="$(find xivo)/../cfg/pointgrey_viewer.json"/>
+    <param name="config_path" value="$(find xivo)/../cfg/phab.json"/>
+    <param name="viewer_config_path" value="$(find xivo)/../cfg/phab_viewer.json"/>
     <param name="estimator_queue_size" value="1000" />
-    <param name="image_topic"   value="/camera/image_raw" />
-    <param name="imu_topic"   value="/imu/data" />
+    <param name="image_topic"   value="/cam0/image_raw" />
+    <param name="imu_topic"   value="/imu0_calib" />
     <param name="viewer_type" value="pangolin" />
     <!-- <param name="viewer_type" value="ros" /> -->
   </node>
