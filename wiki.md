@@ -115,7 +115,7 @@ The `-seq` and `-root` options are the same as explained above. If the `-stdout`
 
 ## Evaluation
 
-We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS, VINS-Mono and ROVIO, on publicly available datasets. Our implementation achieves comparable accuracy at a much lower computational cost. 
+We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS, VINS-Mono and ROVIO, on publicly available datasets. Our implementation achieves comparable accuracy at a fraction of the computational cost. 
 
 
 ### Algorithm Categories
@@ -130,21 +130,23 @@ OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO fa
 
 We benchmarked the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop machine equipped with an Intel Core i7 CPU @ 3.6 GHz. The table below shows the runtime of the feature processing and state update modules.
 
-| Module | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
+| Module | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
 |:---       | :---   | :---       | :---   | :---  |
-| Feature detection \& matching   | 15ms | 20ms | 1ms (detection only) | 3 ms|
+| Feature detection \& matching   | 15ms | 20ms | 1ms<sup>*</sup> | 3 ms|
 | State update | 42ms | 50m | 13ms | 4 ms |
 
-OKVIS and VINS-Mono perform iterative nonlinear least square for state estimation, and thus are much slower in the state update step.
 
-ROVIO is a ''direct'' method that skips the feature matching step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
+\* ROVIO is a ''direct'' method that skips the feature matching step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
+
+OKVIS and VINS-Mono (marked with KF) perform iterative nonlinear least square on keyframes for state estimation, and thus are much slower in the state update step.
 
 ### TUM-VI
 
 The benchmark performance of this software on TUM-VI dataset is comparable to other top-performing open-source VIO systems. Also, our system runs at more than 100 Hz on a Intel Core i7 CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. The evaluation script of Ours-XIVO can be found in `misc/run_all.sh`.
 
 
-| Sequence | length | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
+
+| Sequence | length | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
 |:---       | :---    | :---:   | :---:       | :---:   | :---:  |
 |room1     | 156m   | **0.06m** | 0.07m | 0.16m | 0.13m |
 |room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.11 |
@@ -153,10 +155,9 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 |room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.10m |
 |room6     | 67m    | **0.04m** | 0.08m | 0.05m | 0.05m |
 
-*Table 1. RMSE ATE* in meters. OKVIS and VINS-Mono are optimization-based, whereas ROVIO and Ours-XIVO are EKF-based.
+*Table 1. RMSE ATE* in meters. OKVIS and VINS-Mono are optimization-based, whereas ROVIO and Ours-XIVO are EKF-based. Methods marked with KF are keyframe-based, others are recursive approaches.
 
-
-| Sequence | OKVIS | VINS-Mono | ROVIO | Ours-XIVO |
+| Sequence | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
 |:---       | :---:   | :---:       | :---:   | :---:  |
 |room1 | **0.013**m/**0.43**<sup>o</sup> | 0.015m/0.44<sup>o</sup> | 0.029m/0.53<sup>o</sup> | 0.022m/0.60<sup>o</sup> |
 |room2 | **0.015**m/**0.62**<sup>o</sup> | 0.017m/0.63<sup>o</sup> | 0.030m/0.67<sup>o</sup> | 0.040m/0.71<sup>o</sup> |
@@ -165,7 +166,7 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 |room5 | **0.012**m/**0.47**<sup>o</sup> | 0.026m/**0.47**<sup>o</sup> | 0.031m/0.60<sup>o</sup> | 0.030m/0.60<sup>o</sup> |
 |room6| **0.012**m/0.49<sup>o</sup> | 0.014m/**0.44**<sup>o</sup> | 0.019m/0.50<sup>o</sup> | 0.020m/0.52<sup>o</sup> |
 
-*Table 2. RMSE RPE* in translation (meters) and rotation (degrees).
+*Table 2. RMSE RPE* in translation (meters) and rotation (degrees). Methods marked with KF are keyframe-based, others are recursive approaches.
 
 ### EuRoC
 
