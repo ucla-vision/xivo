@@ -16,7 +16,7 @@ Corvis is optimized for speed, running at 200FPS on a commodity laptop computer,
 
 We provide several recorded sequences, and the ability to run XIVO off-line in batch mode, for comparison with other methods. Note that some of these methods operate in a non-causal fashion, by performing batch optimization relative to keyframe, or in a sliding window mode, introducing latency. XIVO is causal, and processes only the last image frame received.
 
-Corvis has been developed since 2005 \[[Jones *et al.*][jonesVS_07]\], with contributors including Eagle Jones \[[ijrr11][jones_ijrr11]\], Konstantine Tsotsos \[[icra15][tsotsos_icra15]\], and Xiaohan Fei \[[cvpr17][dong_cvpr17],[eccv18][fei_eccv18],[icra19][fei_icra19]\]. If you use this code, or the datasets provided, please acknowledge it by citing \[[Fei *et al.*][fei_icra19]\].
+Corvis has been developed since 2005 \[[Jones *et al.*][jonesVS_07]\], with contributors including Eagle Jones \[[ijrr11][jones_ijrr11]\], Konstantine Tsotsos \[[icra15][tsotsos_icra15]\], and Xiaohan Fei \[[cvpr17][dong_cvpr17],[eccv18][fei_eccv18],[icra19][fei_icra19]\]. If you use this code, or the datasets provided, please acknowledge it by citing \[[Fei *et al.*][ack-anchor]\].
 
 While the ‘map’ produced by SLAM is only functional to localization, consisting of a sparse set of attributed point features, with the attributes sufficient for detection in an image, XIVO has been used as a building block for semantic mapping \[[Dong *et al.*][dong_cvpr17],[Fei *et al.*][fei_eccv18]\], where the scene is populated by objects, bounded by dense surfaces. Research code for semantic mapping using XIVO can be found [here][visma_repo].
 
@@ -87,6 +87,7 @@ For detailed usage of the software, see the [wiki](wiki.md).
 This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied, according to the terms linked [here](https://github.com/feixh/xivo/blob/master/LICENSE). For commercial use, please contact [UCLA TDG](https://tdg.ucla.edu).
 
 ## Acknowledgment
+[ack-anchor](#ack-anchor)
 
 If you make use of any part of this code or the datasets provided, please acknowledge this repository by citing the following:
 
