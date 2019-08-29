@@ -138,7 +138,7 @@ We benchmarked the runtime of OKVIS, VINS-Mono, ROVIO and XIVO on a desktop mach
 
 \* ROVIO is a ''direct'' method that skips the feature matching step and directly uses the photometric error as the innovation term in EKF update step. Since it uses Iterative Extended Kalman Filter (IEKF) for state update, it's slower than our EKF-based method.
 
-OKVIS and VINS-Mono (marked with KF) perform iterative nonlinear least square on keyframes for state estimation, and thus are much slower in the state update step.
+OKVIS and VINS-Mono (marked with Keyframe) perform iterative nonlinear least square on keyframes for state estimation, and thus are much slower in the state update step. Also OKVIS runs on stereo images.
 
 ### Accuracy
 
@@ -157,7 +157,7 @@ The following table shows the performance on 6 indoor sequences where ground-tru
 |room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.10m |
 |room6     | 67m    | **0.04m** | 0.08m | 0.05m | 0.05m |
 
-*Table 1. RMSE ATE* in meters. Methods marked with KF are keyframe-based, others are recursive approaches.
+*Table 1. RMSE ATE* in meters. Methods marked with Keyframe are keyframe-based, others are recursive approaches.
 
 | Sequence | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---:   | :---:       | :---:   | :---:  |
@@ -168,7 +168,7 @@ The following table shows the performance on 6 indoor sequences where ground-tru
 |room5 | **0.012**m/**0.47**<sup>o</sup> | 0.026m/**0.47**<sup>o</sup> | 0.031m/0.60<sup>o</sup> | 0.030m/0.60<sup>o</sup> |
 |room6| **0.012**m/0.49<sup>o</sup> | 0.014m/**0.44**<sup>o</sup> | 0.019m/0.50<sup>o</sup> | 0.020m/0.52<sup>o</sup> |
 
-*Table 2. RMSE RPE* in translation (meters) and rotation (degrees). Methods marked with KF are keyframe-based, others are recursive approaches.
+*Table 2. RMSE RPE* in translation (meters) and rotation (degrees). Methods marked with Keyframe are keyframe-based, others are recursive approaches.
 
 #### EuRoC
 
