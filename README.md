@@ -84,7 +84,7 @@ For detailed usage of the software, see the [wiki](wiki.md).
 
 ## License and Disclaimer
 
-This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied, according to the terms linked [here](https://github.com/feixh/xivo/blob/master/LICENSE). For commercial use, please contact [UCLA TDG](https://tdg.ucla.edu).
+This software is property of the UC Regents, and is provided free of charge for research purposes only. It comes with no warranties, expressed or implied, according to the terms linked [here](LICENSE). For commercial use, please contact [UCLA TDG](https://tdg.ucla.edu).
 
 ## <a name="ack-anchor"></a> Acknowledgment
 
