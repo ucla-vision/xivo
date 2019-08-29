@@ -105,6 +105,4 @@ If you make use of any part of this code or the datasets provided, please acknow
 }
 ```
 
-\[[pdf][fei_icra19]\]
-
 
