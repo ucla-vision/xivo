@@ -86,29 +86,13 @@
     "Wg"  : 0
   },
 
-  // // exact densities provided by TUM-VI dataset
+  // // Exact densities provided by TUM-VI dataset
   // // https://vision.in.tum.de/data/datasets/visual-inertial-dataset
   // "Qimu": {
   //   "gyro": 8.0e-5,
   //   "gyro_bias": 2.2e-6,
   //   "accel":1.4e-3,
   //   "accel_bias": 8.6e-5
-  // },
-
-  // // inflated by sqrt(3) times 
-  // "Qimu": {
-  //   "gyro": 14.0e-5,
-  //   "gyro_bias": 3.8e-6,
-  //   "accel": 2.4e-3,
-  //   "accel_bias": 14.9e-5
-  // },
-
-  // // doubled 
-  // "Qimu": {
-  //   "gyro": 16.0e-5,
-  //   "gyro_bias": 4.4e-6,
-  //   "accel":2.8e-3,
-  //   "accel_bias": 17.2e-5
   // },
 
   // inflated by 3 times
@@ -118,14 +102,6 @@
     "accel": 4.2e-3,
     "accel_bias": 25.8e-5
   },
-
-  // // inflated by 10 times
-  // "Qimu": {
-  //   "gyro": 8.0e-4,
-  //   "gyro_bias": 2.2e-5,
-  //   "accel":1.4e-2,
-  //   "accel_bias": 8.6e-4
-  // },
 
 
   // initial std on feature state

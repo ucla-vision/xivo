@@ -206,7 +206,15 @@ Estimator::Estimator(const Json::Value &cfg)
 // initialize covariance for camera intrinsics
 #ifdef USE_ONLINE_CAMERA_CALIB
   int dim = Camera::instance()->dim();
-  P_.block(kCameraBegin, kCameraBegin, 4, 4) *= P["FC"].asDouble();
+  try {
+    // homogeneous focal length and principal point error
+    P_.block(kCameraBegin, kCameraBegin, 4, 4) *= P["FC"].asDouble();
+  } catch (const std::exception &) {
+    // non-homogeneous focal length and principal point error
+    auto fc_var = GetVectorFromJson<number_t, 2>(P, "FC");
+    P_.block(kCameraBegin, kCameraBegin, 2, 2) *= fc_var[0];
+    P_.block(kCameraBegin+2, kCameraBegin+2, 2, 2) *= fc_var[1];
+  }
   P_.block(kCameraBegin + 4, kCameraBegin + 4, dim - 4, dim - 4) *=
       P["distortion"].asDouble();
   P_.block(kCameraBegin + dim, kCameraBegin + dim, kMaxCameraIntrinsics - dim,
