@@ -23,8 +23,11 @@ if __name__ == '__main__':
     gyro = []
     accel = []
     for topic, msg, t in bag.read_messages(topics=[args.imu_topic]):
-        accel.append((t.to_sec(), msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z))
-        gyro.append((t.to_sec(), msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z))
+        if np.linalg.norm([msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z]) > 0:
+            accel.append((t.to_sec(), msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z))
+        if np.linalg.norm([msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]) > 0:
+            gyro.append((t.to_sec(), msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z))
+
     gyro_path = os.path.join(output_dir, 'gyro_data.txt')
     accel_path = os.path.join(output_dir, 'accel_data.txt')
     np.savetxt(gyro_path, np.asarray(gyro))
