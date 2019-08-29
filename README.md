@@ -88,7 +88,7 @@ This software is property of the UC Regents, and is provided free of charge for 
 
 ## Acknowledgment
 
-If you make use of any part of this code or the datasets provided, please acknowledge this repository by citing the follows:
+If you make use of any part of this code or the datasets provided, please acknowledge this repository by citing the following:
 
 ```
 @article{fei2019geo,
