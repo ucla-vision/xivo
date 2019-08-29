@@ -120,7 +120,7 @@ We benchmarked the performance of our system in terms of ATE (Absolute Trajector
 
 ### Algorithm Categories
 
-OKVIS and VINS-Mono are optimization based, which means they operate on keyframes in an iterative manner, which in general results in more accurate pose estimates at the price of higher latency and computational cost. ROVIO and Ours-XIVO are filtering based, which are causal and much cheap in terms of computatioanl cost. Yet, they produce pose estimates comparable to optimization based methods.
+OKVIS and VINS-Mono are optimization based, which means they operate on keyframes in an iterative manner, which in general results in more accurate pose estimates at the price of higher latency and computational cost. ROVIO and XIVO are filtering based, which are causal and much cheap in terms of computatioanl cost. Yet, they produce pose estimates comparable to optimization based methods.
 
 <!-- 
 OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO falls into the category of ''direct'' methods where photometric error instead of geometric error is directly minimized. -->
@@ -128,9 +128,9 @@ OKVIS, VINS-Mono and Ours-XIVO detect and track local features, whereas ROVIO fa
 
 ### Computational Cost
 
-We benchmarked the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop machine equipped with an Intel Core i7 CPU @ 3.6 GHz. The table below shows the runtime of the feature processing and state update modules.
+We benchmarked the runtime of OKVIS, VINS-Mono, ROVIO and XIVO on a desktop machine equipped with an Intel Core i7 CPU @ 3.6 GHz. The table below shows the runtime of the feature processing and state update modules.
 
-| Module | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
+| Module | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---   | :---       | :---   | :---  |
 | Feature detection \& matching   | 15ms | 20ms | 1ms<sup>*</sup> | 3 ms|
 | State update | 42ms | 50m | 13ms | 4 ms |
@@ -146,9 +146,9 @@ We compared the performance of our system in terms of ATE and RPE on two publicl
 
 #### TUM-VI
 
-The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. The evaluation script of Ours-XIVO can be found in `misc/run_all.sh`.
+The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. The evaluation script of XIVO can be found in `misc/run_all.sh`.
 
-| Sequence | length | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
+| Sequence | length | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---    | :---:   | :---:       | :---:   | :---:  |
 |room1     | 156m   | **0.06m** | 0.07m | 0.16m | 0.13m |
 |room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.11 |
@@ -159,7 +159,7 @@ The following table shows the performance on 6 indoor sequences where ground-tru
 
 *Table 1. RMSE ATE* in meters. Methods marked with KF are keyframe-based, others are recursive approaches.
 
-| Sequence | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
+| Sequence | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---:   | :---:       | :---:   | :---:  |
 |room1 | **0.013**m/**0.43**<sup>o</sup> | 0.015m/0.44<sup>o</sup> | 0.029m/0.53<sup>o</sup> | 0.022m/0.60<sup>o</sup> |
 |room2 | **0.015**m/**0.62**<sup>o</sup> | 0.017m/0.63<sup>o</sup> | 0.030m/0.67<sup>o</sup> | 0.040m/0.71<sup>o</sup> |
