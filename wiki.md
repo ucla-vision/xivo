@@ -12,7 +12,7 @@ We provide X sequences recorded by a [Tango](https://en.wikipedia.org/wiki/Tango
 
 ### Setup
 
-Once you have downloaded the data as compressed `.tar` files, uncompress them into the directory of your choice and set the environment variable `$DATAROOT` to that directory as follows:
+Once you have downloaded the data as compressed `.tar` files, uncompress them into the directory of your choice and set the environment variable `$DATAROOT` to that directory as the following:
 
 ```
 export DATAROOT=/DIRECTORY/OF/YOUR/CHOICE
@@ -23,7 +23,7 @@ Note, the `$DATAROOT` directory should contain datasets structured in the format
 
 ### Example
 
-From the project root directory, run the estimator with configuration specified by the option `-cfg cfg/vio.json` on the `room6` sequence (option `-seq room6`) which resides in directory `$DATAROOT` (option `-root $DATAROOT`) as follows:
+From the project root directory, run the estimator with configuration specified by the option `-cfg cfg/vio.json` on the `room6` sequence (option `-seq room6`) which resides in directory `$DATAROOT` (option `-root $DATAROOT`) as the following:
 
 ```
 bin/st_vio -cfg cfg/vio.json -root $DATAROOT -seq room6 -out out_state
