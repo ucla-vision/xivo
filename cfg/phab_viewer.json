@@ -1,0 +1,27 @@
+{
+  "window": {
+    "height": 960,
+    "width": 640
+  },
+
+  "viewport": {
+    "width": 640,
+    "height": 480,
+    "fx": 400,
+    "fy": 400,
+    "cx": 320,
+    "cy": 240,
+    "znear": 0.1,
+    "zfar": 10
+  },
+
+  "bg_color": {
+    "r": 0.0,
+    "g": 0.0,
+    "b": 0.0,
+    "a": 1.0
+  },
+  "grid_size": 20,
+  "draw_trace_as_dots": true
+
+}
