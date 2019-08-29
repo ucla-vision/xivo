@@ -29,7 +29,7 @@
     "attempts": 12,
     "min_scale_factor": 0.125,
     "max_scale_factor": 4.0,
-    "stepsize": 0.004
+    "stepsize": 0.002
   },
 
   "RK4": {
@@ -56,10 +56,11 @@
 
     "Wbc": [-1.26, 1.21, -1.16],
 
-    "Tbc": [0.060, -0.050, -0.01],  // this seems working well on swivel_chair
+    // "Tbc": [0.00, 0.022, -0.050],  // this seems working well on swivel_chair
+    "Tbc": [-0.030, 0.04, 0.030],  // this seems working well on swivel_chair
 
     "Wg"  : [0, 0, 0],
-    "td"  : 0.026 // 0.0167
+    "td"  : 0.027 // 0.0167
   },
 
   "P" : {
@@ -69,14 +70,14 @@
     "V"   : 0.5,
     "bg"  : 1e-4,
     "ba"  : 1e-3,
-    "Wbc" : 0.1,
+    "Wbc" : 3.1,
     "Tbc" : 0.01,
     "Wg"  : 3.01,
     "td"  : 1e-3, // 1ms
-    "Cg"  : 0, // 1e-3,
-    "Ca"  : 0, // 1e-3,
-    "FC"  :  0, // 10,
-    "distortion": 0
+    "Cg"  : 1e-3, // 1e-3,
+    "Ca"  : 1e-3, // 1e-3,
+    "FC"  :  10, // 10,
+    "distortion": 1e-3
   },
 
   "Qmodel" : {
@@ -110,9 +111,9 @@
   // inflated by 10
   "Qimu": {
     "gyro": 0.01, // 0.10,
-    "gyro_bias": 0, // 0.0447, // 0.0020,
+    "gyro_bias": 0.002, // 0.0020,
     "accel": 0.04,
-    "accel_bias": 0 // 0.0707 // 0.005
+    "accel_bias": 0.001 // 0.005
   },
 
   // initial std on feature state
@@ -175,12 +176,18 @@
 
     "rows": 500, 
     "cols": 960,
+    // "fx": 539.4192,
+    // "fy": 540.924,
+    // "cx": 472.22016,
+    // "cy": 257.5774,
+    // "w": 0.709402, 
 
-    "fx": 539.4192,
-    "fy": 540.924,
-    "cx": 472.22016,
-    "cy": 257.5774,
-    "w": 0.709402, 
+    "model": "fov",
+    "fx": 546.56,
+    "fy": 549.41,
+    "cx": 470.98,
+    "cy": 266.07,
+    "w": 0.727,
 
     "comment": "from corvis"
   },
