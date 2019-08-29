@@ -59,8 +59,8 @@ target_link_libraries(mynode
   gflags::gflags
   glog
   jsoncpp
-  opencv_imgcodecs3
-  opencv_highgui3
-  opencv_core3
+  opencv_core
+  opencv_imgcodecs
+  opencv_highgui
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES})
