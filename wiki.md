@@ -115,8 +115,8 @@ The `-seq` and `-root` options are the same as explained above. If the `-stdout`
 
 ## Evaluation
 
-We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS, VINS-Mono and ROVIO, on publicly available datasets. *Our implementation achieves comparable accuracy at a fraction of the computational cost.*
-
+We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS [Leutenegger *et al.*], VINS-Mono [Qin *et al.*] and ROVIO [Bloesch *et al.*], on publicly available datasets. 
+*Our implementation achieves comparable accuracy at a fraction of the computational cost.* On a desktop PC equipped with an Intel Core i7 CPU @ 3.6 GHz, our system runs at around 140 Hz at low CPU consumption rate. As a comparison, OKVIS and VINS-Mono runs at around 20 Hz, and ROVIO runs at around 60 Hz. The runtime of our system can be further improved by better utilizing CPU cache and memory.
 
 ### Algorithm Categories
 
@@ -140,11 +140,13 @@ We benchmarked the runtime of OKVIS, VINS-Mono, ROVIO and Ours-XIVO on a desktop
 
 OKVIS and VINS-Mono (marked with KF) perform iterative nonlinear least square on keyframes for state estimation, and thus are much slower in the state update step.
 
-### TUM-VI
+### Accuracy
 
-The benchmark performance of this software on TUM-VI dataset is comparable to other top-performing open-source VIO systems. Also, our system runs at more than 100 Hz on a Intel Core i7 CPU at very low CPU consumption rate. The runtime can be further improved by utilizing CPU cache and memory better. The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. The evaluation script of Ours-XIVO can be found in `misc/run_all.sh`.
+We compared the performance of our system in terms of ATE and RPE on two publicly available datasets: TUM-VI and EuRoC. We achieve comparable pose estimation accuracy at a fraction of the computational cost of the top-performing open-source implementations.
 
+#### TUM-VI
 
+The following table shows the performance on 6 indoor sequences where ground-truth poses are available. The numbers for OKVIS, VINS-Mono, and ROVIO are taken from the TUM-VI benchmark paper. The evaluation script of Ours-XIVO can be found in `misc/run_all.sh`.
 
 | Sequence | length | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
 |:---       | :---    | :---:   | :---:       | :---:   | :---:  |
@@ -168,6 +170,6 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 
 *Table 2. RMSE RPE* in translation (meters) and rotation (degrees). Methods marked with KF are keyframe-based, others are recursive approaches.
 
-### EuRoC
+#### EuRoC
 
 Benchmark results on the EuRoC dataset will be available soon.
