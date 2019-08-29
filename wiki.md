@@ -68,9 +68,9 @@ followed by `make` to build with ROS support.
 
 ### Launch
 
-1. In the project root directory, `source build/devel/setup.zsh`. If another shell, such as bash/sh, is used, please source the corresponding shell script (`setup.bash`/`setup.sh`) respectively.
+1. In the project root directory, `source build/devel/setup.zsh`. If another shell, such as bash/sh, is used, source the corresponding shell script (`setup.bash`/`setup.sh`) respectively.
 2. `roslaunch node/launch/xivo.launch` to launch the ros node, which subscribes to `/imu0` and `/cam0/image_raw` topics.
-3. In antoher terminal, playback the rosbag of your choice, e.g., `rosbag play /PATH/TO/YOUR/ROSBAG` .
+3. In antoher terminal, playback the rosbag of your choice, i.e., `rosbag play /PATH/TO/YOUR/ROSBAG`.
 
 <!-- ## Profiling
 
@@ -88,7 +88,7 @@ See [gperftools](https://gperftools.github.io/gperftools/cpuprofile.html) from G
 
 ## Python binding
 
-A simple python binding is provided by wrapping some public interfaces of the estimator via [`pybind11`](https://github.com/pybind/pybind11). Check out `pybind11/pyxivo.cpp` for the available interfaces in python. With pybind11, it is relatively easy if you want to expose more interfaces of the C++ implementation to python.
+A simple python binding is provided by wrapping some public interfaces of the estimator via [pybind11](https://github.com/pybind/pybind11). Check out `pybind11/pyxivo.cpp` for the available interfaces in python. With pybind11, it is relatively easy if you want to expose more interfaces of the C++ implementation to python.
 
 An example of using the Python binding is available in `scripts/pyxivo.py`, which demonstrates estimator creation, data loading, and visualization in python.
 
@@ -115,7 +115,7 @@ The `-seq` and `-root` options are the same as explained above. If the `-stdout`
 
 ## Evaluation
 
-We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS, VINS-Mono and ROVIO, on publicly available datasets. Our implementation achieves comparable accuracy at a fraction of the computational cost. 
+We benchmarked the performance of our system in terms of ATE (Absolute Trajectory Error), RPE (Relative Pose Error), and computational cost against other top-performing open-source implementations, i.e., OKVIS, VINS-Mono and ROVIO, on publicly available datasets. *Our implementation achieves comparable accuracy at a fraction of the computational cost.*
 
 
 ### Algorithm Categories
@@ -155,7 +155,7 @@ The benchmark performance of this software on TUM-VI dataset is comparable to ot
 |room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.10m |
 |room6     | 67m    | **0.04m** | 0.08m | 0.05m | 0.05m |
 
-*Table 1. RMSE ATE* in meters. OKVIS and VINS-Mono are optimization-based, whereas ROVIO and Ours-XIVO are EKF-based. Methods marked with KF are keyframe-based, others are recursive approaches.
+*Table 1. RMSE ATE* in meters. Methods marked with KF are keyframe-based, others are recursive approaches.
 
 | Sequence | OKVIS (KF) | VINS-Mono (KF) | ROVIO | Ours-XIVO |
 |:---       | :---:   | :---:       | :---:   | :---:  |
