@@ -12,7 +12,7 @@
     <param name="viewer_config_path" value="$(find xivo)/../cfg/phab_viewer.json"/>
     <param name="estimator_queue_size" value="1000" />
     <param name="image_topic"   value="/cam0/image_raw" />
-    <param name="imu_topic"   value="/imu0_calib" />
+    <param name="imu_topic"   value="/imu0" />
     <param name="viewer_type" value="pangolin" />
     <!-- <param name="viewer_type" value="ros" /> -->
   </node>

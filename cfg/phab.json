@@ -3,7 +3,7 @@
   "simulation": false,
   "print_timing": true,
   "use_canvas": true,
-  "use_debug_view": false,  // draw rejected & dropped features on canvas
+  "use_debug_view": true,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
 
   // visualization (tracker view) option
@@ -13,7 +13,7 @@
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
-  "use_depth_opt": true,  // depth optimization
+  "use_depth_opt": false,  // depth optimization
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,   
   "use_compression": true,  // measurement compression
@@ -27,7 +27,7 @@
     "attempts": 12,
     "min_scale_factor": 0.125,
     "max_scale_factor": 4.0,
-    "stepsize": 0.002
+    "stepsize": -1
   },
 
   "RK4": {
@@ -42,7 +42,7 @@
 
 
   // gravity constant
-  "gravity": [0, 0, -9.8],
+  "gravity": [0, 0, -9.796],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],
@@ -52,11 +52,12 @@
     "bg"  : [8.93594e-05, -0.000113499, -4.95253e-05],
     "ba"  : [0.106957, 0.0822465, -0.092585],
 
-    "Wbc" : [-2.21, -2.21, 0],
-    // Wbc in tangent space: [-0.0418, -2.172, 2.248]
-    "Tbc": [0, 0, 0],
+    "Wbc" : [1.94, 1.97, 0],
+    "Tbc": [-0.02, 0.08, -0.03],
+    // "Tbc": [0, 0, 0],
+
     "Wg"  : [0, 0, 0],
-    "td"  : 0
+    "td"  : -0.001
   },
 
   "P" : {
@@ -65,13 +66,13 @@
     "V"   : 0.5,
     "bg"  : 1e-4,
     "ba"  : 1e-3,
-    "Wbc" : 3.1,
+    "Wbc" : 0.1,
     "Tbc" : 0.01,
-    "Wg"  : 3.01,
-    "td"  : 1e-5, // 1ms
-    "Cg"  : 1e-5,
-    "Ca"  : 1e-5,
-    "FC"  : 50,
+    "Wg"  : 0.01,
+    "td"  : 3e-5, // 1ms
+    "Cg"  : 1e-3,
+    "Ca"  : 1e-3,
+    "FC"  : 10, //
     "distortion": 1e-3
   },
 
@@ -86,56 +87,33 @@
     "Wg"  : 0
   },
 
-  // // exact densities provided by TUM-VI dataset
-  // // https://vision.in.tum.de/data/datasets/visual-inertial-dataset
+  // Exact densities provided by TUM-VI dataset
+  // This is for tango yellowstone, not the phab phone
   // "Qimu": {
-  //   "gyro": 8.0e-5,
-  //   "gyro_bias": 2.2e-6,
-  //   "accel":1.4e-3,
-  //   "accel_bias": 8.6e-5
+  //   "gyro": 0.00015,
+  //   "gyro_bias": 0.0004,
+  //   "accel":0.003,
+  //   "accel_bias": 0.000005
   // },
 
-  // // inflated by sqrt(3) times 
-  // "Qimu": {
-  //   "gyro": 14.0e-5,
-  //   "gyro_bias": 3.8e-6,
-  //   "accel": 2.4e-3,
-  //   "accel_bias": 14.9e-5
-  // },
-
-  // // doubled 
-  // "Qimu": {
-  //   "gyro": 16.0e-5,
-  //   "gyro_bias": 4.4e-6,
-  //   "accel":2.8e-3,
-  //   "accel_bias": 17.2e-5
-  // },
-
-  // inflated by 3 times
   "Qimu": {
-    "gyro": 24.0e-5,
-    "gyro_bias": 6.6e-6,
-    "accel": 4.2e-3,
-    "accel_bias": 25.8e-5
+    // NOTE: this should be sqrt of the density
+    // since internally, this will be squared
+    "gyro": 0.023,
+    "gyro_bias": 0.0034,
+    "accel":0.095,
+    "accel_bias": 0.0039
   },
-
-  // // inflated by 10 times
-  // "Qimu": {
-  //   "gyro": 8.0e-4,
-  //   "gyro_bias": 2.2e-5,
-  //   "accel":1.4e-2,
-  //   "accel_bias": 8.6e-4
-  // },
 
 
   // initial std on feature state
   "initial_z": 2.5, // meter
-  "initial_std_x": 1.0, // pixel
-  "initial_std_y": 1.0, // pixel
+  "initial_std_x": 1.5, // pixel
+  "initial_std_y": 1.5, // pixel
   "initial_std_z": 1.0,  // meter
 
   // std of visuale measurement, in pixels
-  "visual_meas_std":  1.5,
+  "visual_meas_std":  3.5,
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 5.0,
@@ -146,7 +124,7 @@
   "subfilter": {
     "visual_meas_std":  3.5,
     "ready_steps": 2,
-    "MH_thresh": 8.991
+    "MH_thresh": 18.991
   },
 
   // pre-subfilter triangulation options
@@ -157,7 +135,7 @@
   },
 
   "depth_opt": {
-    "two_view": false,
+    "two_view": true,
     "use_hessian": true,
     "max_iters": 5,
     "eps": 1e-3,
@@ -206,7 +184,7 @@
 
   "min_inliers": 5, // minimum number of inlier measurements
 
-  "MH_thresh": 5.991, // 8.991
+  "MH_thresh": 8.991, // 8.991
   "MH_adjust_factor": 1.15,
 
   "1pt_RANSAC_thresh": 1.5,

@@ -94,7 +94,7 @@ if __name__ == '__main__':
         prev_gyro = (ts, gyro)
       else:
         # both fields are non-empty, forward
-        prev_gyro, prev_accel = gyro, accel
+        prev_gyro, prev_accel = (ts, gyro), (ts, accel)
         interp.append((ts, gyro, accel))
 
     with open(output, 'w') as ofid:
