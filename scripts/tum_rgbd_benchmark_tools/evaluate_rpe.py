@@ -364,7 +364,10 @@ if __name__ == '__main__':
         print "rotational_error.min %f deg"%(numpy.min(rot_error) * 180.0 / numpy.pi)
         print "rotational_error.max %f deg"%(numpy.max(rot_error) * 180.0 / numpy.pi)
     else:
-        print numpy.mean(trans_error)
+        # print numpy.mean(trans_error)
+        print "compared_pose_pairs %d pairs"%(len(trans_error))
+        print "translational_error.rmse %f m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error))
+        print "rotational_error.rmse %f deg"%(numpy.sqrt(numpy.dot(rot_error,rot_error) / len(rot_error)) * 180.0 / numpy.pi)
 
     if args.plot:
         import matplotlib

@@ -36,8 +36,8 @@ public:
   void InertialMeas(uint64_t ts, double wx, double wy, double wz, double ax,
                     double ay, double az) {
 
-    std::cout << "InertialMeas called on " << name_ << " " 
-      << ++imu_calls_ << " times" << std::endl;
+    // std::cout << "InertialMeas called on " << name_ << " " 
+    //   << ++imu_calls_ << " times" << std::endl;
 
     estimator_->InertialMeas(timestamp_t{ts}, {wx, wy, wz}, {ax, ay, az});
 
@@ -49,8 +49,8 @@ public:
 
   void VisualMeas(uint64_t ts, std::string &image_path) {
 
-    std::cout << "VisualMeas called on " << name_ << " " 
-      << ++visual_calls_ << " times" << std::endl;
+    // std::cout << "VisualMeas called on " << name_ << " " 
+    //   << ++visual_calls_ << " times" << std::endl;
 
     auto image = cv::imread(image_path);
 
