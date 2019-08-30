@@ -1,0 +1,6 @@
+- results.tar.gz: contains the pose estimates for the results presented in our evaluation
+- tumvi_calib: contains the calibration data files from TUM-VI
+- format_all.sh: format all the source and header files
+- print_stats.sh: print number of lines of code
+- run_all.sh: run and evaluate the estimator in one command
+- view_benchmark.sh: quick check of the benchmark results
