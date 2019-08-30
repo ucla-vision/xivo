@@ -1,5 +1,5 @@
 {
-    "estimator_cfg": "cfg/estimator.json",
+    "estimator_cfg": "cfg/estimator1.json",
     "viewer_cfg": "cfg/viewer.json",
 
     "visualize": true,

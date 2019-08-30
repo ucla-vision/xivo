@@ -18,6 +18,7 @@ public:
   // explicit SO3Type(const Eigen::Matrix<Type, 3, 3> &R):R_{R} {}
   template <typename Derived>
   explicit SO3Type(const Eigen::MatrixBase<Derived> &R) : R_{R} {}
+
   explicit SO3Type(const Vec3 &axis, Type angle)
       : R_{rodrigues(Vec3{axis / axis.norm() * angle})} {}
 
