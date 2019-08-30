@@ -122,7 +122,7 @@ We benchmarked the performance of our system in terms of ATE (Absolute Trajector
 
 ### Algorithm Categories
 
-OKVIS and VINS-Mono are optimization based, which means they operate on keyframes in an iterative manner, which in general results in more accurate pose estimates at the price of higher latency and computational cost. ROVIO and XIVO are filtering based, which are causal and much cheap in terms of computatioanl cost. Yet, they produce pose estimates comparable to optimization based methods.
+OKVIS and VINS-Mono are optimization based, which means they operate on keyframes in an iterative manner, which in general results in more accurate pose estimates at the price of higher latency and computational cost. ROVIO and XIVO are filtering based, which are causal and much cheaper in terms of computatioanl cost. Yet, they produce pose estimates comparable to optimization based methods.
 
 Besides, OKVIS runs on stereo images, whereas the other three methods only use monocular images.
 
