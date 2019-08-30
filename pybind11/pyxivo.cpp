@@ -16,7 +16,8 @@ class EstimatorWrapper {
 public:
   EstimatorWrapper(const std::string &cfg_path,
                    const std::string &viewer_cfg_path,
-                   const std::string &name) {
+                   const std::string &name)
+    : name_{name}, imu_calls_{0}, visual_calls_{0} {
 
     if (!glog_init_) {
       google::InitGoogleLogging("pyxivo");
@@ -34,6 +35,10 @@ public:
 
   void InertialMeas(uint64_t ts, double wx, double wy, double wz, double ax,
                     double ay, double az) {
+
+    std::cout << "InertialMeas called on " << name_ << " " 
+      << ++imu_calls_ << " times" << std::endl;
+
     estimator_->InertialMeas(timestamp_t{ts}, {wx, wy, wz}, {ax, ay, az});
 
     if (viewer_) {
@@ -43,6 +48,10 @@ public:
   }
 
   void VisualMeas(uint64_t ts, std::string &image_path) {
+
+    std::cout << "VisualMeas called on " << name_ << " " 
+      << ++visual_calls_ << " times" << std::endl;
+
     auto image = cv::imread(image_path);
 
     estimator_->VisualMeas(timestamp_t{ts}, image);
@@ -77,6 +86,8 @@ private:
   std::unique_ptr<Estimator> estimator_;
   std::unique_ptr<Viewer> viewer_;
   static bool glog_init_;
+  std::string name_;
+  int imu_calls_, visual_calls_;
 };
 
 bool EstimatorWrapper::glog_init_{false};

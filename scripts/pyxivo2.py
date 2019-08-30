@@ -14,7 +14,7 @@ KIF_ROOT = '/local2/Data/tumvi/exported/euroc/512_16'
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '-root', default=KIF_ROOT, help='root directory of the tumvi dataset')
+    '-root', default=TP_ROOT, help='root directory of the tumvi dataset')
 parser.add_argument(
     '-seq', default='room6', help='short tag for the seuqence name')
 parser.add_argument(
@@ -76,12 +76,9 @@ if __name__ == '__main__':
             for estimator in estimators:
                 estimator.InertialMeas(ts, gyro[0], gyro[1], gyro[2], accel[0], accel[1], accel[2])
         else:
-            for estimator in estimators:
-                estimator.VisualMeas(ts, content)
-
-            now = estimator.now()
             gsb = []
             for estimator in estimators:
+                estimator.VisualMeas(ts, content)
                 gsb.append(np.array(estimator.gsb()))
 
             # # print gsb[:3, :3]
