@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
 
     np.savetxt(
-        os.path.join(args.out_dir, 'tumvi_cam{}_{}'.format(args.cam_id, args.seq)),
+        os.path.join(args.out_dir, 'tumvi_{}_cam{}'.format(args.seq, args.cam_id)),
         results,
         fmt='%f %f %f %f %f %f %f %f')
 

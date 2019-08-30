@@ -5,6 +5,7 @@ from shutil import copyfile
 
 TP_ROOT = '/home/feixh/Data/tumvi/exported/euroc/512_16'
 KIF_ROOT = '/local2/Data/tumvi/exported/euroc/512_16'
+double_fusion = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -15,6 +16,10 @@ parser.add_argument(
     '-out_dir', default='.', help='output directory to save results')
 parser.add_argument(
     '-use_viewer', default=False, action='store_true', help='visualize if set')
+
+# parser.add_argument(
+#     '-double-fusion', default=False, action='store_true', help='if ture, take average of two trajectories in the same coordinate system')
+#
 parser.add_argument(
     '-stdout', default=False, action='store_true', help='write to stdout instead of a benchmark file if set')
 args = parser.parse_args()
@@ -49,7 +54,7 @@ if __name__ == '__main__':
         print(cmd)
         os.system(cmd)
 
-        result_file = os.path.join(args.out_dir, 'tumvi_cam{}_{}'.format(cam_id, args.seq))
+        result_file = os.path.join(args.out_dir, 'tumvi_{}_cam{}'.format(args.seq, cam_id))
         groundtruth_file = os.path.join(args.out_dir, 'tumvi_{}_gt'.format(args.seq))
         benchmark_file = os.path.join(args.out_dir, 'tumvi_{}_bench'.format(args.seq))
 
@@ -85,3 +90,32 @@ if __name__ == '__main__':
         print('*** COMMAND TO BE EXECUTED ***')
         print(cmd)
         os.system(cmd)
+
+    if double_fusion:
+        # fuse trajectories
+        cmd = 'python scripts/double_fusion.py \
+-root {root:} \
+-working-dir {workdir:}  \
+-seq {seq:}'.format( root=args.root, workdir=args.out_dir, seq=args.seq)
+        print('*** COMMAND TO BE EXECUTED ***')
+        print(cmd)
+        os.system(cmd)
+
+        # evaluate the fused trajectory
+        result_file = os.path.join(args.out_dir, 'tumvi_{}_fused'.format(args.seq))
+        cmd = 'python scripts/tum_rgbd_benchmark_tools/evaluate_ate.py \
+--max_difference 0.001 \
+{groundtruth_file:} \
+{result_file:} {write_to:}'.format(
+            groundtruth_file=groundtruth_file,
+            result_file=result_file,
+            write_to='>> {}'.format(benchmark_file) if not args.stdout else '')
+        print('*** COMMAND TO BE EXECUTED ***')
+        print(cmd)
+        os.system(cmd)
+
+
+
+
+
+
