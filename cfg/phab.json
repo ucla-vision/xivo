@@ -1,7 +1,7 @@
 {
   // verbose
   "simulation": false,
-  "print_timing": true,
+  "print_timing": false,
   "print_calibration": true,
   "use_canvas": true,
   "use_debug_view": true,  // draw rejected & dropped features on canvas
@@ -65,11 +65,11 @@
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 1e-4,
-    "ba"  : 1e-3,
+    "bg"  : 3e-4,
+    "ba"  : 3e-3,
     "Wbc" : 1.1,
     "Tbc" : [0.001, 0.001, 0.005],
-    "Wg"  : 0.01,
+    "Wg"  : 3.1,
     "td"  : 5e-4, // 1ms
     "Cg"  : 1e-3,
     "Ca"  : 1e-3,
@@ -100,9 +100,9 @@
 
   "Qimu": {
     "gyro": 0.01,
-    "gyro_bias": 0.0001,
-    "accel":0.20,
-    "accel_bias": 0.003
+    "gyro_bias": 0.00001,
+    "accel":0.10,
+    "accel_bias": 0.001
   },
 
 
