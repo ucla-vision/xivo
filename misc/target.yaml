@@ -1,0 +1,5 @@
+target_type: 'aprilgrid'
+tagCols: 4
+tagRows: 5
+tagSize: 0.03
+tagSpacing: 0.25

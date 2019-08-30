@@ -12,7 +12,7 @@ We provide several sequences recorded by a [Tango](https://en.wikipedia.org/wiki
 
 ### Setup
 
-Once you have downloaded the data as compressed `.tar` files, uncompress them into the directory of your choice and set the environment variable `$DATAROOT` to that directory as the following:
+Once you have downloaded the data as compressed `.tar.gz` files, uncompress them into the directory of your choice and set the environment variable `$DATAROOT` to that directory as the following:
 
 ```
 export DATAROOT=/DIRECTORY/OF/YOUR/CHOICE
@@ -23,15 +23,15 @@ Note, the `$DATAROOT` directory should contain datasets structured in the format
 
 ### Example
 
-From the project root directory, run the estimator with configuration specified by the option `-cfg cfg/vio.json` on the `room6` sequence (option `-seq room6`) which resides in directory `$DATAROOT` (option `-root $DATAROOT`) as the following:
+From the project root directory, run the estimator with configuration specified by the option `-cfg cfg/vio.json` on the `data9_workbench` sequence (option `-seq data9_workbench`) which resides in directory `$DATAROOT` (option `-root $DATAROOT`) as the following:
 
 ```
-bin/vio -cfg cfg/vio.json -root $DATAROOT -seq room6 -out out_state
+bin/vio -cfg cfg/vio.json -root $DATAROOT -seq data9_workbench -out out_state -dataset xivo
 ```
 
 where estimated states are saved to the output file `out_state`.
 
-For detailed usage of the application, see the flags defined at the beginning of the application source file `src/app/singlethread_vio.cpp`. 
+For detailed usage of the application, see the flags defined at the beginning of the application source file `src/app/vio.cpp`. 
 
 
 ### System logging
@@ -45,7 +45,7 @@ mkdir /YOUR/LOG/DIRECTORY/HERE
 and then run the estimator with a prefix to specify the log directory:
 
 ```
-GLOG_log_dir=/YOUR/LOG/DIRECTORY/HERE bin/vio -cfg cfg/vio.json -root $DATAROOT
+GLOG_log_dir=/YOUR/LOG/DIRECTORY/HERE bin/vio -cfg cfg/vio.json -root $DATAROOT -seq data9_workbench -out out_state -dataset xivo
 ```
 
 Note, by default, log is suppressed for runtime speed by setting `add_definitions(-DGOOGLE_STRIP_LOG=1)` in `src/CMakeLists.txt`. To enable log, simply comment out that line and re-build.
@@ -95,7 +95,7 @@ An example of using the Python binding is available in `scripts/pyxivo.py`, whic
 To run the demo, execute:
 
 ```
-python scripts/pyxivo.py -root $DATAROOT -seq room6
+python scripts/pyxivo.py -cfg cfg/phab.json -root $DATAROOT -seq data9_workbench -dataset xivo -use_viewer
 ```
 
 in the project root directory. The command-line options are more or less the same as the C++ executable. For detailed usage, you can look at the options defined at the beginning of the script `scripts/pyxivo.py`. Note you might need to install some python dependencies by executing the following in the project root directory:

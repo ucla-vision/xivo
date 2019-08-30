@@ -16,13 +16,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     '-root', default=KIF_ROOT, help='root directory of the tumvi dataset')
 parser.add_argument(
-    '-cfg', default='cfg/estimator.json', help='path to the estimator configuration')
+    '-cfg', default='cfg/phab.json', help='path to the estimator configuration')
 parser.add_argument(
     '-seq', default='room6', help='short tag for the seuqence name')
 parser.add_argument(
     '-cam_id', default=0, type=int, help='specify which camera to use')
 parser.add_argument(
     '-out_dir', default='.', help='output directory to save results')
+parser.add_argument(
+        '-dataset', default='tumvi', help='dataset type')
 parser.add_argument(
     '-use_viewer', default=False, action='store_true',
     help='visualize trajectory and feature tracks if set')
@@ -35,11 +37,18 @@ if __name__ == '__main__':
     ########################################
     # LOAD DATA
     ########################################
-    img_dir = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
-                           'mav0', 'cam{}'.format(args.cam_id), 'data')
+    if args.dataset == 'tumvi':
+        img_dir = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
+                               'mav0', 'cam{}'.format(args.cam_id), 'data')
 
-    imu_path = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
-                            'mav0', 'imu0', 'data.csv')
+        imu_path = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
+                                'mav0', 'imu0', 'data.csv')
+    elif args.dataset == 'xivo':
+        img_dir = os.path.join(args.root, args.seq, 'cam0', 'data')
+
+        imu_path = os.path.join(args.root, args.seq, 'imu0', 'data.csv')
+    else:
+        raise ValueError('unknown dataset argument; choose from tumvi or xivo')
 
     data = []
 
@@ -49,7 +58,7 @@ if __name__ == '__main__':
 
     with open(imu_path, 'r') as fid:
         for l in fid.readlines():
-            if l[0] != '#':
+            if l[0].isdigit():
                 v = l.strip().split(',')
                 ts = int(v[0])
                 w = [float(x) for x in v[1:4]]
@@ -62,7 +71,11 @@ if __name__ == '__main__':
     ########################################
     # INITIALIZE ESTIMATOR
     ########################################
-    estimator = pyxivo.Estimator(args.cfg, 'cfg/viewer.json' if args.use_viewer else '', args.seq)
+    viewer_cfg = ''
+    if args.use_viewer:
+        viewer_cfg = os.path.join('cfg', 'viewer.json' if args.dataset == 'tumvi' else 'phab_viewer.json')
+
+    estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq)
     results = []
     for i, (ts, content) in enumerate(data):
         # if i > 0 and i % 500 == 0:
