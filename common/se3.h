@@ -17,7 +17,7 @@ public:
 
   // explicit SO3Type(const Eigen::Matrix<Type, 3, 3> &R):R_{R} {}
   template <typename Derived>
-  explicit SO3Type(const Eigen::MatrixBase<Derived> &R) : R_{R} {}
+  explicit SO3Type(const Eigen::MatrixBase<Derived> &R) : R_{fitToSO3(R)} {}
 
   explicit SO3Type(const Vec3 &axis, Type angle)
       : R_{rodrigues(Vec3{axis / axis.norm() * angle})} {}
@@ -42,11 +42,10 @@ public:
   static Vec3 log(const SO3Type &R) { return R.log(); }
   static SO3Type exp(const Vec3 &w) { return SO3Type{rodrigues(w)}; }
 
-  static SO3Type fitToSO3(const Mat3 &R_approx) {
+  static Mat3 fitToSO3(const Mat3 &R_approx) {
     Eigen::JacobiSVD<Mat3> svd(R_approx,
                                Eigen::ComputeThinU | Eigen::ComputeThinV);
-    return SO3Type{svd.matrixU() * Mat3::Identity() *
-                   svd.matrixV().transpose()};
+    return svd.matrixU() * Mat3::Identity() * svd.matrixV().transpose();
   }
 
   template <typename TT> SO3Type<TT> cast() const {

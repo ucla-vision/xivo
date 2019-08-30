@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # load two trajectories
     trajs = []
     for cam_id in [0, 1]:
-        data = np.loadtxt(os.path.join(args.working_dir, 'tumvi_{}_cam{}'.format(args.seq, args.cam_id)))
+        data = np.loadtxt(os.path.join(args.working_dir, 'tumvi_{}_cam{}'.format(args.seq, cam_id)))
         # convert each data line to (timestamp, pose) tuple
         # layout of each line
         # 0: timestamp; 1-3: Tsb; 4-7: Rsb in quaternion [x, y, z, w] convention

@@ -58,7 +58,9 @@ if __name__ == '__main__':
         groundtruth_file = os.path.join(args.out_dir, 'tumvi_{}_gt'.format(args.seq))
         benchmark_file = os.path.join(args.out_dir, 'tumvi_{}_bench'.format(args.seq))
 
-        os.system('echo tumvi sequence {} >> {}'.format(args.seq, benchmark_file))
+        if cam_id == 0:
+            os.system('echo tumvi sequence {} >> {}'.format(args.seq, benchmark_file))
+
         os.system('echo camera {} >> {}'.format(cam_id, benchmark_file))
 
         ########################################
@@ -100,6 +102,8 @@ if __name__ == '__main__':
         print('*** COMMAND TO BE EXECUTED ***')
         print(cmd)
         os.system(cmd)
+
+        os.system('echo double-fusion >> {}'.format(benchmark_file))
 
         # evaluate the fused trajectory
         result_file = os.path.join(args.out_dir, 'tumvi_{}_fused'.format(args.seq))

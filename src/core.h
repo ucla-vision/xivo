@@ -93,7 +93,7 @@ constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;
 constexpr int kFullSize = kFeatureBegin + kFeatureSize * kMaxFeature;
 
 // frequency to project rotation matrices to SO3 to get rid of the accumulated numeric error
-constexpr int kEnforceSO3Freq = 100;  
+constexpr int kEnforceSO3Freq = 50;  
 
 ////////////////////////////////////////
 // STATE
@@ -131,13 +131,13 @@ struct State {
     td += dX(Index::td);
 #endif
 
-    // if constexpr(kEnforceSO3Freq > 0) {
-    //   if (++counter % kEnforceSO3Freq == 0) {
-    //     Rsb = SO3::project(Rsb.matrix());
-    //     Rbc = SO3::project(Rbc.matrix());
-    //     Rg = SO3::project(Rg.matrix());
-    //   }
-    // }
+    if constexpr(kEnforceSO3Freq > 0) {
+      if (++counter % kEnforceSO3Freq == 0) {
+        Rsb = SO3::project(Rsb.matrix());
+        Rbc = SO3::project(Rbc.matrix());
+        Rg = SO3::project(Rg.matrix());
+      }
+    }
 
     return *this;
   }
