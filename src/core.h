@@ -87,8 +87,7 @@ constexpr int kFeatureSize = 3;
 // By reducing the number of groups and features, we can trade off computational cost
 // and accuracy
 constexpr int kMaxFeature = 30;
-constexpr int kMinFeature = 25;  // NOTE: the number of features will also be limited by the number of groups
-constexpr int kMaxGroup = kMinFeature;
+constexpr int kMaxGroup = 15;
 
 constexpr int kGroupBegin = kCameraBegin + kMaxCameraIntrinsics;
 constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;

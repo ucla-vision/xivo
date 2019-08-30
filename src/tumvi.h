@@ -10,11 +10,11 @@
 
 namespace xivo {
 
-class TUMVILoader {
+class DataLoader {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  TUMVILoader(const std::string &image_dir, const std::string &imu_dir);
+  DataLoader(const std::string &image_dir, const std::string &imu_dir);
   std::vector<msg::Pose> LoadGroundTruthState(const std::string &state_dir);
 
   msg::Message *Get(int i) const { return entries_[i].get(); };
@@ -25,7 +25,8 @@ private:
   std::vector<msg::Pose> poses_;
 };
 
-using EuRoCLoader = TUMVILoader;
+using TUMVILoader = DataLoader;
+using EuRoCLoader = DataLoader;
 
 // Get image, imu and groundtruth directories for TUMVI and EuRoC dataset
 std::tuple<std::string, std::string, std::string>

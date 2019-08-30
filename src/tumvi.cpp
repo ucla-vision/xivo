@@ -13,7 +13,7 @@
 
 namespace xivo {
 
-TUMVILoader::TUMVILoader(const std::string &image_dir,
+DataLoader::DataLoader(const std::string &image_dir,
                          const std::string &imu_dir) {
 
   // load image data entries
@@ -61,7 +61,7 @@ TUMVILoader::TUMVILoader(const std::string &image_dir,
 }
 
 std::vector<msg::Pose>
-TUMVILoader::LoadGroundTruthState(const std::string &state_dir) {
+DataLoader::LoadGroundTruthState(const std::string &state_dir) {
   std::string state_data = state_dir + "/data.csv";
   if (std::ifstream is{state_data}) {
     std::string line;
@@ -114,6 +114,12 @@ GetDirs(const std::string dataset, const std::string root,
     std::string imu_dir = absl::StrFormat("%s/%s/mav0/imu0/", root, seq);
     std::string mocap_dir =
         absl::StrFormat("%s/%s/mav0/state_groundtruth_estimate0/", root, seq);
+    return std::make_tuple(image_dir, imu_dir, mocap_dir);
+  } else if (dataset_type == "xivo") {
+    std::string image_dir =
+        absl::StrFormat("%s/%s/cam0/", root, seq);
+    std::string imu_dir = absl::StrFormat("%s/%s/imu0/", root, seq);
+    std::string mocap_dir = "";
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else {
     LOG(FATAL) << "Unrecognized dataset type, expecting [euroc|tumvi]";
