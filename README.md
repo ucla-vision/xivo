@@ -3,7 +3,7 @@
 
 ![Demo](misc/demo_ucla_e6.gif)
 
-*Demo video in Boelter Hall at UCLA.* System runs in real-time on data captured by a RealSense i435D sensor. More videos and demos availabe at the [demo page](demo.md).
+*Demo video taken in Boelter Hall at UCLA.* System runs in real-time on data captured by a RealSense i435D sensor. More videos and demos availabe at the [demo page](demo.md).
 
 ## Overview
 
