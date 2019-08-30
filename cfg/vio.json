@@ -1,6 +1,6 @@
 {
-    "estimator_cfg": "cfg/estimator0.json",
-    "viewer_cfg": "cfg/viewer.json",
+    "estimator_cfg": "cfg/phab.json",
+    "viewer_cfg": "cfg/phab_viewer.json",
 
     "visualize": true,
     "wait_time": 1,

@@ -43,7 +43,7 @@ list(APPEND deps
 
 add_library(xapp SHARED
         estimator_process.cpp
-        tumvi.cpp
+        loader.cpp
         geometry.cpp
         metrics.cpp
         publisher.cpp

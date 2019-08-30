@@ -1,4 +1,3 @@
-// Single-thread VIO running on TUMVI dataset
 // Author: Xiaohan Fei
 #include "unistd.h"
 #include <algorithm>
@@ -13,7 +12,7 @@
 #include "estimator_process.h"
 #include "metrics.h"
 #include "tracker.h"
-#include "tumvi.h"
+#include "loader.h"
 #include "viewer.h"
 #include "visualize.h"
 
@@ -22,7 +21,7 @@ DEFINE_string(cfg, "cfg/vio.json",
               "Configuration file for the VIO application.");
 DEFINE_string(root, "/home/feixh/Data/tumvi/exported/euroc/512_16/",
               "Root directory containing tumvi dataset folder.");
-DEFINE_string(dataset, "tumvi", "euroc | tumvi");
+DEFINE_string(dataset, "tumvi", "xivo | euroc | tumvi");
 DEFINE_string(seq, "room1", "Sequence of TUM VI benchmark to play with.");
 DEFINE_int32(cam_id, 0, "Camera id.");
 DEFINE_string(out, "out_state", "Output file path.");
@@ -40,7 +39,7 @@ int main(int argc, char **argv) {
   std::tie(image_dir, imu_dir, mocap_dir) =
       GetDirs(FLAGS_dataset, FLAGS_root, FLAGS_seq, FLAGS_cam_id);
 
-  std::unique_ptr<TUMVILoader> loader(new TUMVILoader{image_dir, imu_dir});
+  std::unique_ptr<DataLoader> loader(new DataLoader{image_dir, imu_dir});
 
   // create estimator
   auto est = std::make_unique<Estimator>(

@@ -44,7 +44,7 @@ Estimator::~Estimator() {
     std::cout << "td=" << X_.td << std::endl;
     std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
     std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
-    std::cout << "Camera intrinsics:\n";
+    std::cout << "===== Camera intrinsics =====\n";
     CameraManager::instance()->Print(std::cout);
   }
 
