@@ -36,13 +36,15 @@ void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
 
 // destructor
 Estimator::~Estimator() {
-  std::cout << "===== Auto-Calibration =====\n";
-  std::cout << "Rbc=\n" << X_.Rbc << std::endl;
-  std::cout << "Wbc=" << SO3::log(X_.Rbc).transpose() << std::endl;
-  std::cout << "Tbc=" << X_.Tbc.transpose() << std::endl;
-  std::cout << "td=" << X_.td << std::endl;
-  std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
-  std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
+  if (cfg_.get("print_calibration", false).asBool()) {
+    std::cout << "===== Auto-Calibration =====\n";
+    std::cout << "Rbc=\n" << X_.Rbc << std::endl;
+    std::cout << "Wbc=" << SO3::log(X_.Rbc).transpose() << std::endl;
+    std::cout << "Tbc=" << X_.Tbc.transpose() << std::endl;
+    std::cout << "td=" << X_.td << std::endl;
+    std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
+    std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
+  }
 
   if (worker_) {
     worker_->join();

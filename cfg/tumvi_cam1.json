@@ -1,7 +1,8 @@
 {
   // verbose
   "simulation": false,
-  "print_timing": true,
+  "print_timing": false,  // if true, print timing information
+  "print_calibration": false, // if true, report results of auto-calibration at the end of executation
   "use_canvas": true,
   "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
