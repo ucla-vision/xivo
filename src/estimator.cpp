@@ -193,7 +193,12 @@ Estimator::Estimator(const Json::Value &cfg)
   P_.block<3, 3>(Index::bg, Index::bg) *= P["bg"].asDouble();
   P_.block<3, 3>(Index::ba, Index::ba) *= P["ba"].asDouble();
   P_.block<3, 3>(Index::Wbc, Index::Wbc) *= P["Wbc"].asDouble();
-  P_.block<3, 3>(Index::Tbc, Index::Tbc) *= P["Tbc"].asDouble();
+  try {
+    P_.block<3, 3>(Index::Tbc, Index::Tbc) *= P["Tbc"].asDouble();
+  } catch (const std::exception&) {
+    auto Cov = GetVectorFromJson<number_t, 3>(P, "Tbc");
+    P_.block<3, 3>(Index::Tbc, Index::Tbc) *= Cov.asDiagonal();
+  }
   P_.block<3, 3>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   P_(Index::td, Index::td) *= P["td"].asDouble();

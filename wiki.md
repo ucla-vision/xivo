@@ -8,7 +8,7 @@ The current implementation supports two execution modes: Batch, requiring a fold
 
 ### Datasets
 
-We provide X sequences recorded by a [Tango](https://en.wikipedia.org/wiki/Tango_(platform)) phone. The images are recorded at 30 Hz in VGA (640x480) size, and the inertial measurements are recorded at 200 Hz. You can download the sequences [here](placeholder).
+We provide X sequences recorded by a [Tango](https://en.wikipedia.org/wiki/Tango_(platform)) phone. The images are recorded at 30 Hz in VGA (640x480) size, and the inertial measurements are recorded at 200 Hz. You can download the sequences [here](https://www.dropbox.com/sh/1a87gb0rwk72qso/AACMB-hSDQwS-hRiHLhz9wr9a?dl=0). 
 
 ### Setup
 

@@ -2,6 +2,7 @@
   // verbose
   "simulation": false,
   "print_timing": true,
+  "print_calibration": true,
   "use_canvas": true,
   "use_debug_view": true,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
@@ -53,9 +54,8 @@
     "bg"  : [8.93594e-05, -0.000113499, -4.95253e-05],
     "ba"  : [0.106957, 0.0822465, -0.092585],
 
-    "Wbc" : [1.97, 2.08, -0.0245],
-    // "Tbc": [-0.020, 0.030, 0.002], // good
-    "Tbc": [0.0, 0.0, -0.03], // good
+    "Wbc" : [1.87, 1.98, -0.0048],
+    "Tbc": [-0.025, 0.025, -0.040],
 
     "Wg"  : [0, 0, 0],
     "td"  : 0.0
@@ -67,14 +67,14 @@
     "V"   : 0.5,
     "bg"  : 1e-4,
     "ba"  : 1e-3,
-    "Wbc" : 0.1,
-    "Tbc" : 0.01,
+    "Wbc" : 1.1,
+    "Tbc" : [0.001, 0.001, 0.005],
     "Wg"  : 0.01,
     "td"  : 5e-4, // 1ms
     "Cg"  : 1e-3,
     "Ca"  : 1e-3,
-    "FC"  : [5, 0.5], // calibration accuracy of focal length and principal point can vary
-    "distortion": 0.05
+    "FC"  : [1, 0.5], // calibration accuracy of focal length and principal point can vary
+    "distortion": 1e-3
   },
 
   "Qmodel" : {
@@ -99,10 +99,10 @@
   // },
 
   "Qimu": {
-    "gyro": 0.023,
-    "gyro_bias": 0.0034,
-    "accel":0.28,
-    "accel_bias": 0.0039
+    "gyro": 0.01,
+    "gyro_bias": 0.0001,
+    "accel":0.20,
+    "accel_bias": 0.003
   },
 
 
@@ -161,20 +161,26 @@
   },
   "gravity_init_counter": 20,
 
+
   "camera_cfg": {
     "model": "equidistant",
+    "max_iter": 25,
 
     "rows": 480, 
     "cols": 640,
 
-    "fx": 278.58280916,
-    "fy": 280.22060362,
-    "cx": 319.44633807,
-    "cy": 234.52617002,
-    "k0123": [0.03270076, -0.10166512,  0.13026008, -0.05382413],
-    "max_iter": 25,
+    "fx": 274.00289785,
+    "fy": 275.2699115,
+    "cx": 319.72871392,
+    "cy": 234.57458689,
+    "k0123":[0.02259339, -0.03359065,  0.04207969, -0.01753983],
 
 
+    // "fx": 278.58280916,
+    // "fy": 280.22060362,
+    // "cx": 319.44633807,
+    // "cy": 234.52617002,
+    // "k0123": [0.03270076, -0.10166512,  0.13026008, -0.05382413],
 	 // distortion: [ 0.03270076 -0.10166512  0.13026008 -0.05382413] +- [0.01319749 0.03219052 0.03762898 0.01511334]
 	 // projection: [278.58280916 280.22060362 319.44633807 234.52617002] +- [3.02010026 3.07492519 0.33669887 0.25876254]
 	 // reprojection error: [0.000001, -0.000001] +- [0.182146, 0.186258]
