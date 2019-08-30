@@ -31,6 +31,7 @@ public:
       viewer_ = std::unique_ptr<Viewer>(new Viewer{viewer_cfg, name});
     }
   }
+
   void InertialMeas(uint64_t ts, double wx, double wy, double wz, double ax,
                     double ay, double az) {
     estimator_->InertialMeas(timestamp_t{ts}, {wx, wy, wz}, {ax, ay, az});

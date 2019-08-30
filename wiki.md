@@ -26,7 +26,7 @@ Note, the `$DATAROOT` directory should contain datasets structured in the format
 From the project root directory, run the estimator with configuration specified by the option `-cfg cfg/vio.json` on the `room6` sequence (option `-seq room6`) which resides in directory `$DATAROOT` (option `-root $DATAROOT`) as the following:
 
 ```
-bin/st_vio -cfg cfg/vio.json -root $DATAROOT -seq room6 -out out_state
+bin/vio -cfg cfg/vio.json -root $DATAROOT -seq room6 -out out_state
 ```
 
 where estimated states are saved to the output file `out_state`.
@@ -45,7 +45,7 @@ mkdir /YOUR/LOG/DIRECTORY/HERE
 and then run the estimator with a prefix to specify the log directory:
 
 ```
-GLOG_log_dir=/YOUR/LOG/DIRECTORY/HERE bin/st_vio -cfg cfg/vio.json -root $DATAROOT
+GLOG_log_dir=/YOUR/LOG/DIRECTORY/HERE bin/vio -cfg cfg/vio.json -root $DATAROOT
 ```
 
 Note, by default, log is suppressed for runtime speed by setting `add_definitions(-DGOOGLE_STRIP_LOG=1)` in `src/CMakeLists.txt`. To enable log, simply comment out that line and re-build.

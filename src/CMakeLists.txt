@@ -83,8 +83,8 @@ endif(BUILD_G2O)
 add_executable(vio app/vio.cpp)
 target_link_libraries(vio ${libxivo} gflags::gflags)
 
-add_executable(st_vio app/singlethread_vio.cpp)
-target_link_libraries(st_vio ${libxivo} gflags::gflags)
+# add_executable(double_vio app/double_vio.cpp)
+# target_link_libraries(double_vio ${libxivo} gflags::gflags)
 
 ################################################################################
 # TOOLING
