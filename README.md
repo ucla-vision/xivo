@@ -1,9 +1,9 @@
 # XIVO: X Inertial-aided Visual Odometry
 
 
-<!-- ![Demo](misc/demo.gif)
+![Demo](misc/demo_ucla_e6.gif)
 
-*Demo on TUM-VI room4 sequence. (downsampled video, not actual framerate)* -->
+*Demo video in Boelter Hall at UCLA.* System runs in real-time on data captured by a RealSense i435D sensor. More videos and demos availabe at the [demo page](demo.md).
 
 ## Overview
 

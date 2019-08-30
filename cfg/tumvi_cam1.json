@@ -73,8 +73,8 @@
     "td"  : 1e-5, // 1ms
     "Cg"  : 1e-5,
     "Ca"  : 1e-5,
-    "FC"  : 50,
-    "distortion": 1e-3
+    "FC"  : [9, 0.9],
+    "distortion": 0.01
   },
 
   "Qmodel" : {
