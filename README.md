@@ -3,7 +3,7 @@
 
 ![Demo](misc/demo_ucla_e6.gif)
 
-XIVO runs in faster-than-real-time on stored data (here from a RealSense i435D sensor) or on live streams. More demos are available [here](demo.md).
+XIVO runs in faster-than-real-time on stored data (here from a RealSense i435D sensor) or on live streams. It takes as input video frames from a calibrated camera and inertial measurements sensors, and outputs a sparse point cloud with attribute features and 6 DOF pose of teh camera with a latency of about 7ms, depending on the hardware. It performs auto-calibration of the relative pose between the camera and the IMU as well as the time-stamp alignment. More demos are available [here](demo.md), the system is described in this [paper]; please reference [link to BibTex entry] if you use any portion of this code.
 
 ## Overview
 
