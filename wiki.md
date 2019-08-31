@@ -8,7 +8,9 @@ The current implementation supports two execution modes: Batch, requiring a fold
 
 ### Datasets
 
-We provide several sequences recorded by a [Tango](https://en.wikipedia.org/wiki/Tango_(platform)) platform. The images are recorded at 30 Hz in VGA (640x480) size, and the inertial measurements are recorded at 200 Hz. You can download the sequences [here][xivo_download] as compressed files (`.tar.gz`) or ROS bags (`.bag`). We will add more sequences to the dataset as well as metric way points for thorough evaluation of VIO systems.
+We provide several sequences recorded by a [Tango](https://en.wikipedia.org/wiki/Tango_(platform)) platform. The images are recorded at 30 Hz in VGA (640x480) size, and the inertial measurements are recorded at 200 Hz. You can download the sequences [here][xivo_download] as compressed files (`.tar.gz`) or ROS bags (`.bag`). 
+
+<!-- We will add more sequences to the dataset as well as metric way points for thorough evaluation of VIO systems. -->
 
 [xivo_download]: https://www.dropbox.com/sh/0w5b7fglxf3li2l/AABAGYTU8QCq-vPuD-cqO4xta?dl=0
 
