@@ -3,7 +3,7 @@
 
 ![Demo](misc/demo_ucla_e6.gif)
 
-*Demo video taken in Boelter Hall at UCLA.* Our system runs in real-time on data captured by a RealSense i435D sensor. More demos are available on the [demo page](demo.md).
+XIVO runs in faster-than-real-time on stored data (here from a RealSense i435D sensor) or on live streams. More demos are available [here](demo.md).
 
 ## Overview
 
