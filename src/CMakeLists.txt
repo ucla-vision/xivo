@@ -95,9 +95,11 @@ target_link_libraries(vio ${libxivo} gflags::gflags)
 ################################################################################
 # TESTS
 ################################################################################
-message(INFO ${libxivo})
-add_executable(test_optimizer test/test_optimizer.cpp)
-target_link_libraries(test_optimizer ${libxivo})
+if (BUILD_G2O)
+  message(INFO ${libxivo})
+  add_executable(test_optimizer test/test_optimizer.cpp)
+  target_link_libraries(test_optimizer ${libxivo})
+endif(BUILD_G2O)
 
 # add_executable(test_givens test/test_givens.cpp )
 # target_link_libraries(test_givens estimator)
