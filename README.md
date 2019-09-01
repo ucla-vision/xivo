@@ -3,7 +3,7 @@
 
 ![Demo](misc/demo_ucla_e6.gif)
 
-XIVO runs at 140FPS on stored data (here from a RealSense i435D sensor) or on live streams with latency of around 1-7ms, depending on the hardware. It takes as input video frames from a calibrated camera and inertial measurements from an IMU, and outputs a sparse point cloud with attribute features and 6 DOF pose of the camera. It performs auto-calibration of the relative pose between the camera and the IMU as well as the time-stamp alignment. More demos are available [here](demo.md), the aproach is described in this [paper][tsotsos_icra15]. XIVO does not perform post-mortem refinement (bundle adjustment, pose graph optimization), but that can be easily added as post-processing.
+XIVO runs at 140FPS on stored data (here from a RealSense D435i sensor) or on live streams with latency of around 1-7ms, depending on the hardware. It takes as input video frames from a calibrated camera and inertial measurements from an IMU, and outputs a sparse point cloud with attribute features and 6 DOF pose of the camera. It performs auto-calibration of the relative pose between the camera and the IMU as well as the time-stamp alignment. More demos are available [here](demo.md), the aproach is described in this [paper][tsotsos_icra15]. XIVO does not perform post-mortem refinement (bundle adjustment, pose graph optimization), but that can be easily added as post-processing.
 
 ## Overview
 
