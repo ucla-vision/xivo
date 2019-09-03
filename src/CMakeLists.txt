@@ -41,6 +41,10 @@ list(APPEND deps
         common
         )
 
+if (USE_GPERFTOOLS)
+  list(APPEND deps profiler)
+endif (USE_GPERFTOOLS)
+
 add_library(xapp SHARED
         estimator_process.cpp
         loader.cpp
@@ -68,7 +72,7 @@ add_library(xest SHARED
         mm.cpp
         camera_manager.cpp
         imu.cpp)
-target_link_libraries(xest ${deps}) # profiler)
+target_link_libraries(xest ${deps})
 
 set(libxivo xest xapp)
 
@@ -82,9 +86,6 @@ endif(BUILD_G2O)
 
 add_executable(vio app/vio.cpp)
 target_link_libraries(vio ${libxivo} gflags::gflags)
-
-# add_executable(double_vio app/double_vio.cpp)
-# target_link_libraries(double_vio ${libxivo} gflags::gflags)
 
 ################################################################################
 # TOOLING

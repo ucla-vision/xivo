@@ -8,6 +8,10 @@
 #include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
+#ifdef USE_GPERFTOOLS
+#include "gperftools/profiler.h"
+#endif
+
 #include "estimator.h"
 #include "feature.h"
 #include "geometry.h"
@@ -17,6 +21,11 @@
 namespace xivo {
 
 void Estimator::Update() {
+
+#ifdef USE_GPERFTOOLS
+  ProfilerStart();
+#endif
+
   if (instate_features_.empty() && oos_features_.empty())
     return;
 
@@ -149,6 +158,10 @@ void Estimator::Update() {
   timer_.Tock("update");
 
   LOG(INFO) << "Error state absorbed";
+
+#ifdef USE_GPERFTOOLS
+  ProfilerStop();
+#endif
 }
 
 std::vector<FeaturePtr>

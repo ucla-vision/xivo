@@ -3,17 +3,19 @@ project(feh)
 
 option(BUILD_ROSNODE "wrap the system in a rosnode" OFF)
 option(BUILD_G2O "build with g2o support" OFF)
+option(USE_GPERFTOOLS "use gperf for performance profiling" OFF)
+
+if (USE_GPERFTOOLS)
+  add_definitions(-DUSE_GPERFTOOLS)
+endif (USE_GPERFTOOLS)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++17 -Wno-narrowing -Wno-register -fPIC -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-# add_definitions(-DOMP_NUM_THREADS=4)
 
-# set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+# set(CMAKE_BUILD_TYPE "Release")
 add_definitions(-DNDEBUG)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
@@ -23,11 +25,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 # disable logging whose severity level is below the given integer
 # add_definitions(-DGOOGLE_STRIP_LOG=1)
 
-
 # add_definitions(-DEIGEN_DEFAULT_TO_ROW_MAJOR)
 add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 
-# comment out the following line to disable NaN checks on Jacobians
 find_package(OpenCV REQUIRED)
 
 link_directories(
@@ -36,10 +36,10 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/glog/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
-        # ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
-        # /usr/local/lib
+        ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
         /usr/lib/x86_64-linux-gnu
 )
+
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/common
@@ -49,14 +49,14 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/include
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen-3.3.7/include/eigen3
+        ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
 
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
         ${JSONCPP_INCLUDE_DIRS}
-        # /usr/local/include/opencv2
         /usr/include/opencv2
         /usr/include/suitesparse
+        /usr/include
         # ${PROJECT_SOURCE_DIR}/thirdparty/libigl/include
-        # ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
 )
 
 
