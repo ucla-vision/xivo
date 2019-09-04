@@ -58,14 +58,14 @@ using VecXi = Eigen::Matrix<int, Eigen::Dynamic, 1>;
 using MatXi = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>;
 using MatX3i = Eigen::Matrix<int, Eigen::Dynamic, 3>;
 
-using SE3 = SE3Type<number_t>;
-using SO3 = SO3Type<number_t>;
+using SE3 = lie::SE3<number_t>;
+using SO3 = lie::SO3<number_t>;
 
-using SE3f = SE3Type<float>;
-using SO3f = SO3Type<float>;
+using SE3f = lie::SE3<float>;
+using SO3f = lie::SO3<float>;
 
-using SE3d = SE3Type<double>;
-using SO3d = SO3Type<double>;
+using SE3d = lie::SE3<double>;
+using SO3d = lie::SO3<double>;
 
 static const number_t eps = 1e-4f;
 

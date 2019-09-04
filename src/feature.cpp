@@ -310,7 +310,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
       Mat3 dWi_dWsb, dWi_dWbc; 
       Mat3 dTi_dWsb, dTi_dTsb, dTi_dTbc;
       // [Ri, Ti] = spatial to camera transformation
-      auto [Ri, Ti] = ComposeInverse(Rsb, Tsb,
+      auto [Ri, Ti] = InverseOfCompose(Rsb, Tsb,
           Rbc, Tbc,
           &dWi_dWsb, &dWi_dWbc, 
           &dTi_dWsb, &dTi_dTsb, &dTi_dTbc);

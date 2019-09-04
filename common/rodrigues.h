@@ -327,4 +327,4 @@ invrodrigues(const Eigen::MatrixBase<Derived> &R,
   return w;
 }
 
-}
+} // namespace math
