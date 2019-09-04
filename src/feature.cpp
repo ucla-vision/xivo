@@ -295,10 +295,39 @@ bool Feature::RefineDepth(const SE3 &gbc,
     Mat3 dXs_dx;
     Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
     for (const auto &obs : views) {
-      SE3 g_cn_s = (obs.g->gsb() * gbc).inv(); // spatial -> camera new
-      Vec3 Xcn = g_cn_s * Xs; // alias: gtot = g_cn_s
-      // Mat3 dXc_dXs = gcs.rotation();
-      Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
+      // Feeling too lasy to derive the Jacobians on paper,
+      // so I'm gonna use chain rule to compute them.
+      Mat3 dWtot_dWsb, dWtot_dWbc;
+      Mat3 dTtot_dWsb, dTtot_dTsb, dTtot_dTbc;
+      auto [Rtot, Ttot] = Compose(
+          obs.g->gsb().R, obs.g->gsb().T,
+          gbc.R, gbc.T,
+          &dWtot_dWsb, &dWtot_dWbc,
+          &dTtot_dWsb, &dTtot_dTsb, &dTtot_dTbc);
+
+      Mat3 dWi_dWtot;
+      Mat3 dTi_dWtot, dTi_dTtot;
+      auto [Ri, Ti] = Inverse(Rtot, Ttot,
+          &dWi_dWtot, &dTi_dWtot, &dTi_dTtot);
+
+      // compose jacobians
+      dWi_dWsb = dWi_dWtot * dWtot_dWsb;
+      dWi_dWbc = dWi_dWtot * dWtot_dWbc;
+
+      dTi_dWsb = dTi_dWtot * dWtot_dWsb + dTi_dTtot * dTtot_dWsb;
+      dTi_dTsb = dTi_dTtot * dTtot_dTsb;
+      dTi_dWbc = dTi_dWtot * dWtot_dWbc; //  + dTi_dTtot * dTtot_dWbc;
+      dTi_dTbc = dTi_dTtot * dTtot_dTbc;
+
+      Mat3 dXcn_dWi, dXcn_dTi, dXcn_dXs;
+      Vec3 Xcn = Transform(Ri, Ti, Xs,
+          &dXcn_dWi, &dXcn_dTi, &dXcn_dXs);
+
+      Mat3 dXcn_dx = dXcn_dXs * dXs_dx;
+      Mat3 dXcn_dWsb = dXcn_dWi * dWi_dWsb + dXn_dTi * dTi_dWsb;
+      Mat3 dXcn_dTsb = dXcn_dTi * dTi_dTsb;
+      Mat3 dXcn_dWbc = dXcn_dWi * dWi_dWbc + dXcn_dTi * dTi_dWbc;
+      Mat3 dXcn_dTbc = dXcn_dTi * dTi_dTbc;
 
       Mat23 dxcn_dXcn;
       Vec2 xcn = project(Xcn, &dxcn_dXcn);
