@@ -191,4 +191,97 @@ private:
 };
 
 
+// Apply rigid-body transformation to a 3D point.
+// Args:
+//  R: Rotational part of the transformation.
+//  T: Translational part of the transformation.
+//  Xin: Inpt 3D point.
+//  dX_d[R, T, Xin]: Jacobian matrices w.r.t. R, T, and Xin.
+// Returns:
+//  Xout
+template <typename F>
+Eigen::Matrix<F, 3, 1> 
+Transform(const SO3Type<F> &R, 
+    const Eigen::Matrix<F, 3, 1> &T, 
+    const Eigen::Matrix<F, 3, 1> &Xin,
+    Eigen::Matrix<F, 3, 3> *dX_dW=nullptr,
+    Eigen::Matrix<F, 3, 3> *dX_dT=nullptr,
+    Eigen::Matrix<F, 3, 3> *dX_dXin=nullptr) 
+{
+  Eigen::Matrix<F, 3, 1> X{R * Xin + T};
+  if (dX_dW) {
+    *dX_dW = - R.matrix() * hat(Xin);
+  }
+
+  if (dX_dT) {
+    dX_dT->setIdentity();
+  }
+
+  if (dX_dXin) {
+    *dX_dXin = R.matrix();
+  }
+  return X;
+}
+
+template <typename F>
+std::tuple<SO3Type<F>, Eigen::Matrix<F, 3, 1>> 
+Compose(
+    const SO3Type<F> &R1, const Eigen::Matrix<F, 3, 1> &T1,
+    const SO3Type<F> &R2, const Eigen::Matrix<F, 3, 1> &T2,
+    Eigen::Matrix<F, 3, 3> *dW_dW1=nullptr, Eigen::Matrix<F, 3, 3> *dW_dW2=nullptr,
+    Eigen::Matrix<F, 3, 3> *dT_dW1=nullptr, Eigen::Matrix<F, 3, 3> *dT_dT1=nullptr, Eigen::Matrix<F, 3, 3> *dT_dT2=nullptr)
+{
+  SO3Type<F> R{R1 * R2};
+  Eigen::Matrix<F, 3, 1> T{R1 * T2 + T1};
+
+  if (dW_dW1) {
+    *dW_dW1 = R2.matrix().transpose();
+  }
+  if (dW_dW2) {
+    dW_dW2->setIdentity();
+  }
+  if (dT_dW1) {
+    *dT_dW1 = - R1.matrix() * hat(T2);
+  }
+  if (dT_dT1) {
+    dT_dT1->setIdentity();
+  }
+  if (dT_dT2) {
+    *dT_dT2 = R1.matrix();
+  }
+  return std::make_tuple(R, T);
+}
+
+template <typename F>
+std::tuple<SO3Type<F>, Eigen::Matrix<F, 3, 1>>
+Inverse(const SO3Type<F> &R, const Eigen::Matrix<F, 3, 1> &T,
+    Eigen::Matrix<F, 3, 3> *dWi_dW=nullptr, 
+    Eigen::Matrix<F, 3, 3> *dTi_dW=nullptr,
+    Eigen::Matrix<F, 3, 3> *dTi_dT=nullptr) 
+{
+  SO3Type<F> Ri{R.inv()};
+  Eigen::Matrix<F, 3, 1> Ti{-R * T};
+
+  if (dWi_dW) {
+    *dWi_dW = -R.matrix();
+  }
+
+  if (dTi_dW) {
+    *dTi_dW = hat(Ti);
+  }
+
+  if (dTi_dT) {
+    *dTi_dT = -R.matrix().transpose();
+  }
+
+  return std::make_tuple(R, T);
+}
+
+
+
+
+
+
+
+
 }

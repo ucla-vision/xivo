@@ -23,7 +23,7 @@ namespace xivo {
 void Estimator::Update() {
 
 #ifdef USE_GPERFTOOLS
-  ProfilerStart();
+  ProfilerStart(__PRETTY_FUNCTION__);
 #endif
 
   if (instate_features_.empty() && oos_features_.empty())
