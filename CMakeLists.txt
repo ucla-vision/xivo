@@ -14,8 +14,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
 
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-# set(CMAKE_BUILD_TYPE "Release")
+# set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "Release")
 add_definitions(-DNDEBUG)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
@@ -23,7 +23,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 # disable logging whose severity level is below the given integer
-# add_definitions(-DGOOGLE_STRIP_LOG=1)
+add_definitions(-DGOOGLE_STRIP_LOG=1)
 
 # add_definitions(-DEIGEN_DEFAULT_TO_ROW_MAJOR)
 add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)

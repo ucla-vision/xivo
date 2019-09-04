@@ -260,7 +260,7 @@ Inverse(const SO3Type<F> &R, const Eigen::Matrix<F, 3, 1> &T,
     Eigen::Matrix<F, 3, 3> *dTi_dT=nullptr) 
 {
   SO3Type<F> Ri{R.inv()};
-  Eigen::Matrix<F, 3, 1> Ti{-R * T};
+  Eigen::Matrix<F, 3, 1> Ti{R * -T};
 
   if (dWi_dW) {
     *dWi_dW = -R.matrix();
@@ -276,6 +276,44 @@ Inverse(const SO3Type<F> &R, const Eigen::Matrix<F, 3, 1> &T,
 
   return std::make_tuple(R, T);
 }
+
+
+template <typename F>
+std::tuple<SO3Type<F>, Eigen::Matrix<F, 3, 1>> 
+ComposeInverse(
+    const SO3Type<F> &R1, const Eigen::Matrix<F, 3, 1> &T1,
+    const SO3Type<F> &R2, const Eigen::Matrix<F, 3, 1> &T2,
+    Eigen::Matrix<F, 3, 3> *dWi_dW1=nullptr, Eigen::Matrix<F, 3, 3> *dWi_dW2=nullptr,
+    Eigen::Matrix<F, 3, 3> *dTi_dW1=nullptr, Eigen::Matrix<F, 3, 3> *dTi_dT1=nullptr, Eigen::Matrix<F, 3, 3> *dTi_dT2=nullptr)
+{
+  Eigen::Matrix<F, 3, 3> dW_dW1, dW_dW2, dT_dW1, dT_dT1, dT_dT2;
+  auto [R, T] = Compose(R1, T1, R2, T2, 
+      &dW_dW1, &dW_dW2,
+      &dT_dW1, &dT_dT1, &dT_dT2);
+
+  Eigen::Matrix<F, 3, 3> dWi_dW, dTi_dW, dTi_dT;
+  auto [Ri, Ti] = Inverse(R, T,
+      &dWi_dW, &dTi_dW, &dTi_dT);
+
+  if (dWi_dW1) {
+    *dWi_dW1 = dWi_dW * dW_dW1;
+  }
+  if (dWi_dW2) {
+    *dWi_dW2 = dWi_dW * dW_dW2;
+  }
+  if (dTi_dW1) {
+    *dTi_dW1 = dTi_dW * dW_dW1 + dTi_dT * dT_dW1;
+  }
+  if (dTi_dT1) {
+    *dTi_dT1 = dTi_dT * dT_dT1;
+  }
+  if (dTi_dT2) {
+    *dTi_dT2 = dTi_dT * dT_dT2;
+  }
+  return std::make_tuple(Ri, Ti);
+}
+
+
 
 
 

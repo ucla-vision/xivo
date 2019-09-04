@@ -265,7 +265,8 @@ bool Feature::RefineDepth(const SE3 &gbc,
     VLOG_IF(0, iter > 0) << absl::StrFormat("iter=%d; |res|:%0.4f->%0.4f", iter,
                                             res_norm0, res_norm);
 
-    Vec3 delta = H.ldlt().solve(b);
+    // Vec3 delta = H.ldlt().solve(b);
+    Vec3 delta = H.completeOrthogonalDecomposition().solve(b);
     BackupState();
     x_ += delta;
     res_norm0 = res_norm;
@@ -286,47 +287,42 @@ bool Feature::RefineDepth(const SE3 &gbc,
     // std::cout << "P=\n" << P_ << std::endl;
 
   if (options.use_hessian) {
-    auto Hinv = H.inverse();
-    if (anynan(Hinv)) return false;
-    P_ = Hinv;
+    // auto Hinv = H.inverse();
+    // Pseudo-Inverse, since H is rank 2 (3x2 matrix times 2x2 matrix times 2x3 matrix)
+    Mat3 H_pinv{H.completeOrthogonalDecomposition().pseudoInverse()};
+    if (anynan(H_pinv)) return false;
+    P_ = H_pinv;
 
 #ifdef APPROXIMATE_INIT_CORRELATION
     // compute correlation blocks
     Mat3 dXs_dx;
     Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
+
+    SO3 Rbc{gbc.R()};
+    Vec3 Tbc{gbc.T()};
+
     for (const auto &obs : views) {
       // Feeling too lasy to derive the Jacobians on paper,
       // so I'm gonna use chain rule to compute them.
-      Mat3 dWtot_dWsb, dWtot_dWbc;
-      Mat3 dTtot_dWsb, dTtot_dTsb, dTtot_dTbc;
-      auto [Rtot, Ttot] = Compose(
-          obs.g->gsb().R, obs.g->gsb().T,
-          gbc.R, gbc.T,
-          &dWtot_dWsb, &dWtot_dWbc,
-          &dTtot_dWsb, &dTtot_dTsb, &dTtot_dTbc);
+      SO3 Rsb{obs.g->gsb().R()};
+      Vec3 Tsb{obs.g->gsb().T()};
 
-      Mat3 dWi_dWtot;
-      Mat3 dTi_dWtot, dTi_dTtot;
-      auto [Ri, Ti] = Inverse(Rtot, Ttot,
-          &dWi_dWtot, &dTi_dWtot, &dTi_dTtot);
-
-      // compose jacobians
-      dWi_dWsb = dWi_dWtot * dWtot_dWsb;
-      dWi_dWbc = dWi_dWtot * dWtot_dWbc;
-
-      dTi_dWsb = dTi_dWtot * dWtot_dWsb + dTi_dTtot * dTtot_dWsb;
-      dTi_dTsb = dTi_dTtot * dTtot_dTsb;
-      dTi_dWbc = dTi_dWtot * dWtot_dWbc; //  + dTi_dTtot * dTtot_dWbc;
-      dTi_dTbc = dTi_dTtot * dTtot_dTbc;
+      Mat3 dWi_dWsb, dWi_dWbc; 
+      Mat3 dTi_dWsb, dTi_dTsb, dTi_dTbc;
+      // [Ri, Ti] = spatial to camera transformation
+      auto [Ri, Ti] = ComposeInverse(Rsb, Tsb,
+          Rbc, Tbc,
+          &dWi_dWsb, &dWi_dWbc, 
+          &dTi_dWsb, &dTi_dTsb, &dTi_dTbc);
 
       Mat3 dXcn_dWi, dXcn_dTi, dXcn_dXs;
       Vec3 Xcn = Transform(Ri, Ti, Xs,
           &dXcn_dWi, &dXcn_dTi, &dXcn_dXs);
 
       Mat3 dXcn_dx = dXcn_dXs * dXs_dx;
-      Mat3 dXcn_dWsb = dXcn_dWi * dWi_dWsb + dXn_dTi * dTi_dWsb;
+      Mat3 dXcn_dWsb = dXcn_dWi * dWi_dWsb + dXcn_dTi * dTi_dWsb;
       Mat3 dXcn_dTsb = dXcn_dTi * dTi_dTsb;
-      Mat3 dXcn_dWbc = dXcn_dWi * dWi_dWbc + dXcn_dTi * dTi_dWbc;
+      Mat3 dXcn_dWbc = dXcn_dWi * dWi_dWbc; //  + dXcn_dTi * dTi_dWbc;
       Mat3 dXcn_dTbc = dXcn_dTi * dTi_dTbc;
 
       Mat23 dxcn_dXcn;
@@ -338,11 +334,11 @@ bool Feature::RefineDepth(const SE3 &gbc,
       Mat23 dxp_dx = dxp_dxcn * dxcn_dXcn * dXcn_dx;
       // std::cout << dxp_dx << std::endl;
 
-      H += (dxp_dx.transpose() * invC * dxp_dx) / (views.size() - 1);
-      Vec2 res = obs.xp - xp;
-      b += dxp_dx.transpose() * invC * res / (views.size() - 1);
+      // H += (dxp_dx.transpose() * invC * dxp_dx) / (views.size() - 1);
+      // Vec2 res = obs.xp - xp;
+      // b += dxp_dx.transpose() * invC * res / (views.size() - 1);
 
-      res_norm += res.norm() / (views.size() - 1);
+      // res_norm += res.norm() / (views.size() - 1);
     }
 #endif
   }
