@@ -15,7 +15,7 @@ add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
 add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 # if set, approximate the initial correlation between feature state and
 # group state with gradient information from depth refinement optimization
-add_definitions(-DAPPROXIMATE_INIT_CORRELATION)
+# add_definitions(-DAPPROXIMATE_INIT_COVARIANCE)
 
 include_directories(
   ${PROJECT_SOURCE_DIR}

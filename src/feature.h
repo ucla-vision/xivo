@@ -186,6 +186,10 @@ private:
   OOSJacobian oos_;            // out-of-state measurement jacobian cache
   int oos_jac_counter_;        // valid OOS jacobian blocks
 
+#ifdef APPROXIMATE_INIT_COVARIANCE
+  std::unordered_map<int, Eigen::Matrix<number_t, kFeatureSize, kGroupSize>> cov_;
+#endif
+
 public:
   // simulation
   struct {

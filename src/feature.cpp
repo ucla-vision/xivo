@@ -293,7 +293,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
     if (anynan(H_pinv)) return false;
     P_ = H_pinv;
 
-#ifdef APPROXIMATE_INIT_CORRELATION
+#ifdef APPROXIMATE_INIT_COVARIANCE
     // compute correlation blocks
     Mat3 dXs_dx;
     Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
