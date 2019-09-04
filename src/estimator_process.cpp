@@ -1,7 +1,6 @@
 // 3rdparty
 #include "opencv2/highgui/highgui.hpp"
 // xivo
-#include "absl/strings/str_format.h"
 #include "estimator_process.h"
 #include "tracker.h"
 #include "visualize.h"

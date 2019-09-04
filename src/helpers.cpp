@@ -4,7 +4,6 @@
 #include <iostream>
 #include <memory>
 
-#include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
 namespace xivo {

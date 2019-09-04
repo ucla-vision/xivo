@@ -2,6 +2,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "alias.h"
+#include "traits.h"
 
 // stl
 #include <chrono>
@@ -273,5 +274,38 @@ void WriteMatrixToFile(const std::string &filename,
   ostream << m;
   ostream.close();
 }
+
+namespace impl {
+
+// implementation details
+template <typename T>
+std::enable_if_t<std::is_same<plain<T>, std::string>::value, const char*>
+StrArgPass(T &arg) {
+  // std::cout << __PRETTY_FUNCTION__ << std::endl;
+  return arg.c_str();
+}
+
+template <typename T>
+std::enable_if_t<!std::is_same<plain<T>, std::string>::value, T>
+StrArgPass(T&& arg) {
+  // std::cout << __PRETTY_FUNCTION__ << std::endl;
+  return arg;
+}
+
+} // namespace impl
+
+
+constexpr int kStrBufSize = 512;
+template <typename... Args>
+std::string StrFormat(const char *format, Args... args) {
+  char buf[kStrBufSize];
+  if (snprintf(&buf[0], kStrBufSize, format, impl::StrArgPass(args)...) < 0) {
+    LOG(FATAL) << "failed to format string!!!";
+  }
+  return buf;
+}
+
+std::vector<std::string> StrSplit(const std::string &str, char delimiter);
+
 
 } // namespace xivo

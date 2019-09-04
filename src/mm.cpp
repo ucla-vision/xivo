@@ -3,7 +3,6 @@
 #include "feature.h"
 #include "group.h"
 
-#include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
 namespace xivo {
@@ -14,7 +13,7 @@ MemoryManagerPtr MemoryManager::Create(int max_features, int max_groups) {
   if (!instance_) {
     instance_ = std::unique_ptr<MemoryManager>(
         new MemoryManager(max_features, max_groups));
-    LOG(INFO) << absl::StrFormat(
+    LOG(INFO) << StrFormat(
         "MemoryManager instance created with %d features and %d groups",
         max_features, max_groups);
   } else {

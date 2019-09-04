@@ -3,7 +3,6 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
 #include "estimator.h"

@@ -4,7 +4,6 @@
 #include <tuple>
 
 #include "Eigen/QR"
-#include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
 #include "estimator.h"
@@ -615,7 +614,7 @@ bool Estimator::GoodTimestamp(const timestamp_t &now) {
   auto curr_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(curr_time_);
   if (now_ms < curr_ms) {
-    LOG(WARNING) << absl::StrFormat("now=%ld ms < curr=%ld ms", now_ms.count(),
+    LOG(WARNING) << StrFormat("now=%ld ms < curr=%ld ms", now_ms.count(),
                                     curr_ms.count());
     return false;
   } else {
@@ -722,7 +721,7 @@ void Estimator::AddGroupToState(GroupPtr g) {
     P_.block(0, offset + 3, err_.size(), 3) =
         P_.block(0, Index::Tsb, err_.size(), 3);
 
-    VLOG(0) << absl::StrFormat("group #%d inserted @ %d/%d", g->id(), index,
+    VLOG(0) << StrFormat("group #%d inserted @ %d/%d", g->id(), index,
                                kMaxGroup);
   } else {
     throw std::runtime_error("Failed to find slot in state for group.");
@@ -761,7 +760,7 @@ void Estimator::AddFeatureToState(FeaturePtr f) {
     P_.block<1, 2>(offset + 2, offset) *= damping;
     P_(offset + 2, offset + 2) *= (damping * damping);
 
-    VLOG(0) << absl::StrFormat("feature #%d inserted @ %d/%d", f->id(), index,
+    VLOG(0) << StrFormat("feature #%d inserted @ %d/%d", f->id(), index,
                                kMaxFeature);
   } else {
     throw std::runtime_error("Failed to find slot in state for feature.");
@@ -769,7 +768,7 @@ void Estimator::AddFeatureToState(FeaturePtr f) {
 }
 
 void Estimator::PrintErrorStateNorm() {
-  VLOG(0) << absl::StrFormat(
+  VLOG(0) << StrFormat(
       "|Wsb|=%0.8f, |Tsb|=%0.8f, |Vsb|=%0.8f, "
       "|bg|=%0.8f, |ba|=%0.8f, |Wbc|=%0.8f, |Tbc|=%0.8f, |Wg|=%0.8f\n",
       err_.segment<3>(Index::Wsb).norm(), err_.segment<3>(Index::Tsb).norm(),
@@ -780,7 +779,7 @@ void Estimator::PrintErrorStateNorm() {
 #ifndef NDEBUG
     CHECK(gsel_[g->sind()]) << "instate group not actually instate";
 #endif
-    VLOG(0) << absl::StrFormat(
+    VLOG(0) << StrFormat(
         "g#%d |W|=%0.8f, |T|=%0.8f\n", g->id(),
         err_.segment<3>(kGroupBegin + 6 * g->sind()).norm(),
         err_.segment<3>(kGroupBegin + 6 * g->sind() + 3).norm());
@@ -789,7 +788,7 @@ void Estimator::PrintErrorStateNorm() {
 #ifndef NDEBUG
     CHECK(fsel_[f->sind()]) << "instate feature not yet instate";
 #endif
-    VLOG(0) << absl::StrFormat(
+    VLOG(0) << StrFormat(
         "f#%d |X|=%0.8f\n", f->id(),
         err_.segment<3>(kFeatureBegin + 3 * f->sind()).norm());
   }

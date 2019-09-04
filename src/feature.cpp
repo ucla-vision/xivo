@@ -7,7 +7,6 @@
 #include "mm.h"
 #include "param.h"
 
-#include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
 namespace xivo {
@@ -262,7 +261,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
       break;
     }
 
-    VLOG_IF(0, iter > 0) << absl::StrFormat("iter=%d; |res|:%0.4f->%0.4f", iter,
+    VLOG_IF(0, iter > 0) << StrFormat("iter=%d; |res|:%0.4f->%0.4f", iter,
                                             res_norm0, res_norm);
 
     // Vec3 delta = H.ldlt().solve(b);
@@ -278,7 +277,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
   }
 
   if (res_norm0 > options.max_res_norm) {
-    VLOG(0) << absl::StrFormat("feature #%d; status=%d; |res|=%f\n", id_,
+    VLOG(0) << StrFormat("feature #%d; status=%d; |res|=%f\n", id_,
                                as_integer(status_), res_norm0);
     return false;
   } 

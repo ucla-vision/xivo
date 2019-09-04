@@ -1,7 +1,6 @@
 // Drawing functions to overlay feature tracks & system
 // info on input images.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
-#include "absl/strings/str_format.h"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "feature.h"
@@ -108,47 +107,47 @@ void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
 
   int line_counter{0};
 
-  cv::putText(disp_, absl::StrFormat("Tsb=[%0.4f, %0.4f, %0.4f]", X.Tsb(0),
+  cv::putText(disp_, StrFormat("Tsb=[%0.4f, %0.4f, %0.4f]", X.Tsb(0),
                                      X.Tsb(1), X.Tsb(2)),
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
-  cv::putText(disp_, absl::StrFormat("Vsb=[%0.4f, %0.4f, %0.4f]", X.Vsb(0),
+  cv::putText(disp_, StrFormat("Vsb=[%0.4f, %0.4f, %0.4f]", X.Vsb(0),
                                      X.Vsb(1), X.Vsb(2)),
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
   auto Wsb{X.Rsb.log()};
-  cv::putText(disp_, absl::StrFormat("Wsb=[%0.4f, %0.4f, %0.4f]", Wsb(0),
+  cv::putText(disp_, StrFormat("Wsb=[%0.4f, %0.4f, %0.4f]", Wsb(0),
                                      Wsb(1), Wsb(2)),
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
-  cv::putText(disp_, absl::StrFormat("Tbc=[%0.4f, %0.4f, %0.4f]", X.Tbc(0),
+  cv::putText(disp_, StrFormat("Tbc=[%0.4f, %0.4f, %0.4f]", X.Tbc(0),
                                      X.Tbc(1), X.Tbc(2)),
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
   auto Wbc{X.Rbc.log()};
-  cv::putText(disp_, absl::StrFormat("Wbc=[%0.4f, %0.4f, %0.4f]", Wbc(0),
+  cv::putText(disp_, StrFormat("Wbc=[%0.4f, %0.4f, %0.4f]", Wbc(0),
                                      Wbc(1), Wbc(2)),
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
 
   if (print_bias_info) {
-    cv::putText(disp_, absl::StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
+    cv::putText(disp_, StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
           X.bg(1), X.bg(2)),
         cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
         kColorLakeBlue, thickness);
 
-    cv::putText(disp_, absl::StrFormat("ba=[%0.4f, %0.4f, %0.4f]", X.ba(0),
+    cv::putText(disp_, StrFormat("ba=[%0.4f, %0.4f, %0.4f]", X.ba(0),
           X.ba(1), X.ba(2)),
         cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
         kColorLakeBlue, thickness);
   }
 
-  cv::putText(disp_, absl::StrFormat("td=%0.4f", X.td),
+  cv::putText(disp_, StrFormat("td=%0.4f", X.td),
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
       kColorLakeBlue, thickness);
 

@@ -5,7 +5,6 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "absl/strings/str_format.h"
 #include "glog/logging.h"
 
 #ifdef USE_GPERFTOOLS
@@ -252,7 +251,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
       g->RestoreState();
     }
   }
-  auto str = absl::StrFormat("#hyp tested=%d: li_inliers/mh_inliers=%d/%d",
+  auto str = StrFormat("#hyp tested=%d: li_inliers/mh_inliers=%d/%d",
                              n_hyp, max_inliers.size(), mh_inliers.size());
 
   LOG(INFO) << str;

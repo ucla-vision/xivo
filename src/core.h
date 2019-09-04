@@ -213,8 +213,4 @@ struct Observation {
 
 using Obs = Observation;
 
-// type traits utilities
-template <class T>
-using plain = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
-
 } // namespace xivo

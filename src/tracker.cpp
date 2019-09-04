@@ -3,8 +3,6 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include <fstream>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "glog/logging.h"
 #include "opencv2/video/video.hpp"
 #include "opencv2/xfeatures2d.hpp"

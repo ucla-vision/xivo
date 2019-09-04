@@ -5,7 +5,6 @@
 // stl
 #include <iostream>
 // I/O
-#include "absl/strings/str_format.h"
 #include "json/json.h"
 
 #include "utils.h"
@@ -110,7 +109,7 @@ Json::Value LoadJson(const std::string &filename) {
     return out;
   } else {
     throw std::runtime_error(
-        absl::StrFormat("failed to read file %s", filename));
+        StrFormat("failed to read file %s", filename));
   }
 }
 
@@ -128,6 +127,19 @@ void SaveJson(const Json::Value &value, const std::string &filename) {
   auto writer = builder.newStreamWriter();
   writer->write(value, &out);
   out.close();
+}
+
+std::vector<std::string> StrSplit(const std::string &str, char delimiter) {
+  std::vector<std::string> splits;
+  size_t curr = 0;
+  size_t next = str.find(delimiter, curr);
+  while (next != std::string::npos) {
+    splits.push_back(str.substr(curr, next - curr));
+    curr = next + 1;
+    next = str.find(delimiter, curr);
+  }
+  splits.push_back(str.substr(curr));
+  return std::move(splits);
 }
 
 } // namespace xivo

@@ -2,8 +2,6 @@
 #include "unistd.h"
 #include <algorithm>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "opencv2/highgui/highgui.hpp"
@@ -90,7 +88,7 @@ int main(int argc, char **argv) {
       }
 
       traj_est.emplace_back(est->ts(), est->gsb());
-      ostream << absl::StrFormat("%ld", est->ts().count()) << " "
+      ostream << StrFormat("%ld", est->ts().count()) << " "
         << est->gsb().translation().transpose() << " "
         << est->gsb().rotation().log().transpose() << std::endl;
 

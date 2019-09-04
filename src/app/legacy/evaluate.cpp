@@ -3,7 +3,6 @@
 #include <memory>
 #include <tuple>
 
-#include "absl/strings/str_format.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
@@ -73,8 +72,8 @@ int main(int argc, char **argv) {
       ComputeRPE(traj_est, traj_gt, FLAGS_RPE_interval, FLAGS_resolution);
   LOG(INFO) << "RPE computed";
 
-  std::cout << absl::StreamFormat("ATE=%0.4f meters\n", ate);
-  std::cout << absl::StreamFormat(
+  std::cout << StreamFormat("ATE=%0.4f meters\n", ate);
+  std::cout << StreamFormat(
       "RPE @ %0.4f ms=[%0.4f meters, %0.4f degrees]\n",
       1000.0 * FLAGS_RPE_interval, rpe_pos, rpe_rot / M_PI * 180);
 
@@ -86,7 +85,7 @@ int main(int argc, char **argv) {
   ;
   for (auto msg : traj_est) {
     auto aligned_g = g_est_gt.inv() * msg.g_;
-    ostream << absl::StrFormat("%ld", msg.ts_) << " "
+    ostream << StrFormat("%ld", msg.ts_) << " "
             << aligned_g.T().transpose() << " "
             << aligned_g.R().log().transpose() << std::endl;
   }

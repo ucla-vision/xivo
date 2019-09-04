@@ -4,8 +4,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
 #include "glog/logging.h"
 
 #include "message_types.h"
@@ -23,7 +21,7 @@ DataLoader::DataLoader(const std::string &image_dir,
     std::getline(is, line); // get rid of the header
     while (is >> line) {
       if (line.front() != '#') {
-        std::vector<std::string> content = absl::StrSplit(line, ',');
+        std::vector<std::string> content = StrSplit(line, ',');
         auto ts{timestamp_t(std::stoll(content[0]))};
         std::string image_path = image_dir + "/data/" + content[1];
         entries_.emplace_back(std::make_unique<msg::Image>(ts, image_path));
@@ -40,7 +38,7 @@ DataLoader::DataLoader(const std::string &image_dir,
     std::getline(is, line); // get rid of the header
     while (is >> line) {
       if (line.front() != '#') {
-        std::vector<std::string> content = absl::StrSplit(line, ',');
+        std::vector<std::string> content = StrSplit(line, ',');
         auto ts{timestamp_t(std::stoll(content[0]))};
         Vec3 gyro;
         Vec3 accel;
@@ -68,7 +66,7 @@ DataLoader::LoadGroundTruthState(const std::string &state_dir) {
     std::getline(is, line); // get rid of the header
     while (is >> line) {
       if (line.front() != '#') {
-        std::vector<std::string> content = absl::StrSplit(line, ',');
+        std::vector<std::string> content = StrSplit(line, ',');
         auto ts{timestamp_t(std::stoull(content[0]))};
         // pose frame -> world frame
         Vec3 T;
@@ -85,7 +83,7 @@ DataLoader::LoadGroundTruthState(const std::string &state_dir) {
         poses_.emplace_back(ts, gsb);
       }
     }
-    LOG(INFO) << absl::StreamFormat("%d ground truth poses in total loaded",
+    LOG(INFO) << StrFormat("%d ground truth poses in total loaded",
                                     poses_.size());
   } else {
     LOG(FATAL) << "failed to load ground-truth state csv @ " << state_data;
@@ -102,23 +100,23 @@ GetDirs(const std::string dataset, const std::string root,
 
   if (dataset_type == "tumvi") {
     std::string image_dir =
-        absl::StrFormat("%s/dataset-%s_512_16/mav0/cam%d/", root, seq, cam_id);
+        StrFormat("%s/dataset-%s_512_16/mav0/cam%d/", root, seq, cam_id);
     std::string imu_dir =
-        absl::StrFormat("%s/dataset-%s_512_16/mav0/imu0/", root, seq);
+        StrFormat("%s/dataset-%s_512_16/mav0/imu0/", root, seq);
     std::string mocap_dir =
-        absl::StrFormat("%s/dataset-%s_512_16/mav0/mocap0/", root, seq);
+        StrFormat("%s/dataset-%s_512_16/mav0/mocap0/", root, seq);
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else if (dataset_type == "euroc") {
     std::string image_dir =
-        absl::StrFormat("%s/%s/mav0/cam%d/", root, seq, cam_id);
-    std::string imu_dir = absl::StrFormat("%s/%s/mav0/imu0/", root, seq);
+        StrFormat("%s/%s/mav0/cam%d/", root, seq, cam_id);
+    std::string imu_dir = StrFormat("%s/%s/mav0/imu0/", root, seq);
     std::string mocap_dir =
-        absl::StrFormat("%s/%s/mav0/state_groundtruth_estimate0/", root, seq);
+        StrFormat("%s/%s/mav0/state_groundtruth_estimate0/", root, seq);
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else if (dataset_type == "xivo") {
     std::string image_dir =
-        absl::StrFormat("%s/%s/cam0/", root, seq);
-    std::string imu_dir = absl::StrFormat("%s/%s/imu0/", root, seq);
+        StrFormat("%s/%s/cam0/", root, seq);
+    std::string imu_dir = StrFormat("%s/%s/imu0/", root, seq);
     std::string mocap_dir = "";
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else {

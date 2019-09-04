@@ -3,8 +3,6 @@
 #include "unistd.h"
 #include <algorithm>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "opencv2/highgui/highgui.hpp"
@@ -86,7 +84,7 @@ int main(int argc, char **argv) {
     ////////////////////////////////////////
     if (verbose) {
       est_proc->Wait();
-      std::cout << absl::StrFormat("%ld", est_proc->ts().count()) << " "
+      std::cout << StrFormat("%ld", est_proc->ts().count()) << " "
         << est_proc->gsb().translation().transpose() << std::endl;
     }
   }
