@@ -143,7 +143,7 @@
     "max_res_norm": 2.5 // maximal norm of per observation residuals
   },
 
-  "feature_P0_damping": 1.0, // 10.0 seems most appropriate
+  // "feature_P0_damping": 1.0, // 10.0 seems most appropriate
 
   "imu_calib": {
     "Cas": [1, 1, 1],

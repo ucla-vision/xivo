@@ -50,6 +50,12 @@ void Feature::Reset(number_t x, number_t y) {
   sim_.xc << -1, -1;
   sim_.z = -1;
   sim_.lifetime = -1;
+
+#ifdef APPROXIMATE_INIT_COVARIANCE
+  cov_.clear();
+  cov_xc_.setZero();
+  cov_xr_.setZero();
+#endif
 }
 
 ////////////////////////////////////////
@@ -248,11 +254,11 @@ bool Feature::RefineDepth(const SE3 &gbc,
       Mat23 dxp_dx = dxp_dxcn * dxcn_dXcn * dXcn_dx;
       // std::cout << dxp_dx << std::endl;
 
-      H += (dxp_dx.transpose() * invC * dxp_dx) / (views.size() - 1);
+      H += (dxp_dx.transpose() * invC * dxp_dx); //  / (views.size() - 1);
       Vec2 res = obs.xp - xp;
-      b += dxp_dx.transpose() * invC * res / (views.size() - 1);
+      b += dxp_dx.transpose() * invC * res; //  / (views.size() - 1);
 
-      res_norm += res.norm() / (views.size() - 1);
+      res_norm += res.norm(); //  / (views.size() - 1);
     }
 
     if (iter > 0 && res_norm > res_norm0) {
@@ -261,8 +267,8 @@ bool Feature::RefineDepth(const SE3 &gbc,
       break;
     }
 
-    VLOG_IF(0, iter > 0) << StrFormat("iter=%d; |res|:%0.4f->%0.4f", iter,
-                                            res_norm0, res_norm);
+    VLOG_IF(0, iter > 0) << StrFormat("iter=%d; |res|:%0.4f->%0.4f", 
+        iter, res_norm0 / (views.size() - 1), res_norm / (views.size() - 1) );
 
     // Vec3 delta = H.ldlt().solve(b);
     Vec3 delta = H.completeOrthogonalDecomposition().solve(b);
@@ -324,19 +330,21 @@ bool Feature::RefineDepth(const SE3 &gbc,
     Mat3 dXs_dTbc{dXs_dTtot * dTtot_dTbc};
     Mat3 dXs_dx{dXs_dXc * dXc_dx};
 
-    Eigen::Matrix<number_t, 2, kGroupSize> Hr;  // dxp_d[Wr, Tr]
-    Eigen::Matrix<number_t, 2, kGroupSize> Hc;  // dxp_d[Wbc, Tbc]
+    // allocate Jacobian matrices
     Eigen::Matrix<number_t, 2, kFeatureSize> Hx;  // dxp_dx
+    Eigen::Matrix<number_t, 2, kGroupSize> Hc;  // dxp_d[Wbc, Tbc]
+    Eigen::Matrix<number_t, 2, kGroupSize> Hr;  // dxp_d[Wr, Tr]
+    Eigen::Matrix<number_t, 2, kGroupSize> Hg;  // dxp_d[Wbs, Tbs]
+    Eigen::Matrix<number_t, 2, -1> Hstack;  // Jacobian stack: [Hx, Hc, Hr, Hg]
+    Hstack.setZero(2, kFeatureSize + kGroupSize * 3);
+    // allocate information matrices
+    // Note: Ix, Ic and Ir should be accumulated
+    MatX Ixcr;  // information matrix of [x, camera-body-alignment, reference group pose]
+    Ixcr.setZero(kFeatureSize + kGroupSize * 2, kFeatureSize + kGroupSize * 2);
 
-    // tuples of (residual, Jacobian block)
-    using ResidualJacobian = std::tuple<
-      Eigen::Matrix<number_t, 2, 1>, Eigen::Matrix<number_t, 2, kGroupSize> >;
-    std::unordered_map<int, ResidualJacobian> resH; 
-
-    cov_.clear();
     for (const auto &obs : views) {
       Group* g{obs.g};
-      if (g->id() == ref_->id())
+      if (g->id() == ref_->id() || !g->instate())
         continue;
       // Feeling too lasy to derive the Jacobians on paper,
       // so I'm gonna use chain rule to compute them.
@@ -360,8 +368,10 @@ bool Feature::RefineDepth(const SE3 &gbc,
       Mat3 dXcn_dx = dXcn_dXs * dXs_dx;
       Mat3 dXcn_dWsb = dXcn_dWi * dWi_dWsb + dXcn_dTi * dTi_dWsb;
       Mat3 dXcn_dTsb = dXcn_dTi * dTi_dTsb;
-      Mat3 dXcn_dWbc = dXcn_dWi * dWi_dWbc; //  + dXcn_dTi * dTi_dWbc;
-      Mat3 dXcn_dTbc = dXcn_dTi * dTi_dTbc;
+      Mat3 dXcn_dWbc = dXcn_dWi * dWi_dWbc + dXcn_dXs * dXs_dWbc; //  + dXcn_dTi * dTi_dWbc;
+      Mat3 dXcn_dTbc = dXcn_dTi * dTi_dTbc + dXcn_dXs * dXs_dTbc;
+      Mat3 dXcn_dWr = dXcn_dXs * dXs_dWr;
+      Mat3 dXcn_dTr = dXcn_dXs * dXs_dTr;
 
       // perspective projection
       Mat23 dxcn_dXcn;
@@ -373,20 +383,38 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
       // fill-in Jacobian w.r.t. the group
       Mat23 dxp_dXcn{dxp_dxcn * dxcn_dXcn};
-      std::get<0>(resH[g->id()]) << obs.xp - xp;
-      std::get<1>(resH[g->id()]) << dxp_dXcn * dXcn_dWsb, dxp_dXcn * dXcn_dTsb;
-      Mat23 dxp_dXs{dxp_dXcn * dXcn_dXs};
+      Hg.block<2, 3>(0, 0) = dxp_dXcn * dXcn_dWsb; 
+      Hg.block<2, 3>(0, 3) = dxp_dXcn * dXcn_dTsb;
 
       // update Jacobian w.r.t. the pose of the reference group
-      Hr.block<2, 3>(0, 0) += dxp_dXs * dXs_dWr;
-      Hr.block<2, 3>(0, 3) += dxp_dXs * dXs_dTr;
+      Hr.block<2, 3>(0, 0) = dxp_dXcn * dXcn_dWr;
+      Hr.block<2, 3>(0, 3) = dxp_dXcn * dXcn_dTr;
 
       // update Jacobian w.r.t. the pose of the camera-body alignment
-      Hc.block<2, 3>(0, 0) += dxp_dXs * dXs_dWbc + dxp_dXcn * dXcn_dWbc;
-      Hc.block<2, 3>(0, 3) += dxp_dXs * dXs_dTbc + dxp_dXcn * dXcn_dTbc;
+      Hc.block<2, 3>(0, 0) = dxp_dXcn * dXcn_dWbc;
+      Hc.block<2, 3>(0, 3) = dxp_dXcn * dXcn_dTbc;
 
       // update Jacobian w.r.t. local parametrization of the feature
-      Hx += dxp_dXcn * dXcn_dx;
+      Hx = dxp_dXcn * dXcn_dx;
+      Hstack << Hx, Hc, Hr, Hg;
+      // std::cout << "Hstack=\n" << Hstack << std::endl;
+      auto I = Hstack.transpose() * invC * Hstack;  // hessian as information matrix
+      auto P = I.completeOrthogonalDecomposition().pseudoInverse(); // info mat -> cov mat
+      // accumulate the top left corner of the info mat
+      Ixcr += I.topLeftCorner(kFeatureSize + kGroupSize * 2, kFeatureSize + kGroupSize * 2);
+      // keep the covariance block between feature state and group state
+      int g_offset = kGroupBegin + kGroupSize * g->sind();
+      cov_[g_offset] = P.block<kFeatureSize, kGroupSize>(0, kFeatureSize + kGroupSize * 2);
+    }
+    // convert info mat to cov mat
+    auto P = Ixcr.completeOrthogonalDecomposition().pseudoInverse();
+    cov_xc_ = P.block<kFeatureSize, kGroupSize>(0, kFeatureSize);
+    cov_xr_ = P.block<kFeatureSize, kGroupSize>(0, kFeatureSize + kGroupSize);
+
+    if (!P.isZero(0)) {
+      std::cout << "P=\n" << P << std::endl;
+      std::cout << "cov_xc=\n" << cov_xc_ << std::endl;
+      std::cout << "cov_xr=\n" << cov_xr_ << std::endl;
     }
 #endif
   }
@@ -544,6 +572,31 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
     x_(2) = log(z);
 #endif
   }
+}
+
+void Feature::FillCovarianceBlock(MatX &P) {
+  int size = P.rows();
+  int offset = kFeatureBegin + kFeatureSize * sind_;
+  // zero-out
+  P.block(offset, 0, kFeatureSize, size).setZero();
+  P.block(0, offset, size, kFeatureSize).setZero();
+  // copy local covariance obtained during initialization to state covariance
+  P.block<kFeatureSize, kFeatureSize>(offset, offset) = P_;
+
+#ifdef APPROXIMATE_INIT_COVARIANCE
+  // cross correlation of featur state (x) and spatial alignment (c)
+  P.block<kFeatureSize, kGroupSize>(offset, Index::Wbc) = cov_xc_;
+  P.block<kGroupSize, kFeatureSize>(Index::Wbc, offset) = cov_xc_.transpose();
+  // cross correlation of x and reference group
+  int ref_offset = kGroupBegin + kGroupSize * ref_->sind();
+  P.block<kFeatureSize, kGroupSize>(offset, ref_offset) = cov_xr_;
+  P.block<kGroupSize, kFeatureSize>(ref_offset, offset) = cov_xr_.transpose();
+
+  for (auto [g_offset, cov] : cov_) {
+    P.block<kFeatureSize, kGroupSize>(offset, g_offset) = cov;
+    P.block<kGroupSize, kFeatureSize>(g_offset, offset) = cov.transpose();
+  }
+#endif
 }
 
 } // xivo

@@ -744,23 +744,7 @@ void Estimator::AddFeatureToState(FeaturePtr f) {
     fsel_[index] = true;
     f->SetStatus(FeatureStatus::INSTATE);
     f->SetSind(index);
-    int offset = kFeatureBegin + 3 * index;
-
-    // Error-state equation
-    err_.segment<3>(offset).setZero();
-
-    // TODO: might need to play with the covariance
-    // copy local covariance obtained during initialization to state covariance
-    P_.block(offset, 0, 3, err_.size()).setZero();
-    P_.block(0, offset, err_.size(), 3).setZero();
-    // P_.block<3, 3>(offset, offset) =
-    //     f->P() * cfg_.get("feature_P0_damping", 100).asDouble(); // damping
-    P_.block<3, 3>(offset, offset) = f->P();
-    number_t damping = cfg_.get("feature_P0_damping", 10).asDouble();
-    P_.block<2, 1>(offset, offset + 2) *= damping;
-    P_.block<1, 2>(offset + 2, offset) *= damping;
-    P_(offset + 2, offset + 2) *= (damping * damping);
-
+    f->FillCovarianceBlock(P_);
     VLOG(0) << StrFormat("feature #%d inserted @ %d/%d", f->id(), index,
                                kMaxFeature);
   } else {

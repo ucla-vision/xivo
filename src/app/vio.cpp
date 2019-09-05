@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         //   viewer->Update_gsc(est->gsc());
         // }
       } else {
-        throw std::runtime_error("Invalid entry type.");
+        LOG(FATAL) << "Invalid entry type.";
       }
 
       traj_est.emplace_back(est->ts(), est->gsb());

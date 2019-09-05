@@ -96,6 +96,9 @@ public:
   // H: the big jacobian matrix of all measurements
   // offset: of the block in H
   void FillJacobianBlock(MatX &H, int offset);
+  // fill-in the corresponding covariance block when inserting the feature into state
+  // P: the covariance matrix of the estimator
+  void FillCovarianceBlock(MatX &P);
 
   const Eigen::Matrix<number_t, 2, kFullSize> &J() const { return J_; }
   const Vec2 &inn() const { return inn_; }
@@ -187,8 +190,13 @@ private:
   int oos_jac_counter_;        // valid OOS jacobian blocks
 
 #ifdef APPROXIMATE_INIT_COVARIANCE
+  // correlation block between local feature state (x) and group pose
   std::unordered_map<int, Eigen::Matrix<number_t, kFeatureSize, kGroupSize>> cov_;
+  // correlation block between local feature state (x) and camera-body alignment (c),
+  // and reference group (r)
+  Eigen::Matrix<number_t, kFeatureSize, kGroupSize> cov_xc_, cov_xr_;
 #endif
+
 
 public:
   // simulation
@@ -199,6 +207,7 @@ public:
     number_t z;
     int lifetime;
   } sim_;
+
 };
 
 } // namespace xivo
