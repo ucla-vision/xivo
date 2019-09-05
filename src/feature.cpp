@@ -289,23 +289,60 @@ bool Feature::RefineDepth(const SE3 &gbc,
     // auto Hinv = H.inverse();
     // Pseudo-Inverse, since H is rank 2 (3x2 matrix times 2x2 matrix times 2x3 matrix)
     Mat3 H_pinv{H.completeOrthogonalDecomposition().pseudoInverse()};
-    if (anynan(H_pinv)) return false;
+    if (anynan(H_pinv)) {
+      std::cout << "hessian as information matrix: nan in H.inv!!!" << std::endl;
+      return false;
+    }
     P_ = H_pinv;
 
 #ifdef APPROXIMATE_INIT_COVARIANCE
+    // std::cout << "approximating covariance using inverse of Hessian" << std::endl;
     // compute correlation blocks
-    Mat3 dXs_dx;
-    Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
+    Mat3 dXc_dx;
+    Vec3 Xc = this->Xc(&dXc_dx);
+
+    SO3 Rr{ref_->gsb().R()};
+    Vec3 Tr{ref_->gsb().T()};
 
     SO3 Rbc{gbc.R()};
     Vec3 Tbc{gbc.T()};
 
+    // total rotation & translation w.r.t. body pose and alignment
+    Mat3 dWtot_dWr, dWtot_dWbc;
+    Mat3 dTtot_dWr, dTtot_dTr, dTtot_dTbc;
+    // compose and compute the Jacobians
+    auto [Rtot, Ttot] = Compose(Rr, Tr, Rbc, Tbc,
+        &dWtot_dWr, &dWtot_dWbc,
+        &dTtot_dWr, &dTtot_dTr, &dTtot_dTbc);
+    // 3D point in spatial frame (Xs) w.r.t. total rotation & translation, and 3D point in camera frame (Xc)
+    Mat3 dXs_dWtot, dXs_dTtot, dXs_dXc;
+    auto Xs = Transform(Rtot, Ttot, Xc, &dXs_dWtot, &dXs_dTtot, &dXs_dXc);
+
+    Mat3 dXs_dWr{dXs_dWtot * dWtot_dWr + dXs_dTtot * dTtot_dWr};
+    Mat3 dXs_dTr{dXs_dTtot * dTtot_dTr};
+    Mat3 dXs_dWbc{dXs_dWtot * dWtot_dWbc}; //  + dXs_dTtot * dTtot_dWbc};
+    Mat3 dXs_dTbc{dXs_dTtot * dTtot_dTbc};
+    Mat3 dXs_dx{dXs_dXc * dXc_dx};
+
+    Eigen::Matrix<number_t, 2, kGroupSize> Hr;  // dxp_d[Wr, Tr]
+    Eigen::Matrix<number_t, 2, kGroupSize> Hc;  // dxp_d[Wbc, Tbc]
+    Eigen::Matrix<number_t, 2, kFeatureSize> Hx;  // dxp_dx
+
+    // tuples of (residual, Jacobian block)
+    using ResidualJacobian = std::tuple<
+      Eigen::Matrix<number_t, 2, 1>, Eigen::Matrix<number_t, 2, kGroupSize> >;
+    std::unordered_map<int, ResidualJacobian> resH; 
+
+    cov_.clear();
     for (const auto &obs : views) {
+      Group* g{obs.g};
+      if (g->id() == ref_->id())
+        continue;
       // Feeling too lasy to derive the Jacobians on paper,
       // so I'm gonna use chain rule to compute them.
-      SO3 Rsb{obs.g->gsb().R()};
-      Vec3 Tsb{obs.g->gsb().T()};
-
+      SO3 Rsb{g->gsb().R()};
+      Vec3 Tsb{g->gsb().T()};
+      // compute the total transformation from spatial frame to new camera frame
       Mat3 dWi_dWsb, dWi_dWbc; 
       Mat3 dTi_dWsb, dTi_dTsb, dTi_dTbc;
       // [Ri, Ti] = spatial to camera transformation
@@ -314,30 +351,42 @@ bool Feature::RefineDepth(const SE3 &gbc,
           &dWi_dWsb, &dWi_dWbc, 
           &dTi_dWsb, &dTi_dTsb, &dTi_dTbc);
 
+      // transfrom from spatial frame to new camera frame
       Mat3 dXcn_dWi, dXcn_dTi, dXcn_dXs;
       Vec3 Xcn = Transform(Ri, Ti, Xs,
           &dXcn_dWi, &dXcn_dTi, &dXcn_dXs);
 
+      // intermediate Jacobians
       Mat3 dXcn_dx = dXcn_dXs * dXs_dx;
       Mat3 dXcn_dWsb = dXcn_dWi * dWi_dWsb + dXcn_dTi * dTi_dWsb;
       Mat3 dXcn_dTsb = dXcn_dTi * dTi_dTsb;
       Mat3 dXcn_dWbc = dXcn_dWi * dWi_dWbc; //  + dXcn_dTi * dTi_dWbc;
       Mat3 dXcn_dTbc = dXcn_dTi * dTi_dTbc;
 
+      // perspective projection
       Mat23 dxcn_dXcn;
       Vec2 xcn = project(Xcn, &dxcn_dXcn);
 
+      // apply distortion model
       Mat2 dxp_dxcn;
       Vec2 xp = Camera::instance()->Project(xcn, &dxp_dxcn);
 
-      Mat23 dxp_dx = dxp_dxcn * dxcn_dXcn * dXcn_dx;
-      // std::cout << dxp_dx << std::endl;
+      // fill-in Jacobian w.r.t. the group
+      Mat23 dxp_dXcn{dxp_dxcn * dxcn_dXcn};
+      std::get<0>(resH[g->id()]) << obs.xp - xp;
+      std::get<1>(resH[g->id()]) << dxp_dXcn * dXcn_dWsb, dxp_dXcn * dXcn_dTsb;
+      Mat23 dxp_dXs{dxp_dXcn * dXcn_dXs};
 
-      // H += (dxp_dx.transpose() * invC * dxp_dx) / (views.size() - 1);
-      // Vec2 res = obs.xp - xp;
-      // b += dxp_dx.transpose() * invC * res / (views.size() - 1);
+      // update Jacobian w.r.t. the pose of the reference group
+      Hr.block<2, 3>(0, 0) += dxp_dXs * dXs_dWr;
+      Hr.block<2, 3>(0, 3) += dxp_dXs * dXs_dTr;
 
-      // res_norm += res.norm() / (views.size() - 1);
+      // update Jacobian w.r.t. the pose of the camera-body alignment
+      Hc.block<2, 3>(0, 0) += dxp_dXs * dXs_dWbc + dxp_dXcn * dXcn_dWbc;
+      Hc.block<2, 3>(0, 3) += dxp_dXs * dXs_dTbc + dxp_dXcn * dXcn_dTbc;
+
+      // update Jacobian w.r.t. local parametrization of the feature
+      Hx += dxp_dXcn * dXcn_dx;
     }
 #endif
   }

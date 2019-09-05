@@ -94,6 +94,7 @@ Estimator::Estimator(const Json::Value &cfg)
   use_depth_opt_ = cfg_.get("use_depth_opt", false).asBool();
   refinement_options_.two_view =
       cfg_["depth_opt"].get("two_view", false).asBool();
+  refinement_options_.use_hessian = cfg_["depth_opt"].get("use_hessian", false).asBool();
   refinement_options_.max_iters = cfg_["depth_opt"].get("max_iters", 5).asInt();
   refinement_options_.eps = cfg_["depth_opt"].get("eps", 1e-4).asDouble();
   refinement_options_.damping =

@@ -9,9 +9,9 @@
 TUMVIROOT="/home/feixh/Data/tumvi/exported/euroc/512_16"
 
 mkdir $OUTPUT
-python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room1 ${1} &
-python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room2 ${1} &
-python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room3 ${1} &
-python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room4 ${1} &
-python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room5 ${1} &
-python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room6 ${1} &
+python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room1 ${1}
+python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room2 ${1}
+python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room3 ${1}
+python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room4 ${1}
+python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room5 ${1}
+python scripts/run_and_eval_pyxivo.py -out_dir $OUTPUT -root $TUMVIROOT -seq room6 ${1}

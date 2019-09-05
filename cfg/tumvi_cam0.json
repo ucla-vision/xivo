@@ -1,7 +1,7 @@
 {
   // verbose
   "simulation": false,
-  "print_timing": false,
+  "print_timing": true,
   "use_canvas": true,
   "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking

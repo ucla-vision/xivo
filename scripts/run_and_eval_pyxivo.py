@@ -5,7 +5,7 @@ from shutil import copyfile
 
 TP_ROOT = '/home/feixh/Data/tumvi/exported/euroc/512_16'
 KIF_ROOT = '/local2/Data/tumvi/exported/euroc/512_16'
-double_fusion = True
+double_fusion = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -33,7 +33,9 @@ if __name__ == '__main__':
         os.makedirs(args.out_dir)
 
 
-    for cam_id in [0, 1]:
+    cam_ids = [0, 1] if double_fusion else [0]
+
+    for cam_id in cam_ids:
         cfg = 'cfg/tumvi_cam{}.json'.format(cam_id)
 
         copyfile(cfg, os.path.join(args.out_dir, os.path.basename(cfg)))
