@@ -17,7 +17,7 @@ add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 # if set, approximate the initial correlation between feature state and
 # group state with Hessian from depth refinement optimization.
 # WARNING: this feature not work yet.
-add_definitions(-DAPPROXIMATE_INIT_COVARIANCE)
+# add_definitions(-DAPPROXIMATE_INIT_COVARIANCE)
 
 include_directories(
   ${PROJECT_SOURCE_DIR}
