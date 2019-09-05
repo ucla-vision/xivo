@@ -152,23 +152,23 @@ The following table shows the performance on 6 indoor sequences where ground-tru
 
 | Sequence | length | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---    | :---:   | :---:       | :---:   | :---:  |
-|room1     | 156m   | **0.06m** | 0.07m | 0.16m | 0.13m |
-|room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.11m |
-|room3     | 135m   | **0.07m**  | 0.11m | 0.15m | 0.17m |
-|room4     | 68m    | **0.03m** | 0.04m | 0.09m | 0.09m |
-|room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.10m |
-|room6     | 67m    | **0.04m** | 0.08m | 0.05m | 0.05m |
+|room1     | 156m   | **0.06m** | 0.07m | 0.16m | 0.12m |
+|room2     | 142m   | 0.11m | **0.07m** | 0.33m | 0.08m |
+|room3     | 135m   | **0.07m**  | 0.11m | 0.15m | 0.13m |
+|room4     | 68m    | **0.03m** | 0.04m | 0.09m | 0.08m |
+|room5     | 131m   | **0.07m** | 0.20m | 0.12m | 0.09m |
+|room6     | 67m    | **0.04m** | 0.08m | 0.05m | 0.10m |
 
 *Table 1. RMSE ATE* in meters. Methods marked with *Keyframe* are keyframe-based, others are recursive approaches.
 
 | Sequence | OKVIS (Stereo+Keyframe) | VINS-Mono (Keyframe) | ROVIO | XIVO |
 |:---       | :---:   | :---:       | :---:   | :---:  |
-|room1 | **0.013**m/**0.43**<sup>o</sup> | 0.015m/0.44<sup>o</sup> | 0.029m/0.53<sup>o</sup> | 0.022m/0.60<sup>o</sup> |
-|room2 | **0.015**m/**0.62**<sup>o</sup> | 0.017m/0.63<sup>o</sup> | 0.030m/0.67<sup>o</sup> | 0.040m/0.71<sup>o</sup> |
-|room3 | **0.012**m/0.64<sup>o</sup> | 0.023m/**0.63**<sup>o</sup> | 0.027m/0.66<sup>o</sup> | 0.086m/0.74<sup>o</sup> |
-|room4 | **0.012**m/0.57<sup>o</sup> | 0.015m/**0.41**<sup>o</sup> | 0.022m/0.61<sup>o</sup> | 0.022m/0.62<sup>o</sup> |
-|room5 | **0.012**m/**0.47**<sup>o</sup> | 0.026m/**0.47**<sup>o</sup> | 0.031m/0.60<sup>o</sup> | 0.030m/0.60<sup>o</sup> |
-|room6| **0.012**m/0.49<sup>o</sup> | 0.014m/**0.44**<sup>o</sup> | 0.019m/0.50<sup>o</sup> | 0.020m/0.52<sup>o</sup> |
+|room1 | **0.013**m/**0.43**<sup>o</sup> | 0.015m/0.44<sup>o</sup> | 0.029m/0.53<sup>o</sup> | 0.022m/0.53<sup>o</sup> |
+|room2 | **0.015**m/**0.62**<sup>o</sup> | 0.017m/0.63<sup>o</sup> | 0.030m/0.67<sup>o</sup> | 0.037m/0.72<sup>o</sup> |
+|room3 | **0.012**m/0.64<sup>o</sup> | 0.023m/**0.63**<sup>o</sup> | 0.027m/0.66<sup>o</sup> | 0.061m/0.74<sup>o</sup> |
+|room4 | **0.012**m/0.57<sup>o</sup> | 0.015m/**0.41**<sup>o</sup> | 0.022m/0.61<sup>o</sup> | 0.024m/0.64<sup>o</sup> |
+|room5 | **0.012**m/**0.47**<sup>o</sup> | 0.026m/**0.47**<sup>o</sup> | 0.031m/0.60<sup>o</sup> | 0.027m/0.57<sup>o</sup> |
+|room6| **0.012**m/0.49<sup>o</sup> | 0.014m/**0.44**<sup>o</sup> | 0.019m/0.50<sup>o</sup> | 0.025m/0.54<sup>o</sup> |
 
 *Table 2. RMSE RPE* in translation (meters) and rotation (degrees). Methods marked with *Keyframe* are keyframe-based, others are recursive approaches.
 
