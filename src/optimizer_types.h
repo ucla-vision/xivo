@@ -116,10 +116,8 @@ struct GroupAdapter {
 };
 
 using ObsAdapterG = std::tuple<GroupAdapter, Vec2, Mat2>;
-using VectorObsAdapterG = std::vector<ObsAdapterG, 
-      Eigen::aligned_allocator<ObsAdapterG>>;
+using VectorObsAdapterG = std::vector<ObsAdapterG>;
 using ObsAdapterF = std::tuple<FeatureAdapter, Vec2, Mat2>;
-using VectorObsAdapterF = std::vector<ObsAdapterF,
-      Eigen::aligned_allocator<ObsAdapterF>>;
+using VectorObsAdapterF = std::vector<ObsAdapterF>;
 
 } // namespace xivo

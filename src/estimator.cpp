@@ -15,6 +15,10 @@
 #include "param.h"
 #include "tracker.h"
 
+#ifdef USE_G2O
+#include "optimizer.h"
+#endif
+
 namespace xivo {
 
 static const Mat3 I3{Mat3::Identity()};
@@ -291,6 +295,9 @@ Estimator::Estimator(const Json::Value &cfg)
   // Initialize the visibility graph
   // /////////////////////////////
   Graph::Create();
+#ifdef USE_G2O
+  Optimizer::Create(cfg_["optimizer"]);
+#endif
 
   // /////////////////////////////
   // Load initial std on feature state

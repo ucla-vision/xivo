@@ -22,6 +22,7 @@ OptimizerPtr Optimizer::Create(const Json::Value &cfg) {
 } 
 
 OptimizerPtr Optimizer::instance() {
+  CHECK(instance_ != nullptr);
   return instance_.get();
 }
 
