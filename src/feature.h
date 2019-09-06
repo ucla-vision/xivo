@@ -150,6 +150,9 @@ public:
   void SetState(const Vec3 &x) { x_ = x; }
   void UpdateState(const Vec3 &dx) { x_ += dx; }
 
+  // feature counter to start with, to guarantee feature id and group id do not coincide
+  static constexpr int counter0 = 10000;  
+
 private:
   Feature(const Feature &) = delete;
   // default constructor used memory manager's pre-allocation
@@ -162,7 +165,6 @@ private:
 
 private:
   static int counter_;
-  static constexpr int counter0 = 10000;  // feature counter to start with, to guarantee feature id and group id do not coincide  FIXME (xfei): need to ensure group counter does not hit this number
   int id_;
   int sind_; // state index
   FeatureStatus status_;

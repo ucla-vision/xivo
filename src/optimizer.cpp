@@ -5,6 +5,7 @@
 
 // xivo
 #include "optimizer.h"
+#include "utils.h"
 
 namespace xivo {
 
@@ -134,7 +135,6 @@ void Optimizer::AddGroup(const GroupAdapter &g, const std::vector<ObsAdapterF> &
     // FIXME (xfei): make sure no duplicate edges are added
     CreateEdge(fv, gv, xp, IM);
   }
-
 }
 
 void Optimizer::Solve(int max_iters) {
@@ -147,7 +147,18 @@ void Optimizer::Solve(int max_iters) {
   //   Vec3 optimizer_.vertex(fid)->estimate();
   // }
   optimizer_.setVerbose(verbose_);
+
+  // compute error once before solving
+  optimizer_.initializeOptimization();
+  optimizer_.computeActiveErrors();
+
+  int num_active_edges = optimizer_.activeEdges().size();
+  number_t init_average_chi2 = optimizer_.chi2() / num_active_edges;
+
   optimizer_.optimize(max_iters);
+
+  number_t average_chi2 = optimizer_.chi2() / num_active_edges;
+  std::cout << StrFormat("average chi2: %0.2f -> %0.2f\n", init_average_chi2, average_chi2);
 }
 
 

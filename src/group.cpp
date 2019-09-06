@@ -1,4 +1,5 @@
 #include "group.h"
+#include "feature.h"
 #include "mm.h"
 
 namespace xivo {
@@ -21,6 +22,9 @@ void Group::Delete(GroupPtr g) { MemoryManager::instance()->ReturnGroup(g); }
 
 void Group::Reset(const SO3 &Rsb, const Vec3 &Tsb) {
   id_ = counter_++;
+  if (id_ >= Feature::counter0) {
+    LOG(FATAL) << "Group index overflow!!!";
+  }
   lifetime_ = 0;
   sind_ = -1;
   status_ = GroupStatus::CREATED;
