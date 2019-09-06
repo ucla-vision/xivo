@@ -101,10 +101,8 @@ Edge* Optimizer::CreateEdge(FeatureVertex *fv, GroupVertex *gv, const Vec2 &xp, 
   return e;
 }
 
-void Optimizer::AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapterG> &obs) {
+void Optimizer::AddFeature(const FeatureAdapter &f, const VectorObsAdapterG &obs) {
   // CHECK(!fvertices_.count(f->id()) << "Feature #" << f->id() << " already in optimization graph";
-
-  std::cout << "adding feature #" << f.id << std::endl;
   if (!fvertices_.count(f.id)) {
     // feature vertex not exist, create one
     CreateFeatureVertex(f);
@@ -122,7 +120,7 @@ void Optimizer::AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapter
   }
 }
 
-void Optimizer::AddGroup(const GroupAdapter &g, const std::vector<ObsAdapterF> &obs) {
+void Optimizer::AddGroup(const GroupAdapter &g, const VectorObsAdapterF &obs) {
   if (!gvertices_.count(g.id)) {
     CreateGroupVertex(g);
   }

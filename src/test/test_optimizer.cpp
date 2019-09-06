@@ -62,7 +62,7 @@ int main() {
       Sample::gaussian(1),
       Sample::gaussian(1)};
 
-    vector<ObsAdapterG> obs;
+    VectorObsAdapterG obs;
     for (int j = 0; j < gsb.size(); ++j) {
       Vec3 Xb = gsb[j].inv() * pt;
       Vec2 xp = Xb.head<2>() / Xb(2);
@@ -72,7 +72,7 @@ int main() {
             GroupAdapter{j, gsb[j]},
             noisy_xp,  Mat2::Identity() /(PIXEL_NOISE * PIXEL_NOISE)));
     }
-    optimizer->AddFeature(FeatureAdapter{gsb.size() + i, noisy_pt}, obs);
+    optimizer->AddFeature(FeatureAdapter{10000 + i, noisy_pt}, obs);
   }
   optimizer->Solve(10);
 }

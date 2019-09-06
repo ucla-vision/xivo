@@ -13,12 +13,13 @@ if (BUILD_G2O)
   add_definitions(-DUSE_G2O)
 endif (BUILD_G2O)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++17 -Wno-narrowing -Wno-register -fPIC -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++17 -Wno-narrowing -Wno-register -fPIC -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
 
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE "Debug")
+# set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 # set(CMAKE_BUILD_TYPE "Release")
 add_definitions(-DNDEBUG)
 

@@ -24,8 +24,8 @@ public:
   static OptimizerPtr instance();
   void Solve(int iters=1);
 
-  void AddFeature(const FeatureAdapter &f, const std::vector<ObsAdapterG> &obs);
-  void AddGroup(const GroupAdapter &g, const std::vector<ObsAdapterF> &obs);
+  void AddFeature(const FeatureAdapter &f, const VectorObsAdapterG &obs);
+  void AddGroup(const GroupAdapter &g, const VectorObsAdapterF &obs);
 
 private:
   Optimizer() = delete;
