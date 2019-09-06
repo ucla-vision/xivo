@@ -83,7 +83,6 @@ public:
   SE3 gsc() const { return gsb() * gbc(); }
   State X() const { return X_; }
   const timestamp_t &ts() const { return curr_time_; }
-  bool Finished();
 
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }

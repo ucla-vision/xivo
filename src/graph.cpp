@@ -3,6 +3,10 @@
 #include "feature.h"
 #include "group.h"
 
+#ifdef USE_G2O
+#include "optimizer_adapters.h"
+#endif
+
 namespace xivo {
 
 void FeatureAdj::Add(const Observation &obs) { insert({obs.g->id(), obs.xp}); }
@@ -54,6 +58,10 @@ const GroupAdj &Graph::GetGroupAdj(GroupPtr g) const {
 void Graph::RemoveFeature(const FeaturePtr f) {
   CHECK(HasFeature(f)) << "feature #" << f->id() << " not exists";
 
+#ifdef USE_G2O
+  adapter::AddFeature(f);
+#endif
+
   int fid = f->id();
   features_.erase(fid);
   for (const auto &obs : feature_adj_.at(fid)) {
@@ -72,6 +80,10 @@ void Graph::RemoveFeatures(const std::vector<FeaturePtr> &features) {
 
 void Graph::RemoveGroup(const GroupPtr g) {
   CHECK(HasGroup(g)) << "group #" << g->id() << " not exists";
+
+#ifdef USE_G2O
+  adapter::AddGroup(g);
+#endif
 
   int gid = g->id();
   groups_.erase(gid);

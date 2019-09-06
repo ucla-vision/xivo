@@ -18,7 +18,9 @@ GroupPtr Group::Create(const SO3 &Rsb, const Vec3 &Tsb) {
   return g;
 }
 
-void Group::Delete(GroupPtr g) { MemoryManager::instance()->ReturnGroup(g); }
+void Group::Delete(GroupPtr g) { 
+  MemoryManager::instance()->ReturnGroup(g); 
+}
 
 void Group::Reset(const SO3 &Rsb, const Vec3 &Tsb) {
   id_ = counter_++;

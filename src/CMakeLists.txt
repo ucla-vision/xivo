@@ -47,7 +47,7 @@ if (USE_GPERFTOOLS)
   list(APPEND deps profiler)
 endif (USE_GPERFTOOLS)
 
-add_library(xapp SHARED
+add_library(xapp STATIC
         estimator_process.cpp
         loader.cpp
         geometry.cpp
@@ -56,7 +56,7 @@ add_library(xapp SHARED
         viewer.cpp)
 target_link_libraries(xapp ${deps})
 
-add_library(xest SHARED
+add_library(xest STATIC
         estimator.cpp
         princedormand.cpp
         rk4.cpp
@@ -79,8 +79,9 @@ target_link_libraries(xest ${deps})
 set(libxivo xest xapp)
 
 if (BUILD_G2O)
-  add_library(xopt
+  add_library(xopt STATIC
     optimizer.cpp
+    optimizer_adapters.cpp
   )
   target_link_libraries(xopt xest ${deps})
   list(APPEND libxivo xopt)

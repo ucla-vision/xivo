@@ -19,9 +19,6 @@ using OptimizerPtr = Optimizer*;
 
 class Optimizer {
 public:
-
-
-public:
   ~Optimizer();
   static OptimizerPtr Create(const Json::Value &cfg);
   static OptimizerPtr instance();
@@ -56,7 +53,6 @@ private:
 
   // g2o variables
   g2o::SparseOptimizer optimizer_;
-
 };
 
 } // namespace xivo

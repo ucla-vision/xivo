@@ -1,5 +1,4 @@
 // Project and Unproject functions.
-//
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 

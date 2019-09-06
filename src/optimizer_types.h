@@ -104,16 +104,19 @@ public:
 };
 
 struct FeatureAdapter {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   int id;
   Vec3 Xs;  // 3D coordinates in spatial frame
 };
 
 struct GroupAdapter {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   int id;
   SE3 gsb;  // body to spatial transformation
 };
 
 using ObsAdapterG = std::tuple<GroupAdapter, Vec2, Mat2>;
+// using ObsAdaptersG = std::vector<ObsAdapterG, Eigen::aligned_allocator<
 using ObsAdapterF = std::tuple<FeatureAdapter, Vec2, Mat2>;
 
 } // namespace xivo

@@ -362,14 +362,6 @@ void Estimator::Run() {
   });
 }
 
-bool Estimator::Finished() {
-#ifndef NDEBUG
-  CHECK(async_run_);
-#endif
-  std::scoped_lock lck(buf_.mtx);
-  return buf_.empty();
-}
-
 bool Estimator::InitializeGravity() {
   VLOG(0) << "attempt to initialize gravity";
   if (!simulation_) {
@@ -865,21 +857,24 @@ void Estimator::VisualMeas(const timestamp_t &ts_raw, const cv::Mat &img) {
     ts -= timestamp_t(uint64_t(-X_.td * 1e9)); // seconds -> nanoseconds
   }
 #endif
-  {
+  if (async_run_) {
     std::scoped_lock lck(buf_.mtx);
     buf_.push_back(std::make_unique<internal::Visual>(ts, img));
-    // std::cout << "visual pushed\n";
     MaintainBuffer();
-    // std::cout << "buffer.size=" << buf_.size() << std::endl;
+  } else {
+    buf_.push_back(std::make_unique<internal::Visual>(ts, img));
+    MaintainBuffer();
   }
 }
 
 void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
                              const Vec3 &accel) {
-  {
+  if (async_run_) {
     std::scoped_lock lck(buf_.mtx);
     buf_.push_back(std::make_unique<internal::Inertial>(ts, gyro, accel));
-    // std::cout << "inertial pushed\n";
+    MaintainBuffer();
+  } else {
+    buf_.push_back(std::make_unique<internal::Inertial>(ts, gyro, accel));
     MaintainBuffer();
   }
 }
