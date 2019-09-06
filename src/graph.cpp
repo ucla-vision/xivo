@@ -10,6 +10,23 @@ void FeatureAdj::Remove(int id) { erase(id); }
 void GroupAdj::Add(int id) { insert(id); }
 void GroupAdj::Remove(int id) { erase(id); }
 
+std::unique_ptr<Graph> Graph::instance_ = nullptr;
+
+Graph* Graph::Create() {
+  if (instance_ == nullptr) {
+    instance_ = std::unique_ptr<Graph>(new Graph);
+  } 
+  return instance_.get();
+}
+
+Graph* Graph::instance() {
+  if (instance_ == nullptr) {
+    LOG(WARNING) << "Graph not created yet! Creating one ...";
+    Graph::Create();
+  } 
+  return instance_.get();
+}
+
 bool Graph::HasGroup(GroupPtr g) const { return HasGroup(g->id()); }
 
 bool Graph::HasGroup(int gid) const {

@@ -1,4 +1,4 @@
-// The feature-group graph.
+// The feature-group visibility graph.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <functional>
@@ -23,6 +23,9 @@ struct GroupAdj : public std::unordered_set<int> {
 
 class Graph {
 public:
+  static Graph* Create();
+  static Graph* instance();
+
   void RemoveFeature(const FeaturePtr f);
   void RemoveFeatures(const std::vector<FeaturePtr> &);
 
@@ -68,6 +71,11 @@ public:
   void CleanIsolatedNodes();
 
 private:
+  Graph() = default;
+  Graph(const Graph&) = delete;
+  Graph& operator=(const Graph&) = delete;
+  static std::unique_ptr<Graph> instance_;
+
   // 2 types of nodes: feature and group
   std::unordered_map<int, FeaturePtr> features_;
   std::unordered_map<int, GroupPtr> groups_;

@@ -263,12 +263,16 @@ Estimator::Estimator(const Json::Value &cfg)
   Qimu_ *= Qimu_;
   LOG(INFO) << "Covariance of IMU measurement noise loaded";
 
+  // /////////////////////////////
   // initialize memory manager
+  // /////////////////////////////
   MemoryManager::Create(cfg_["memory"].get("max_features", 256).asInt(),
                         cfg_["memory"].get("max_groups", 128).asInt());
   LOG(INFO) << "Memory management unit created";
 
+  // /////////////////////////////
   // initialize tracker
+  // /////////////////////////////
   auto tracker_cfg = cfg_["tracker_cfg"].isString()
                          ? LoadJson(cfg_["tracker_cfg"].asString())
                          : cfg_["tracker_cfg"];
@@ -282,6 +286,11 @@ Estimator::Estimator(const Json::Value &cfg)
   Roos_ *= Roos_;
 
   LOG(INFO) << "R=" << R_ << " ;Roos=" << Roos_;
+
+  // /////////////////////////////
+  // Initialize the visibility graph
+  // /////////////////////////////
+  Graph::Create();
 
   // /////////////////////////////
   // Load initial std on feature state
@@ -972,9 +981,10 @@ std::tuple<number_t, bool> Estimator::HuberOnInnovation(const Vec2 &inn,
 std::vector<FeaturePtr>
 Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
   std::vector<FeaturePtr> nullref_features;
+  Graph& graph{*Graph::instance()};
   for (auto g : discards) {
     // transfer ownership of the remaining features whose reference is this one
-    auto failed = graph_.TransferFeatureOwnership(g, gbc());
+    auto failed = graph.TransferFeatureOwnership(g, gbc());
     nullref_features.insert(nullref_features.end(), failed.begin(),
                             failed.end());
 
@@ -983,7 +993,7 @@ Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
       gauge_group_ = -1;
     }
 
-    graph_.RemoveGroup(g);
+    graph.RemoveGroup(g);
     if (g->instate()) {
       RemoveGroupFromState(g);
     }
@@ -994,7 +1004,7 @@ Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
 }
 
 void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
-  graph_.RemoveFeatures(discards);
+  Graph::instance()->RemoveFeatures(discards);
   for (auto f : discards) {
     if (f->instate()) {
       RemoveFeatureFromState(f);
@@ -1005,7 +1015,7 @@ void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
 
 void Estimator::SwitchRefGroup() {
   auto candidates =
-      graph_.GetGroupsIf([](GroupPtr g) -> bool { return g->instate(); });
+      Graph::instance()->GetGroupsIf([](GroupPtr g) -> bool { return g->instate(); });
   if (!candidates.empty()) {
     // FIXME: in addition to the variance, also take account of the number of
     // instate features

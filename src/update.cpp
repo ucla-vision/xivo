@@ -89,7 +89,7 @@ void Estimator::Update() {
     // std::vector<OOSJacobian> oos_jacs; // jacobians w.r.t. feature
     // parametrization
     for (auto f : oos_features_) {
-      auto vobs = graph_.GetObservationsOf(f);
+      auto vobs = Graph::instance()->GetObservationsOf(f);
       int oos_jac_size = f->ComputeOOSJacobian(vobs, X_.Rbc, X_.Tbc);
       if (oos_jac_size > 0) {
         total_oos_jac_size += oos_jac_size;

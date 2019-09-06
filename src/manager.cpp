@@ -24,11 +24,14 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   oos_features_.clear();
   instate_groups_.clear();
 
+  // retrieve the visibility graph
+  Graph& graph{*Graph::instance()};
+
   // increment lifetime of all features and groups
-  for (auto f : graph_.GetFeatures()) {
+  for (auto f : graph.GetFeatures()) {
     f->IncrementLifetime();
   }
-  for (auto g : graph_.GetGroups()) {
+  for (auto g : graph.GetGroups()) {
     g->IncrementLifetime();
   }
 
@@ -51,7 +54,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       it = tracks.erase(it);
     } else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
                f->track_status() == TrackStatus::REJECTED) {
-      graph_.RemoveFeature(f);
+      graph.RemoveFeature(f);
       if (f->instate()) {
         RemoveFeatureFromState(f);
         affected_groups.insert(f->ref());
@@ -65,7 +68,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         oos_features_.push_back(f);
       } else {
         // just remove
-        graph_.RemoveFeature(f);
+        graph.RemoveFeature(f);
         Feature::Delete(f);
       }
       it = tracks.erase(it);
@@ -91,7 +94,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
         // std::cout << "outlier score=" << f->outlier_counter() << std::endl;
         if (f->outlier_counter() > 10) {
-          graph_.RemoveFeature(f);
+          graph.RemoveFeature(f);
           Feature::Delete(f);
           it = tracks.erase(it);
         } else {
@@ -103,7 +106,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)
-  instate_features_ = graph_.GetFeaturesIf([](FeaturePtr f) -> bool {
+  instate_features_ = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
     return f->status() == FeatureStatus::INSTATE;
   });
 
@@ -113,7 +116,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     // choose the instate-candidate criterion
     auto criterion =
       vision_counter_ < 5 ? Criteria::Candidate : Criteria::CandidateStrict;
-    auto candidates = graph_.GetFeaturesIf(criterion);
+    auto candidates = graph.GetFeaturesIf(criterion);
 
     MakePtrVectorUnique(candidates);
     std::sort(candidates.begin(), candidates.end(),
@@ -127,7 +130,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       auto f = *it;
 
       if (use_depth_opt_) {
-        auto obs = graph_.GetObservationsOf(f);
+        auto obs = graph.GetObservationsOf(f);
         if (obs.size() > 1) {
           if (f->RefineDepth(gbc(), obs, refinement_options_)) {
             ++it;
@@ -154,9 +157,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       AddFeatureToState(f); // insert f to state vector and covariance
       if (!f->ref()->instate()) {
 #ifndef NDEBUG
-        CHECK(graph_.HasGroup(f->ref()));
-        CHECK(graph_.GetGroupAdj(f->ref()).count(f->id()));
-        CHECK(graph_.GetFeatureAdj(f).count(f->ref()->id()));
+        CHECK(graph.HasGroup(f->ref()));
+        CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
+        CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
 #endif
         // need to add reference group to state if it's not yet instate
         AddGroupToState(f->ref());
@@ -172,7 +175,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     std::vector<FeaturePtr> bad_features;
     for (auto it = oos_features_.begin(); it != oos_features_.end();) {
       auto f = *it;
-      auto obs = graph_.GetObservationsOf(f);
+      auto obs = graph.GetObservationsOf(f);
       if (obs.size() > 1 && f->RefineDepth(gbc(), obs, refinement_options_)) {
         ++it;
       } else {
@@ -190,7 +193,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     MakePtrVectorUnique(instate_features_);
 
     instate_groups_ =
-        graph_.GetGroupsIf([](GroupPtr g) { return g->instate(); });
+        graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
     Update();
   }
 
@@ -199,7 +202,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
     CHECK(!f->instate());
 #endif
-    graph_.RemoveFeature(f);
+    graph.RemoveFeature(f);
     Feature::Delete(f);
   }
 
@@ -209,7 +212,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // 2) detach the feature from the reference group
   // 3) remove the group if it lost all the instate features
 
-  auto rejected_features = graph_.GetFeaturesIf([](FeaturePtr f) -> bool {
+  auto rejected_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
     return f->status() == FeatureStatus::REJECTED_BY_FILTER;
   });
   // std::cout << "#rejected=" << rejected_features.size() << std::endl;
@@ -225,7 +228,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #endif
     affected_groups.insert(f->ref());
   }
-  graph_.RemoveFeatures(rejected_features);
+  graph.RemoveFeatures(rejected_features);
   for (auto f : rejected_features) {
     RemoveFeatureFromState(f);
     Feature::Delete(f);
@@ -238,7 +241,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     // remove floating groups (with no instate features) and
     // floating features (not instate and reference group is floating)
     for (auto g : affected_groups) {
-      const auto &adj_f = graph_.GetFeaturesOf(g);
+      const auto &adj_f = graph.GetFeaturesOf(g);
       if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
             return f->ref() == g && f->instate();
           })) {
@@ -249,7 +252,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   } else {
     // if not enough slots, remove old instate groups and recycle some spaces
     std::vector<GroupPtr> groups =
-        graph_.GetGroupsIf([](GroupPtr g) { return g->instate(); });
+        graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
     if (groups.size() == kMaxGroup) {
       int oos_discard_step = cfg_.get("oos_discard_step", 3).asInt();
       // sort such that oldest groups are at the front of the vector
@@ -264,7 +267,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
           // if the group does not have instate features referring back to
           // itself,
           auto g = groups[i];
-          auto adj_f = graph_.GetFeaturesOf(g);
+          auto adj_f = graph.GetFeaturesOf(g);
           if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
                 return f->instate() && f->ref() == g;
               })) {
@@ -283,7 +286,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // initialize those newly detected featuers
   // create a new group and associate newly detected features to the new group
   GroupPtr g = Group::Create(X_.Rsb, X_.Tsb);
-  graph_.AddGroup(g);
+  graph.AddGroup(g);
   if (use_OOS_) {
     // In OOS mode, always try to add groups to state.
     AddGroupToState(g);
@@ -302,15 +305,15 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     f->SetRef(g);
     f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
 
-    graph_.AddFeature(f);
-    graph_.AddFeatureToGroup(f, g);
-    graph_.AddGroupToFeature(g, f);
+    graph.AddFeature(f);
+    graph.AddFeatureToGroup(f, g);
+    graph.AddGroupToFeature(g, f);
 
     // put back the detected feature
     tracks.push_back(f);
   }
 
-  auto tracked_features = graph_.GetFeaturesIf([](FeaturePtr f) -> bool {
+  auto tracked_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
     return f->track_status() == TrackStatus::TRACKED;
   });
   for (auto f : tracked_features) {
@@ -319,15 +322,15 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #endif
 
     // attach the new group to all the features being tracked
-    graph_.AddFeatureToGroup(f, g);
-    graph_.AddGroupToFeature(g, f);
+    graph.AddFeatureToGroup(f, g);
+    graph.AddGroupToFeature(g, f);
 
     // put back the tracked feature
     tracks.push_back(f);
   }
 
   // adapt initial depth to average depth of features currently visible
-  auto depth_features = graph_.GetFeaturesIf([this](FeaturePtr f) -> bool {
+  auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
     return f->status() == FeatureStatus::INSTATE ||
            (f->status() == FeatureStatus::READY && f->lifetime() > 5);
   });
@@ -349,13 +352,13 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   if (!use_OOS_) {
     // remove non-reference groups
-    auto all_groups = graph_.GetGroups();
+    auto all_groups = graph.GetGroups();
     int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
     for (auto g : all_groups) {
       if (g->lifetime() > max_group_lifetime) {
-        const auto &adj = graph_.GetGroupAdj(g);
-        if (std::none_of(adj.begin(), adj.end(), [this, g](int fid) {
-              return graph_.GetFeature(fid)->ref() == g;
+        const auto &adj = graph.GetGroupAdj(g);
+        if (std::none_of(adj.begin(), adj.end(), [&graph, g](int fid) {
+              return graph.GetFeature(fid)->ref() == g;
             })) {
           // for groups which have no reference features, they cannot be instate
           // anyway
@@ -363,21 +366,21 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
           CHECK(!g->instate());
 #endif
 
-          graph_.RemoveGroup(g);
+          graph.RemoveGroup(g);
           Group::Delete(g);
         }
       }
     }
   }
 
-  // std::cout << "#groups=" << graph_.GetGroups().size() << std::endl;
+  // std::cout << "#groups=" << graph.GetGroups().size() << std::endl;
   // check & clean graph
-  // graph_.SanityCheck();
+  // graph.SanityCheck();
   // // remove isolated groups
-  // auto empty_groups = graph_.GetGroupsIf([this](GroupPtr g)->bool {
-  //     return graph_.GetGroupAdj(g).empty(); });
+  // auto empty_groups = graph.GetGroupsIf([this](GroupPtr g)->bool {
+  //     return graph.GetGroupAdj(g).empty(); });
   // LOG(INFO) << "#empty groups=" << empty_groups.size();
-  // graph_.RemoveGroups(empty_groups);
+  // graph.RemoveGroups(empty_groups);
   // for (auto g : empty_groups) {
   //   CHECK(!g->instate());
   //   Group::Delete(g);

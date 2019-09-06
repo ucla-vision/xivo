@@ -74,7 +74,5 @@ int main() {
     }
     optimizer->AddFeature(FeatureAdapter{gsb.size() + i, noisy_pt}, obs);
   }
-
   optimizer->Solve(10);
-
 }

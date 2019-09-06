@@ -150,7 +150,7 @@ private:
   std::vector<FeaturePtr> instate_features_; // in-state features
   std::vector<FeaturePtr> oos_features_;     // out-of-state features
   std::vector<GroupPtr> instate_groups_;     // in-state groups
-  Graph graph_;
+  // Graph graph_;
   int gauge_group_; // index of the selected gauge group, -1 for none
 
 private:
