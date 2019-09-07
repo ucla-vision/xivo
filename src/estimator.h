@@ -29,13 +29,18 @@
 
 namespace xivo {
 
+class Estimator;
+using EstimatorPtr = Estimator*;
+EstimatorPtr CreateSystem(const Json::Value &cfg);
+
+
 namespace internal {
 class Message {
 public:
   Message(const timestamp_t &ts) : ts_{ts} {}
   const timestamp_t &ts() const { return ts_; }
   virtual ~Message() = default;
-  virtual void Execute(Estimator *) {}
+  virtual void Execute(EstimatorPtr) {}
 
 protected:
   timestamp_t ts_;
@@ -44,7 +49,7 @@ protected:
 class Visual : public Message {
 public:
   Visual(const timestamp_t &ts, const cv::Mat &img) : Message{ts}, img_{img} {}
-  void Execute(Estimator *est);
+  void Execute(EstimatorPtr est);
 
 private:
   cv::Mat img_;
@@ -54,7 +59,7 @@ class Inertial : public Message {
 public:
   Inertial(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel)
       : Message{ts}, gyro_{gyro}, accel_{accel} {}
-  void Execute(Estimator *est);
+  void Execute(EstimatorPtr est);
 
 private:
   Vec3 gyro_, accel_;
@@ -62,13 +67,18 @@ private:
 
 } // namespace internal
 
+
 class Estimator : public Component<Estimator, State> {
   friend class internal::Visual;
   friend class internal::Inertial;
+
+public:
+  static EstimatorPtr Create(const Json::Value &cfg);
+  static EstimatorPtr instance();
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  Estimator(const Json::Value &cfg);
   ~Estimator();
 
   void Run();
@@ -144,6 +154,10 @@ private:
   void PrintErrorStateNorm();
   void PrintErrorState();
   void PrintNominalState();
+
+private:
+  Estimator(const Json::Value &cfg);
+  static std::unique_ptr<Estimator> instance_;
 
 private:
   std::vector<FeaturePtr> instate_features_; // in-state features

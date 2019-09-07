@@ -25,7 +25,8 @@ public:
     }
 
     auto cfg = LoadJson(cfg_path);
-    estimator_ = std::unique_ptr<Estimator>(new Estimator{cfg});
+    // estimator_ = std::unique_ptr<Estimator>(new Estimator{cfg});
+    estimator_ = CreateSystem(cfg);
 
     if (!viewer_cfg_path.empty()) {
       auto viewer_cfg = LoadJson(viewer_cfg_path);
@@ -77,13 +78,9 @@ public:
       viewer_->Refresh();
   }
 
-  void Release() {
-    viewer_.reset();
-    estimator_.reset();
-  }
-
 private:
-  std::unique_ptr<Estimator> estimator_;
+  // std::unique_ptr<Estimator> estimator_;
+  EstimatorPtr estimator_;
   std::unique_ptr<Viewer> viewer_;
   static bool glog_init_;
   std::string name_;
@@ -101,6 +98,5 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("VisualMeas", &EstimatorWrapper::VisualMeas)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("now", &EstimatorWrapper::now)
-      .def("Visualize", &EstimatorWrapper::Visualize)
-      .def("Release", &EstimatorWrapper::Release);
+      .def("Visualize", &EstimatorWrapper::Visualize);
 }

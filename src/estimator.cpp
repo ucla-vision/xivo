@@ -21,6 +21,24 @@
 
 namespace xivo {
 
+std::unique_ptr<Estimator> Estimator::instance_{nullptr};
+
+EstimatorPtr Estimator::Create(const Json::Value &cfg) {
+  if (instance_) {
+    LOG(WARNING) << "Estimator already exists!";
+  } else {
+    instance_ = std::unique_ptr<Estimator>(new Estimator{cfg});
+  }
+  return instance_.get();
+}
+
+EstimatorPtr Estimator::instance() {
+  if (!instance_) {
+    LOG(FATAL) << "Estimator NOT created yet!";
+  }
+  return instance_.get();
+}
+
 static const Mat3 I3{Mat3::Identity()};
 static const Mat3 nI3{-I3};
 
@@ -59,11 +77,6 @@ Estimator::~Estimator() {
 
 Estimator::Estimator(const Json::Value &cfg)
     : cfg_{cfg}, gauge_group_{-1}, worker_{nullptr}, timer_{"estimator"} {
-
-  // initialize paramter server
-  // so that other modules can use parameters right away
-  ParameterServer::Create(cfg_);
-  LOG(INFO) << "Parameter server created";
 
   // /////////////////////////////
   // Component flags
@@ -131,13 +144,6 @@ Estimator::Estimator(const Json::Value &cfg)
   // now update the IMU component
   imu_ = IMU{Ca, Cg};
   LOG(INFO) << "Imu calibration loaded";
-
-  // load camera parameters
-  auto cam_cfg = cfg_["camera_cfg"].isString()
-                     ? LoadJson(cfg_["camera_cfg"].asString())
-                     : cfg_["camera_cfg"];
-  Camera::Create(cam_cfg);
-  LOG(INFO) << "Camera created";
 
   g_ = GetMatrixFromJson<number_t, 3, 1>(cfg_, "gravity");
   LOG(INFO) << "gravity loaded:" << g_.transpose();
@@ -267,21 +273,6 @@ Estimator::Estimator(const Json::Value &cfg)
   Qimu_ *= Qimu_;
   LOG(INFO) << "Covariance of IMU measurement noise loaded";
 
-  // /////////////////////////////
-  // initialize memory manager
-  // /////////////////////////////
-  MemoryManager::Create(cfg_["memory"].get("max_features", 256).asInt(),
-                        cfg_["memory"].get("max_groups", 128).asInt());
-  LOG(INFO) << "Memory management unit created";
-
-  // /////////////////////////////
-  // initialize tracker
-  // /////////////////////////////
-  auto tracker_cfg = cfg_["tracker_cfg"].isString()
-                         ? LoadJson(cfg_["tracker_cfg"].asString())
-                         : cfg_["tracker_cfg"];
-  Tracker::Create(tracker_cfg);
-  LOG(INFO) << "Tracker created";
 
   R_ = cfg_["visual_meas_std"].asDouble();
   R_ *= R_;
@@ -290,14 +281,6 @@ Estimator::Estimator(const Json::Value &cfg)
   Roos_ *= Roos_;
 
   LOG(INFO) << "R=" << R_ << " ;Roos=" << Roos_;
-
-  // /////////////////////////////
-  // Initialize the visibility graph
-  // /////////////////////////////
-  Graph::Create();
-#ifdef USE_G2O
-  Optimizer::Create(cfg_["optimizer"]);
-#endif
 
   // /////////////////////////////
   // Load initial std on feature state

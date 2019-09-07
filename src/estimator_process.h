@@ -92,7 +92,8 @@ private:
 
 private:
   std::string name_;
-  std::unique_ptr<Estimator> estimator_; // owned
+  // std::unique_ptr<Estimator> estimator_; // owned
+  EstimatorPtr estimator_; // owned
   // results publisher for asynchronized communication
   Publisher *publisher_; // non-owned
 };                       // EstimatorProcess
