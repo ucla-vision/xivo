@@ -6,7 +6,7 @@ tmp.*
 test_cfg/
 bin/
 lib/
-thirdparty
+!thirdparty
 src/src/
 src/Makefile
 back_results/
