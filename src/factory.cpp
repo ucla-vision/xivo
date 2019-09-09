@@ -1,4 +1,5 @@
 // factory method to create a system
+// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "param.h"
 #include "camera_manager.h"
 #include "mm.h"

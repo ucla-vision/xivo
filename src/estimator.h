@@ -91,7 +91,7 @@ public:
   SE3 gbc() const { return SE3{X_.Rbc, X_.Tbc}; }
   SE3 gsb() const { return SE3{X_.Rsb, X_.Tsb}; }
   SE3 gsc() const { return gsb() * gbc(); }
-  State X() const { return X_; }
+  const State& X() const { return X_; }
   const timestamp_t &ts() const { return curr_time_; }
 
 private:
