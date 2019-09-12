@@ -227,6 +227,9 @@ bool Feature::RefineDepth(const SE3 &gbc,
   invC(0, 0) = 1. / options.Rtri;
   invC(1, 1) = 1. / options.Rtri;
 
+  // using JacResTuple = std::tuple<Eigen::Matrix<number_t, 2, 3>, Eigen::Matrix<number_t, 2, 1>>;
+  // std::vector<JacResTuple> jac_res;
+
   for (int iter = 0; iter < options.max_iters; ++iter) {
     Mat3 dXs_dx;
     Vec3 Xs = this->Xs(gbc, &dXs_dx); // ref_->gsb() * gbc * this->Xc();
@@ -252,11 +255,12 @@ bool Feature::RefineDepth(const SE3 &gbc,
       Vec2 xp = Camera::instance()->Project(xcn, &dxp_dxcn);
 
       Mat23 dxp_dx = dxp_dxcn * dxcn_dXcn * dXcn_dx;
-      // std::cout << dxp_dx << std::endl;
 
       H += (dxp_dx.transpose() * invC * dxp_dx); //  / (views.size() - 1);
-      Vec2 res = obs.xp - xp;
+      Vec2 res = xp - obs.xp;
       b += dxp_dx.transpose() * invC * res; //  / (views.size() - 1);
+
+      // jac_res.push_back(std::make_tuple(dxp_dx, res));
 
       res_norm += res.norm(); //  / (views.size() - 1);
     }
@@ -270,10 +274,30 @@ bool Feature::RefineDepth(const SE3 &gbc,
     VLOG_IF(0, iter > 0) << StrFormat("iter=%d; |res|:%0.4f->%0.4f", 
         iter, res_norm0 / (views.size() - 1), res_norm / (views.size() - 1) );
 
+    // auto ldlt = H.ldlt();
+    // std::cout << "D=" << ldlt.vectorD().transpose() << std::endl;
     // Vec3 delta = H.ldlt().solve(b);
     Vec3 delta = H.completeOrthogonalDecomposition().solve(b);
+
+    /*
+    MatX J;
+    J.setZero(2 * jac_res.size(), 3);
+    VecX r;
+    r.setZero(2 * jac_res.size());
+    for (int i = 0; i < jac_res.size(); ++i) {
+      const auto& tup{jac_res[i]};
+      J.block<2, 3>(i * 2, 0) = std::get<0>(tup);
+      r.segment<2>(i * 2) = std::get<1>(tup);
+    }
+    auto H = J.transpose() * J;
+    auto ldlt = H.ldlt();
+    std::cout << "D=" << ldlt.vectorD().transpose() << std::endl;
+    auto b = J.transpose() * r;
+    auto delta = ldlt.solve(b);
+    */
+
     BackupState();
-    x_ += delta;
+    x_ -= delta;
     res_norm0 = res_norm;
 
     // not much to progress
