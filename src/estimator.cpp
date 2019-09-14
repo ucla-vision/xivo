@@ -180,8 +180,7 @@ Estimator::Estimator(const Json::Value &cfg)
   }
   X_.Tbc = GetVectorFromJson<number_t, 3>(X, "Tbc");
   Vec3 Wg;
-  // Wg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wg");
-  Wg = GetVectorFromJson<number_t, 3>(X, "Wg");
+  Wg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wg");
   X_.Rg = SO3::exp(Wg);
 // temporal offset
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -374,9 +373,8 @@ bool Estimator::InitializeGravity() {
     Eigen::AngleAxis<number_t> AAg(
         Eigen::Quaternion<number_t>::FromTwoVectors(-g_, accel_calib));
     Vec3 Wg(AAg.axis() * AAg.angle());
-    // Wg(2) = 0;
-    auto Rg = SO3::exp(Wg);
-    X_.Rg = Rg;
+    Wg(2) = 0;
+    X_.Rg = SO3::exp(Wg);
 
     LOG(INFO) << "===== Wg initialization =====";
     LOG(INFO) << "stationary accel samples=" << gravity_init_buf_.size();
@@ -541,10 +539,7 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 dV_dW = -R * hat(accel_calib);
   Mat3 dV_dba = -R;
 
-  // static Mat3 tmp = -R * hat(g_); // 3x3
-  // Mat32 dV_dWg = tmp.block<3, 3>(0, 0); // 3x2
-  
-  Mat3 dV_dWg = -R * hat(g_);
+  Mat3 dV_dWg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
@@ -564,8 +559,10 @@ void Estimator::ComputeMotionJacobianAt(
       F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
       F_.coeffRef(Index::V + i, Index::ba + j) = dV_dba(i, j);
 
-      // if (j < 2)
-      F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i, j);
+      if (j < 2) {
+        // NOTE: Wg is 2-dim, i.e., NO z-component
+        F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i, j);
+      }
     }
   }
 

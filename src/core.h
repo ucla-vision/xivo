@@ -31,6 +31,11 @@ using timestamp_t = nanoseconds;
 ////////////////////////////////////////
 // STATE DIMENSION
 ////////////////////////////////////////
+// NOTE: in the implementation, the spatial frame is actually the world frame, which is arbitrary.
+// Gravity of the form g=[0, 0, -9.8] is brought from the inertial frame to the spatial (world) frame .
+// by the rotation matrix Rg, i.e., Rg * g is the gravity in the spatial (world) frame.
+// Since the rotation around z-axis of the inertial frame is not observable, the z-component of Wg=Log(Rg)
+// is not included in the model.
 enum Index : int {
   W = 0, // Wsb, rotation
   Wsb = 0,
@@ -42,17 +47,17 @@ enum Index : int {
   ba = 12,  // alpha bias
   Wbc = 15, // alignment rotation
   Tbc = 18, // alignment translation
-  Wg = 21,  // gravity
+  Wg = 21,  // alignment of gravity from [0, 0, -9.8] to the spatial frame
 #ifdef USE_ONLINE_TEMPORAL_CALIB
-  td = 24, // temporal offset
+  td = Wg + 2, // temporal offset
 #endif
 
 #ifdef USE_ONLINE_IMU_CALIB
 
 #ifdef USE_ONLINE_TEMPORAL_CALIB
-  Cg = 25, // gyro calibration, 9 numbers
+  Cg = td + 1, // gyro calibration, 9 numbers
 #else
-  Cg = 24, // gyro calibration, 9 numbers
+  Cg = Wg + 2, // gyro calibration, 9 numbers
 #endif
   Ca = Cg + 9, // accel calibration, 6 numbers
   End = Ca + 6,
@@ -111,7 +116,7 @@ struct State {
 
   SO3 Rbc;
   Vec3 Tbc;
-  SO3 Rg;
+  SO3 Rg;  // gravity -> spatial
 
   number_t td;
 
@@ -125,8 +130,8 @@ struct State {
     ba += dX.segment<3>(Index::ba);
     Rbc *= SO3::exp(dX.segment<3>(Index::Wbc));
     Tbc += dX.segment<3>(Index::Tbc);
-    // Rg *= SO3::exp(Vec3{dX(Index::Wg), dX(Index::Wg + 1), 0.0});
-    Rg *= SO3::exp(dX.segment<3>(Index::Wg));
+    Rg *= SO3::exp(Vec3{dX(Index::Wg), dX(Index::Wg + 1), 0.0});
+    // Rg *= SO3::exp(dX.segment<3>(Index::Wg));
 // std::cout << "Wg=" << dX.segment<3>(Index::Wg).transpose() << std::endl;
 #ifdef USE_ONLINE_TEMPORAL_CALIB
     td += dX(Index::td);
@@ -136,7 +141,9 @@ struct State {
       if (++counter % kEnforceSO3Freq == 0) {
         Rsb = SO3::project(Rsb.matrix());
         Rbc = SO3::project(Rbc.matrix());
-        Rg = SO3::project(Rg.matrix());
+        auto Wg = SO3::log(Rg);
+        Wg(2) = 0;
+        Rg = SO3::exp(Wg);
       }
     }
 
@@ -156,7 +163,6 @@ struct State {
     os << "\n=====\n";
     return os;
   }
-
 };
 
 ////////////////////////////////////////
