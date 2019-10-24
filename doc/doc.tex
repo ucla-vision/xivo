@@ -699,34 +699,35 @@ Again, we need to write $R_{bc}^\top\big(R_{sb}^\top(X_s-T_{sb})-T_{bc})\big)$ i
 \begin{aligned}
  & R_{bc}^\top\big(R_{sb}^\top(X_s-T_{sb})-T_{bc})\big) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- = & (\bar R_{bc} + \asym{\tilde\omega_{bc}})^\top
- \big( (\bar R_{sb} + \asym{\tilde\omega_{sb}})^\top (\bar X_s - \bar T_{sb}) + (\bar R_{sb} + \asym{\tilde\omega_{sb}})^\top (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
+ = & (\bar R_{bc} + \bar R_{bc}\asym{\tilde\omega_{bc}})^\top
+ \big( (\bar R_{sb} + \bar R_{sb}\asym{\tilde\omega_{sb}})^\top (\bar X_s - \bar T_{sb}) + (\bar R_{sb} + \bar R_{sb}\asym{\tilde\omega_{sb}})^\top (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- = & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})
- \big( (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\bar X_s - \bar T_{sb}) + (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
+ = & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^\top)
+ \big( (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\bar X_s - \bar T_{sb}) + (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-= & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})
- (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\bar X_s - \bar T_{sb}) \\
- &+ (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})(\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\tilde X_s - \tilde T_{sb}) \\
- &- (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})(\bar T_{bc} + \tilde T_{bc}) \\
+= & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^\top)
+ (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\bar X_s - \bar T_{sb}) \\
+ &+ (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^
+ \top)(\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\tilde X_s - \tilde T_{sb}) \\
+ &- (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^\top)(\bar T_{bc} + \tilde T_{bc}) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- \approx & \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \asym{\tilde \omega_{bc}}\bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \asym{\tilde \omega_{sb}}(\bar X_s - \bar T_{sb}) \\
+ \approx & \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \asym{\tilde \omega_{bc}}\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \asym{\tilde \omega_{sb}} \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) \\
  &+ \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) \\
  &- \bar R_{bc}^\top \bar T_{bc} - \bar R_{bc}^\top \tilde T_{bc} + \asym{\tilde \omega_{bc}} \bar T_{bc} \quad\text{(drop high-order terms)}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  = & \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) 
- + \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
- + \bar R_{bc}^\top \asym{\bar X_s - \bar T_{sb}} \tilde \omega_{sb} \\
+ + \asym{\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
+ + \bar R_{bc}^\top \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})} \tilde \omega_{sb} \\
  &+ \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) \\
  &- \bar R_{bc}^\top \bar T_{bc} 
  - \bar R_{bc}^\top \tilde T_{bc} 
- - \asym{\bar T_{bc}}\tilde \omega_{bc}  \\
+ - \asym{\bar R_{bc}^\top \bar T_{bc}}\tilde \omega_{bc}  \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 =& \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \bar T_{bc} \quad\text{(nominal term)}\\
-&+ \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
-+ \bar R_{bc}^\top \asym{\bar X_s - \bar T_{sb}}\tilde \omega_{sb}
+&+ \asym{\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
++ \bar R_{bc}^\top \asym{ \bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{sb}
  + \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) 
- - \bar R_{bc}^\top \tilde T_{bc} - \asym{\bar T_{bc}} \tilde \omega_{bc} \\
+ - \bar R_{bc}^\top \tilde T_{bc} - \asym{\bar R_{bc}^\top \bar T_{bc}} \tilde \omega_{bc} \\
 \end{aligned}
 \end{equation}
 
@@ -739,8 +740,8 @@ To summarize:
     &\cdot 
     
     \big( 
-    \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar T_{bc}}\tilde \omega_{bc} 
-+ \bar R_{bc}^\top \asym{\bar X_s - \bar T_{sb}}\tilde \omega_{sb}
+    \asym{\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \bar T_{bc}}\tilde \omega_{bc} 
++ \bar R_{bc}^\top \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{sb}
 + \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) 
 - \bar R_{bc}^\top \tilde T_{bc}
     \big)
