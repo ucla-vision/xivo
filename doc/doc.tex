@@ -71,10 +71,10 @@ y_{imu}(t)=
 
 \begin{itemize}
  \item 
-$R_{sb}(t) \in \SO{3}$ and $T_{sb}(t) \in \real^3$ are the body to spatial frame rotation and translation, which form $g_{sb}(t)\doteq (R_{sb}(t), T_{sb}(t)) \in \SE{3}$ the rigid body transformation from the body frame to the spatial frame. We adopt the convention in~\cite{maSKS} for the subscripts, where $g_{ab}$ denotes a transformation from reference frame $b$ to $a$, such that for a point $X$ represented in $b$, $g_{ab} X$ brings it to frame $a$.
+$R_{sb}(t) \in \SO{3}$ and $T_{sb}(t) \in \real^3$ are the body to spatial frame rotation and translation, which form $g_{sb}(t)\doteq (R_{sb}(t), T_{sb}(t)) \in \SE{3}$ the rigid body transformation from the body frame to the spatial frame. We adopt the convention in~\cite{maSKS} for the subscripts, where $g_{ab}$ denotes a transformation from reference frame $b$ to $a$, such that for a point $X$ represented in $b$, $g_{ab} X$ brings it to frame $a$. \footnote{In other words, $T_{sb}$ is the position of the origin of the body frame with respect to the spatial frame with coordinates resolved in the spatial frame and $R_{sb}$ transforms coordinates resolved in the body frame to coordinates resolved in the spatial frame by multiplying on the left: $x^s = R_{sb}x^b$.}
 
 \item
-$\omega_{sb}^b(t), v_{sb}^b(t)\in \real^3$ are the body to spatial rotational and linear velocity measured in the body frame. $\alpha_{sb}^b(t)$ is the body to spatial linear acceleration measured in body frame. 
+$\omega_{sb}^b(t), v_{sb}^b(t)\in \real^3$ are the body to spatial rotational and linear velocity measured in the body frame. $\alpha_{sb}^b(t)$ is the body to spatial linear acceleration measured in body frame. \footnote{In other words, they are, respectively, the rotational velocity, linear velocity, and linear acceleration of the body frame with respect to the spatial frame with coordinates resolved in the body frame.}
 
 \item
 The ``hat'' operator $\hat{\cdot}$ (or $\asym{\cdot}$ when the operand is an expression instead of a single variable) maps a vector $v \doteq [v_1, v_2, v_3]^\top \in \real^3$ to a skew-symmetric matrix 
@@ -187,7 +187,7 @@ In the above model, we assume the camera frame coincides with the body frame, wh
 \begin{aligned}
 y^i(t) 
 &= \pi \Big( g_{bc}^{-1} g_{sb}^{-1}(t)X_0^i \Big)\\
-&= \pi \Big(R_{bc}^\top R_{sb}^\top(t)\big( X_0^i - T_{sb}(t)\big)-T_{bc} \Big).
+&= \pi \Big(R_{bc}^\top \Big( R_{sb}^\top(t)\big( X_0^i - T_{sb}(t)\big)-T_{bc} \Big)\Big).
 \end{aligned}
 \label{eq-vismeas}
 \end{equation}
@@ -252,7 +252,7 @@ System dynamics:
 Each component can be written as the composition of a nominal state and an error state. For variables defined in Euclidean space the composition is the usual addition such as $T=\bar T + \tilde T$; for rotation, the composition is defined as $R=\bar R R(\tilde \omega)$ where $R(\tilde \omega)\doteq \exp(\asym{\tilde \omega})$ maps the error vector $\tilde \omega \in \real^3$ to a rotation matrix $R(\tilde \omega) \in \SO{3}$. The exponential map can be approximated as follows when the magnitude of $\tilde \omega$ is small:
 
 \begin{equation}
-R(\tilde \omega) \doteq \exp(\asym{\tilde \omega})=\asym{\tilde \omega}
+R(\tilde \omega) \doteq \exp(\asym{\tilde \omega})= I + \asym{\tilde \omega}
 \end{equation}
 
 
@@ -508,7 +508,7 @@ To propagate the covariance matrix of the error state, we follow \cite{mourikis2
     \end{bmatrix}
     \label{eq:covariance-partition}
 \end{equation}
-where $P_{k|k}^{(1)}$ is the $18\times 18$ covariance matrix of the evolving motion state, $P_{k|k}^{(3)}$ corresponds to the structure state (including pose of groups and position of features, detailed later), and $P_{k|k}^{(2)}$  is the correlation between the erros in the motion state and the structure state. The covariance matrix of the propagated state is given by:
+where $P_{k|k}^{(1)}$ is the $18\times 18$ covariance matrix of the evolving motion state, $P_{k|k}^{(3)}$ corresponds to the structure state (including pose of groups and position of features, detailed later), and $P_{k|k}^{(2)}$  is the correlation between the errors in the motion state and the structure state. The covariance matrix of the propagated state is given by:
 
 \begin{equation}
     P_{k+1|k} =
@@ -533,7 +533,7 @@ The state transition matrix $\Phi(t_{k+1}, t_k)$ is obtained by numerical integr
 \end{equation}
 
 \section{State augmentation}
-Once the pose estimate of a newly arrived image is available, its camera-to-spatial transformation $g_{sc} \in \SE{3}$ is inserted into the state. $g_{sc}$ is the composed of the body-to-spatial transformation $g_{sb} \in \SE{3}$ and the camera-ot-body alignment $g_{bc} \in \SE{3}$. Written in components
+Once the pose estimate of a newly arrived image is available, its camera-to-spatial transformation $g_{sc} \in \SE{3}$ is inserted into the state. $g_{sc}$ is the composed of the body-to-spatial transformation $g_{sb} \in \SE{3}$ and the camera-to-body alignment $g_{bc} \in \SE{3}$. Written in components
 \begin{equation}
 \begin{cases}
 R_{sc} &= R_{sb} R_{bc}\\
@@ -699,34 +699,35 @@ Again, we need to write $R_{bc}^\top\big(R_{sb}^\top(X_s-T_{sb})-T_{bc})\big)$ i
 \begin{aligned}
  & R_{bc}^\top\big(R_{sb}^\top(X_s-T_{sb})-T_{bc})\big) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- = & (\bar R_{bc} + \asym{\tilde\omega_{bc}})^\top
- \big( (\bar R_{sb} + \asym{\tilde\omega_{sb}})^\top (\bar X_s - \bar T_{sb}) + (\bar R_{sb} + \asym{\tilde\omega_{sb}})^\top (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
+ = & (\bar R_{bc} + \bar R_{bc}\asym{\tilde\omega_{bc}})^\top
+ \big( (\bar R_{sb} + \bar R_{sb}\asym{\tilde\omega_{sb}})^\top (\bar X_s - \bar T_{sb}) + (\bar R_{sb} + \bar R_{sb}\asym{\tilde\omega_{sb}})^\top (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- = & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})
- \big( (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\bar X_s - \bar T_{sb}) + (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
+ = & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^\top)
+ \big( (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\bar X_s - \bar T_{sb}) + (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\tilde X_s - \tilde T_{sb}) - (\bar T_{bc} + \tilde T_{bc}) \big) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-= & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})
- (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\bar X_s - \bar T_{sb}) \\
- &+ (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})(\bar R_{sb}^\top - \asym{\tilde\omega_{sb}}) (\tilde X_s - \tilde T_{sb}) \\
- &- (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}})(\bar T_{bc} + \tilde T_{bc}) \\
+= & (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^\top)
+ (\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\bar X_s - \bar T_{sb}) \\
+ &+ (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^
+ \top)(\bar R_{sb}^\top - \asym{\tilde\omega_{sb}} \bar R_{sb}^\top) (\tilde X_s - \tilde T_{sb}) \\
+ &- (\bar R_{bc}^\top - \asym{\tilde\omega_{bc}} \bar R_{bc}^\top)(\bar T_{bc} + \tilde T_{bc}) \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- \approx & \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \asym{\tilde \omega_{bc}}\bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \asym{\tilde \omega_{sb}}(\bar X_s - \bar T_{sb}) \\
+ \approx & \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \asym{\tilde \omega_{bc}}\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \asym{\tilde \omega_{sb}} \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) \\
  &+ \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) \\
  &- \bar R_{bc}^\top \bar T_{bc} - \bar R_{bc}^\top \tilde T_{bc} + \asym{\tilde \omega_{bc}} \bar T_{bc} \quad\text{(drop high-order terms)}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  = & \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) 
- + \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
- + \bar R_{bc}^\top \asym{\bar X_s - \bar T_{sb}} \tilde \omega_{sb} \\
+ + \asym{\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
+ + \bar R_{bc}^\top \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})} \tilde \omega_{sb} \\
  &+ \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) \\
  &- \bar R_{bc}^\top \bar T_{bc} 
  - \bar R_{bc}^\top \tilde T_{bc} 
- - \asym{\bar T_{bc}}\tilde \omega_{bc}  \\
+ - \asym{\bar R_{bc}^\top \bar T_{bc}}\tilde \omega_{bc}  \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 =& \bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \bar T_{bc} \quad\text{(nominal term)}\\
-&+ \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
-+ \bar R_{bc}^\top \asym{\bar X_s - \bar T_{sb}}\tilde \omega_{sb}
+&+ \asym{\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{bc} 
++ \bar R_{bc}^\top \asym{ \bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{sb}
  + \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) 
- - \bar R_{bc}^\top \tilde T_{bc} - \asym{\bar T_{bc}} \tilde \omega_{bc} \\
+ - \bar R_{bc}^\top \tilde T_{bc} - \asym{\bar R_{bc}^\top \bar T_{bc}} \tilde \omega_{bc} \\
 \end{aligned}
 \end{equation}
 
@@ -739,8 +740,8 @@ To summarize:
     &\cdot 
     
     \big( 
-    \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar T_{bc}}\tilde \omega_{bc} 
-+ \bar R_{bc}^\top \asym{\bar X_s - \bar T_{sb}}\tilde \omega_{sb}
+    \asym{\bar R_{bc}^\top \bar R_{sb}^\top (\bar X_s - \bar T_{sb}) - \bar R_{bc}^\top \bar T_{bc}}\tilde \omega_{bc} 
++ \bar R_{bc}^\top \asym{\bar R_{sb}^\top (\bar X_s - \bar T_{sb})}\tilde \omega_{sb}
 + \bar R_{bc}^\top\bar R_{sb}^\top (\tilde X_s - \tilde T_{sb}) 
 - \bar R_{bc}^\top \tilde T_{bc}
     \big)
@@ -799,15 +800,15 @@ Let's first express $X_s$ in error state form. Each 3D point is parametrized as 
 \begin{aligned}
 X_s &= g_{sb}(t_r) g_{bc} X_c \quad\text{(let } g_{sb}(t_r)=[R_r|T_r] \text{)}\\
 &= R_r(R_{bc} X_c + T_{bc}) + T_r \\ 
-&= R_r(R_{bc} (\bar X_c + \tilde X_c)
-+ T_{bc}) + T_r \quad\text{formally of } X_c = \bar X_c + \tilde X_c\\
-&= (\bar R_r + \asym{\tilde \omega_r})(\bar R_{bc} + \asym{\tilde \omega_{bc}})(\bar X_c + \tilde X_c) + (\bar R_r + \asym{\tilde \omega_r})(\bar T_{bc} + \tilde T_{bc}) + (\bar T_r + \tilde T_r) \\
+%&= R_r(R_{bc} (\bar X_c + \tilde X_c)
+%+ T_{bc}) + T_r \quad\text{formally of } X_c = \bar X_c + \tilde X_c\\
+&= (\bar R_r + \bar R_r \asym{\tilde \omega_r})(\bar R_{bc} + \bar R_{bc}\asym{\tilde \omega_{bc}})(\bar X_c + \tilde X_c) + (\bar R_r + \bar R_r \asym{\tilde \omega_r})(\bar T_{bc} + \tilde T_{bc}) + (\bar T_r + \tilde T_r) \\
 &= \bar R_r \bar R_{bc} \bar X_c  + 
 \bar R_r \bar R_{bc} \tilde X_c +
-\bar R_r \asym{\tilde\omega_{bc}} \bar X_c +
-\asym{\tilde \omega_r} \bar R_{bc} \bar X_c \quad\text{(1st term, drop higher-order terms)}\\
-&+ \bar R_r \bar T_{bc} + \bar R_r \tilde T_{bc} + \asym{\tilde\omega_r} \bar T_{bc} \quad\text{(2nd term, drop higher-order terms)}\\
-&+ \bar T_r + \tilde T_r.
+\bar R_r \bar R_{bc} \asym{\tilde\omega_{bc}} \bar X_c +
+\bar R_r \asym{\tilde \omega_r} \bar R_{bc} \bar X_c \quad\text{(1st term, drop higher-order terms)}\\
+&\quad + \bar R_r \bar T_{bc} + \bar R_r \tilde T_{bc} + \bar R_r \asym{\tilde\omega_r} \bar T_{bc} \quad\text{(2nd term, drop higher-order terms)}\\
+&\quad + \bar T_r + \tilde T_r.
 \end{aligned}
 \end{equation}
 
@@ -815,7 +816,7 @@ To summarize:
 \begin{equation}
 \begin{cases}
 \bar X_s &= \bar R_r \bar R_{bc} \bar X_c + \bar R_r \bar T_{bc} + \bar T_r\\
-\tilde X_s &= \bar R_r \bar R_{bc} \tilde X_c - \bar R_r \asym{\bar X_c} \tilde \omega_{bc} - \asym{\bar R_{bc}\bar X_c + \bar T_{bc}} \tilde \omega_r + \bar R_r \tilde T_{bc} + \tilde T_r.
+\tilde X_s &= \bar R_r \bar R_{bc} \tilde X_c - \bar R_r \bar R_{bc} \asym{\bar X_c} \tilde \omega_{bc} - \bar R_r \asym{\bar R_{bc} \bar X_c + \bar T_{bc}} \tilde \omega_r + \bar R_r \tilde T_{bc} + \tilde T_r.
 \end{cases}
 \end{equation}
 
@@ -824,7 +825,9 @@ Now we need to expand $X_c = [x_c/\rho, y_c/\rho, 1/\rho]^\top$ in error state f
 \begin{aligned}
 \frac{x_c}{\rho}
 &= \frac{\bar x_c + \tilde x_c}{\bar \rho_c + \tilde \rho_c} \\
-&= (\bar x_c + \tilde x_c)(\frac{1}{\bar \rho_c} - \frac{1}{\bar \rho_c^2}\tilde \rho_c)\\
+&= (\bar x_c + \tilde x_c) \left (  \frac{\bar \rho_c - \tilde \rho_c}{\bar \rho_c^2 - \tilde \rho_c^2}  \right ) \\
+&\approx (\bar x_c + \tilde x_c) \left (  \frac{\bar \rho_c - \tilde \rho_c}{\bar \rho_c^2}  \right ) \quad\text{(drop higher-order term in denominator)}\\
+&= (\bar x_c + \tilde x_c)\left (\frac{1}{\bar \rho_c} - \frac{1}{\bar \rho_c^2}\tilde \rho_c \right )\\
 &\approx \frac{\bar x_c}{\bar\rho_c} - \frac{\bar x_c}{\bar \rho_c^2} \tilde\rho_c + \frac{1}{\bar \rho_c} \tilde x_c \quad\text{(drop higher-order terms)}.
 \end{aligned}
 \end{equation}
@@ -1150,7 +1153,7 @@ $$
 \omega_2 = A \omega_1, \text{ and } \tilde T_2 = B \omega_1 + C \tilde T_1.
 $$
 
-Now if we pass $g_2$ to anothe nonlinear function $g_3=h(g_2):\SE{3}\mapsto\SE{3}$ whose error state equation reads
+Now if we pass $g_2$ to another nonlinear function $g_3=h(g_2):\SE{3}\mapsto\SE{3}$ whose error state equation reads
 $$
 \omega_3 = D \omega_2, \text{ and } \tilde T_3 = E \omega_2 + F \tilde T_2,
 $$

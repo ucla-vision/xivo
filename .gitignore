@@ -10,3 +10,17 @@ thirdparty
 src/src/
 src/Makefile
 back_results/
+
+.vscode/
+doc/html/
+doc/latex/
+
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.synctex.gz
