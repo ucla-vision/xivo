@@ -800,15 +800,15 @@ Let's first express $X_s$ in error state form. Each 3D point is parametrized as 
 \begin{aligned}
 X_s &= g_{sb}(t_r) g_{bc} X_c \quad\text{(let } g_{sb}(t_r)=[R_r|T_r] \text{)}\\
 &= R_r(R_{bc} X_c + T_{bc}) + T_r \\ 
-&= R_r(R_{bc} (\bar X_c + \tilde X_c)
-+ T_{bc}) + T_r \quad\text{formally of } X_c = \bar X_c + \tilde X_c\\
-&= (\bar R_r + \asym{\tilde \omega_r})(\bar R_{bc} + \asym{\tilde \omega_{bc}})(\bar X_c + \tilde X_c) + (\bar R_r + \asym{\tilde \omega_r})(\bar T_{bc} + \tilde T_{bc}) + (\bar T_r + \tilde T_r) \\
+%&= R_r(R_{bc} (\bar X_c + \tilde X_c)
+%+ T_{bc}) + T_r \quad\text{formally of } X_c = \bar X_c + \tilde X_c\\
+&= (\bar R_r + \bar R_r \asym{\tilde \omega_r})(\bar R_{bc} + \bar R_{bc}\asym{\tilde \omega_{bc}})(\bar X_c + \tilde X_c) + (\bar R_r + \bar R_r \asym{\tilde \omega_r})(\bar T_{bc} + \tilde T_{bc}) + (\bar T_r + \tilde T_r) \\
 &= \bar R_r \bar R_{bc} \bar X_c  + 
 \bar R_r \bar R_{bc} \tilde X_c +
-\bar R_r \asym{\tilde\omega_{bc}} \bar X_c +
-\asym{\tilde \omega_r} \bar R_{bc} \bar X_c \quad\text{(1st term, drop higher-order terms)}\\
-&+ \bar R_r \bar T_{bc} + \bar R_r \tilde T_{bc} + \asym{\tilde\omega_r} \bar T_{bc} \quad\text{(2nd term, drop higher-order terms)}\\
-&+ \bar T_r + \tilde T_r.
+\bar R_r \bar R_{bc} \asym{\tilde\omega_{bc}} \bar X_c +
+\bar R_r \asym{\tilde \omega_r} \bar R_{bc} \bar X_c \quad\text{(1st term, drop higher-order terms)}\\
+&\quad + \bar R_r \bar T_{bc} + \bar R_r \tilde T_{bc} + \bar R_r \asym{\tilde\omega_r} \bar T_{bc} \quad\text{(2nd term, drop higher-order terms)}\\
+&\quad + \bar T_r + \tilde T_r.
 \end{aligned}
 \end{equation}
 
@@ -816,7 +816,7 @@ To summarize:
 \begin{equation}
 \begin{cases}
 \bar X_s &= \bar R_r \bar R_{bc} \bar X_c + \bar R_r \bar T_{bc} + \bar T_r\\
-\tilde X_s &= \bar R_r \bar R_{bc} \tilde X_c - \bar R_r \asym{\bar X_c} \tilde \omega_{bc} - \asym{\bar R_{bc}\bar X_c + \bar T_{bc}} \tilde \omega_r + \bar R_r \tilde T_{bc} + \tilde T_r.
+\tilde X_s &= \bar R_r \bar R_{bc} \tilde X_c - \bar R_r \bar R_{bc} \asym{\bar X_c} \tilde \omega_{bc} - \bar R_r \asym{\bar R_{bc} \bar X_c + \bar T_{bc}} \tilde \omega_r + \bar R_r \tilde T_{bc} + \tilde T_r.
 \end{cases}
 \end{equation}
 
