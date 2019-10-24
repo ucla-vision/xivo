@@ -56,19 +56,28 @@ Note, by default, log is suppressed for runtime speed by setting `add_definition
 
 For more details on glog, see the tutorial [here](http://rpg.ifi.uzh.ch/docs/glog.html).
 
+
+
+## Build
+
+XIVO's dependencies include OpenCV, eigen, g2o, gflags, glog, googletest, gperftools, imu_tk, jsoncpp, Pangolin, pybind, and stb. You will need to install [OpenCV 3.4.x](https://github.com/opencv/opencv/tree/3.4) and its accompanying [OpenCV Contrib](https://github.com/opencv/opencv_contrib/tree/3.4) library. The rest of the dependencies are included with XIVO and automatically compiled with the build script.
+
+To build, run `./build.sh` in XIVO's root directory.
+
+
+
 ## ROS support
 
 ### Build
 
 By default the ROS node of the system will not be built in case that your operating system does not have ROS installed. 
 
-However, if you want to use the system with ROS support, you need to first install ROS (see instructions [here](http://wiki.ros.org/ROS/Installation)), and then turn on the `BUILD_ROSNODE` option when generating the makefile: In `build` directory of the project root, do the following:
+However, if you want to use the system with ROS support, you need to first install ROS (see instructions [here](http://wiki.ros.org/ROS/Installation)), and then build with both ROS and g2o.
 
 ```
-cmake .. -DBUILD_ROSNODE=ON
+./build.sh ros g2o
 ```
 
-followed by `make` to build with ROS support.
 
 ### Launch
 
