@@ -47,9 +47,9 @@ void Feature::ComputeOOSJacobianInternal(const Observation &obs,
   cache_.Xcn = Rbc_t * Rsb_t * (cache_.Xs - Tsb) - Rbc_t * Tbc;
   cache_.dXcn_dXs = Rbc_t * Rsb_t;
   cache_.dXcn_dTsb = -cache_.dXcn_dXs;
-  cache_.dXcn_dWsb = Rbc_t * hat(cache_.Xs - Tsb);
+  cache_.dXcn_dWsb = Rbc_t * hat(Rsb_t*(cache_.Xs - Tsb));
   cache_.dXcn_dTbc = -Rbc_t;
-  cache_.dXcn_dWbc = hat(Rsb_t * (cache_.Xs - Tsb) - Tbc);
+  cache_.dXcn_dWbc = Rbc_t*hat(Rsb_t * (cache_.Xs - Tsb) - Tbc);
 
   cache_.xcn = project(cache_.Xcn, &cache_.dxcn_dXcn);
 
