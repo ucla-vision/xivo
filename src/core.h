@@ -67,7 +67,7 @@ enum Index : int {
 #ifdef USE_ONLINE_TEMPORAL_CALIB // USE_ONLINE_TEMPORAL_CALIB, but not USE_ONLINE_IMU_CALIB
   End = td + 1,
 #else
-  End = Wg + 3  // FIXME?: Should this be a 2?
+  End = Wg + 2
 #endif
 
 #endif
