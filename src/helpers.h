@@ -20,6 +20,12 @@ void SlowGivens(const MatX &Hf, MatX &Hx);
 // might be over-sized.
 int Givens(VecX &r, MatX &Hx, MatX &Hf, int effective_rows = -1);
 
+/** Given a 2d vector v = [a; b], returns a matrix G such that the second
+ *  elemenet of transpose(G)*v is 0.
+ *  We use the notation in Algorithm 5.1.3 of Golub & Loan, which is the
+ *  opposite of what is implemented in Matlab's planerot function. */
+static Mat2 givens(number_t a, number_t b);
+
 // QR-based measurement compression.
 // Args:
 //  r: residual vector

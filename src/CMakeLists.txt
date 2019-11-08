@@ -100,6 +100,10 @@ target_link_libraries(vio ${libxivo} gflags::gflags)
 ################################################################################
 # TESTS
 ################################################################################
+add_executable(unitTests_NumericalAlgorithms test/unittest_givens.cpp)
+target_link_libraries(unitTests_NumericalAlgorithms ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME NumericalAlgorithms COMMAND unitTests_NumericalAlgorithms)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)
