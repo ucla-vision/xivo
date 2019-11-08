@@ -10,13 +10,16 @@ namespace xivo {
 
 // Reference:
 // http://www.math.usm.edu/lambers/mat610/sum10/lecture9.pdf
-void SlowGivens(const MatX &Hf, MatX &Hx) {
+int SlowGivens(const MatX &Hf, MatX &Hx, MatX &A) {
   // FIXME: use Givens rotation
   Eigen::FullPivLU<MatX> lu(Hf.transpose());
-  MatX A = lu.kernel(); // Hf.T * A = 0 -> A.T * Hf = 0
+  A = lu.kernel();
+//  MatX A = lu.kernel(); // Hf.T * A = 0 -> A.T * Hf = 0
   // Hf: 2nx3, Hf.T: 3x2n, A: 2nx?, At: ?x2n
   // MatX At = A.transpose();
   Hx = A.transpose() * Hx;
+
+  return Hx.rows();
 }
 
 // Matrix computation. Golub & Loan.

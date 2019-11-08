@@ -7,12 +7,13 @@ namespace xivo {
 int Feature::ComputeOOSJacobian(const std::vector<Observation> &vobs,
                                 const Mat3 &Rbc, const Vec3 &Tbc) {
 
-  int num_contraints =
+  int num_constraints =
       std::count_if(vobs.begin(), vobs.end(),
                     [](const Observation &obs) { return obs.g->instate(); });
 
-  if (num_contraints > 1) {
-    // A constraint should involve at least 2 poses
+// A constraint should involve at least 2 poses
+//  if (num_constraints > 1) {
+  if (num_constraints > 5) { // TODO: Make this a settable parameter
     cache_.Xs = this->Xs(SE3{SO3{Rbc}, Tbc});
     oos_jac_counter_ = 0;
     for (auto obs : vobs) {
@@ -22,7 +23,10 @@ int Feature::ComputeOOSJacobian(const std::vector<Observation> &vobs,
     }
 
     // perform givens elimination
-    oos_jac_counter_ = Givens(oos_.inn, oos_.Hx, oos_.Hf, 2 * oos_jac_counter_);
+//    oos_jac_counter_ = Givens(oos_.inn, oos_.Hx, oos_.Hf, 2 * oos_jac_counter_);
+    MatX A;
+    oos_jac_counter_ = SlowGivens(oos_.Hf, oos_.Hx, A);
+    oos_.inn = A.transpose() * oos_.inn;
     // std::cout << "feature #" << id_ << " got " << oos_jac_counter_ << " oos
     // jac blocks\n";
   } else {

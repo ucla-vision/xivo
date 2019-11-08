@@ -12,7 +12,7 @@ namespace xivo {
 // i.e., A' * Hf = 0 and we compute Hx <- A' * Hx
 // This can be achieved first concatenate Hf and Hx as [Hf | Hx]
 // And then eliminate the left most block Hf via Givens rotation.
-void SlowGivens(const MatX &Hf, MatX &Hx);
+int SlowGivens(const MatX &Hf, MatX &Hx, MatX &A);
 
 // zero-out measurement jacobian matrix H by applying Givens rotations
 // same rotations will also be used to transform residual vector r.
