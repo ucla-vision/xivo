@@ -1,6 +1,9 @@
 #include "helpers.cpp"
+#include "unittest_helpers.h"
+#include "Eigen/SVD"
 #include "gtest/gtest.h"
 
+using namespace Eigen;
 using namespace xivo;
 
 
@@ -34,7 +37,78 @@ TEST(NumericalLinearAlgebra, GivensSub) {
 }
 
 
-TEST(NumericalLinearAlgebra, SlowGivens) {
+TEST(NumericalLinearAlgebra, SlowAndFastGivensMatch) {
+    number_t tol = 1e-4;
 
+    int M = 4;
+    VecX r, r2;
+    MatX Hf, Hx, Hf2, Hx2;
+    r = MatX::Random(2 * M, 1);
+    Hf = MatX::Random(2 * M, 3);
+    Hx = MatX::Random(2 * M, 5);
+
+    // For comparing Givens and SlowGivens
+    r2 = r;
+    Hf2 = Hf;
+    Hx2 = Hx;
+
+    std::cout << "===== Before givens =====\n";
+    std::cout << "r=\n";
+    std::cout << r.transpose() << std::endl;
+    std::cout << "Hf=\n";
+    std::cout << Hf << std::endl;
+    std::cout << "Hx=\n";
+    std::cout << Hx << std::endl;
+
+    int effective_rows = Givens(r, Hx, Hf);
+    std::cout << "===== After givens =====\n";
+    std::cout << "r=\n";
+    std::cout << r.transpose() << std::endl;
+    std::cout << "Hf=\n";
+    std::cout << Hf << std::endl;
+    std::cout << "Hx=\n";
+    std::cout << Hx << std::endl;
+    std::cout << "Effective Rows: " << effective_rows << std::endl;
+    JacobiSVD<MatX> svd(Hx);
+    std::cout << "Singular values are: " << std::endl << svd.singularValues() << std::endl;
+
+    MatX A;
+    int effective_rows2 = SlowGivens(Hf2, Hx2, A);
+    VecX r2_after = A.transpose() * r2;
+    MatX Hf2_after = A.transpose() * Hf2;
+    std::cout << "===== After Slow Givens =====\n";
+    std::cout << "r=\n";
+    std::cout << r2_after.transpose() << std::endl;
+    std::cout << "Hf=\n";
+    std::cout << Hf2_after << std::endl;
+    std::cout << "Hx=\n";
+    std::cout << Hx2 << std::endl;
+
+    EXPECT_EQ(effective_rows, effective_rows2);
+    CheckMatrixEquality(Hf.block(0,0,effective_rows, 3), Hf2_after, tol);
+    CheckMatrixZero(Hf, tol);
+    CheckMatrixZero(Hf2_after, tol);
+    CheckVectorEquality(r.head(effective_rows), r2_after, tol);
+    CheckMatrixEquality(Hx.block(0,0,effective_rows,5), Hx2, tol);
+}
+
+
+TEST(NumericalLinearAlgebra, QR) {
+    int N = 4;  // state size
+    int M = 8;  // measurement size
+    VecX r;
+    MatX Hf, Hx;
+    r = MatX::Random(M, 1);
+    Hx = MatX::Random(M, N);
+
+    std::cout << "r=\n" << r.transpose() << std::endl;
+    std::cout << "Hx=\n" << Hx << std::endl;
+    int rows = QR(r, Hx);
+    std::cout << "Effective rows: " << rows << std::endl;
+    std::cout << "===== After givens =====\n";
+    std::cout << "r=\n";
+    std::cout << r.head(rows).transpose() << std::endl;
+    std::cout << "TH=\n";
+    std::cout << Hx.topRows(rows) << std::endl;
 
 }
