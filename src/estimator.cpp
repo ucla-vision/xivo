@@ -41,6 +41,8 @@ EstimatorPtr Estimator::instance() {
 
 static const Mat3 I3{Mat3::Identity()};
 static const Mat3 nI3{-I3};
+static const Mat2 I2{Mat2::Identity()};
+static const Mat2 nI2{-I2};
 
 static bool cmp(const std::unique_ptr<internal::Message> &m1,
                 const std::unique_ptr<internal::Message> &m2) {
@@ -210,7 +212,7 @@ Estimator::Estimator(const Json::Value &cfg)
     auto Cov = GetVectorFromJson<number_t, 3>(P, "Tbc");
     P_.block<3, 3>(Index::Tbc, Index::Tbc) *= Cov.asDiagonal();
   }
-  P_.block<3, 3>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
+  P_.block<2, 2>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   P_(Index::td, Index::td) *= P["td"].asDouble();
 #endif
@@ -255,7 +257,7 @@ Estimator::Estimator(const Json::Value &cfg)
   Qmodel_.setZero(kMotionSize, kMotionSize);
   Qmodel_.block<3, 3>(Index::W, Index::W) = I3 * Qmodel["W"].asDouble();
   Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) = I3 * Qmodel["Wbc"].asDouble();
-  Qmodel_.block<3, 3>(Index::Wg, Index::Wg) = I3 * Qmodel["Wg"].asDouble();
+  Qmodel_.block<2, 2>(Index::Wg, Index::Wg) = I2 * Qmodel["Wg"].asDouble();
   Qmodel_.block<kMotionSize, kMotionSize>(0, 0) *=
       Qmodel_.block<kMotionSize, kMotionSize>(0, 0);
   LOG(INFO) << "Covariance of process noises loaded";
@@ -747,7 +749,7 @@ void Estimator::PrintErrorStateNorm() {
       err_.segment<3>(Index::Wsb).norm(), err_.segment<3>(Index::Tsb).norm(),
       err_.segment<3>(Index::Vsb).norm(), err_.segment<3>(Index::bg).norm(),
       err_.segment<3>(Index::ba).norm(), err_.segment<3>(Index::Wbc).norm(),
-      err_.segment<3>(Index::Tbc).norm(), err_.segment<3>(Index::Wg).norm());
+      err_.segment<3>(Index::Tbc).norm(), err_.segment<2>(Index::Wg).norm());
   for (auto g : instate_groups_) {
 #ifndef NDEBUG
     CHECK(gsel_[g->sind()]) << "instate group not actually instate";

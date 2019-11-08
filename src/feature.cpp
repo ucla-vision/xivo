@@ -509,6 +509,8 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 #ifdef USE_ONLINE_CAMERA_CALIB
   Eigen::Matrix<number_t, 2, -1> jacc;
   cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn, &jacc);
+#else
+  cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn);
 #endif
 
   cache_.dxp_dXcn = cache_.dxp_dxcn * cache_.dxcn_dXcn;
