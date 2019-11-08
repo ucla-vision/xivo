@@ -462,14 +462,14 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   // cache_.dXs_dXc = Rr * Rbc;
   cache_.dXs_dx = Rr * Rbc * cache_.dXc_dx;
   cache_.dXs_dTbc = Rr;
-  cache_.dXs_dWbc = -Rr * hat(cache_.Xc);
+  cache_.dXs_dWbc = -Rr * Rbc * hat(cache_.Xc);
   cache_.dXs_dTr = Mat3::Identity();
-  cache_.dXs_dWr = -hat(Rbc * cache_.Xc + Tbc);
+  cache_.dXs_dWr = -Rr * hat(Rbc * cache_.Xc + Tbc);
 
   // Xs back to Xc(new)
   cache_.Xcn = Rbc_t * Rsb_t * (cache_.Xs - Tsb) - Rbc_t * Tbc;
-  cache_.dXcn_dWbc = hat(Rsb_t * (cache_.Xs - Tsb) - Tbc);
-  cache_.dXcn_dWsb = Rbc_t * hat(cache_.Xs - Tsb);
+  cache_.dXcn_dWbc = Rbc_t * hat(Rsb_t * (cache_.Xs - Tsb) - Tbc);
+  cache_.dXcn_dWsb = Rbc_t * Rsb_t * hat(cache_.Xs - Tsb);
   cache_.dXcn_dXs = Rbc_t * Rsb_t; // dXcn_d... = dXcn_dXs * dXs_d...
   cache_.dXcn_dTsb = -cache_.dXcn_dXs;
   cache_.dXcn_dTbc = -Rbc_t;
@@ -477,11 +477,11 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Vec3 gyro_calib = Cg * gyro - bg;
   cache_.dXcn_dtd =
-      -Rbc_t * (hat(gyro_calib) * Rsb_t * cache_.Xs + Rsb_t * Vsb);
+      -Rbc_t * (hat(gyro_calib) * Rsb_t * (cache_.Xs - Tsb) + Rsb_t * Vsb);
 
   // since imu.Cg is used here, also need to compute jacobian block w.r.t. Cg
   auto dXcn_dW =
-      dAB_dB<3, 1>(Rbc_t * hat(Rsb_t * cache_.Xs) * td); // W=Cg * Wm
+      dAB_dB<3, 1>(Rbc_t * hat(Rsb_t * (cache_.Xs - Tsb)) * td); // W=Cg * Wm
 #ifdef USE_ONLINE_IMU_CALIB
   Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {
@@ -489,7 +489,7 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   }
   cache_.dXcn_dCg = dXcn_dW * dW_dCg;
 #endif
-  cache_.dXcn_dbg = dXcn_dW;
+  cache_.dXcn_dbg = -dXcn_dW;
 #endif
 
   // Rbc and Tbc are used twice, so add extra terms
@@ -503,6 +503,9 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   // xc(new)
   cache_.xcn = project(cache_.Xcn, &cache_.dxcn_dXcn);
 
+// FIXME: Code would break if this block didn't run
+// (i.e USE_ONLINE_CAMERA_CALIB was not set) because the variable
+// cache_.dxp_dxcn would never be set.
 #ifdef USE_ONLINE_CAMERA_CALIB
   Eigen::Matrix<number_t, 2, -1> jacc;
   cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn, &jacc);

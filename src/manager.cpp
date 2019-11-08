@@ -93,6 +93,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         // out-of-state feature, run depth subfilter to improve depth ...
         f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
         // std::cout << "outlier score=" << f->outlier_counter() << std::endl;
+
+        // TODO: Make outlier counter a parameter
         if (f->outlier_counter() > 10) {
           graph.RemoveFeature(f);
           Feature::Delete(f);

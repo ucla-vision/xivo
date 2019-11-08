@@ -52,7 +52,7 @@ enum Index : int {
   td = Wg + 2, // temporal offset
 #endif
 
-#ifdef USE_ONLINE_IMU_CALIB
+#ifdef USE_ONLINE_IMU_CALIB // USE_ONLINE_IMU_CALIB and USE_ONLINE_TEMPORAL_CALIB
 
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Cg = td + 1, // gyro calibration, 9 numbers
@@ -64,10 +64,10 @@ enum Index : int {
 
 #else
 
-#ifdef USE_ONLINE_TEMPORAL_CALIB
+#ifdef USE_ONLINE_TEMPORAL_CALIB // USE_ONLINE_TEMPORAL_CALIB, but not USE_ONLINE_IMU_CALIB
   End = td + 1,
 #else
-  End = Wg + 3
+  End = Wg + 3  // FIXME?: Should this be a 2?
 #endif
 
 #endif

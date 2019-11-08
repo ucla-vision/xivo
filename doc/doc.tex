@@ -295,7 +295,7 @@ where $\bar \omega \doteq \omega_m - \bar b_g$.
 
 Recall the identity $\dot R=R \asym{\omega}$, and thus $R^\top \dot R = \asym{\omega}$. 
 
-We left-multiple both sides of the last equation by $\bar R^\top$, and use the identity $\bar R^\top\dot{\bar R}=\asym{\bar\omega}$
+We left-multiply both sides of the last equation by $\bar R^\top$, and use the identity $\bar R^\top\dot{\bar R}=\asym{\bar\omega}$
 \begin{equation}
 \begin{aligned}
  \asym{\bar \omega}\asym{\tilde \omega} + \asym{\dot{\tilde\omega}} &= \asym{-\tilde b_g - n_g} + \asym{\tilde\omega}\asym{\bar\omega}\\
@@ -408,7 +408,7 @@ For convenience, define $\tilde X \doteq [\tilde \omega, \tilde T, \tilde v, \ti
 \subsection{Online calibration of IMU intrinsics}
 IMU intrinsics (scaling and misalignment factors) are typically obtained via an offline calibration procedure. Nevertheless, we can also treat them as unknown constants and calibrate them online by incorporating them into the state with small initial covariance. 
 
-Let $C_a\in\real^3$ and $C_g\in\real^3$ be the calibration matrix of the accelerometer and gyroscope respectively.~\footnote{To be precise, $C_a$ and $C_g$ live on some manifolds since they have some intrinsic structures. For instance, $C_a$ is composed of a scaling matrix which has positive entries on the diagonal and zeros otherwise, and an orthonormal misalignment matrix.}
+Let $C_a\in\real^{3\times 3}$ and $C_g\in\real^{3 \times 3}$ be the calibration matrix of the accelerometer and gyroscope respectively.~\footnote{To be precise, $C_a$ and $C_g$ live on some manifolds since they have some intrinsic structures. For instance, $C_a$ is composed of a scaling matrix which has positive entries on the diagonal and zeros otherwise, and an orthonormal misalignment matrix.}
 
 \subsubsection{Rotation}
 Recall the last line of Eq.~\eqref{eq-rotation-derivation}
@@ -759,26 +759,26 @@ where $\bar R_{sb}\doteq \bar R_{sb}(t+\bar t_d)$ is the rotation propagated to 
 
 Error terms involving $\tilde t_d$ in $X_c$ then reads
 $$
-\bar R_{bc}^\top \big(\bar R_{sb}\asym{\bar\omega}\tilde t_d)^\top X_s - \bar R_{bc}^\top \bar R_{sb}^\top \bar v_{sb} \tilde t_d
-= -\bar R_{bc}^\top \big(\asym{\bar\omega}\bar R_{sb}^\top X_s + \bar R_{sb}^\top \bar v_{sb} \big)\tilde t_d.
+\bar R_{bc}^\top \big(\bar R_{sb}\asym{\bar\omega}\tilde t_d)^\top (X_s-\bar T_{sb}) - \bar R_{bc}^\top \bar R_{sb}^\top \bar v_{sb} \tilde t_d
+= -\bar R_{bc}^\top \big(\asym{\bar\omega}\bar R_{sb}^\top (X_s - \bar T_{sb}) + \bar R_{sb}^\top \bar v_{sb} \big)\tilde t_d.
 $$
 
 This residual block can be inserted to the second part of the measurement residual equation $\tilde x_p$ of Eq.~\eqref{eq-msckf-gsb}, i.e., 
 $$
 \tilde x_p=\pi'(\ldots)\cdot\big(\ldots
-- \bar R_{bc}^\top \big(\asym{\bar\omega}\bar R_{sb}^\top X_s + \bar R_{sb}^\top \bar v_{sb} \big)\tilde t_d
+- \bar R_{bc}^\top \big(\asym{\bar\omega}\bar R_{sb}^\top (X_s- \bar T_{sb}) + \bar R_{sb}^\top \bar v_{sb} \big)\tilde t_d
 \big)
 $$
 
-Note, if online IMU intrinsics calibration is enabled, $\bar \omega=C_g \omega_m + b_g$, where $C_g = \bar C_g + \tilde C_g$ and $b_g=\bar b_g + \tilde b_g$, and hence we need to expand $\tilde x_p$ w.r.t. the error state of both the IMU intrinsics $\tilde C_g$ and the bias $\tilde b_g$:
+Note, if online IMU intrinsics calibration is enabled, $\bar \omega=C_g \omega_m - b_g$, where $C_g = \bar C_g + \tilde C_g$ and $b_g=\bar b_g + \tilde b_g$, and hence we need to expand $\tilde x_p$ w.r.t. the error state of both the IMU intrinsics $\tilde C_g$ and the bias $\tilde b_g$:
 
 $$
 \tilde x_p
 = \pi'(\ldots)\cdot
 \big(
     \ldots
-    +\bar R_{bc}^\top\asym{\bar R_{sb}^\top X_s} \bar t_d 
-    ( \tilde C_g \omega_m + \tilde b_g)
+    +\bar R_{bc}^\top\asym{\bar R_{sb}^\top (X_s - \bar T_{sb})} \bar t_d 
+    ( \tilde C_g \omega_m - \tilde b_g)
 \big)
 $$
 
