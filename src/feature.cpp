@@ -503,9 +503,6 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   // xc(new)
   cache_.xcn = project(cache_.Xcn, &cache_.dxcn_dXcn);
 
-// FIXME: Code would break if this block didn't run
-// (i.e USE_ONLINE_CAMERA_CALIB was not set) because the variable
-// cache_.dxp_dxcn would never be set.
 #ifdef USE_ONLINE_CAMERA_CALIB
   Eigen::Matrix<number_t, 2, -1> jacc;
   cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn, &jacc);
