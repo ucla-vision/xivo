@@ -67,6 +67,8 @@ using SO3f = lie::SO3<float>;
 using SE3d = lie::SE3<double>;
 using SO3d = lie::SO3<double>;
 
+using Quat = Eigen::Quaternion<double, Eigen::AutoAlign>;
+
 static const number_t eps = 1e-4f;
 
 } // namespace xivo

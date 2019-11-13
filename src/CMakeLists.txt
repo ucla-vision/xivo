@@ -106,6 +106,12 @@ add_executable(unitTests_NumericalAlgorithms
 target_link_libraries(unitTests_NumericalAlgorithms ${libxivo} ${deps} gtest gtest_main)
 add_test(NAME NumericalAlgorithms COMMAND unitTests_NumericalAlgorithms)
 
+add_executable(unitTests_Jacobians
+               test/unittest_jacobians_instate.cpp
+               test/unittest_helpers.cpp)
+target_link_libraries(unitTests_Jacobians ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME Jacobians COMMAND unitTests_Jacobians)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)

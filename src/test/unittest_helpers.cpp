@@ -1,3 +1,4 @@
+#include <random>
 #include "unittest_helpers.h"
 #include "gtest/gtest.h"
 
@@ -34,4 +35,23 @@ void CheckMatrixZero(MatX M, number_t tol) {
             EXPECT_NEAR(M(i,j), 0.0, tol);
         }
     }
+}
+
+
+Mat3 RandomTransformationMatrix(void) {
+
+    std::default_random_engine generator;
+    std::uniform_real_distribution<number_t> distribution(0.0, 1.0);
+
+    // Order is w, x, y, z
+    Vec4 v(distribution(generator),
+           distribution(generator),
+           distribution(generator),
+           distribution(generator));
+    v.normalize();
+    Quat q(v(0), v(1), v(2), v(3));
+
+    Mat3 R = q.toRotationMatrix();
+
+    return R;
 }
