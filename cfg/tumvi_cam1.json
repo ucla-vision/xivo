@@ -22,6 +22,7 @@
   "compression_trigger_ratio": 1.5,
   "max_group_lifetime": 60,
   "remove_outlier_counter": 10,
+  "OOS_update_min_observations": 5,
 
   "PrinceDormand": {
     "control_stepsize": false,

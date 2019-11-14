@@ -94,6 +94,8 @@ Estimator::Estimator(const Json::Value &cfg)
   use_compression_ = cfg_.get("use_compression", false).asBool();
   compression_trigger_ratio_ =
       cfg_.get("compression_trigger_ratio", 1.5).asDouble();
+  OOS_update_min_observations_ =
+      cfg_.get("OOS_update_min_observations", 5).asInt();
 
   // one point ransac parameters
   use_1pt_RANSAC_ = cfg_.get("use_1pt_RANSAC", false).asBool();

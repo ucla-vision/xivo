@@ -1,6 +1,7 @@
 #include "feature.h"
 #include "helpers.h"
 #include "group.h"
+#include "estimator.h"
 
 namespace xivo {
 
@@ -12,8 +13,7 @@ int Feature::ComputeOOSJacobian(const std::vector<Observation> &vobs,
                     [](const Observation &obs) { return obs.g->instate(); });
 
 // A constraint should involve at least 2 poses
-//  if (num_constraints > 1) {
-  if (num_constraints > 5) { // TODO: Make this a settable parameter
+  if (num_constraints >= Estimator::instance()->OOS_update_min_observations()) {
     cache_.Xs = this->Xs(SE3{SO3{Rbc}, Tbc});
     oos_jac_counter_ = 0;
     for (auto obs : vobs) {

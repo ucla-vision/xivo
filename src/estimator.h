@@ -94,6 +94,8 @@ public:
   const State& X() const { return X_; }
   const timestamp_t &ts() const { return curr_time_; }
 
+  int OOS_update_min_observations() { return OOS_update_min_observations_; }
+
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }
 
@@ -179,6 +181,9 @@ private:
   number_t compression_trigger_ratio_; // use measurement compression, if the ratio
                                     // of columns/rows of measurement matrix is
                                     // above this level
+  /** Minimum number of observations a feature needs by the time `Tracker` drops
+   *  it in order to use it in a MSCKF update. */
+  int OOS_update_min_observations_;
   bool use_depth_opt_;              // use depth optimization or not
   RefinementOptions refinement_options_; // depth refinement options
   SubfilterOptions subfilter_options_;   // depth-subfilter options
