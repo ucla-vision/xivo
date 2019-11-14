@@ -129,6 +129,8 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();
 
+  remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
+
   // load imu calibration
   auto imu_calib = cfg_["imu_calib"];
   // load accel axis misalignment first as a 3x3 matrix

@@ -185,6 +185,9 @@ private:
   bool triangulate_pre_subfilter_; // depth triangulation before depth subfilter
   TriangulateOptions triangulate_options_;
 
+  /** Minimum number of steps a feature is an outlier before it is removed */
+  int remove_outlier_counter_;
+
   State X_;
   VecX err_;                           // error state
   std::array<bool, kMaxGroup> gsel_;   // group selector

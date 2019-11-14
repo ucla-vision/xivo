@@ -38,7 +38,6 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
   max_iter_ = klt_cfg.get("max_iter", 15).asInt();
   eps_ = klt_cfg.get("eps", 0.01).asDouble();
 
-  // TODO (xfei): hardcoded detector type
   std::string detector_type = cfg_.get("detector", "FAST").asString();
   LOG(INFO) << "detector type=" << detector_type;
   auto detector_cfg = cfg_[detector_type];
