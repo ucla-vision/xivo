@@ -1,7 +1,3 @@
-// Singleton memory management for feature and groups.
-// A fixed chunk of memory is pre-allocated for features and groups,
-// which prevents memory leaks and frequent malloc calls.
-// Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include <memory>
 #include <unordered_map>
@@ -11,6 +7,10 @@
 
 namespace xivo {
 
+/** Singleton memory management for feature and groups.
+ *  A fixed chunk of memory is pre-allocated for features and groups,
+ *  which prevents memory leaks and frequent malloc calls.
+ *  Author: Xiaohan Fei (feixh@cs.ucla.edu) */
 class MemoryManager {
 public:
   ~MemoryManager();

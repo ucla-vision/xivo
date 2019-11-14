@@ -17,6 +17,9 @@
 namespace xivo {
 
 
+/** Track is a C++ <vector> containing all the (x,y) pixel detections found by
+ *  the `Tracker` over a set of consecutive images paired with some metadata.
+ */
 class Track : public std::vector<Vec2, Eigen::aligned_allocator<Vec2>> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -24,6 +27,7 @@ public:
   Track() : status_(TrackStatus::CREATED) {}
   Track(number_t x, number_t y) { Reset(x, y); }
 
+  /** Deletes the entire history of tracks and starts a new vector. */
   void Reset(number_t x, number_t y) {
     clear();
     status_ = TrackStatus::CREATED;
@@ -42,12 +46,20 @@ public:
 protected:
   TrackStatus status_;
 
-  // initial keypoint to store extra info, e.g., octave, orientation, etc.
+  /** OpenCV Keypoint from when this track was first detected in `Tracker::Detect()` */
   cv::KeyPoint keypoint_;
-  // last descriptor
+
+  /** Descriptor of the very last keypoint. */
   cv::Mat descriptor_;
 };
 
+
+/** All the data associated with a single tracked feature.
+ *  Essentially, the `Track` class plus
+ *  - estimate of current 3D position with respect to the global reference frame
+ *  - subfiltering and triangulation functions to accurately estimate depth
+ *  - Functions to compute Jacobians for the `Estimator` class's measurement update.
+ */
 class Feature : public Component<Feature, Vec3>, public Track {
   friend class MemoryManager;
 
@@ -80,12 +92,14 @@ public:
   const Vec3& Xs() const { return Xs_; }
 
   // return (2M-3) as the dimension of the measurement
+  /** Computes the Jacobian for the in-state (EKF) measurement model. */
   void ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                        const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
                        const Vec3 &bg, const Vec3 &Vsb, number_t td);
 
   int oos_inn_size() const { return oos_jac_counter_; }
 
+  /** Computes the Jacobian for the out-of-state (MSCKF) measurement model. */
   int ComputeOOSJacobian(const std::vector<Obs> &obs, const Mat3 &Rbc,
                          const Vec3 &Tbc);
   // FIXME: make the following private
@@ -155,12 +169,9 @@ public:
 
 private:
   Feature(const Feature &) = delete;
-  // default constructor used memory manager's pre-allocation
+  /** default constructor used memory manager's pre-allocation */
   Feature() = default;
-  // Feature(number_t x, number_t y) {
-  //   Reset(x, y);
-  //   LOG(INFO) << "feature #" << id_ << " created";
-  // }
+  /** Resets a `Feature` object. Calls `Track::Reset` */
   void Reset(number_t x, number_t y);
 
 private:
@@ -171,12 +182,28 @@ private:
   GroupPtr ref_; // reference group: where the feature is first observed
   int lifetime_;
 
-  Vec3 x_, x0_; // state: (x, y, inv_z)
-  Mat3 P_;      // covariance
-  Vec2 pred_;   // predicted pixel coordinates
+  /** Projected state: Let (X, Y, Z) be the coordinates of the feature in 3D
+   *  space with respect to the current camera frame. Then, this variable
+   *  contains the vector (X/Z, Y/Z, log(Z)) or (X/Z, Y/Z, 1/Z) when compiling
+   *  with `#USE_INVDEPTH` */
+  Vec3 x_;
 
-  Vec3 Xc_; // cached camera coordinates
-  Vec3 Xs_; // cached spatial coordinates
+  /** "Backup" of `Feature::x_` used in `Estimator::OnePointRANSAC` */
+  Vec3 x0_;
+
+  /** Subfilter (for estimating depth) covariance */
+  Mat3 P_;
+
+  /** Predicted pixel coordinates - computed right before the `Estimator` class's
+   *  measurement update step in `Feature::Predict`. */
+  Vec2 pred_;
+
+  /** 3D coordinates of the feature with respect to the current camera frame. */
+  Vec3 Xc_;
+
+  /** 3D coordiantes of the feature with respect to the (current) global reference
+   *  frame. */
+  Vec3 Xs_;
 
   Eigen::Matrix<number_t, 2, kFullSize> J_;
   Vec2 inn_;
@@ -187,9 +214,15 @@ private:
   bool inlier_;
   number_t outlier_counter_;
 
-  static JacobianCache cache_; // in-state measurement jacobian cache
-  OOSJacobian oos_;            // out-of-state measurement jacobian cache
-  int oos_jac_counter_;        // valid OOS jacobian blocks
+  /** Contains current intermediate variables used to compute the Jacobians in both the
+   *  EKF and MSCKF measurement models. */
+  static JacobianCache cache_;
+
+  /** Current MSCKF measurement Jacobians (both Hf and Hx) and innovation */
+  OOSJacobian oos_;
+
+  /** Number of measurements in the MSCKF measurement update. */
+  int oos_jac_counter_;
 
 #ifdef APPROXIMATE_INIT_COVARIANCE
   // correlation block between local feature state (x) and group pose

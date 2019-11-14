@@ -5,9 +5,9 @@
 #include "Eigen/Core"
 
 namespace xivo {
-// perspective projection
-// Xc=[x, y, z]
-// returns xc=[x/z, y/z]
+
+/** Perspective projection. For input Xc=(X, Y, Z), returns xc=(X/Z, Y/Z).
+ *  Optionally computes the 2x3 Jacobian d(xc)/d(Xc) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 2, 1>
 project(const Eigen::MatrixBase<Derived> &Xc,
@@ -23,9 +23,10 @@ project(const Eigen::MatrixBase<Derived> &Xc,
   return xc;
 }
 
-// perspective projection with inverse depth appended
-// Xc=[x, y, z]
-// returns xc=[x/z, y/z, 1/z]
+
+/** Perspective projection with inverse depth appended.
+ *  For input Xc=(X, Y, Z), returns xc=(X/Z, Y/Z, 1/Z).
+ *  Optionally computes the 3x3 Jacobian d(xc)/d(Xc) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 1>
 project_invz(const Eigen::MatrixBase<Derived> &Xc,
@@ -41,10 +42,10 @@ project_invz(const Eigen::MatrixBase<Derived> &Xc,
   return xc;
 }
 
-// un-projection with inverse depth appended
-// Input: xc=[x, y, rho] where rho = 1/z
-// returns Xc=[x/rho, y/rho, 1/rho]
-// Note: this is exactly the same function form of project_invz.
+
+/** For a projected point xc=(X/Z, Y/Z, 1/Z), returns (X, Y, Z), the
+ *  coordinates of the point with respect to the camera frame.
+ *  Optionally computes the 3x3 Jacobian d(Xc)/d(xc) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 1> unproject_invz(
     const Eigen::MatrixBase<Derived> &xc,
@@ -52,9 +53,10 @@ Eigen::Matrix<typename Derived::Scalar, 3, 1> unproject_invz(
   return project_invz(xc, dXc_dxc);
 }
 
-// perspective projection with log depth appended
-// Xc=[x, y, z]
-// returns xc=[x/z, y/z, log(z)]
+
+/** Perspective projection with log depth appended.
+ *  For input Xc=(X, Y, Z), returns xc=(X/Z, Y/Z, log(Z)).
+ *  Optionally computes the 3x3 Jacobian d(xc)/d(Xc) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 1>
 project_logz(const Eigen::MatrixBase<Derived> &Xc,
@@ -70,9 +72,10 @@ project_logz(const Eigen::MatrixBase<Derived> &Xc,
   return xc;
 }
 
-// un-projection with log depth appended
-// xc=[x, y, rho=log(z)]
-// returns xc=[x*exp(rho), y*exp(rho), exp(rho)]
+
+/** For a projected point xc=(X/Z, Y/Z, log(Z)), returns (X, Y, Z), the
+ *  coordinates of the point with respect to the camera frame.
+ *  Optionally computes the 3x3 Jacobian d(Xc)/d(xc) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 1> unproject_logz(
     const Eigen::MatrixBase<Derived> &xc,
