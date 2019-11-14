@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <Eigen/Geometry>
 
 #define private public
 
@@ -55,13 +54,14 @@ class InstateJacobiansTest : public ::testing::Test {
         td_err = 0.0;
 
         // Set reference Rr and Tr for the feature
-        f = Feature::Create(25, 46);
-        // Bogus values for xc(ref) = [2m, 3m, 10m],
-#ifdef USE_INVDEPTH
-        f -> x_ << 2, 3, (1/10.0);
-#else
-        f -> x_ << 2, 3, log(10);
-#endif
+        Vec2 xp(25, 46);
+        f = Feature::Create(xp(0), xp(1)); // sets x_(2) = 2.0 = log(z) (or 1/z)
+
+        // Compute coordinates of internal state
+        Vec2 xc = Camera::instance()->UnProject(xp);
+        f->x_(0) = xc(0);
+        f->x_(1) = xc(1);
+        // f->x_(2) = 2.0;
         group = Group::Create(SO3(Rr_nom), Tr_nom);
         f->ref_ = group;
 
@@ -108,9 +108,6 @@ class InstateJacobiansTest : public ::testing::Test {
     CameraPtr cam;
     GroupPtr group;
     FeaturePtr f;
-
-    // A value of xc(new) that contains all the errors.
-    Vec3 xc;
 
     // Fake IMU measurement
     Vec3 gyro;
@@ -385,14 +382,14 @@ TEST_F(InstateJacobiansTest, td) {
 
     Vec3 Xcn1 = ComputeXcn();
 
-    Vec3 dXcn_dtd = (Xcn1_0 - Xcn0) / delta;
+    Vec3 dXcn_dtd = (Xcn1 - Xcn0) / delta;
     EXPECT_NEAR(dXcn_dtd(0), f->cache_.dXcn_dtd(0), tol);
     EXPECT_NEAR(dXcn_dtd(1), f->cache_.dXcn_dtd(1), tol);
     EXPECT_NEAR(dXcn_dtd(2), f->cache_.dXcn_dtd(2), tol);
 }
 
 
-#ifdef USE_ONLINE IMU_CALIB
+#ifdef USE_ONLINE_IMU_CALIB
 TEST_F(InstateJacobiansTest, bg) {
     Vec3 Xcn0 = ComputeXcn();
 
@@ -423,6 +420,84 @@ TEST_F(InstateJacobiansTest, bg) {
     EXPECT_NEAR(dXcn_dbg2(0), f->cache_.dXcn_dbg(0,2), tol);
     EXPECT_NEAR(dXcn_dbg2(1), f->cache_.dXcn_dbg(1,2), tol);
     EXPECT_NEAR(dXcn_dbg2(2), f->cache_.dXcn_dbg(2,2), tol);
+}
+
+
+TEST_F(InstateJacobiansTest, Cg) {
+    Vec3 Xcn0 = ComputeXcn();
+
+    Cg_err(0,0) = delta;
+    Vec3 Xcn1_00 = ComputeXcn();
+    Cg_err(0,0) = 0;
+    Vec3 dXcn_dCg00 = (Xcn1_00 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg00(0), f->cache_.dXcn_dCg(0,0), tol);
+    EXPECT_NEAR(dXcn_dCg00(1), f->cache_.dXcn_dCg(1,0), tol);
+    EXPECT_NEAR(dXcn_dCg00(2), f->cache_.dXcn_dCg(2,0), tol);
+
+    Cg_err(0,1) = delta;
+    Vec3 Xcn1_01 = ComputeXcn();
+    Cg_err(0,1) = 0;
+    Vec3 dXcn_dCg01 = (Xcn1_01 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg01(0), f->cache_.dXcn_dCg(0,1), tol);
+    EXPECT_NEAR(dXcn_dCg01(1), f->cache_.dXcn_dCg(1,1), tol);
+    EXPECT_NEAR(dXcn_dCg01(2), f->cache_.dXcn_dCg(2,1), tol);
+
+    Cg_err(0,2) = delta;
+    Vec3 Xcn1_02 = ComputeXcn();
+    Cg_err(0,2) = 0;
+    Vec3 dXcn_dCg02 = (Xcn1_02 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg02(0), f->cache_.dXcn_dCg(0,2), tol);
+    EXPECT_NEAR(dXcn_dCg02(1), f->cache_.dXcn_dCg(1,2), tol);
+    EXPECT_NEAR(dXcn_dCg02(2), f->cache_.dXcn_dCg(2,2), tol);
+
+    Cg_err(1,0) = delta;
+    Vec3 Xcn1_10 = ComputeXcn();
+    Cg_err(1,0) = 0;
+    Vec3 dXcn_dCg10 = (Xcn1_10 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg10(0), f->cache_.dXcn_dCg(0,3), tol);
+    EXPECT_NEAR(dXcn_dCg10(1), f->cache_.dXcn_dCg(1,3), tol);
+    EXPECT_NEAR(dXcn_dCg10(2), f->cache_.dXcn_dCg(2,3), tol);
+
+    Cg_err(1,1) = delta;
+    Vec3 Xcn1_11 = ComputeXcn();
+    Cg_err(1,1) = 0;
+    Vec3 dXcn_dCg11 = (Xcn1_11 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg11(0), f->cache_.dXcn_dCg(0,4), tol);
+    EXPECT_NEAR(dXcn_dCg11(1), f->cache_.dXcn_dCg(1,4), tol);
+    EXPECT_NEAR(dXcn_dCg11(2), f->cache_.dXcn_dCg(2,4), tol);
+
+    Cg_err(1,2) = delta;
+    Vec3 Xcn1_12 = ComputeXcn();
+    Cg_err(1,2) = 0;
+    Vec3 dXcn_dCg12 = (Xcn1_12 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg12(0), f->cache_.dXcn_dCg(0,5), tol);
+    EXPECT_NEAR(dXcn_dCg12(1), f->cache_.dXcn_dCg(1,5), tol);
+    EXPECT_NEAR(dXcn_dCg12(2), f->cache_.dXcn_dCg(2,5), tol);
+
+    Cg_err(2,0) = delta;
+    Vec3 Xcn1_20 = ComputeXcn();
+    Cg_err(2,0) = 0;
+    Vec3 dXcn_dCg20 = (Xcn1_20 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg20(0), f->cache_.dXcn_dCg(0,6), tol);
+    EXPECT_NEAR(dXcn_dCg20(1), f->cache_.dXcn_dCg(1,6), tol);
+    EXPECT_NEAR(dXcn_dCg20(2), f->cache_.dXcn_dCg(2,6), tol);
+
+    Cg_err(2,1) = delta;
+    Vec3 Xcn1_21 = ComputeXcn();
+    Cg_err(2,1) = 0;
+    Vec3 dXcn_dCg21 = (Xcn1_21 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg21(0), f->cache_.dXcn_dCg(0,8), tol);
+    EXPECT_NEAR(dXcn_dCg21(1), f->cache_.dXcn_dCg(1,8), tol);
+    EXPECT_NEAR(dXcn_dCg21(2), f->cache_.dXcn_dCg(2,8), tol);
+
+    Cg_err(2,2) = delta;
+    Vec3 Xcn1_22 = ComputeXcn();
+    Cg_err(2,2) = 0;
+    Vec3 dXcn_dCg22 = (Xcn1_22 - Xcn0) / delta;
+    EXPECT_NEAR(dXcn_dCg22(0), f->cache_.dXcn_dCg(0,8), tol);
+    EXPECT_NEAR(dXcn_dCg22(1), f->cache_.dXcn_dCg(1,8), tol);
+    EXPECT_NEAR(dXcn_dCg22(2), f->cache_.dXcn_dCg(2,8), tol);
+
 }
 #endif
 #endif
