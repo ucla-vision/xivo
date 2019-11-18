@@ -70,14 +70,29 @@ private:
   void Reset(const SO3 &Rsb, const Vec3 &Tsb);
 
 private:
+
+  /** Total number of groups created */
   static int counter_;
+
+  /** ID of group - IDs are in order of group creation and not reused */
   int id_;
-  int sind_; // state index
+
+  /** Group's slot index in the Estimator's array of groups. This is set only when
+   *  the group is added to the Estimator's state and not when the group is first
+   *  created. */
+  int sind_;
+
+  /** Newly created, Instate, Floating, or Gauge */
   GroupStatus status_;
+
+  /** Number of images that have been processed since group was created. */
   int lifetime_;
 
-  // nominal state
-  SO3xR3 X_, X0_;
+  /** Nominal State: (Rsb, Tsb) */
+  SO3xR3 X_;
+
+  /** Backup of `X_` = (Rsb, Tsb) used in `Estimator::OnePointRANSAC` */
+  SO3xR3 X0_;
 };
 
 } // namespace xivo

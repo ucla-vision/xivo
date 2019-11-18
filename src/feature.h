@@ -44,6 +44,7 @@ public:
   cv::Mat &descriptor() { return descriptor_; }
 
 protected:
+  /** CREATED, TRACKED, REJECTED, or DROPPED */
   TrackStatus status_;
 
   /** OpenCV Keypoint from when this track was first detected in `Tracker::Detect()` */
@@ -68,16 +69,21 @@ public:
   static FeaturePtr Create(number_t x, number_t y);
   static void Delete(FeaturePtr f);
 
+  /** Appends another point to vector of observations.
+   *  Recall: (`Feature` << `Track` << `std::vector` */
   void UpdateTrack(number_t x, number_t y) { emplace_back(x, y); }
+  /** Appends another point to vector of observations.
+   *  Recall: (`Feature` << `Track` << `std::vector` */
   void UpdateTrack(const Vec2 &pt) { UpdateTrack(pt(0), pt(1)); }
 
-  // quick predictor of instate status
+  /** Returns whether or not the feature is currently in the filter's state */
   bool instate() const;
   // score of the potential goodness of being an instate feature
   // The higher, the better.
   number_t score() const;
   number_t outlier_counter() const { return outlier_counter_; }
-  // get depth
+  /** Gets depth of feature (calculation is different depending on whether or not we're
+   *  using an inverse-depth or log-depth parameterization. */
   number_t z() const;
   const Vec3 &x() const { return x_; }
   const Mat3 &P() const { return P_; }
@@ -117,13 +123,20 @@ public:
   const Eigen::Matrix<number_t, 2, kFullSize> &J() const { return J_; }
   const Vec2 &inn() const { return inn_; }
 
+  /** Gets the last measurement (from the `Tracker`) of this feature */
   const Vec2 &xp() const { return back(); }
+  /** Returns the last-computed predicted measurement
+   *  (does not compute a new prediction) */
   const Vec2 &pred() const { return pred_; }
+  /** Computes a new predicted measurement (in pixels) given transformations
+   *  `gsb` and `gbc` */
   const Vec2 &Predict(const SE3 &gsb, const SE3 &gbc) {
     Vec3 Xc = (gsb * gbc).inv() * this->Xs(gbc);
     pred_ = Camera::instance()->Project(project(Xc));
     return pred_;
   }
+  /** Sets variable `pred_`, the last computed predicted measurement to (-1,-1),
+   *  the default "invalid" value for a predicted measurement. */
   void ResetPred() { pred_ << -1, -1; }
 
   ////////////////////////////////////////
@@ -164,7 +177,11 @@ public:
   void SetState(const Vec3 &x) { x_ = x; }
   void UpdateState(const Vec3 &dx) { x_ += dx; }
 
-  // feature counter to start with, to guarantee feature id and group id do not coincide
+  /** Initial value of static variable `Feature::counter_`/smallest possible number
+   *  used for feature IDs. Its purpose is so that feature IDs and group IDs never
+   *  overlap.
+   *  \todo Completely separate feature and group IDs so that we don't have
+   *        problems if this SLAM code is ever run for a long, long time.  */
   static constexpr int counter0 = 10000;  
 
 private:
@@ -175,11 +192,25 @@ private:
   void Reset(number_t x, number_t y);
 
 private:
+  /** Total number of features ever created (never decremented) +
+   *  (static constexpr) `counter0`. Used for getting ID values of newly created
+   *  features. `counter_` starts at `counter0` so that feature and group IDs
+   *  do not overlap. */
   static int counter_;
+  /** Feature ID. IDs are in order of creation. */
   int id_;
-  int sind_; // state index
+  /** Index of feature in Estimator's array of instate features. Not set until
+   *  `status_` is `FeatureStatus::READY`. */
+  int sind_;
+
+  /** CREATED, INITIALIZING, READY, INSTATE, REJECTED_BY_FILTER, REJECTED_BY_TRACKER,
+   *  or DROPPED */
   FeatureStatus status_;
-  GroupPtr ref_; // reference group: where the feature is first observed
+  /** Pointer to feature's reference group: pose/instance in time where the feature
+   *  is first observed. */
+  GroupPtr ref_;
+
+  /** Total number of timesteps (image frames) since the feature was first detected. */
   int lifetime_;
 
   /** Projected state: Let (X, Y, Z) be the coordinates of the feature in 3D
@@ -206,7 +237,11 @@ private:
   Vec3 Xs_;
 
   Eigen::Matrix<number_t, 2, kFullSize> J_;
+
+  /** `xp` - predicted observation used in the filter for this particular feature. */
   Vec2 inn_;
+
+  /** Measurement model Jacobian with respect to the error state used in the filter. */
   Mat23 Hx_;
 
   // outlier rejection

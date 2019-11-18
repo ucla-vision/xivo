@@ -20,6 +20,10 @@ public:
   static TrackerPtr Create(const Json::Value &cfg);
   static TrackerPtr instance() { return instance_.get(); }
 
+  /** Matches features found on incoming image `img` to features in `features_`
+   *  using LK-pyramid and detects a new set of features to be tracked.
+   *  \todo Rescue features that would otherwise be dropped from tracker with newly
+   *        detected features. */
   void Update(const cv::Mat &img);
 
 public:
@@ -63,6 +67,8 @@ private:
    * detected at the very edges of images.
    */
   cv::Mat mask_;
+  /** Number of pixels around a currently tracked feature where we shouldn't look
+   *  for new features (so that we don't have two features for the same corner) */
   int mask_size_;
   int margin_;
 
