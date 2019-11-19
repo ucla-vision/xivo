@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <unsupported/Eigen/MatrixFunctions>
 
 #define private public
 
@@ -25,7 +26,7 @@ class InstateJacobiansTest : public ::testing::Test {
         auto cfg_ = LoadJson("cfg/phab.json");
         Camera::Create(cfg_["camera_cfg"]);
         delta = 1e-6;
-        tol = 1e-6;
+        tol = 1e-5;
 
         // IMU measurement
         gyro = Vec3::Random();
@@ -73,11 +74,14 @@ class InstateJacobiansTest : public ::testing::Test {
 
     Vec3 ComputeXcn() {
         Mat3 I3 = Mat3::Identity();
-        Rr = Rr_nom*(I3 + hat(Wr_err));
+        //Rr = Rr_nom*(I3 + hat(Wr_err));
+        Rr = Rr_nom*(hat(Wr_err).exp());
         Tr = Tr_nom + Tr_err;
-        Rsb = Rsb_nom*(I3 + hat(Wsb_err));
+        //Rsb = Rsb_nom*(I3 + hat(Wsb_err));
+        Rsb = Rsb_nom*(hat(Wsb_err).exp());
         Tsb = Tsb_nom + Tsb_err;
-        Rbc = Rbc_nom*(I3 + hat(Wbc_err));
+        //Rbc = Rbc_nom*(I3 + hat(Wbc_err));
+        Rbc = Rbc_nom*(hat(Wbc_err).exp());
         Tbc = Tbc_nom + Tbc_err;
         Cg = Cg_nom + Cg_err;
         bg = bg_nom + bg_err;
