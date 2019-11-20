@@ -85,10 +85,8 @@ Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) {
 
 number_t Feature::z() const {
 #ifdef USE_INVDEPTH
-  // FIXME: ensure depth is positive
   return 1.0 / x_(2);
 #else
-  // in log-depth parametrization, positivity is guaranteed
   return exp(x_(2));
 #endif
 }

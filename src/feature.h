@@ -82,8 +82,12 @@ public:
   // The higher, the better.
   number_t score() const;
   number_t outlier_counter() const { return outlier_counter_; }
-  /** Gets depth of feature (calculation is different depending on whether or not we're
-   *  using an inverse-depth or log-depth parameterization. */
+  /**
+   * Gets actual depth of feature from variable `x_` (calculation is different
+   * depending on whether or not we're using an inverse-depth or log-depth
+   * parameterization).
+   * \todo Ensure depth is positive when using inverse-depth parameterization,
+   *       which is guaranteed when using log-depth paramterization. */
   number_t z() const;
   const Vec3 &x() const { return x_; }
   const Mat3 &P() const { return P_; }
@@ -108,7 +112,9 @@ public:
   /** Computes the Jacobian for the out-of-state (MSCKF) measurement model. */
   int ComputeOOSJacobian(const std::vector<Obs> &obs, const Mat3 &Rbc,
                          const Vec3 &Tbc);
-  // FIXME: make the following private
+  /** Contains the equations used in `Feature::ComputeOOSJacobian` for each
+   *  observation.
+   *  \todo make the following private */
   void ComputeOOSJacobianInternal(const Obs &obs, const Mat3 &Rbc,
                                   const Vec3 &Tbc);
 

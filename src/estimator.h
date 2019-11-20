@@ -215,9 +215,10 @@ private:
   /** Minimum number of steps a feature is an outlier before it is removed */
   int remove_outlier_counter_;
 
-  /** The current state estimate */
+  /** The current state estimate. Contains nominal state and calibrations, but no
+   *  feature positions. */
   State X_;
-  /** Filter's error state */
+  /** Filter's error state: Contains both pose and feature positions. */
   VecX err_;
   /** Whether or not each group is in-state */
   std::array<bool, kMaxGroup> gsel_;
