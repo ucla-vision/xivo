@@ -10,42 +10,30 @@ using namespace xivo;
 
 
 // Test Rodrigues and derivatives against OpenCV implementation for correctness
-TEST(Rodrigues, Correctness) {
-
-  double tol = 1e-6;
+TEST(Rodrigues, Rodrigues) {
 
   // Test vectors
   Vec3 w0(0.5, 0.5, 0.7);
   Vec3 w1(0.1, 0.2, -0.1);
 
-  Timer t;
-
   // Output Jacobians
-  Eigen::Matrix<number_t, 9, 3> dR_dw0;
-  Eigen::Matrix<number_t, 9, 3> dR_dw1;
+  Mat93 dR_dw0;
+  Mat93 dR_dw1;
 
   // Our implementation
-  t.Tick("Ours");
   Mat3 R0 = rodrigues(w0, &dR_dw0);
-  t.Tock("Ours");
-  t.Tick("Ours");
   Mat3 R1 = rodrigues(w1, &dR_dw1);
-  t.Tock("Ours");
 
   // OpenCV implementation
-  t.Tick("OpenCV");
   cv::Vec3d v0( w0(0), w0(1), w0(2) );
   cv::Matx33d RR0;
   cv::Mat_<number_t> dRR_dv0(3, 9, 0.0); // OpenCV does (cols, rows) to be like images
   cv::Rodrigues(v0, RR0, dRR_dv0);
-  t.Tock("OpenCV");
 
-  t.Tick("OpenCV");
   cv::Vec3d v1( w1(0), w1(1), w1(2) );
   cv::Matx33d RR1;
   cv::Mat_<number_t> dRR_dv1(3, 9, 0.0);
   cv::Rodrigues(v1, RR1, dRR_dv1);
-  t.Tock("OpenCV");
 
   // Check for correctness
   EXPECT_FLOAT_EQ(R0(0,0), RR0(0,0));
@@ -68,6 +56,7 @@ TEST(Rodrigues, Correctness) {
   EXPECT_FLOAT_EQ(R1(2,1), RR1(2,1));
   EXPECT_FLOAT_EQ(R1(2,2), RR1(2,2));
 
+  // Check Jacobians. Note that Eigen indexing is (row,col) while OpenCV is (col,row)
   EXPECT_FLOAT_EQ(dR_dw0(0,0), dRR_dv0.at<number_t>(0,0));
   EXPECT_FLOAT_EQ(dR_dw0(0,1), dRR_dv0.at<number_t>(1,0));
   EXPECT_FLOAT_EQ(dR_dw0(0,2), dRR_dv0.at<number_t>(2,0));
@@ -124,7 +113,119 @@ TEST(Rodrigues, Correctness) {
   EXPECT_FLOAT_EQ(dR_dw1(8,1), dRR_dv1.at<number_t>(1,8));
   EXPECT_FLOAT_EQ(dR_dw1(8,2), dRR_dv1.at<number_t>(2,8));
 
+}
 
-  // Print to test speed
-  std::cout << t << std::endl;
+
+
+TEST(Rodrigues, InvRodrigues) {
+
+  // Two test matrices - we're going to use the same cases as in the previous test,
+  // except that we're going to test that we end up where we started. This is okay since
+  // the code in rodrigues() and invrodrigues() do not overlap.
+  Vec3 w0_orig(0.5, 0.5, 0.7);
+  Vec3 w1_orig(0.1, 0.2, -0.1);
+  Mat3 R0 = rodrigues(w0_orig);
+  Mat3 R1 = rodrigues(w1_orig);
+
+  // Derivatives
+  Mat39 dw0_dR;
+  Mat39 dw1_dR;
+
+  // Result
+  Vec3 w0 = invrodrigues(R0, &dw0_dR);
+  Vec3 w1 = invrodrigues(R1, &dw1_dR);
+
+  EXPECT_FLOAT_EQ(w0(0), w0_orig(0));
+  EXPECT_FLOAT_EQ(w0(1), w0_orig(1));
+  EXPECT_FLOAT_EQ(w0(2), w0_orig(2));
+  
+  EXPECT_FLOAT_EQ(w0(0), w0_orig(0));
+  EXPECT_FLOAT_EQ(w0(1), w0_orig(1));
+  EXPECT_FLOAT_EQ(w0(2), w0_orig(2));
+
+
+  // Still going to use OpenCV to check that the Jacobians are implemented correctly
+  cv::Vec3d v0;
+  // I dunno if this initialization is row or column-major, but our matrices are
+  // symmetric! :D
+  cv::Matx33d RR0( R0(0,0), R0(0,1), R0(0,2),
+                   R0(1,0), R0(1,1), R0(1,2),
+                   R0(2,0), R0(2,1), R0(2,2));
+  cv::Mat_<number_t> dv0_dRR(9, 3, 0.0); // OpenCV does (cols, rows) to be like images
+  cv::Rodrigues(RR0, v0, dv0_dRR);
+
+  cv::Vec3d v1;
+  cv::Matx33d RR1( R1(0,0), R1(0,1), R1(0,2),
+                   R1(1,0), R1(1,1), R1(1,2),
+                   R1(2,0), R1(2,1), R1(2,2));
+  cv::Mat_<number_t> dv1_dRR(9, 3, 0.0);
+  cv::Rodrigues(RR1, v1, dv1_dRR);
+
+  // Sanity check to make sure I set up the OpenCV call correctly.
+  EXPECT_FLOAT_EQ(v0(0), w0_orig(0));
+  EXPECT_FLOAT_EQ(v0(1), w0_orig(1));
+  EXPECT_FLOAT_EQ(v0(2), w0_orig(2));
+  EXPECT_FLOAT_EQ(v1(0), w1_orig(0));
+  EXPECT_FLOAT_EQ(v1(1), w1_orig(1));
+  EXPECT_FLOAT_EQ(v1(2), w1_orig(2));
+
+
+  // Test on Jacobians. Remember that Eigen indexing is (row,col) while OpenCV is (col,row)
+  EXPECT_FLOAT_EQ(dw0_dR(0,0), dv0_dRR.at<number_t>(0,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,1), dv0_dRR.at<number_t>(1,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,2), dv0_dRR.at<number_t>(2,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,3), dv0_dRR.at<number_t>(3,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,4), dv0_dRR.at<number_t>(4,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,5), dv0_dRR.at<number_t>(5,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,6), dv0_dRR.at<number_t>(6,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,7), dv0_dRR.at<number_t>(7,0));
+  EXPECT_FLOAT_EQ(dw0_dR(0,8), dv0_dRR.at<number_t>(8,0));
+  EXPECT_FLOAT_EQ(dw0_dR(1,0), dv0_dRR.at<number_t>(0,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,1), dv0_dRR.at<number_t>(1,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,2), dv0_dRR.at<number_t>(2,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,3), dv0_dRR.at<number_t>(3,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,4), dv0_dRR.at<number_t>(4,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,5), dv0_dRR.at<number_t>(5,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,6), dv0_dRR.at<number_t>(6,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,7), dv0_dRR.at<number_t>(7,1));
+  EXPECT_FLOAT_EQ(dw0_dR(1,8), dv0_dRR.at<number_t>(8,1));
+  EXPECT_FLOAT_EQ(dw0_dR(2,0), dv0_dRR.at<number_t>(0,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,1), dv0_dRR.at<number_t>(1,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,2), dv0_dRR.at<number_t>(2,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,3), dv0_dRR.at<number_t>(3,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,4), dv0_dRR.at<number_t>(4,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,5), dv0_dRR.at<number_t>(5,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,6), dv0_dRR.at<number_t>(6,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,7), dv0_dRR.at<number_t>(7,2));
+  EXPECT_FLOAT_EQ(dw0_dR(2,8), dv0_dRR.at<number_t>(8,2));
+
+
+  EXPECT_FLOAT_EQ(dw1_dR(0,0), dv1_dRR.at<number_t>(0,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,1), dv1_dRR.at<number_t>(1,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,2), dv1_dRR.at<number_t>(2,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,3), dv1_dRR.at<number_t>(3,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,4), dv1_dRR.at<number_t>(4,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,5), dv1_dRR.at<number_t>(5,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,6), dv1_dRR.at<number_t>(6,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,7), dv1_dRR.at<number_t>(7,0));
+  EXPECT_FLOAT_EQ(dw1_dR(0,8), dv1_dRR.at<number_t>(8,0));
+  EXPECT_FLOAT_EQ(dw1_dR(1,0), dv1_dRR.at<number_t>(0,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,1), dv1_dRR.at<number_t>(1,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,2), dv1_dRR.at<number_t>(2,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,3), dv1_dRR.at<number_t>(3,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,4), dv1_dRR.at<number_t>(4,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,5), dv1_dRR.at<number_t>(5,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,6), dv1_dRR.at<number_t>(6,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,7), dv1_dRR.at<number_t>(7,1));
+  EXPECT_FLOAT_EQ(dw1_dR(1,8), dv1_dRR.at<number_t>(8,1));
+  EXPECT_FLOAT_EQ(dw1_dR(2,0), dv1_dRR.at<number_t>(0,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,1), dv1_dRR.at<number_t>(1,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,2), dv1_dRR.at<number_t>(2,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,3), dv1_dRR.at<number_t>(3,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,4), dv1_dRR.at<number_t>(4,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,5), dv1_dRR.at<number_t>(5,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,6), dv1_dRR.at<number_t>(6,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,7), dv1_dRR.at<number_t>(7,2));
+  EXPECT_FLOAT_EQ(dw1_dR(2,8), dv1_dRR.at<number_t>(8,2));
+
 }

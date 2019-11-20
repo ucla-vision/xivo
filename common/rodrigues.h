@@ -316,8 +316,28 @@ rodrigues(const Eigen::MatrixBase<Derived> &w,
 }
 
 
-/** Inverse Rodrigues formula. Given a transformation matrix R, returns w and optionally
- *  computes the 3x9 matrix dw_dR. */
+/** Inverse Rodrigues formula. Given a transformation matrix `R`, returns `w` and
+ *  optionally computes the 3x9 matrix `dw_dR`, using a row-major order for `R`. i.e.
+ *  if `R` is the matrix
+ *  \f[ \begin{bmatrix}
+ *  r_{00} & r_{01} & r_{02} \\
+ *  r_{10} & r_{11} & r_{12} \\
+ *  r_{20} & r_{21} & r_{22}
+ *  \end{bmatrix} \f]
+ *  then the matrix `dw_dR` is
+ *  \f[ \begin{bmatrix}
+ *  (w_0)_{r_{00}} & (w_0)_{r_{01}} & (w_0)_{r_{02}} &
+ *    (w_0)_{r_{10}} & (w_0)_{r_{11}} & (w_0)_{r_{12}} &
+ *    (w_0)_{r_{20}} & (w_0)_{r_{21}} & (w_0)_{r_{22}} \\
+ *  (w_1)_{r_{00}} & (w_1)_{r_{01}} & (w_1)_{r_{02}} &
+ *    (w_1)_{r_{10}} & (w_1)_{r_{11}} & (w_1)_{r_{12}} &
+ *    (w_1)_{r_{20}} & (w_1)_{r_{21}} & (w_1)_{r_{22}} \\
+ *  (w_2)_{r_{00}} & (w_2)_{r_{01}} & (w_2)_{r_{02}} &
+ *    (w_2)_{r_{10}} & (w_2)_{r_{11}} & (w_2)_{r_{12}} &
+ *    (w_2)_{r_{20}} & (w_2)_{r_{21}} & (w_2)_{r_{22}}
+ *  \end{bmatrix} \f]
+ *  (But since `R` is symmetric, there shouldn't be a numerical difference between using
+ *  flattening `R` in a row-major or column-major order) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 1>
 invrodrigues(const Eigen::MatrixBase<Derived> &R,
