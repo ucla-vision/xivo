@@ -113,6 +113,11 @@ add_executable(unitTests_Jacobians
 target_link_libraries(unitTests_Jacobians ${libxivo} ${deps} gtest gtest_main)
 add_test(NAME Jacobians COMMAND unitTests_Jacobians)
 
+add_executable(unitTests_Rodrigues
+               test/unittest_rodrigues.cpp)
+target_link_libraries(unitTests_Rodrigues ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME Rodrigues COMMAND unitTests_Rodrigues)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)
