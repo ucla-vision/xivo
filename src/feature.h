@@ -105,7 +105,8 @@ public:
   /** Computes the Jacobian for the in-state (EKF) measurement model. */
   void ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                        const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
-                       const Vec3 &bg, const Vec3 &Vsb, number_t td);
+                       const Vec3 &bg, const Vec3 &Vsb, number_t td,
+                       const VecX &error_state);
 
   int oos_inn_size() const { return oos_jac_counter_; }
 

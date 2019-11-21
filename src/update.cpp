@@ -36,7 +36,7 @@ void Estimator::Update() {
   timer_.Tick("jacobian");
   for (auto f : instate_features_) {
     f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
-                       X_.bg, X_.Vsb, X_.td);
+                       X_.bg, X_.Vsb, X_.td, err_);
     const auto &J = f->J();
     const auto &res = f->inn();
 
@@ -290,7 +290,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
         auto f = mh_inliers[i];
 
         f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_,
-                           imu_.Cg(), X_.bg, X_.Vsb, X_.td);
+                           imu_.Cg(), X_.bg, X_.Vsb, X_.td, err_);
         auto J = f->J();
         auto res = f->inn();
 
@@ -338,7 +338,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   // need to re-compute jacobians
   for (auto f : max_inliers) {
     f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
-                       X_.bg, X_.Vsb, X_.td);
+                       X_.bg, X_.Vsb, X_.td, err_);
   }
   return max_inliers;
 }

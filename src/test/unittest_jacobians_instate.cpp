@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <unsupported/Eigen/MatrixFunctions>
+//#include <unsupported/Eigen/MatrixFunctions>
 
 #define private public
 
@@ -13,7 +13,7 @@
 #include "feature.h"
 
 
-using namespace Eigen;
+//using namespace Eigen;
 using namespace xivo;
 
 /* Class to check dxc(now)_d[everything else]. We wil */
@@ -44,6 +44,7 @@ class InstateJacobiansTest : public ::testing::Test {
         td_nom = 0.005;
         Vsb_nom = Vec3::Random();
 
+        // Initialize the error variables
         Wr_err = Vec3::Zero();
         Tr_err = Vec3::Zero();
         Wsb_err = Vec3::Zero();
@@ -53,6 +54,9 @@ class InstateJacobiansTest : public ::testing::Test {
         Cg_err = Mat3::Zero();
         bg_err = Vec3::Zero();
         td_err = 0.0;
+        err_state.resize(kFullSize);
+        err_state.setZero();
+
 
         // Set reference Rr and Tr for the feature
         Vec2 xp(25, 46);
@@ -69,19 +73,15 @@ class InstateJacobiansTest : public ::testing::Test {
         // Compute the analytic Jacobians and nominal states
         ComputeNominalStates();
         f->ComputeJacobian(Rsb_nom, Tsb_nom, Rbc_nom, Tbc_nom, gyro, 
-                           Cg_nom, bg_nom, Vsb_nom, td_nom);
+                           Cg_nom, bg_nom, Vsb_nom, td_nom, err_state);
     }
 
     Vec3 ComputeXcn() {
-        Mat3 I3 = Mat3::Identity();
-        //Rr = Rr_nom*(I3 + hat(Wr_err));
-        Rr = Rr_nom*(hat(Wr_err).exp());
+        Rr = Rr_nom*rodrigues(Wr_err);
         Tr = Tr_nom + Tr_err;
-        //Rsb = Rsb_nom*(I3 + hat(Wsb_err));
-        Rsb = Rsb_nom*(hat(Wsb_err).exp());
+        Rsb = Rsb_nom*rodrigues(Wsb_err);
         Tsb = Tsb_nom + Tsb_err;
-        //Rbc = Rbc_nom*(I3 + hat(Wbc_err));
-        Rbc = Rbc_nom*(hat(Wbc_err).exp());
+        Rbc = Rbc_nom*rodrigues(Wbc_err);
         Tbc = Tbc_nom + Tbc_err;
         Cg = Cg_nom + Cg_err;
         bg = bg_nom + bg_err;
@@ -143,6 +143,7 @@ class InstateJacobiansTest : public ::testing::Test {
     Vec3 Vsb_nom;
 
     // Error variables containing placeholder values
+    VecX err_state;
     Vec3 Wr_err;
     Vec3 Tr_err;
     Vec3 Wsb_err;
