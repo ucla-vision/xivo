@@ -112,12 +112,12 @@ public:
 
   /** Computes the Jacobian for the out-of-state (MSCKF) measurement model. */
   int ComputeOOSJacobian(const std::vector<Obs> &obs, const Mat3 &Rbc,
-                         const Vec3 &Tbc);
+                         const Vec3 &Tbc, const VecX &error_state);
   /** Contains the equations used in `Feature::ComputeOOSJacobian` for each
    *  observation.
    *  \todo make the following private */
   void ComputeOOSJacobianInternal(const Obs &obs, const Mat3 &Rbc,
-                                  const Vec3 &Tbc);
+                                  const Vec3 &Tbc, const VecX &error_state);
 
   // fill-in the corresponding jacobian block
   // H: the big jacobian matrix of all measurements

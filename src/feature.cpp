@@ -481,7 +481,7 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   for (int i=0; i<3; i++) {
     Mat3 dR_dWr_err_i  = unstack(dR_dWr_err.block<9,1>(0,i));
     Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
-    // Filling in derivatives
+    // Compute derivatives
     Vec3 dXs_dWri = Rr * dR_dWr_err_i * (Rbc * cache_.Xc + Tbc);
     Vec3 dXs_dWbci = Rr * Rbc * dR_dWbc_err_i * cache_.Xc;
     // Fill in columns in cache_

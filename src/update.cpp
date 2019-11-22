@@ -90,7 +90,7 @@ void Estimator::Update() {
     // parametrization
     for (auto f : oos_features_) {
       auto vobs = Graph::instance()->GetObservationsOf(f);
-      int oos_jac_size = f->ComputeOOSJacobian(vobs, X_.Rbc, X_.Tbc);
+      int oos_jac_size = f->ComputeOOSJacobian(vobs, X_.Rbc, X_.Tbc, err_);
       if (oos_jac_size > 0) {
         total_oos_jac_size += oos_jac_size;
         active_oos_features.push_back(f);
