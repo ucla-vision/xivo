@@ -26,9 +26,6 @@ class OOSJacobiansTest : public::testing::Test {
         delta = 1e-6;
         tol = 1e-6;
 
-        // IMU measurement
-        gyro = Vec3::Random();
-
         // Set nominal and error variables to random values
         Rr_nom = RandomTransformationMatrix();
         Tr_nom = Vec3::Random();
@@ -98,9 +95,6 @@ class OOSJacobiansTest : public::testing::Test {
     CameraPtr cam;
     GroupPtr group;
     FeaturePtr f;
-
-    // Fake IMU measurement
-    Vec3 gyro;
 
     // numerical tolerance
     number_t tol;

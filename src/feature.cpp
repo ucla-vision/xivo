@@ -511,6 +511,11 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
     cache_.dXcn_dWbc.block<3,1>(0,i) = dXcn_dWbc_err_i;
   }
 
+  cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dx;
+  cache_.dXcn_dWr = cache_.dXcn_dXs * cache_.dXs_dWr;
+  cache_.dXcn_dTr = cache_.dXcn_dXs * cache_.dXs_dTr;
+
+
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Vec3 gyro_calib = Cg * gyro - bg;
   cache_.dXcn_dtd =
@@ -528,11 +533,6 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 #endif
   cache_.dXcn_dbg = -dXcn_dW;
 #endif
-
-
-  cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dx;
-  cache_.dXcn_dWr = cache_.dXcn_dXs * cache_.dXs_dWr;
-  cache_.dXcn_dTr = cache_.dXcn_dXs * cache_.dXs_dTr;
 
   // xc(new)
   cache_.xcn = project(cache_.Xcn, &cache_.dxcn_dXcn);
