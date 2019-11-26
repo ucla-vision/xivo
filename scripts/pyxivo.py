@@ -101,7 +101,7 @@ def main(args):
             estimator.Visualize()
             saver.onVisionUpdate(estimator, datum=(ts, content))
 
-    saver.onResultsReady(results)
+    saver.onResultsReady()
 
 if __name__ == '__main__':
     main(args=parser.parse_args())

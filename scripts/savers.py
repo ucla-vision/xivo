@@ -10,7 +10,7 @@ class BaseSaver:
         self.resultsPath = os.path.join(args.out_dir, 'tumvi_{}_cam{}'.format(args.seq, args.cam_id))
     def onVisionUpdate(self, estimator, datum):
         pass
-    def onResultsReady(self, results):
+    def onResultsReady(self):
         pass
 
 
@@ -39,7 +39,7 @@ class EvalModeSaver(BaseSaver):
         except np.linalg.linalg.LinAlgError:
             pass
 
-    def onResultsReady(self, results):
+    def onResultsReady(self):
         np.savetxt(
             self.resultsPath,
             self.results,
@@ -91,6 +91,6 @@ class DumpModeSaver(BaseSaver):
             except np.linalg.linalg.LinAlgError:
                 pass
 
-    def onResultsReady(self, results):
+    def onResultsReady(self):
         with open(self.resultsPath, 'w') as fid:
             json.dump(self.results, fid, indent=2)
