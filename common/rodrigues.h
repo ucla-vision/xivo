@@ -5,6 +5,7 @@
 
 namespace xivo {
 
+/** Computes the expression N*(N+1)/2 */
 constexpr int Sum1ToN(int N) { return (N * (N + 1)) >> 1; }
 
 template <typename Derived, int N = 3>
@@ -35,6 +36,7 @@ dA_dAu() {
   return D;
 }
 
+/** Reshapes a dimension 9 vector into a 3x3 matrix */
 template <typename Derived, int M = 3, int N = 3>
 Eigen::Matrix<typename Derived::Scalar, M, N>
 unstack(const Eigen::MatrixBase<Derived> &u, int major = Eigen::RowMajor) {
@@ -51,6 +53,7 @@ unstack(const Eigen::MatrixBase<Derived> &u, int major = Eigen::RowMajor) {
   return m;
 }
 
+/** Construct a skew-symmetric matrix (for cross products) from a 3x1 vector. */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 3>
 hat(const Eigen::MatrixBase<Derived> &u) {
@@ -60,6 +63,25 @@ hat(const Eigen::MatrixBase<Derived> &u) {
       .finished();
 }
 
+/** 
+ * Derivative of a skew-symmetric matrix (constructed with `hat`) with respect to
+ * the original 3x1 vector \f$[v_1, v_2, v_3]^T\f$. Let \f$u_{ij}\f$ be
+ * the element at the ith row and jth column of the skew symmetric matrix. Then, the
+ * elements of the derivative are:
+ * \f[ \begin{bmatrix}
+ *  (u_{00})_{v_1} & (u_{00})_{v_2} & (u_{00})_{v_3} \\
+ *  (u_{01})_{v_1} & (u_{01})_{v_2} & (u_{01})_{v_3} \\
+ *  (u_{02})_{v_1} & (u_{02})_{v_2} & (u_{02})_{v_3} \\
+ *  (u_{10})_{v_1} & (u_{10})_{v_2} & (u_{10})_{v_3} \\
+ *  (u_{11})_{v_1} & (u_{11})_{v_2} & (u_{11})_{v_3} \\
+ *  (u_{12})_{v_1} & (u_{12})_{v_2} & (u_{12})_{v_3} \\
+ *  (u_{20})_{v_1} & (u_{20})_{v_2} & (u_{20})_{v_3} \\
+ *  (u_{21})_{v_1} & (u_{21})_{v_2} & (u_{21})_{v_3} \\
+ *  (u_{22})_{v_1} & (u_{22})_{v_2} & (u_{22})_{v_3}
+ * \end{bmatrix}
+ * \f]
+ * (The matrix is a constant matrix of 0, 1, -1.)
+ */
 template <typename T = float> Eigen::Matrix<T, 9, 3> dhat() {
   return (Eigen::Matrix<T, 9, 3>{} << 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1, 0, 0,
           0, -1, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0)
@@ -239,6 +261,11 @@ dAB_dB(const Eigen::MatrixBase<Derived> &A,
   */
 }
 
+
+/** Rodrigues formula for changing an axis-angle representation of a 3D coordinate
+ *  transformation matrix to a DCM. Computes R = MatrixExponential(w) +
+ *  optional 9 x 3 matrix dR_dw. The 9 x 3 matrix follows the same indexing order
+ *  as the 9 x 3 matrix in `dhat`. */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 3>
 rodrigues(const Eigen::MatrixBase<Derived> &w,
@@ -269,19 +296,49 @@ rodrigues(const Eigen::MatrixBase<Derived> &w,
   Eigen::Matrix<T, 3, 3> uhat2 = uhat * uhat;
   R = Eigen::Matrix<T, 3, 3>::Identity() + uhat * sin_th + uhat2 * (1 - cos_th);
   if (dR_dw) {
-    Eigen::Matrix<T, 9, 3> dR_du =
-        sin_th * dhat(u) +
-        (1 - cos_th) * (dAB_dA<3, 3>(uhat) + dAB_dB<3, 3>(uhat)) * dhat(u);
-    Eigen::Matrix<T, 3, 3> du_dw =
-        inv_th * (Eigen::Matrix<T, 3, 3>::Identity() - u * u.transpose());
-    Eigen::Matrix<T, 9, 1> dR_dth = Eigen::Map<Eigen::Matrix<T, 9, 1>>(
-        Eigen::Matrix<T, 3, 3>{uhat * cos_th + uhat2 * sin_th}.data());
-    // Eigen::Matrix<T, 1, 3> dth_dw = u.transpose();
-    *dR_dw = dR_du * du_dw + dR_dth * u.transpose();
+
+    // Guillermo Gallego's Result 2: one element of w at a time
+    Eigen::Matrix<T, 3, 3> IminusR = Eigen::Matrix<T, 3, 3>::Identity() - R;
+    Eigen::Matrix<T, 3, 3> what = hat(w);
+    for (int i=0; i<3; i++) {
+      Eigen::Matrix<T, 3, 1> ei(0,0,0);
+      ei(i) = 1;
+      Eigen::Matrix<T, 3, 3> dR_dwi =
+        (w(i)*what + hat(what*(IminusR*ei))) / th / th * R;
+
+      // Reshape into 9x1 column, row-major way
+      dR_dw->template block<3,1>(0,i) = dR_dwi.template block<1,3>(0,0);
+      dR_dw->template block<3,1>(3,i) = dR_dwi.template block<1,3>(1,0);
+      dR_dw->template block<3,1>(6,i) = dR_dwi.template block<1,3>(2,0);
+    }
+
   }
   return R;
 }
 
+
+/** Inverse Rodrigues formula. Given a transformation matrix `R`, returns `w` and
+ *  optionally computes the 3x9 matrix `dw_dR`, using a row-major order for `R`. i.e.
+ *  if `R` is the matrix
+ *  \f[ \begin{bmatrix}
+ *  r_{00} & r_{01} & r_{02} \\
+ *  r_{10} & r_{11} & r_{12} \\
+ *  r_{20} & r_{21} & r_{22}
+ *  \end{bmatrix} \f]
+ *  then the matrix `dw_dR` is
+ *  \f[ \begin{bmatrix}
+ *  (w_0)_{r_{00}} & (w_0)_{r_{01}} & (w_0)_{r_{02}} &
+ *    (w_0)_{r_{10}} & (w_0)_{r_{11}} & (w_0)_{r_{12}} &
+ *    (w_0)_{r_{20}} & (w_0)_{r_{21}} & (w_0)_{r_{22}} \\
+ *  (w_1)_{r_{00}} & (w_1)_{r_{01}} & (w_1)_{r_{02}} &
+ *    (w_1)_{r_{10}} & (w_1)_{r_{11}} & (w_1)_{r_{12}} &
+ *    (w_1)_{r_{20}} & (w_1)_{r_{21}} & (w_1)_{r_{22}} \\
+ *  (w_2)_{r_{00}} & (w_2)_{r_{01}} & (w_2)_{r_{02}} &
+ *    (w_2)_{r_{10}} & (w_2)_{r_{11}} & (w_2)_{r_{12}} &
+ *    (w_2)_{r_{20}} & (w_2)_{r_{21}} & (w_2)_{r_{22}}
+ *  \end{bmatrix} \f]
+ *  (But since `R` is symmetric, there shouldn't be a numerical difference between using
+ *  flattening `R` in a row-major or column-major order) */
 template <typename Derived>
 Eigen::Matrix<typename Derived::Scalar, 3, 1>
 invrodrigues(const Eigen::MatrixBase<Derived> &R,

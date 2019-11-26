@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <tuple>
 
 #include "Eigen/QR"
@@ -14,6 +15,7 @@
 #include "mm.h"
 #include "param.h"
 #include "tracker.h"
+#include "helpers.h"
 
 #ifdef USE_G2O
 #include "optimizer.h"
@@ -41,6 +43,8 @@ EstimatorPtr Estimator::instance() {
 
 static const Mat3 I3{Mat3::Identity()};
 static const Mat3 nI3{-I3};
+static const Mat2 I2{Mat2::Identity()};
+static const Mat2 nI2{-I2};
 
 static bool cmp(const std::unique_ptr<internal::Message> &m1,
                 const std::unique_ptr<internal::Message> &m2) {
@@ -92,6 +96,15 @@ Estimator::Estimator(const Json::Value &cfg)
   use_compression_ = cfg_.get("use_compression", false).asBool();
   compression_trigger_ratio_ =
       cfg_.get("compression_trigger_ratio", 1.5).asDouble();
+  OOS_update_min_observations_ =
+      cfg_.get("OOS_update_min_observations", 5).asInt();
+
+
+  // Map output options
+  auto mapdump_params = cfg_["mapdump"];
+  dump_map_ = mapdump_params.get("dump_map", false).asBool();
+  max_mapdump_instate_ = mapdump_params.get("max_num_instate", 100).asInt();
+  max_mapdump_total_ = mapdump_params.get("max_total", 1500).asInt();
 
   // one point ransac parameters
   use_1pt_RANSAC_ = cfg_.get("use_1pt_RANSAC", false).asBool();
@@ -126,6 +139,8 @@ Estimator::Estimator(const Json::Value &cfg)
   triangulate_options_.zmin =
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();
+
+  remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
 
   // load imu calibration
   auto imu_calib = cfg_["imu_calib"];
@@ -210,7 +225,7 @@ Estimator::Estimator(const Json::Value &cfg)
     auto Cov = GetVectorFromJson<number_t, 3>(P, "Tbc");
     P_.block<3, 3>(Index::Tbc, Index::Tbc) *= Cov.asDiagonal();
   }
-  P_.block<3, 3>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
+  P_.block<2, 2>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   P_(Index::td, Index::td) *= P["td"].asDouble();
 #endif
@@ -255,7 +270,7 @@ Estimator::Estimator(const Json::Value &cfg)
   Qmodel_.setZero(kMotionSize, kMotionSize);
   Qmodel_.block<3, 3>(Index::W, Index::W) = I3 * Qmodel["W"].asDouble();
   Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) = I3 * Qmodel["Wbc"].asDouble();
-  Qmodel_.block<3, 3>(Index::Wg, Index::Wg) = I3 * Qmodel["Wg"].asDouble();
+  Qmodel_.block<2, 2>(Index::Wg, Index::Wg) = I2 * Qmodel["Wg"].asDouble();
   Qmodel_.block<kMotionSize, kMotionSize>(0, 0) *=
       Qmodel_.block<kMotionSize, kMotionSize>(0, 0);
   LOG(INFO) << "Covariance of process noises loaded";
@@ -747,7 +762,7 @@ void Estimator::PrintErrorStateNorm() {
       err_.segment<3>(Index::Wsb).norm(), err_.segment<3>(Index::Tsb).norm(),
       err_.segment<3>(Index::Vsb).norm(), err_.segment<3>(Index::bg).norm(),
       err_.segment<3>(Index::ba).norm(), err_.segment<3>(Index::Wbc).norm(),
-      err_.segment<3>(Index::Tbc).norm(), err_.segment<3>(Index::Wg).norm());
+      err_.segment<3>(Index::Tbc).norm(), err_.segment<2>(Index::Wg).norm());
   for (auto g : instate_groups_) {
 #ifndef NDEBUG
     CHECK(gsel_[g->sind()]) << "instate group not actually instate";
@@ -899,6 +914,11 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     if (gauge_group_ == -1) {
       SwitchRefGroup();
     }
+
+    // Write out the map, XYZ
+    if (dump_map_) {
+      DumpMap();
+    }
   }
   timer_.Tock("visual-meas");
 }
@@ -1029,5 +1049,66 @@ void Estimator::SwitchRefGroup() {
     P_.block(0, offset, err_.size(), 6).setZero();
   }
 }
+
+
+void Estimator::DumpMap() {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+  std::vector<xivo::FeaturePtr> all_features = graph.GetFeatures();
+  MakePtrVectorUnique(instate_features);
+  MakePtrVectorUnique(all_features);
+
+  // Sort vectors by depth uncertainty
+  std::sort(instate_features.begin(), instate_features.end(),
+            Criteria::CandidateComparison);
+  std::sort(all_features.begin(), all_features.end(),
+            Criteria::CandidateComparison);
+  
+  // Print out instate features
+  std::string instate_features_filename = "instate_features_" + 
+        std::to_string(vision_counter_) + ".txt";
+  std::string all_features_filename = 
+    "all_features_" + std::to_string(vision_counter_) + ".txt";
+  std::ofstream instate_stream;
+  std::ofstream allfeatures_stream;
+  instate_stream.open(instate_features_filename);
+  allfeatures_stream.open(all_features_filename);
+
+  int i = 0; 
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < max_mapdump_instate_;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 Xc = f->Xc();
+    int find = f->id();
+    instate_stream << find << ": " << Xc(0) << ", " << Xc(1) << ", " 
+                   << Xc(2) << std::endl;
+    ++i;
+    ++it;
+  }
+  instate_stream.close();
+
+  i = 0;
+  for (auto it = all_features.begin();
+       it != all_features.end() && i < max_mapdump_total_;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 Xc = f->Xc();
+    int find = f->id();
+    allfeatures_stream << find << ": " << Xc(0) << ", " << Xc(1) << ", "
+                       << Xc(2) << std::endl;
+    ++i;
+    ++it;
+  }
+  allfeatures_stream.close();
+}
+
+
 
 } // xivo

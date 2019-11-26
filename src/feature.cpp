@@ -6,6 +6,8 @@
 #include "helpers.h"
 #include "mm.h"
 #include "param.h"
+#include "alias.h"
+#include "rodrigues.h"
 
 #include "glog/logging.h"
 
@@ -85,10 +87,8 @@ Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) {
 
 number_t Feature::z() const {
 #ifdef USE_INVDEPTH
-  // FIXME: ensure depth is positive
   return 1.0 / x_(2);
 #else
-  // in log-depth parametrization, positivity is guaranteed
   return exp(x_(2));
 #endif
 }
@@ -447,7 +447,8 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
 void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                               const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
-                              const Vec3 &bg, const Vec3 &Vsb, number_t td) {
+                              const Vec3 &bg, const Vec3 &Vsb, number_t td,
+                              const VecX &error_state) {
 
   Mat3 Rsb_t = Rsb.transpose();
   Mat3 Rbc_t = Rbc.transpose();
@@ -457,22 +458,63 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 
   cache_.Xc = Xc(&cache_.dXc_dx);
 
+  // Get components of the error state
+  int offset = kGroupBegin + kGroupSize*(ref_->sind());
+  Vec3 Wsb_err = error_state.segment<3>(Index::Wsb);
+  Vec3 Tsb_err = error_state.segment<3>(Index::Tsb);
+  Vec3 Wbc_err = error_state.segment<3>(Index::Wbc);
+  Vec3 Tbc_err = error_state.segment<3>(Index::Tbc);
+  Vec3 Wr_err  = error_state.segment<3>(offset);
+  Vec3 Tr_err  = error_state.segment<3>(offset+3);
+
+  // Get derivatives of error state matrix exponentials w.r.t vector.
+  Mat93 dR_dWsb_err, dR_dWbc_err, dR_dWr_err;
+  Mat3 R_Wsb_err = rodrigues(Wsb_err, &dR_dWsb_err);
+  Mat3 R_Wbc_err = rodrigues(Wbc_err, &dR_dWbc_err);
+  Mat3 R_Wr_err  = rodrigues(Wr_err, &dR_dWr_err);
+
   // Xc(ref) to Xs
   cache_.Xs = Rr * Rbc * cache_.Xc + Rr * Tbc + Tr;
-  // cache_.dXs_dXc = Rr * Rbc;
   cache_.dXs_dx = Rr * Rbc * cache_.dXc_dx;
   cache_.dXs_dTbc = Rr;
-  cache_.dXs_dWbc = -Rr * Rbc * hat(cache_.Xc);
   cache_.dXs_dTr = Mat3::Identity();
-  cache_.dXs_dWr = -Rr * hat(Rbc * cache_.Xc + Tbc);
+  for (int i=0; i<3; i++) {
+    Mat3 dR_dWr_err_i  = unstack(dR_dWr_err.block<9,1>(0,i));
+    Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
+    // Compute derivatives
+    Vec3 dXs_dWri = Rr * dR_dWr_err_i * (Rbc * cache_.Xc + Tbc);
+    Vec3 dXs_dWbci = Rr * Rbc * dR_dWbc_err_i * cache_.Xc;
+    // Fill in columns in cache_
+    cache_.dXs_dWr.block<3,1>(0,i) = dXs_dWri;
+    cache_.dXs_dWbc.block<3,1>(0,i) = dXs_dWbci;
+  }
 
   // Xs back to Xc(new)
   cache_.Xcn = Rbc_t * Rsb_t * (cache_.Xs - Tsb) - Rbc_t * Tbc;
-  cache_.dXcn_dWbc = Rbc_t * hat(Rsb_t * (cache_.Xs - Tsb) - Tbc);
-  cache_.dXcn_dWsb = Rbc_t * Rsb_t * hat(cache_.Xs - Tsb);
-  cache_.dXcn_dXs = Rbc_t * Rsb_t; // dXcn_d... = dXcn_dXs * dXs_d...
+  cache_.dXcn_dXs = Rbc_t * Rsb_t;
+  //cache_.dXcn_dTsb = -Rbc_t * Rsb_t;
   cache_.dXcn_dTsb = -cache_.dXcn_dXs;
-  cache_.dXcn_dTbc = -Rbc_t;
+  cache_.dXcn_dTbc = -Rbc_t + (cache_.dXcn_dXs * cache_.dXs_dTbc);
+  for (int i=0; i<3; i++) {
+    // Reshape columns of output of rodrigues()
+    Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
+    Mat3 dR_dWsb_err_i = unstack(dR_dWsb_err.block<9,1>(0,i));
+    Mat3 dR_dWbc_err_i_t = dR_dWbc_err_i.transpose();
+    Mat3 dR_dWsb_err_i_t = dR_dWsb_err_i.transpose();
+    // Compute derivatives
+    Vec3 dXcn_dWsb_err_i = Rbc_t * dR_dWsb_err_i_t * Rsb_t * (cache_.Xs - Tsb);
+    Vec3 dXcn_dWbc_err_i = (dR_dWbc_err_i_t * Rbc_t * Rsb_t * cache_.Xs)
+      + (R_Wbc_err.transpose() * Rbc_t * Rsb_t * cache_.dXs_dWbc.block<3,1>(0,i))
+      - (dR_dWbc_err_i_t * Rbc_t * (Rsb_t*Tsb + Tbc));
+    // Fill in columns in cache_
+    cache_.dXcn_dWsb.block<3,1>(0,i) = dXcn_dWsb_err_i;
+    cache_.dXcn_dWbc.block<3,1>(0,i) = dXcn_dWbc_err_i;
+  }
+
+  cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dx;
+  cache_.dXcn_dWr = cache_.dXcn_dXs * cache_.dXs_dWr;
+  cache_.dXcn_dTr = cache_.dXcn_dXs * cache_.dXs_dTr;
+
 
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Vec3 gyro_calib = Cg * gyro - bg;
@@ -492,23 +534,14 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   cache_.dXcn_dbg = -dXcn_dW;
 #endif
 
-  // Rbc and Tbc are used twice, so add extra terms
-  cache_.dXcn_dWbc += cache_.dXcn_dXs * cache_.dXs_dWbc;
-  cache_.dXcn_dTbc += cache_.dXcn_dXs * cache_.dXs_dTbc;
-
-  cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dx;
-  cache_.dXcn_dWr = cache_.dXcn_dXs * cache_.dXs_dWr;
-  cache_.dXcn_dTr = cache_.dXcn_dXs * cache_.dXs_dTr;
-
   // xc(new)
   cache_.xcn = project(cache_.Xcn, &cache_.dxcn_dXcn);
 
-// FIXME: Code would break if this block didn't run
-// (i.e USE_ONLINE_CAMERA_CALIB was not set) because the variable
-// cache_.dxp_dxcn would never be set.
 #ifdef USE_ONLINE_CAMERA_CALIB
   Eigen::Matrix<number_t, 2, -1> jacc;
   cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn, &jacc);
+#else
+  cache_.xp = Camera::instance()->Project(cache_.xcn, &cache_.dxp_dxcn);
 #endif
 
   cache_.dxp_dXcn = cache_.dxp_dxcn * cache_.dxcn_dXcn;

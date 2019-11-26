@@ -94,8 +94,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
         // std::cout << "outlier score=" << f->outlier_counter() << std::endl;
 
-        // TODO: Make outlier counter a parameter
-        if (f->outlier_counter() > 10) {
+        if (f->outlier_counter() > remove_outlier_counter_) {
           graph.RemoveFeature(f);
           Feature::Delete(f);
           it = tracks.erase(it);

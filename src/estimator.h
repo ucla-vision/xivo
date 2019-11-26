@@ -94,47 +94,65 @@ public:
   const State& X() const { return X_; }
   const timestamp_t &ts() const { return curr_time_; }
 
+  int OOS_update_min_observations() { return OOS_update_min_observations_; }
+
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }
 
+  /** Top-level function for state prediction and update when an IMU packet
+   *  arrives */
   void InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
                             const Vec3 &accel);
 
+  /** Top-level function for state prediction and update when an image
+   *  packet arrives */
   void VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img);
 
   // initialize gravity with initial stationary samples
   bool InitializeGravity();
-  // propagate state
+  /** Integrates the State `X`. If parameter `visual_meas` is set to `false`, we
+   *  update `slope_accel_` and `slope_gyro_`. If `visual_meas` is set to `true`, we
+   *  use `slope_accel_` and `slope_gyro` to adjust the last IMU measurement. */
   void Propagate(bool visual_meas);
-  // kalman filter update -- joseph form
+  /** kalman filter update step -- uses Joseph form */
   void UpdateJosephForm();
-  // measurement prediction
+  /** Predicts measurement (pixels) of features in input. */
   void Predict(std::list<FeaturePtr> &features);
-  // compute the motion jacobian F and G at the given linearization point
+  /** compute the motion jacobian F and G (private members `F_` and `G_`) at the
+   *  given state and measurement. */
   void ComputeMotionJacobianAt(const State &X,
                                const Eigen::Matrix<number_t, 6, 1> &gyro_accel);
   // only need velocity as the slope for integration
   void ComposeMotion(State &X, const Vec3 &V,
                      const Eigen::Matrix<number_t, 6, 1> &gyro_accel, number_t dt);
-  // perform Fehlberg numerical integration
+  /** perform Fehlberg numerical integration */
   void Fehlberg(const Vec3 &gyro0, const Vec3 &accel0, number_t dt);
-  // perform Prince-Dormand numerical integration
+  /** perform Prince-Dormand numerical integration */
   void PrinceDormand(const Vec3 &gyro0, const Vec3 &accel0, number_t dt);
-  // return max(slope), i.e., max(V, max(gyro), max(accel))
+  /** Perform one-step in Prince-Dormand numerical integration and
+   *  return max(slope), i.e., max(V, max(gyro), max(accel)) */
   number_t PrinceDormandStep(const Vec3 &gyro0, const Vec3 &accel0, number_t dt);
-  // perform vanilla RK4 without step control
+  /** perform vanilla RK4 without step control */
   void RK4(const Vec3 &gyro0, const Vec3 &accel0, number_t dt);
-  // perform one-step in RK4 integration (4 inner steps)
+  /** perform one-step in RK4 integration (4 inner steps) */
   void RK4Step(const Vec3 &gyro0, const Vec3 &accel0, number_t dt);
 
   void ProcessTracks(const timestamp_t &ts, std::list<FeaturePtr> &features);
+
+  /** Function that contains logic for outlier rejection, filter EKF update, and
+   *  filter MSCKF update. It will mark features for removal from the state, but
+   *  does not do the actual removing and does not update the graph. */
   void Update();
-  // one point RANSAC on individually compatible matches
+
+  /** Outlier rejection on `Tracker` matches. Always occurs after MH-gating. */
   std::vector<FeaturePtr>
   OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches);
   std::tuple<number_t, bool> HuberOnInnovation(const Vec2 &inn, number_t Rviz);
 
   void UpdateSystemClock(const timestamp_t &now);
+
+  /** Checks that timestamp `now` (= timestamp of message currently processed) is
+   *  at or later than timestamp of last processed message. */
   bool GoodTimestamp(const timestamp_t &now);
 
   // same as above, but the group list will be untouched
@@ -155,66 +173,139 @@ private:
   void PrintErrorState();
   void PrintNominalState();
 
+  /** Prints out features from the map onto two text files. Called at the end of
+   *  `Estimator::VisualMeasInternal`. One text file contains the inliers with
+   *  the best score. The second text file contains (more) features with the best
+   *  score.
+   */
+  void DumpMap();
+
 private:
   Estimator(const Json::Value &cfg);
   static std::unique_ptr<Estimator> instance_;
 
 private:
-  std::vector<FeaturePtr> instate_features_; // in-state features
-  std::vector<FeaturePtr> oos_features_;     // out-of-state features
-  std::vector<GroupPtr> instate_groups_;     // in-state groups
-  // Graph graph_;
-  int gauge_group_; // index of the selected gauge group, -1 for none
+  std::vector<FeaturePtr> instate_features_; ///< in-state features
+  std::vector<FeaturePtr> oos_features_;     ///< out-of-state features
+  std::vector<GroupPtr> instate_groups_;     ///< in-state groups
+
+  /** Index of the current gauge group. It is set to -1 when we lose the current
+   *  gauge group while calling `ProcessTracks`. */
+  int gauge_group_;
 
 private:
   Config cfg_;        // this is just a reference of the global parameter server
   bool simulation_;   // estimator used in simulation or not
   bool use_canvas_;   // visualization or not
   bool print_timing_; // show timing info
-  std::string integration_method_; // motion integration numerical scheme
-  bool use_1pt_RANSAC_;            // one point ransac
+  std::string integration_method_; ///< motion integration numerical scheme
+
+  /** If true, dumps out a copy of the map after every visual measurement. */
+  bool dump_map_;
+  int max_mapdump_instate_;
+  int max_mapdump_total_;
+
+  /** Whether or not to sue 1-pt RANSAC in outlier rejection. */
+  bool use_1pt_RANSAC_;
   number_t ransac_thresh_, ransac_prob_, ransac_Chi2_;
-  bool use_OOS_;                    // Out-Of-State measurement update
+
+  /** Whether or not to use MSCKF measurement update */
+  bool use_OOS_;
   bool use_compression_;            // measurement compression
   number_t compression_trigger_ratio_; // use measurement compression, if the ratio
                                     // of columns/rows of measurement matrix is
                                     // above this level
+  /** Minimum number of observations a feature needs by the time `Tracker` drops
+   *  it in order to use it in a MSCKF update. */
+  int OOS_update_min_observations_;
   bool use_depth_opt_;              // use depth optimization or not
   RefinementOptions refinement_options_; // depth refinement options
   SubfilterOptions subfilter_options_;   // depth-subfilter options
   bool triangulate_pre_subfilter_; // depth triangulation before depth subfilter
   TriangulateOptions triangulate_options_;
 
+  /** Minimum number of steps a feature is an outlier before it is removed */
+  int remove_outlier_counter_;
+
+  /** The current state estimate. Contains nominal state and calibrations, but no
+   *  feature positions. */
   State X_;
-  VecX err_;                           // error state
-  std::array<bool, kMaxGroup> gsel_;   // group selector
-  std::array<bool, kMaxFeature> fsel_; // feature selector
-  // imu component
+  /** Filter's error state: Contains both pose and feature positions. */
+  VecX err_;
+  /** Whether or not each group is in-state */
+  std::array<bool, kMaxGroup> gsel_;
+  /** Whether or not each feature is in-state */
+  std::array<bool, kMaxFeature> fsel_;
+  /** Data and operators for IMU calibration variables `Ca` and `Cg` */
   IMU imu_;
-  // gravity
+  /** Current estimate of the gravity vector resolved in the reference frame. */
   Vec3 g_;
 
   // measurement noise
-  number_t init_z_, init_std_x_, init_std_y_, init_std_z_;
-  number_t min_z_, max_z_;
 
-  // jacobians
-  Eigen::SparseMatrix<number_t> F_, G_;
-  // covariances
+  /** The initial depth value given to new features when they are first created. It is
+   *  updated at every frame to be (almost) equal to the median depth of all the
+   *  features currently in the state. (i.e. `init_z = 0.01*init_z + 0.99*median_depth`) */
+  number_t init_z_;
+  /** Default subfilter covariance for each feature for x-coordinate at initialization.
+   *  (Subfilter covariance is initialized as a diagonal.) */
+  number_t init_std_x_;
+  /** Default subfilter covariance for each feature for y-coordinate at initialization.
+   *  (Subfilter covariance is initialized as a diagonal.) */
+  number_t init_std_y_;
+  /** Default subfilter covariance for each feature for z-coordinate at initialization.
+   *  (Subfilter covariance is initialized as a diagonal.) */
+  number_t init_std_z_;
+
+  /** The minimum depth that a feature can be given when it is first
+   *  created. (i.e. minimum value of `init_z_`) */
+  number_t min_z_;
+  /** The maximum depth that a feature can be given when it is first
+   *  created. (i.e. maximum value of `init_z_`) */
+  number_t max_z_;
+
+  /** Error state dynamics Jacobian; Used for covariance update in EKF's
+   *  prediction step. */
+  Eigen::SparseMatrix<number_t> F_;
+  /** Error state noise input-matrix Jacobian; Used for covariance update in EKF's
+   *  prediction step. */
+  Eigen::SparseMatrix<number_t> G_;
+  /** Filter covariance. Size grows and shrinks with the number of tracked
+   *  features. */
   MatX P_;
-  MatX Qmodel_; // kMotionSize x kMotionSize
-  MatX Qimu_;   // 12 x 12
+  /** Filter motion covariance. Size is `kMotionSize` x `kMotionSize` */
+  MatX Qmodel_;
+  /** 
+   * Filter IMU measurement covaraince, made up of four 3x3 blocks for a total
+   * dimention of 12 x 12. The four blocks correspond to the gyro,
+   * accelerometer, gyro bias, and accelerometer bias, measurements,
+   * respectively. */
+  MatX Qimu_;
 
   // for update
+
+  /** Filter predicted covariance */
   MatX S_;
-  MatX K_;               // kalman gain
-  MatX H_;               // measurement Jacobian
-  MatX I_KH_;            // I-KH
-  VecX inn_;             // innovation stack
-  VecX diagR_;           // diagonal of measurement covariance
-  number_t Roos_;           // oos measurement covariance in pixels
-  number_t R_;              // covariance of visual measurement noise, in pixels
-  number_t Rtri_;           // measurement covariance, depth sub-filter
+  /** Filter Kalman gain */
+  MatX K_;
+  /** Filter measurement Jacobian */
+  MatX H_;
+  /** The matrix `I-K*H` used in the Kalman Filter measurement update */
+  MatX I_KH_;
+  /** Filter innovation */
+  VecX inn_;
+  /** Diagonal of visual feature measurement covariance used in the filter.
+   *  (We assume that the feature measurement covariance is diagonal, as opposed
+   *  to just positive semi-definite.) Its size is 2*(number of in-state inliers) +
+   *  (MSCKF measurement size) */
+  VecX diagR_;
+  /** The filter's (assumed) measurement covariance of every element of each MSCKF
+   *  measurement. */
+  number_t Roos_;
+  /** The filter's (assumed) measurement covariance of x and y pixel measurement for
+   *  in-state tracked features. */
+  number_t R_;
+  number_t Rtri_;           // UNUSED? measurement covariance, depth sub-filter
   number_t outlier_thresh_; // outlier threshold -- multipler of the measurement
                          // variance
 
@@ -239,7 +330,7 @@ private:
   bool gravity_initialized_, vision_initialized_;
   int imu_counter_, vision_counter_;
 
-  // helplers
+  // helpers
   int gravity_init_counter_;
   std::vector<Vec3> gravity_init_buf_; // buffer of accel measurements for
                                        // gravity initialization
@@ -256,6 +347,9 @@ private:
 
   own<std::thread *> worker_;
 
+  /** Computes the running average time for dynamics propatagion, visual measurement
+   *  processing, tracker, update tracker, jacobian, MH gating. (Those quantities
+   *  overlap). */
   Timer timer_;
   std::unique_ptr<std::default_random_engine> rng_;
 };

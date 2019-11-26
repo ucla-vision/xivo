@@ -13,7 +13,6 @@ bool operator<(const std::unique_ptr<EstimatorMessage> &m1,
 }
 
 void EstimatorProcess::Initialize(const std::string &config_path) {
-  // TODO (xfei): error handling?
   auto est_cfg = LoadJson(config_path);
   // estimator_ = std::unique_ptr<Estimator>(new Estimator{est_cfg});
   estimator_ = CreateSystem(est_cfg);

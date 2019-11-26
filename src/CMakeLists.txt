@@ -10,9 +10,9 @@ project(estimator)
 # add_definitions(-DUSE_INVDEPTH)
 
 # if set, perform online temporal calibration
-add_definitions(-DUSE_ONLINE_IMU_CALIB)
-add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
-add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
+#add_definitions(-DUSE_ONLINE_IMU_CALIB)
+#add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
+#add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 
 # if set, approximate the initial correlation between feature state and
 # group state with Hessian from depth refinement optimization.
@@ -100,17 +100,29 @@ target_link_libraries(vio ${libxivo} gflags::gflags)
 ################################################################################
 # TESTS
 ################################################################################
+add_executable(unitTests_NumericalAlgorithms 
+               test/unittest_givens.cpp
+               test/unittest_helpers.cpp)
+target_link_libraries(unitTests_NumericalAlgorithms ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME NumericalAlgorithms COMMAND unitTests_NumericalAlgorithms)
+
+add_executable(unitTests_Jacobians
+               test/unittest_jacobians_instate.cpp
+               test/unittest_jacobians_oos.cpp
+               test/unittest_helpers.cpp)
+target_link_libraries(unitTests_Jacobians ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME Jacobians COMMAND unitTests_Jacobians)
+
+add_executable(unitTests_Rodrigues
+               test/unittest_rodrigues.cpp)
+target_link_libraries(unitTests_Rodrigues ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME Rodrigues COMMAND unitTests_Rodrigues)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)
   target_link_libraries(test_optimizer ${libxivo})
 endif(BUILD_G2O)
-
-# add_executable(test_givens test/test_givens.cpp )
-# target_link_libraries(test_givens estimator)
-#
-# add_executable(test_qr test/test_qr.cpp )
-# target_link_libraries(test_qr estimator)
 
 # add_executable(test_estimator test/test_estimator.cpp )
 # target_link_libraries(test_estimator estimator gtest gtest_main)

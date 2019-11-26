@@ -10,11 +10,11 @@
 
   // visualization (tracker view) option
   "print_bias_info": true,
-  "draw_OOS": false,
+  "draw_OOS": true,
 
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
-  "use_OOS": false, // update with Out-Of-State features
+  "use_OOS": true, // update with Out-Of-State features
   "use_depth_opt": true,  // depth optimization
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,   
@@ -22,6 +22,8 @@
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
   "max_group_lifetime": 60,
+  "remove_outlier_counter": 10,
+  "OOS_update_min_observations": 5,
 
   "PrinceDormand": {
     "control_stepsize": false,
@@ -42,6 +44,12 @@
     "max_groups": 256  // max groups should increase as allowed group lifetime increases
   },
 
+  // dumping out map at each frame
+  "mapdump": {
+    "dump_map": false,
+    "max_num_instate": 100,
+    "max_total": 1500
+  },
 
   // gravity constant
   "gravity": [0, 0, -9.796],

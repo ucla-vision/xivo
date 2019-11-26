@@ -70,6 +70,7 @@ include_directories(
 enable_testing()
 add_subdirectory(thirdparty/googletest)
 add_subdirectory(thirdparty/gflags)
+include_directories(${PROJECT_SOURCE_DIR}/thirdparty/googletest/include)
 # add_subdirectory(thirdparty/abseil-cpp)
 if (BUILD_G2O)
   link_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/lib)
