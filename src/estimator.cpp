@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <tuple>
 
 #include "Eigen/QR"
@@ -14,6 +15,7 @@
 #include "mm.h"
 #include "param.h"
 #include "tracker.h"
+#include "helpers.h"
 
 #ifdef USE_G2O
 #include "optimizer.h"
@@ -96,6 +98,13 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_.get("compression_trigger_ratio", 1.5).asDouble();
   OOS_update_min_observations_ =
       cfg_.get("OOS_update_min_observations", 5).asInt();
+
+
+  // Map output options
+  auto mapdump_params = cfg_["mapdump"];
+  dump_map_ = mapdump_params.get("dump_map", false).asBool();
+  max_mapdump_instate_ = mapdump_params.get("max_num_instate", 100).asInt();
+  max_mapdump_total_ = mapdump_params.get("max_total", 1500).asInt();
 
   // one point ransac parameters
   use_1pt_RANSAC_ = cfg_.get("use_1pt_RANSAC", false).asBool();
@@ -905,6 +914,11 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     if (gauge_group_ == -1) {
       SwitchRefGroup();
     }
+
+    // Write out the map, XYZ
+    if (dump_map_) {
+      DumpMap();
+    }
   }
   timer_.Tock("visual-meas");
 }
@@ -1035,5 +1049,66 @@ void Estimator::SwitchRefGroup() {
     P_.block(0, offset, err_.size(), 6).setZero();
   }
 }
+
+
+void Estimator::DumpMap() {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+  std::vector<xivo::FeaturePtr> all_features = graph.GetFeatures();
+  MakePtrVectorUnique(instate_features);
+  MakePtrVectorUnique(all_features);
+
+  // Sort vectors by depth uncertainty
+  std::sort(instate_features.begin(), instate_features.end(),
+            Criteria::CandidateComparison);
+  std::sort(all_features.begin(), all_features.end(),
+            Criteria::CandidateComparison);
+  
+  // Print out instate features
+  std::string instate_features_filename = "instate_features_" + 
+        std::to_string(vision_counter_) + ".txt";
+  std::string all_features_filename = 
+    "all_features_" + std::to_string(vision_counter_) + ".txt";
+  std::ofstream instate_stream;
+  std::ofstream allfeatures_stream;
+  instate_stream.open(instate_features_filename);
+  allfeatures_stream.open(all_features_filename);
+
+  int i = 0; 
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < max_mapdump_instate_;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 Xc = f->Xc();
+    int find = f->id();
+    instate_stream << find << ": " << Xc(0) << ", " << Xc(1) << ", " 
+                   << Xc(2) << std::endl;
+    ++i;
+    ++it;
+  }
+  instate_stream.close();
+
+  i = 0;
+  for (auto it = all_features.begin();
+       it != all_features.end() && i < max_mapdump_total_;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 Xc = f->Xc();
+    int find = f->id();
+    allfeatures_stream << find << ": " << Xc(0) << ", " << Xc(1) << ", "
+                       << Xc(2) << std::endl;
+    ++i;
+    ++it;
+  }
+  allfeatures_stream.close();
+}
+
+
 
 } // xivo

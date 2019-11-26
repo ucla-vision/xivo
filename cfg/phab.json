@@ -44,6 +44,12 @@
     "max_groups": 256  // max groups should increase as allowed group lifetime increases
   },
 
+  // dumping out map at each frame
+  "mapdump": {
+    "dump_map": false,
+    "max_num_instate": 100,
+    "max_total": 1500
+  },
 
   // gravity constant
   "gravity": [0, 0, -9.796],

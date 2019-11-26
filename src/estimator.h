@@ -173,6 +173,13 @@ private:
   void PrintErrorState();
   void PrintNominalState();
 
+  /** Prints out features from the map onto two text files. Called at the end of
+   *  `Estimator::VisualMeasInternal`. One text file contains the inliers with
+   *  the best score. The second text file contains (more) features with the best
+   *  score.
+   */
+  void DumpMap();
+
 private:
   Estimator(const Json::Value &cfg);
   static std::unique_ptr<Estimator> instance_;
@@ -192,6 +199,11 @@ private:
   bool use_canvas_;   // visualization or not
   bool print_timing_; // show timing info
   std::string integration_method_; ///< motion integration numerical scheme
+
+  /** If true, dumps out a copy of the map after every visual measurement. */
+  bool dump_map_;
+  int max_mapdump_instate_;
+  int max_mapdump_total_;
 
   /** Whether or not to sue 1-pt RANSAC in outlier rejection. */
   bool use_1pt_RANSAC_;
