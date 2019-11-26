@@ -1,0 +1,3 @@
+Run the following to dump pose and image path as json file:
+
+python scripts/pyxivo.py -use_viewer -root /home/feixh/Data/tumvi/exported/euroc/512_16/ -cfg cfg/tumvi_cam0.json -seq room0 -mode dump

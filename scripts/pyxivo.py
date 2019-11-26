@@ -8,6 +8,7 @@ from transforms3d.quaternions import mat2quat
 import sys
 sys.path.insert(0, 'lib')
 import pyxivo
+import savers
 
 TP_ROOT = '/home/feixh/Data/tumvi/exported/euroc/512_16'
 KIF_ROOT = '/local2/Data/tumvi/exported/euroc/512_16'
@@ -28,11 +29,23 @@ parser.add_argument(
 parser.add_argument(
     '-use_viewer', default=False, action='store_true',
     help='visualize trajectory and feature tracks if set')
-args = parser.parse_args()
+parser.add_argument(
+     '-mode', default='eval', help='[eval|dump] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
 
-if __name__ == '__main__':
+
+def main(args):
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
+
+    ########################################
+    # CHOOSE SAVERS
+    ########################################
+    if args.mode == 'eval':
+        saver = savers.EvalModeSaver(args)
+    elif args.mode == 'dump':
+        saver = savers.DumpModeSaver(args)
+    else:
+        raise ValueError('mode=[eval|dump]')
 
     ########################################
     # LOAD DATA
@@ -76,7 +89,6 @@ if __name__ == '__main__':
         viewer_cfg = os.path.join('cfg', 'viewer.json' if args.dataset == 'tumvi' else 'phab_viewer.json')
 
     estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq)
-    results = []
     for i, (ts, content) in enumerate(data):
         # if i > 0 and i % 500 == 0:
         #     print('{:6}/{:6}'.format(i, len(data)))
@@ -87,41 +99,9 @@ if __name__ == '__main__':
         else:
             estimator.VisualMeas(ts, content)
             estimator.Visualize()
+            saver.onVisionUpdate(estimator, datum=(ts, content))
 
-            now = estimator.now()
-            gsb = np.array(estimator.gsb())
-            Tsb = gsb[:, 3]
+    saver.onResultsReady(results)
 
-            # print gsb[:3, :3]
-            try:
-                q = mat2quat(gsb[:3, :3])  # [w, x, y, z]
-                # format compatible with tumvi rgbd benchmark scripts
-                results.append(
-                    [now * 1e-9, Tsb[0], Tsb[1], Tsb[2], q[1], q[2], q[3], q[0]])
-            except np.linalg.linalg.LinAlgError:
-                pass
-
-
-    np.savetxt(
-        os.path.join(args.out_dir, 'tumvi_{}_cam{}'.format(args.seq, args.cam_id)),
-        results,
-        fmt='%f %f %f %f %f %f %f %f')
-
-    mocap_path = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
-                              'mav0', 'mocap0', 'data.csv')
-
-    gt = []
-    with open(mocap_path, 'r') as fid:
-        for l in fid.readlines():
-            if l[0] != '#':
-                v = l.strip().split(',')
-                ts = int(v[0])
-                t = [float(x) for x in v[1:4]]
-                q = [float(x) for x in v[4:]]  # [w, x, y, z]
-                gt.append(
-                    [ts * 1e-9, t[0], t[1], t[2], q[1], q[2], q[3], q[0]])
-
-    np.savetxt(
-        os.path.join(args.out_dir, 'tumvi_{}_gt'.format(args.seq)),
-        gt,
-        fmt='%f %f %f %f %f %f %f %f')
+if __name__ == '__main__':
+    main(args=parser.parse_args())
