@@ -9,7 +9,7 @@ import pdb
 DATAROOT = "/local2/Data/tumvi_undistorted"
 TIMESTEP_WINDOW_SIZE = 10
 EPIPOLAR_TOL = 0.025
-USE_RANSAC = False
+USE_RANSAC = True
 PLOT_MATCHES = False
 
 
@@ -36,10 +36,17 @@ def prune_matches(match_list, good_match_list):
 
 class Point:
     def __init__(self, pt2d, pt4d):
-        self.pt = [int(pt2d[0]), int(pt2d[1])]
+        self.pt = pt2d
         self.pt3d = make_not_homogeneous(pt4d)
+        self.count = 1
     def __eq__(self, other):
-        return (self.pt == other.pt)
+        dist = np.linalg.norm(self.pt - other.pt)
+        return (dist < 1)
+    def add_pt3d(self, other_pt):
+        new_count = self.count + 1
+        self.pt3d = (1/new_count)*other_pt.pt3d + (self.count/new_count)*self.pt3d
+        self.pt = (1/new_count)*other_pt.pt + (self.count/new_count)*self.pt
+        self.count = new_count
 
 
 
@@ -232,22 +239,10 @@ class MonoGTDepthCalc:
             print("Triangulation Failed on frames {}/{}".format(idx0, idx1))
             return
 
-        # Add points0 to file of last saved points
-        if timestamp0 not in self.stored_points:
-            self.stored_points[timestamp0] = []
+        # Add matches to lists of points for both images
         for i in range(n_good_matches):
-            pt_obj = Point(points0[:,i], points4d[:,i])
-            if pt_obj not in self.stored_points[timestamp0]:
-                self.stored_points[timestamp0].append(pt_obj)
-
-        # Save pts1
-        if timestamp1 not in self.stored_points:
-            self.stored_points[timestamp1] = []
-        for i in range(n_good_matches):
-            pt_obj = Point(points1[:,i], points4d[:,i])
-            # need extra check because matcher sometimes turns up duplicates
-            if pt_obj not in self.stored_points[timestamp1]:
-                self.stored_points[timestamp1].append(pt_obj)
+            self.add_4d_point(timestamp0, points0[:,i], points4d[:,i])
+            self.add_4d_point(timestamp1, points1[:,i], points4d[:,i])
         
         # Print results
         print("Frame {}/{}: {}/{} features, {} matches, {} good matches".format(
@@ -265,6 +260,18 @@ class MonoGTDepthCalc:
                                   epi_tol=epi_tol, plot_matches=plot_matches)
 
 
+    def add_4d_point(self, timestamp, ptpx, pt4d):
+        pt_obj = Point(ptpx, pt4d)
+
+        if timestamp not in self.stored_points:
+            self.stored_points[timestamp] = [pt_obj]
+            return
+
+        if pt_obj in self.stored_points[timestamp]:
+            ind = self.stored_points[timestamp].index(pt_obj)
+            self.stored_points[timestamp][ind].add_pt3d(pt_obj)
+        else:
+            self.stored_points[timestamp].append(pt_obj)
 
 
 
