@@ -70,6 +70,7 @@ public:
   }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
+  Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
 
   uint64_t now() const { return estimator_->ts().count(); }
 
@@ -97,6 +98,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("InertialMeas", &EstimatorWrapper::InertialMeas)
       .def("VisualMeas", &EstimatorWrapper::VisualMeas)
       .def("gsb", &EstimatorWrapper::gsb)
+      .def("gsc", &EstimatorWrapper::gsc)
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize);
 }

@@ -72,17 +72,17 @@ class DumpModeSaver(BaseSaver):
     def onVisionUpdate(self, estimator, datum):
         ts, content = datum
         now = estimator.now()
-        gsb = np.array(estimator.gsb())
-        Tsb = gsb[:, 3]
+        g = np.array(estimator.gsc())
+        T = g[:, 3]
 
-        if np.linalg.norm(Tsb) > 0:
+        if np.linalg.norm(T) > 0:
             try:
-                q = mat2quat(gsb[:3, :3])  # [w, x, y, z]
+                q = mat2quat(g[:3, :3])  # [w, x, y, z]
                 # format compatible with tumvi rgbd benchmark scripts
                 entry = dict()
                 entry['ImagePath'] = str(content)
                 entry['Timestamp'] = ts
-                entry['TranslationXYZ'] = [Tsb[0], Tsb[1], Tsb[2]]
+                entry['TranslationXYZ'] = [T[0], T[1], T[2]]
                 entry['QuaternionWXYZ'] = [q[0], q[1], q[2], q[3]]
                 self.results.append(entry)
 
