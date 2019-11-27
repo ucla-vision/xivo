@@ -5,7 +5,7 @@ import cv2
 
 
 DATAROOT = "/local2/Data/tumvi_undistorted"
-TIMESTEP_WINDOW_SIZE = 25
+TIMESTEP_WINDOW_SIZE = 10
 
 class Point:
     def __init__(self, pt2d, pt4d):
@@ -122,6 +122,15 @@ class MonoGTDepthCalc:
             points0[:,i] = kp0[match.queryIdx].pt
             points1[:,i] = kp1[match.trainIdx].pt
 
+        # Outlier rejection (uses RANSAC)
+        (_, good_match_list) = cv2.findHomography(np.transpose(points0),
+            np.transpose(points1), method=cv2.RANSAC,
+            ransacReprojThreshold=3, maxIters=2000, confidence=0.995)
+        good_match_list = np.resize(good_match_list, n_matches)
+        points0 = points0[:,good_match_list==1]
+        points1 = points1[:,good_match_list==1]
+        n_good_matches = np.count_nonzero(good_match_list)
+
         # Triangulate matches
         try:
             points4d = cv2.triangulatePoints(Proj0, Proj1, points0, points1)
@@ -132,7 +141,7 @@ class MonoGTDepthCalc:
         # Add points0 to file of last saved points
         if timestamp0 not in self.stored_points:
             self.stored_points[timestamp0] = []
-        for i in range(n_matches):
+        for i in range(n_good_matches):
             pt_obj = Point(points0[:,i], points4d[:,i])
             if pt_obj not in self.stored_points[timestamp0]:
                 self.stored_points[timestamp0].append(pt_obj)
@@ -140,12 +149,16 @@ class MonoGTDepthCalc:
         # Save pts1
         if timestamp1 not in self.stored_points:
             self.stored_points[timestamp1] = []
-        for i in range(n_matches):
+        for i in range(n_good_matches):
             pt_obj = Point(points1[:,i], points4d[:,i])
             # need extra check because matcher sometimes turns up duplicates
             if pt_obj not in self.stored_points[timestamp1]:
                 self.stored_points[timestamp1].append(pt_obj)
-
+        
+        # display to screen
+        print("Frame {}/{}: {}/{} features, {} matches, {} good matches".format(
+            idx0, idx1, len(kp0), len(kp1), n_matches, n_good_matches
+        ))
 
 
 
