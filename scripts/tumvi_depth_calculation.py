@@ -116,6 +116,8 @@ class MonoGTDepthCalc:
             print("Matcher Failed on frames {}/{}".format(idx0, idx1))
             return
         n_matches = len(matches)
+        if n_matches == 0:
+            return
         points0 = np.zeros((2, n_matches))
         points1 = np.zeros((2, n_matches))
         for i,match in enumerate(matches):
