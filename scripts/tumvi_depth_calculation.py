@@ -5,11 +5,7 @@ import cv2
 
 
 DATAROOT = "/local2/Data/tumvi_undistorted"
-#parser = argparse.ArgumentParser()
-#parser.add_argument("dataroot", help="location of undistorted TUMVI data")
-#parser.add_argument("feature_type", help="sift, surf, orb")
-#parser.add_argument("mask", default=None, help="for feature detector")
-
+TIMESTEP_WINDOW_SIZE = 25
 
 class Point:
     def __init__(self, pt2d, pt4d):
@@ -50,8 +46,10 @@ class MonoGTDepthCalc:
                            [0, fy, cy],
                            [0, 0, 1]])
 
-        # For storing pts0
-        self.pts0_last = []
+        # For storing pts and timestamps
+        #self.stored_points = [ [] for i in range(len(self.data)) ]
+        self.stored_points = {}
+        self.timestamps = [ 0 for i in range(len(self.data)) ]
 
         # Place to dump text files full of points
         self.pointlist_dir = dataroot + "/featurelists/" + feature_type + \
@@ -80,7 +78,7 @@ class MonoGTDepthCalc:
     def write_file(self, timestamp):
         file_name = self.pointlist_dir + "/" + str(timestamp) + ".csv"
         fp = open(file_name, "w")
-        for point in self.pts0_last:
+        for point in self.stored_points[timestamp]:
             fp.write("{},{},{},{},{},{}\n".format(
                 point.pt[0], point.pt[1],
                 point.pt4d[0], point.pt4d[1], point.pt4d[2], point.pt4d[3]
@@ -88,70 +86,85 @@ class MonoGTDepthCalc:
         fp.close()
 
 
-    def triangulate_all_pairs(self):
-        num_pairs = len(self.data) - 1
+    def write_all_files(self):
+        for timestamp in self.stored_points:
+            self.write_file(timestamp)
+
+
+    def triangulate_pair(self, idx0, idx1):
+        # load two images
+        (timestamp0, T0_xyz, Q0_wxyz, file0) = self.get_pose_and_filename(idx0)
+        (timestamp1, T1_xyz, Q1_wxyz, file1) = self.get_pose_and_filename(idx1)
+        img0 = cv2.imread(file0)
+        img1 = cv2.imread(file1)
+        self.timestamps[idx0] = timestamp0
+        self.timestamps[idx1] = timestamp1
+
+        # Get 3 x 4 projection matrices for two instants in time
+        Proj0 = self.compute_projection_matrix(Q0_wxyz, T0_xyz)
+        Proj1 = self.compute_projection_matrix(Q1_wxyz, T1_xyz)
+
+        # detect features and set up dictionary from descriptors to keypoints
+        kp0, des0 = self.detector.detectAndCompute(img0, self.mask)
+        kp1, des1 = self.detector.detectAndCompute(img1, self.mask)
+
+        # Match features (des0 = query, des1 = database), we are trying to find
+        # descriptors in img0 that correspond to descriptors in img1.
+        try:
+            matches = self.matcher.match(des0, des1)
+        except:
+            print("Matcher Failed on frames {}/{}".format(idx0, idx1))
+            return
+        n_matches = len(matches)
+        points0 = np.zeros((2, n_matches))
+        points1 = np.zeros((2, n_matches))
+        for i,match in enumerate(matches):
+            points0[:,i] = kp0[match.queryIdx].pt
+            points1[:,i] = kp1[match.trainIdx].pt
+
+        # Triangulate matches
+        try:
+            points4d = cv2.triangulatePoints(Proj0, Proj1, points0, points1)
+        except:
+            print("Triangulation Failed on frames {}/{}".format(idx0, idx1))
+            return
+
+        # Add points0 to file of last saved points
+        if timestamp0 not in self.stored_points:
+            self.stored_points[timestamp0] = []
+        for i in range(n_matches):
+            pt_obj = Point(points0[:,i], points4d[:,i])
+            if pt_obj not in self.stored_points[timestamp0]:
+                self.stored_points[timestamp0].append(pt_obj)
+
+        # Save pts1
+        if timestamp1 not in self.stored_points:
+            self.stored_points[timestamp1] = []
+        for i in range(n_matches):
+            pt_obj = Point(points1[:,i], points4d[:,i])
+            # need extra check because matcher sometimes turns up duplicates
+            if pt_obj not in self.stored_points[timestamp1]:
+                self.stored_points[timestamp1].append(pt_obj)
+
+
+
+
+    def triangulate_all_pairs(self, timestep_window_size):
+        num_pairs = len(self.data) - timestep_window_size
 
         for i in range(num_pairs):
-            print("Frame {}/{}".format(i,i+1))
-
-            # load two images
-            (timestamp0, T0_xyz, Q0_wxyz, file0) = self.get_pose_and_filename(i)
-            (timestamp1, T1_xyz, Q1_wxyz, file1) = self.get_pose_and_filename(i+1)
-            img0 = cv2.imread(file0)
-            img1 = cv2.imread(file1)
-
-            # Get 3 x 4 projection matrices for two instants in time
-            Proj0 = self.compute_projection_matrix(Q0_wxyz, T0_xyz)
-            Proj1 = self.compute_projection_matrix(Q1_wxyz, T1_xyz)
-
-            # detect features and set up dictionary from descriptors to keypoints
-            kp0, des0 = self.detector.detectAndCompute(img0, self.mask)
-            kp1, des1 = self.detector.detectAndCompute(img1, self.mask)
-
-            # Match features (des0 = query, des1 = database), we are trying to find
-            # descriptors in img0 that correspond to descriptors in img1.
-            matches = self.matcher.match(des0, des1)
-            n_matches = len(matches)
-            points0 = np.zeros((2, n_matches))
-            points1 = np.zeros((2, n_matches))
-            for i,match in enumerate(matches):
-                points0[:,i] = kp0[match.queryIdx].pt
-                points1[:,i] = kp1[match.trainIdx].pt
-
-            # Triangulate matches
-            points4d = cv2.triangulatePoints(Proj0, Proj1, points0, points1)
-
-            # Add points0 to file of last saved points
-            for i in range(n_matches):
-                pt_obj = Point(points0[:,i], points4d[:,i])
-                if pt_obj not in self.pts0_last:
-                    self.pts0_last.append(pt_obj)
-
-            # Write out file of points for frame0
-            self.write_file(timestamp0)
-
-            # Save pts1
-            self.pts0_last = []
-            for i in range(n_matches):
-                pt_obj = Point(points1[:,i], points4d[:,i])
-                # need extra check because matcher sometimes turns up duplicates
-                if pt_obj not in self.pts0_last:
-                    self.pts0_last.append(pt_obj)
-
-            # If this is the last frame, this is the only match we're going to get
-            # for frame1, so write out frame 1 as well
-            if i == num_pairs-1:
-                self.write_file(timestamp1)
+            self.triangulate_pair(i,i+timestep_window_size)
 
 
 
 
 
 if __name__ == "__main__":
-#    args = parser.parse_args()
     for feature_type in ["sift", "surf", "orb"]:
+        print("FEATURE TYPE: {}".format(feature_type))
         for i in range(1,6):
             print("ROOM {}".format(i))
             mdc = MonoGTDepthCalc(DATAROOT, i, feature_type)
-            mdc.triangulate_all_pairs()
+            mdc.triangulate_all_pairs(TIMESTEP_WINDOW_SIZE)
+            mdc.write_all_files()
 
