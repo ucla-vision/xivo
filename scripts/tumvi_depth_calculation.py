@@ -1,4 +1,4 @@
-import argparse, json, os
+import sys, json, os
 import numpy as np
 from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
@@ -6,8 +6,10 @@ import cv2
 
 import pdb
 
+
+FEATURE_TYPES = ["sift", "surf", "orb"]
+WINDOW_SIZES = [5, 10, 15, 20]
 DATAROOT = "/local2/Data/tumvi_undistorted"
-TIMESTEP_WINDOW_SIZE = 10
 EPIPOLAR_TOL = 0.025
 USE_RANSAC = True
 PLOT_MATCHES = False
@@ -276,12 +278,12 @@ class MonoGTDepthCalc:
 
 
 if __name__ == "__main__":
-    for feature_type in ["sift", "surf", "orb"]:
+    room = sys.argv[1]
+    for feature_type in FEATURE_TYPES:
         print("FEATURE TYPE: {}".format(feature_type))
-        for i in range(1,6):
-            print("ROOM {}".format(i))
-            mdc = MonoGTDepthCalc(DATAROOT, i, feature_type)
-            mdc.triangulate_all_pairs(TIMESTEP_WINDOW_SIZE, use_RANSAC=USE_RANSAC,
-                                      epi_tol=EPIPOLAR_TOL, plot_matches=PLOT_MATCHES)
+        for window_size in WINDOW_SIZES:
+            mdc = MonoGTDepthCalc(DATAROOT, room, feature_type)
+            mdc.triangulate_all_pairs(window_size, use_RANSAC=USE_RANSAC,
+                                    epi_tol=EPIPOLAR_TOL, plot_matches=PLOT_MATCHES)
             mdc.write_all_files()
 
