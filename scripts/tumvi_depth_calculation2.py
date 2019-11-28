@@ -191,7 +191,7 @@ class MonoGTDepthCalc:
     def compute_projection_matrix(self, R_sc, T_sc):
         R_cs = R_sc.inv()
         R_cs_dcm = np.reshape(R_cs.as_dcm(), (3,3))
-        T_cs = -R_cs.inv().apply(T_sc)
+        T_cs = -R_cs.apply(T_sc)
         T_cs = np.reshape(T_cs, (3,1))
 
         RT = np.hstack((R_cs_dcm, T_cs))
@@ -340,9 +340,19 @@ class MonoGTDepthCalc:
             return
 
         # Add matches to lists of points for both images
+        R0_cs = R0_sc.inv()
+        R1_cs = R1_sc.inv()
         for i in range(n_good_matches):
-            self.add_4d_point(timestamp0, points0[:,i], points4d[:,i])
-            self.add_4d_point(timestamp1, points1[:,i], points4d[:,i])
+            # Get homogeneous coordinate in world frame
+            X_s = make_not_homogeneous(points4d[:,i])
+
+            # Transform to camera frame
+            X_c0 = R0_cs.apply(X_s - T0_sc)
+            X_c1 = R1_cs.apply(X_s - T1_sc)
+            X_c0 = np.reshape(X_c0, (3,))
+            X_c1 = np.reshape(X_c1, (3,))
+            self.add_4d_point(timestamp0, points0[:,i], make_homogeneous(X_c0))
+            self.add_4d_point(timestamp1, points1[:,i], make_homogeneous(X_c1))
         
         # Print results
         print("Frame {}/{}: {}/{} features, {} matches, {} good matches".format(
@@ -379,7 +389,7 @@ if __name__ == "__main__":
     room = sys.argv[1]
     USE_RANSAC = bool(int(sys.argv[2]))
     #mdc = MonoGTDepthCalc(DATAROOT, 1, "sift", USE_RANSAC)
-    #mdc.triangulate_pair(1134, 1144, True, False, EPIPOLAR_TOL, debug=False)
+    #mdc.triangulate_pair(1134, 1144, PLOT_MATCHES, EPIPOLAR_TOL)
     for feature_type in FEATURE_TYPES:
         print("FEATURE TYPE: {}".format(feature_type))
         for window_size in WINDOW_SIZES:
