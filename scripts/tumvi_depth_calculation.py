@@ -97,21 +97,26 @@ class MonoGTDepthCalc:
             os.makedirs(self.pointlist_dir)
 
 
-    def compute_projection_matrix(self, Q_wxyz, T_xyz):
-        Q_xyzw = [Q_wxyz[1], Q_wxyz[2], Q_wxyz[3], Q_wxyz[0]]
-        R = Rotation.from_quat(Q_xyzw)
-        T = np.array(T_xyz).reshape((3,1))
-        RT = np.hstack((R.as_dcm(), T))
+    def compute_projection_matrix(self, R_sc, T_sc):
+        R_cs = R_sc.inv()
+        T_cs = -R_cs.inv().apply(T_sc)
+        T_cs = T_cs.reshape((3,1))
+
+        RT = np.hstack((R_cs.as_dcm(), T_cs))
         return self.K.dot(RT)
 
 
     def get_pose_and_filename(self, ind):
         timestamp = self.data[ind]["Timestamp"] # integer type
-        TranslationXYZ = np.array(self.data[ind]["TranslationXYZ"]) # list of 3 floats
-        QuaternionWXYZ = np.array(self.data[ind]["QuaternionWXYZ"]) # list of 4 floats
+        T_sc = np.array(self.data[ind]["TranslationXYZ"]) # list of 3 floats
+        Q_sc_wxyz = np.array(self.data[ind]["QuaternionWXYZ"]) # list of 4 floats
+        Q_sc_xyzw = np.array([Q_sc_wxyz[1], Q_sc_wxyz[2], Q_sc_wxyz[3], Q_sc_wxyz[0]])
+        R_sc = Rotation.from_quat(Q_sc_xyzw)
+
         undistort_img_filename = self.dataroot + "/undistorted/room" + \
             str(self.room_number) + "/" + str(timestamp) + ".png"
-        return (timestamp, TranslationXYZ, QuaternionWXYZ, undistort_img_filename)
+
+        return (timestamp, T_sc, R_sc, undistort_img_filename)
 
 
     def write_file(self, timestamp):
@@ -130,16 +135,14 @@ class MonoGTDepthCalc:
             self.write_file(timestamp)
 
 
-    def outlier_rejection(self, Q0_wxyz, Q1_wxyz, T0_xyz, T1_xyz, matches, pts0, pts1,
+    def outlier_rejection(self, R0_sc, R1_sc, T0_sc, T1_sc, matches, pts0, pts1,
         tol):
 
         # find transformation that transforms q0 to q1
-        Q0_xyzw = [Q0_wxyz[1], Q0_wxyz[2], Q0_wxyz[3], Q0_wxyz[0]]
-        Q1_xyzw = [Q1_wxyz[1], Q1_wxyz[2], Q1_wxyz[3], Q1_wxyz[0]]
-        R_s_0 = Rotation.from_quat(Q0_xyzw)
-        R_s_1 = Rotation.from_quat(Q1_xyzw)
-        T_s_0 = T0_xyz
-        T_s_1 = T1_xyz
+        R_s_0 = R0_sc
+        R_s_1 = R1_sc
+        T_s_0 = T0_sc
+        T_s_1 = T1_sc
 
         R_1_s = R_s_1.inv()
         R_1_0 = R_1_s * R_s_0
@@ -165,16 +168,16 @@ class MonoGTDepthCalc:
     def triangulate_pair(self, idx0, idx1, plot_matches, use_RANSAC, epi_tol,
                          debug=False):
         # load two images
-        (timestamp0, T0_xyz, Q0_wxyz, file0) = self.get_pose_and_filename(idx0)
-        (timestamp1, T1_xyz, Q1_wxyz, file1) = self.get_pose_and_filename(idx1)
+        (timestamp0, T0_sc, R0_sc, file0) = self.get_pose_and_filename(idx0)
+        (timestamp1, T1_sc, R1_sc, file1) = self.get_pose_and_filename(idx1)
         img0 = cv2.imread(file0)
         img1 = cv2.imread(file1)
         self.timestamps[idx0] = timestamp0
         self.timestamps[idx1] = timestamp1
 
         # Get 3 x 4 projection matrices for two instants in time
-        Proj0 = self.compute_projection_matrix(Q0_wxyz, T0_xyz)
-        Proj1 = self.compute_projection_matrix(Q1_wxyz, T1_xyz)
+        Proj0 = self.compute_projection_matrix(R0_sc, T0_sc)
+        Proj1 = self.compute_projection_matrix(R1_sc, T1_sc)
 
         # detect features and set up dictionary from descriptors to keypoints
         kp0, des0 = self.detector.detectAndCompute(img0, self.mask)
@@ -212,7 +215,7 @@ class MonoGTDepthCalc:
             good_match_list = np.resize(good_match_list, n_matches)
             matches = prune_matches(matches, good_match_list)
         else:
-            good_match_list = self.outlier_rejection(Q0_wxyz, Q1_wxyz, T0_xyz, T1_xyz,
+            good_match_list = self.outlier_rejection(R0_sc, R1_sc, T0_sc, T1_sc,
                 matches, points0, points1, epi_tol)
             matches = prune_matches(matches, good_match_list)
 
