@@ -206,9 +206,9 @@ class MonoGTDepthCalc:
 
         # Outlier rejection
         if use_RANSAC:
-            (_, good_match_list) = cv2.findHomography(np.transpose(points0),
-                np.transpose(points1), method=cv2.RANSAC,
-                ransacReprojThreshold=3, maxIters=2000, confidence=0.995)
+            (_, good_match_list) = cv2.findEssentialMat(np.transpose(points0),
+                np.transpose(points1), self.K, method=cv2.RANSAC, prob=0.999,
+                threshold=1.0)
             good_match_list = np.resize(good_match_list, n_matches)
             matches = prune_matches(matches, good_match_list)
         else:
