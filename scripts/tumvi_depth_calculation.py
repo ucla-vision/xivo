@@ -6,6 +6,33 @@ import cv2
 
 import pdb
 
+"""
+- This script finds features in the TUMVI indoor sequences and records their
+  pixel locations and their X, Y, Z position in the camera frame.
+
+- The position of the camera frame with respect to the spatial frame is
+  computed by XIVO's estimator offline (transformation gsc) and then dumped out
+  into a json file.
+
+- In order to get the Z-coordinate (depth), we need to compare points from
+  pairs of images. To keep the sequence monocular (for the purposes of a
+  specific experiment), we grab two images that were acquired T timesteps apart
+  and match features.
+
+- Since the camera motion in the TUMVI indoor sequences is erratic, we repeat
+  the last step with multiple values of T (5, 10, 15, 20)
+
+- We found that the estimate of gsc from xivo is not accurate enough to
+  directly use the epipolar constraints for outlier rejection. Therefore, we
+  use RANSAC to throw out outliers.
+
+- Before running this script, run misc/undistort_all.sh (edit paths)
+
+- If multiple pairs find the same feature for a single image (same = pixel
+  coordinates within one pixel Euclidean distance), then their X, Y, Z position
+  in the camera frame are averaged together.
+"""
+
 
 FEATURE_TYPES = ["sift", "surf", "orb"]
 WINDOW_SIZES = [5, 10, 15, 20]

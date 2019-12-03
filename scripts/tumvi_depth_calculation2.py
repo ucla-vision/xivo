@@ -8,7 +8,20 @@ import cv2
 
 import pdb
 
+"""
+- This script is the same as tumvi_depth_calculation.py (see notes at top of
+  that file), except that it uses the ground truth value of gsb with the
+  offline-calibrated gbc in order to get a more accurate value of gsc. With
+  this more accurate value, we can use epipolar constraints instead of RANSAC
+  for outlier rejection.
 
+- In order to get the ground truth values, first run
+      python scripts/run_and_eval_pyxivo.py -seq room[#]
+  with all six indoor sequences so that the ground truth files are dumped into
+  XIVO's root directory. (This file was written in a hurry.)
+
+- The ground truth values for gsb are interpolated using Slerp and interp1d.
+"""
 
 FEATURE_TYPES = ["sift", "surf", "orb"]
 WINDOW_SIZES = [5, 10, 15, 20]
