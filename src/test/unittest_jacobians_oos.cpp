@@ -270,6 +270,13 @@ TEST_F(OOSJacobiansTest, Tbc) {
 
 
 TEST_F(OOSJacobiansTest, Xs) {
+    EXPECT_FLOAT_EQ(Xs_nom(0), f->cache_.Xs(0));
+    EXPECT_FLOAT_EQ(Xs_nom(1), f->cache_.Xs(1));
+    EXPECT_FLOAT_EQ(Xs_nom(2), f->cache_.Xs(2));
+}
+
+
+TEST_F(OOSJacobiansTest, Xs_jac) {
     Vec3 Xcn0 = ComputeXcn();
 
     Xs_err(0) = delta;
