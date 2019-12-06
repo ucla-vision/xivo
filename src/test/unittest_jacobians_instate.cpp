@@ -79,12 +79,23 @@ class InstateJacobiansTest : public ::testing::Test {
     Vec3 ComputeXcn() {
         Rr = Rr_nom*rodrigues(Wr_err);
         Tr = Tr_nom + Tr_err;
-        Rsb = Rsb_nom*rodrigues(Wsb_err);
-        Tsb = Tsb_nom + Tsb_err;
-        Rbc = Rbc_nom*rodrigues(Wbc_err);
-        Tbc = Tbc_nom + Tbc_err;
+        
         Cg = Cg_nom + Cg_err;
         bg = bg_nom + bg_err;
+
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+        Vec3 angvel_nom = Cg*gyro - bg;
+        Vec3 angvel_err = Cg_err*gyro - bg_err;
+        Vec3 delta_rot = angvel_nom*td_err + angvel_err*(td_nom + td_err);
+        Rsb = Rsb_nom*rodrigues(Wsb_err)*rodrigues(delta_rot);
+        Tsb = Tsb_nom + Tsb_err + Vsb_nom*td_err;
+#else
+        Rsb = Rsb_nom*rodrigues(Wsb_err);
+        Tsb = Tsb_nom + Tsb_err;
+#endif
+
+        Rbc = Rbc_nom*rodrigues(Wbc_err);
+        Tbc = Tbc_nom + Tbc_err;
         td = td_nom + td_err;
 
 
@@ -491,9 +502,9 @@ TEST_F(InstateJacobiansTest, Cg) {
     Vec3 Xcn1_21 = ComputeXcn();
     Cg_err(2,1) = 0;
     Vec3 dXcn_dCg21 = (Xcn1_21 - Xcn0) / delta;
-    EXPECT_NEAR(dXcn_dCg21(0), f->cache_.dXcn_dCg(0,8), tol);
-    EXPECT_NEAR(dXcn_dCg21(1), f->cache_.dXcn_dCg(1,8), tol);
-    EXPECT_NEAR(dXcn_dCg21(2), f->cache_.dXcn_dCg(2,8), tol);
+    EXPECT_NEAR(dXcn_dCg21(0), f->cache_.dXcn_dCg(0,7), tol);
+    EXPECT_NEAR(dXcn_dCg21(1), f->cache_.dXcn_dCg(1,7), tol);
+    EXPECT_NEAR(dXcn_dCg21(2), f->cache_.dXcn_dCg(2,7), tol);
 
     Cg_err(2,2) = delta;
     Vec3 Xcn1_22 = ComputeXcn();
