@@ -38,6 +38,7 @@
 This script computes the absolute trajectory error from the ground truth
 trajectory and the estimated trajectory.
 """
+from __future__ import print_function
 
 import sys
 import numpy
@@ -150,18 +151,18 @@ if __name__=="__main__":
     second_xyz_full_aligned = rot * second_xyz_full + trans
 
     if args.verbose:
-        print "compared_pose_pairs %d pairs"%(len(trans_error))
+        print("compared_pose_pairs %d pairs"%(len(trans_error)))
 
-        print "absolute_translational_error.rmse %f m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error))
-        print "absolute_translational_error.mean %f m"%numpy.mean(trans_error)
-        print "absolute_translational_error.median %f m"%numpy.median(trans_error)
-        print "absolute_translational_error.std %f m"%numpy.std(trans_error)
-        print "absolute_translational_error.min %f m"%numpy.min(trans_error)
-        print "absolute_translational_error.max %f m"%numpy.max(trans_error)
+        print("absolute_translational_error.rmse %f m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error)))
+        print("absolute_translational_error.mean %f m"%numpy.mean(trans_error))
+        print("absolute_translational_error.median %f m"%numpy.median(trans_error))
+        print("absolute_translational_error.std %f m"%numpy.std(trans_error))
+        print("absolute_translational_error.min %f m"%numpy.min(trans_error))
+        print("absolute_translational_error.max %f m"%numpy.max(trans_error))
     else:
         # print "%f"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error))
-        print "compared_pose_pairs %d pairs"%(len(trans_error))
-        print "absolute_translational_error.rmse %f m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error))
+        print("compared_pose_pairs %d pairs"%(len(trans_error)))
+        print("absolute_translational_error.rmse %f m"%numpy.sqrt(numpy.dot(trans_error,trans_error) / len(trans_error)))
 
     if args.save_associations:
         file = open(args.save_associations,"w")
