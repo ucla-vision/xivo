@@ -55,14 +55,11 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen-3.3.7/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
-        # ${PROJECT_SOURCE_DIR}/thirdparty/abseil-cpp
 
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
         ${JSONCPP_INCLUDE_DIRS}
-        /usr/include/opencv2
         /usr/include/suitesparse
         /usr/include
-        # ${PROJECT_SOURCE_DIR}/thirdparty/libigl/include
 )
 
 
@@ -104,6 +101,8 @@ endif(BUILD_ROSNODE)
 # By default, the python binding generated is only compatible with
 # your default python interpreter, which you can check by typing
 # "which python" in your terminal.
+# If you see an error saying "Python.h: No such file or directory", you probably
+# need to "sudo apt-get install python3-dev" assuming you are binding to python3.
 set(PYBIND11_CPP_STANDARD -std=c++17)
 add_subdirectory(thirdparty/pybind11)
 pybind11_add_module(pyxivo MODULE pybind11/pyxivo.cpp)
