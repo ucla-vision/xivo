@@ -34,11 +34,15 @@
 # Requirements: 
 # sudo apt-get install python-argparse
 
+# Modified by: Xiaohan Fei (feixh@cs.ucla.edu)
+# for Python2/3 compatibility
+
 """
 The Kinect provides the color and depth images in an un-synchronized way. This means that the set of time stamps from the color images do not intersect with those of the depth images. Therefore, we need some way of associating color images to depth images.
 
 For this purpose, you can use the ''associate.py'' script. It reads the time stamps from the rgb.txt file and the depth.txt file, and joins them by finding the best matches.
 """
+from __future__ import print_function
 
 import argparse
 import sys
@@ -83,8 +87,8 @@ def associate(first_list, second_list,offset,max_difference):
     matches -- list of matched tuples ((stamp1,data1),(stamp2,data2))
     
     """
-    first_keys = first_list.keys()
-    second_keys = second_list.keys()
+    first_keys = list(first_list)
+    second_keys = list(second_list)
     potential_matches = [(abs(a - (b + offset)), a, b) 
                          for a in first_keys 
                          for b in second_keys 

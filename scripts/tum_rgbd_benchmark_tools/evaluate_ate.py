@@ -34,6 +34,9 @@
 # Requirements:
 # sudo apt-get install python-argparse
 
+# Modified by: Xiaohan Fei (feixh@cs.ucla.edu)
+# for Python2/3 compatibility
+
 """
 This script computes the absolute trajectory error from the ground truth
 trajectory and the estimated trajectory.
@@ -141,11 +144,11 @@ if __name__=="__main__":
 
     second_xyz_aligned = rot * second_xyz + trans
 
-    first_stamps = first_list.keys()
+    first_stamps = list(first_list)
     first_stamps.sort()
     first_xyz_full = numpy.matrix([[float(value) for value in first_list[b][0:3]] for b in first_stamps]).transpose()
 
-    second_stamps = second_list.keys()
+    second_stamps = list(second_list)
     second_stamps.sort()
     second_xyz_full = numpy.matrix([[float(value)*float(args.scale) for value in second_list[b][0:3]] for b in second_stamps]).transpose()
     second_xyz_full_aligned = rot * second_xyz_full + trans

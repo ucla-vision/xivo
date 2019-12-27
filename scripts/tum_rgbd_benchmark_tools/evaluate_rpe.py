@@ -31,6 +31,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# Modified by: Xiaohan Fei (feixh@cs.ucla.edu)
+# for Python2/3 compatibility
+
 """
 This script computes the relative pose error from the ground truth trajectory
 and the estimated trajectory.
