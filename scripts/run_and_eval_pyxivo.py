@@ -43,7 +43,7 @@ if __name__ == '__main__':
         ########################################
         # RUN THE FILTER
         ########################################
-        cmd = 'python scripts/pyxivo.py \
+        cmd = 'python3 scripts/pyxivo.py \
 -root {root:} \
 -cfg {cfg:} \
 -seq {seq:} \
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         ########################################
         # COMPUTE ATE
         ########################################
-        cmd = 'python scripts/tum_rgbd_benchmark_tools/evaluate_ate.py \
+        cmd = 'python3 scripts/tum_rgbd_benchmark_tools/evaluate_ate.py \
 --max_difference 0.001 \
 {groundtruth_file:} \
 {result_file:} {write_to:}'.format(
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         ########################################
         # COMPUTE RPE
         ########################################
-        cmd = 'python scripts/tum_rgbd_benchmark_tools/evaluate_rpe.py \
+        cmd = 'python3 scripts/tum_rgbd_benchmark_tools/evaluate_rpe.py \
 --fixed_delta \
 --delta_unit s \
 --delta 1 \
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     if double_fusion:
         # fuse trajectories
-        cmd = 'python scripts/double_fusion.py \
+        cmd = 'python3 scripts/double_fusion.py \
 -root {root:} \
 -working-dir {workdir:}  \
 -seq {seq:}'.format( root=args.root, workdir=args.out_dir, seq=args.seq)
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
         # evaluate the fused trajectory
         result_file = os.path.join(args.out_dir, 'tumvi_{}_fused'.format(args.seq))
-        cmd = 'python scripts/tum_rgbd_benchmark_tools/evaluate_ate.py \
+        cmd = 'python3 scripts/tum_rgbd_benchmark_tools/evaluate_ate.py \
 --max_difference 0.001 \
 {groundtruth_file:} \
 {result_file:} {write_to:}'.format(
