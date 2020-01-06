@@ -117,6 +117,18 @@ in the project root directory. The command-line options are more or less the sam
 pip install -r requirements.txt
 ```
 
+**Note:** Since Python 2 is no longer being supported, we are only supporting Python 3. If your default Python version (output of `which python`) is below Python 3, then in `build.sh`, you will need to change the line 
+
+```
+cmake .. -DBUILD_G2O=$BUILD_G2O -DBUILD_ROSNODE=$BUILD_ROSNODE -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
+```
+
+to
+
+```
+cmake .. -DBUILD_G2O=$BUILD_G2O -DBUILD_ROSNODE=$BUILD_ROSNODE -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DPYTHON_EXECUTABLE=/usr/bin/python3
+```
+
 <!-- ### Evaluation
 
 We provide a python script `scripts/run_and_eval_pyxivo.py` to run the estimator on a specified TUM-VI sequence and benchmark the performance in terms ATE (Absolute Trajectory Error) and RPE (Relative Pose Error). To use it, execute the following in the project root directory:
