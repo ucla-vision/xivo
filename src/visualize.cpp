@@ -78,7 +78,7 @@ void Canvas::Draw(const FeaturePtr f) {
     }
 
   } else if (f->track_status() == TrackStatus::CREATED) {
-    // cv::circle(disp_, cv::Point2d(pos[0], pos[1]), 3, kColorYellow, -1);
+    cv::circle(disp_, cv::Point2d(pos[0], pos[1]), 3, kColorYellow, -1);
   } else {
     // LOG(WARNING) << "Feature status NOT recognized.";
   }

@@ -71,8 +71,26 @@ public:
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
+  Eigen::Matrix<double, 3, 4> gbc() { return estimator_->gbc().matrix3x4(); }
+  Eigen::Matrix<double, -1, -1> Pstate() { return estimator_->Pstate(); }
+  Vec3 Vsb() { return estimator_->Vsb(); }
+  Vec3 bg() { return estimator_->bg(); }
+  Vec3 ba() { return estimator_->ba(); }
+  Mat3 Rg() { return estimator_->Rg().matrix(); }
+  number_t td() { return estimator_->td(); }
+  Mat3 Ca() { return estimator_->Ca(); }
+  Mat3 Cg() { return estimator_->Cg(); }
+
+  bool MeasurementUpdateInitialized() { 
+    return estimator_->MeasurementUpdateInitialized();
+  }
+  Vec3 inn_Wsb() { return estimator_->inn_Wsb(); }
+  Vec3 inn_Tsb() { return estimator_->inn_Tsb(); }
+  Vec3 inn_Vsb() { return estimator_->inn_Vsb(); }
 
   uint64_t now() const { return estimator_->ts().count(); }
+
+  int gauge_group() { return estimator_->gauge_group(); }
 
   void Visualize() {
     if (viewer_)
@@ -97,8 +115,22 @@ PYBIND11_MODULE(pyxivo, m) {
                     const std::string &>())
       .def("InertialMeas", &EstimatorWrapper::InertialMeas)
       .def("VisualMeas", &EstimatorWrapper::VisualMeas)
+      .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)
+      .def("Vsb", &EstimatorWrapper::Vsb)
+      .def("inn_Tsb", &EstimatorWrapper::inn_Tsb)
+      .def("inn_Wsb", &EstimatorWrapper::inn_Wsb)
+      .def("inn_Vsb", &EstimatorWrapper::inn_Vsb)
+      .def("Pstate", &EstimatorWrapper::Pstate)
+      .def("bg", &EstimatorWrapper::bg)
+      .def("ba", &EstimatorWrapper::ba)
+      .def("Rg", &EstimatorWrapper::Rg)
+      .def("td", &EstimatorWrapper::td)
+      .def("Ca", &EstimatorWrapper::Ca)
+      .def("Cg", &EstimatorWrapper::Cg)
       .def("now", &EstimatorWrapper::now)
-      .def("Visualize", &EstimatorWrapper::Visualize);
+      .def("Visualize", &EstimatorWrapper::Visualize)
+      .def("gauge_group", &EstimatorWrapper::gauge_group)
+      .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized);
 }

@@ -309,6 +309,8 @@ Estimator::Estimator(const Json::Value &cfg)
   max_z_ = cfg_["max_depth"].asDouble();
   LOG(INFO) << "Initial covariance for features loaded";
 
+  MeasurementUpdateInitialized_ = false;
+
   // /////////////////////////////
   // Outlier rejection options
   // /////////////////////////////

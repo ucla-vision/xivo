@@ -93,6 +93,20 @@ public:
   SE3 gsc() const { return gsb() * gbc(); }
   const State& X() const { return X_; }
   const timestamp_t &ts() const { return curr_time_; }
+  MatX P() const { return P_; }
+  MatX Pstate() const { return P_.block<kMotionSize,kMotionSize>(0,0); }
+  Vec3 Vsb() const { return X_.Vsb; }
+  Vec3 bg() const { return X_.bg; }
+  Vec3 ba() const { return X_.ba; }
+  SO3 Rg() const { return X_.Rg; }
+  number_t td() const { return X_.td; }
+  Mat3 Ca() const { return imu_.Ca(); }
+  Mat3 Cg() const { return imu_.Cg(); }
+  Vec3 inn_Wsb() const { return inn_.segment(Index::Wsb,3); }
+  Vec3 inn_Tsb() const { return inn_.segment(Index::Tsb,3); }
+  Vec3 inn_Vsb() const { return inn_.segment(Index::Vsb,3); }
+  bool MeasurementUpdateInitialized() const { return MeasurementUpdateInitialized_; }
+  int gauge_group() const { return gauge_group_; }
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
@@ -284,6 +298,8 @@ private:
 
   // for update
 
+  /** Set to true once update has been initialized */
+  bool MeasurementUpdateInitialized_;
   /** Filter predicted covariance */
   MatX S_;
   /** Filter Kalman gain */

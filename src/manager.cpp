@@ -196,6 +196,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     instate_groups_ =
         graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
     Update();
+
+    MeasurementUpdateInitialized_ = true;
   }
 
   // remove oos features
