@@ -99,14 +99,7 @@ Estimator::Estimator(const Json::Value &cfg)
   OOS_update_min_observations_ =
       cfg_.get("OOS_update_min_observations", 5).asInt();
 
-
-  // Map output options
-  auto mapdump_params = cfg_["mapdump"];
-  dump_map_ = mapdump_params.get("dump_map", false).asBool();
-  max_mapdump_instate_ = mapdump_params.get("max_num_instate", 100).asInt();
-  max_mapdump_total_ = mapdump_params.get("max_total", 1500).asInt();
-
-  // one point ransac parameters
+   // one point ransac parameters
   use_1pt_RANSAC_ = cfg_.get("use_1pt_RANSAC", false).asBool();
   ransac_thresh_ = cfg_.get("1pt_RANSAC_thresh", 5).asDouble();
   ransac_prob_ = cfg_.get("1pt_RANSAC_prob", 0.95).asDouble();
@@ -917,10 +910,6 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
       SwitchRefGroup();
     }
 
-    // Write out the map, XYZ
-    if (dump_map_) {
-      DumpMap();
-    }
   }
   timer_.Tock("visual-meas");
 }
@@ -1053,7 +1042,22 @@ void Estimator::SwitchRefGroup() {
 }
 
 
-void Estimator::DumpMap() {
+int Estimator::num_instate_features() {
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+
+  MakePtrVectorUnique(instate_features);
+
+  return instate_features.size();
+}
+
+
+MatX Estimator::InstateFeaturePositions(int n_output) const {
 
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
@@ -1062,53 +1066,64 @@ void Estimator::DumpMap() {
   std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
     [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
   );
-  std::vector<xivo::FeaturePtr> all_features = graph.GetFeatures();
   MakePtrVectorUnique(instate_features);
-  MakePtrVectorUnique(all_features);
+  int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort vectors by depth uncertainty
+  // Sort features by subfilter depth uncertainty. (anything else takes
+  // computation and more time)
   std::sort(instate_features.begin(), instate_features.end(),
             Criteria::CandidateComparison);
-  std::sort(all_features.begin(), all_features.end(),
-            Criteria::CandidateComparison);
-  
-  // Print out instate features
-  std::string instate_features_filename = "instate_features_" + 
-        std::to_string(vision_counter_) + ".txt";
-  std::string all_features_filename = 
-    "all_features_" + std::to_string(vision_counter_) + ".txt";
-  std::ofstream instate_stream;
-  std::ofstream allfeatures_stream;
-  instate_stream.open(instate_features_filename);
-  allfeatures_stream.open(all_features_filename);
+
+  MatX feature_positions(npts,3);
 
   int i = 0; 
   for (auto it = instate_features.begin();
-       it != instate_features.end() && i < max_mapdump_instate_;
+       it != instate_features.end() && i < n_output;
        ) {
     FeaturePtr f = *it;
     Vec3 Xc = f->Xc();
-    int find = f->id();
-    instate_stream << find << ": " << Xc(0) << ", " << Xc(1) << ", " 
-                   << Xc(2) << std::endl;
+    feature_positions.block(i, 0, 1, 3) = Xc;
     ++i;
     ++it;
   }
-  instate_stream.close();
+  return feature_positions;
+}
 
-  i = 0;
-  for (auto it = all_features.begin();
-       it != all_features.end() && i < max_mapdump_total_;
+
+MatX Estimator::InstateFeatureCovs(int n_output) const {
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by subfilter depth uncertainty. (anything else takes
+  // computation and more time)
+  std::sort(instate_features.begin(), instate_features.end(),
+            Criteria::CandidateComparison);
+
+  MatX feature_covs(npts,6);
+
+  int i = 0; 
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
        ) {
     FeaturePtr f = *it;
-    Vec3 Xc = f->Xc();
-    int find = f->id();
-    allfeatures_stream << find << ": " << Xc(0) << ", " << Xc(1) << ", "
-                       << Xc(2) << std::endl;
+    int foff = kFeatureBegin + 3*f->sind();
+    Mat3 cov = P_.block<3,3>(foff, foff);
+
+    feature_covs.block(i, 0, 1, 6) <<
+      cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
+
     ++i;
     ++it;
   }
-  allfeatures_stream.close();
+
+  return feature_covs;
 }
 
 

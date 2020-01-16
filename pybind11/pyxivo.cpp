@@ -92,6 +92,16 @@ public:
 
   int gauge_group() { return estimator_->gauge_group(); }
 
+  MatX InstateFeaturePositions(int n_output) {
+    return estimator_->InstateFeaturePositions(n_output);
+  }
+
+  MatX InstateFeatureCovs(int n_output) {
+    return estimator_->InstateFeatureCovs(n_output);
+  }
+
+  int num_instate_features() { return estimator_->num_instate_features(); }
+
   void Visualize() {
     if (viewer_)
       viewer_->Refresh();
@@ -129,6 +139,9 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("td", &EstimatorWrapper::td)
       .def("Ca", &EstimatorWrapper::Ca)
       .def("Cg", &EstimatorWrapper::Cg)
+      .def("InstateFeaturePositions", &EstimatorWrapper::InstateFeaturePositions)
+      .def("InstateFeatureCovs", &EstimatorWrapper::InstateFeatureCovs)
+      .def("num_instate_features", &EstimatorWrapper::num_instate_features)
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize)
       .def("gauge_group", &EstimatorWrapper::gauge_group)
