@@ -100,6 +100,10 @@ public:
     return estimator_->InstateFeatureCovs(n_output);
   }
 
+  MatXi InstateFeatureIDs(int n_output) {
+    return estimator_->InstateFeatureIDs(n_output);
+  }
+
   int num_instate_features() { return estimator_->num_instate_features(); }
 
   void Visualize() {
@@ -141,6 +145,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("Cg", &EstimatorWrapper::Cg)
       .def("InstateFeaturePositions", &EstimatorWrapper::InstateFeaturePositions)
       .def("InstateFeatureCovs", &EstimatorWrapper::InstateFeatureCovs)
+      .def("InstateFeatureIDs", &EstimatorWrapper::InstateFeatureIDs)
       .def("num_instate_features", &EstimatorWrapper::num_instate_features)
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize)

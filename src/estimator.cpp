@@ -1057,6 +1057,40 @@ int Estimator::num_instate_features() {
 }
 
 
+MatXi Estimator::InstateFeatureIDs(int n_output) const {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by subfilter depth uncertainty. (anything else takes
+  // computation and more time)
+  std::sort(instate_features.begin(), instate_features.end(),
+            Criteria::CandidateComparison);
+
+  //std::vector<int> FeatureIDs;
+  MatXi FeatureIDs(npts,1);
+
+  int i = 0;
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 Xc = f->Xc();
+    FeatureIDs(i,0) = f->id();
+    ++i;
+    ++it;
+  }
+  return FeatureIDs;
+}
+
+
 MatX Estimator::InstateFeaturePositions(int n_output) const {
 
   // Retrieve visibility graph
