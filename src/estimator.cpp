@@ -1115,8 +1115,8 @@ MatX Estimator::InstateFeaturePositions(int n_output) const {
        it != instate_features.end() && i < n_output;
        ) {
     FeaturePtr f = *it;
-    Vec3 Xc = f->Xc();
-    feature_positions.block(i, 0, 1, 3) = Xc;
+    Vec3 Xs = f->Xs();
+    feature_positions.block(i, 0, 1, 3) = Xs;
     ++i;
     ++it;
   }
