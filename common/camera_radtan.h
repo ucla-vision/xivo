@@ -38,7 +38,7 @@ public:
     // compute the correction for tangential distortion
     Eigen::Matrix<f_t, 2, 1> kt{2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
                                 2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)};
-    // apply un-distortion
+    // apply distortion
     Eigen::Matrix<f_t, 2, 1> xk{kr * xc + kt};
     // convert to pixels
     Eigen::Matrix<f_t, 2, 1> xp{xk(0) * fx_ + cx_, xk(1) * fy_ + cy_};
@@ -105,11 +105,68 @@ public:
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Derived, 2, 1);
     using f_t = typename Derived::Scalar;
     using Vec2 = Eigen::Matrix<f_t, 2, 1>;
-    Vec2 xc{(xp(0) - cx_) / fx_, (xp(1) - cy_) / fy_};
+    Vec2 xk{(xp(0) - cx_) / fx_, (xp(1) - cy_) / fy_};
 
+    // Initial guess of undistorted point
+    Vec2 xc{xk};
+
+    // Use Newton's method to solve for the undistorted point
+    for (int i=0; i<max_iter_; i++) {
+
+      // intermediate quantities
+      f_t x2 = xc(0) * xc(0);
+      f_t y2 = xc(1) * xc(1);
+      f_t xy = xc(0) * xc(1);
+      f_t r2{x2 + y2};
+      f_t r4{r2 * r2};
+      f_t r6{r2 * r4};
+      // compute the correction for radial distortion
+      f_t kr{1.0 + k1_ * r2 + k2_ * r4 + k3_ * r6};
+      // compute the correction for tangential distortion
+      Eigen::Matrix<f_t, 2, 1> kt{2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
+                                  2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)};
+
+      // compute function
+      Eigen::Matrix<f_t, 2, 1> f{kr*xc + kt - xk};
+
+      // compute gradient of f - same as dxk_dxc from above.
+      Eigen::Matrix<f_t, 2, 1> dxk_dkr{xc};
+
+      // dkr_dx = k1_ * 2 * r * dr_dx + k2_ * 4.0 * r3 * dr_dx + k3_ * 6.0
+      // * r5 * dr_dx;
+      // dkr_dy = k1_ * 2 * r * dr_dy + k2_ * 4.0 * r3 * dr_dy + k3_ * 6.0
+      // * r5 * dr_dy;
+      // Since dr_dx = x/r and dr_dy = y / r
+      // dkr_dx = k1_ * 2 * x + k2_ * 4.0 * r2 * x + k3_ * 6.0 * r4 * x;
+      // = (k1_ * 2 + k2_ * 4 * r2 + k3_ * 6 * r4) * x;
+      f_t dkr_dxc_coeff = k1_ * 2 + k2_ * 4 * r2 + k3_ * 6 * r4;
+      Eigen::Matrix<f_t, 1, 2> dkr_dxc{dkr_dxc_coeff, dkr_dxc_coeff};
+
+      // kt = [2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
+      //   2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)]
+      Eigen::Matrix<f_t, 2, 2> dkt_dxc;
+      dkt_dxc << 2.0 * p1_ * xc(1) + p2_ * (2 * xc(0) + 4.0 * xc(0)),
+          2.0 * p1_ * xc(0) + p2_ * (2 * xc(1)),
+          2.0 * p2_ * xc(1) + p1_ * (2.0 * xc(0)),
+          2.0 * p2_ * xc(0) + p1_ * (2 * xc(1) + 4 * xc(1));
+
+      Eigen::Matrix<f_t, 2, 2> dxk_dxc{dxk_dkr * dkr_dxc + dkt_dxc};
+      dxk_dxc(0, 0) += kr;
+      dxk_dxc(1, 1) += kr;
+
+      Eigen::Matrix<f_t, 2, 2> grad_F{dxk_dxc};
+
+      // next step update
+      xc << xc - (grad_F.inverse())*f;
+    }
+
+    // This part is not implemented properly. The model below is for the
+    // pinhole distortion model. It does not work for the radtan model.
+    // But, it's currently not used, and I'm not going to fix it (yet).
     if (jac != nullptr) {
       (*jac) << 1 / fx_, 0, 0, 1 / fy_;
     }
+
     return xc;
   }
 
