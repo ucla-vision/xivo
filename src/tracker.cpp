@@ -113,7 +113,42 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
       extractor_ = detector_;
     }
   }
+
+  // Rescuing dropped tracks
+  match_dropped_tracks_ = cfg_.get("match_dropped_tracks", false).asBool();
+  match_dropped_tracks_tol_ = cfg_.get("match_dropped_tracks_tol", 80).asInt();
+  if (match_dropped_tracks_ && !extract_descriptor_) {
+    throw std::invalid_argument("must extract descriptors in order to match dropped tracks");
+  }
+
 }
+
+
+
+bool Tracker::FindMatchInDroppedTracks(cv::Mat new_feature_descriptor,
+  FeaturePtr *output_match)
+{
+  bool match_found = false;
+  for (auto f: newly_dropped_tracks_) {
+    int dist = cv::norm(f->descriptor(), new_feature_descriptor, cv::NORM_HAMMING);
+    //LOG(INFO) << "distance is " << dist;
+    if (dist <= match_dropped_tracks_tol_) {
+      LOG(INFO) << "match found! " << dist << "/" << match_dropped_tracks_tol_;
+      match_found = true;
+      *output_match = f;
+      break;
+    }
+  }
+
+  if (match_found) {
+    newly_dropped_tracks_.remove(*output_match);
+  }
+
+  return match_found;
+}
+
+
+
 
 void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   std::vector<cv::KeyPoint> kps;
@@ -136,6 +171,26 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   for (int i = 0; i < kps.size(); ++i) {
     const cv::KeyPoint &kp = kps[i];
     if (MaskValid(mask_, kp.pt.x, kp.pt.y)) {
+
+      // Try to match feature to a track that was recently dropped before
+      // creating a new one.
+      if (match_dropped_tracks_) {
+        //LOG(INFO) << "Attempting to match dropped features";
+        FeaturePtr f1;
+        if (FindMatchInDroppedTracks(descriptors.row(i), &f1)) {
+          f1->SetDescriptor(descriptors.row(i));
+          f1->UpdateTrack(kp.pt.x, kp.pt.y);
+          f1->SetTrackStatus(TrackStatus::TRACKED);
+
+          LOG(INFO) << "Rescued dropped feature #" << f1->id();
+
+          MaskOut(mask_, kp.pt.x, kp.pt.y, mask_size_);
+          --num_to_add;
+          continue;
+        }
+      }
+
+      // Didn't match to a previously-dropped track, so create a new feature
       FeaturePtr f = Feature::Create(kp.pt.x, kp.pt.y);
       features_.push_back(f);
 
@@ -263,6 +318,9 @@ void Tracker::Update(const cv::Mat &image) {
   int num_valid_features = 0;
   int i = 0;
 
+  // Clear list of newly dropped tracks from last time
+  newly_dropped_tracks_.clear();
+
   for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
     FeaturePtr f(*it);
 
@@ -280,23 +338,32 @@ void Tracker::Update(const cv::Mat &image) {
         ++num_valid_features;
       } else {
         // failed to extract descriptors or invalid mask
-        f->SetTrackStatus(TrackStatus::DROPPED);
+        newly_dropped_tracks_.push_back(f);
         // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
       }
     } else {
       // failed to track, reject
-      f->SetTrackStatus(TrackStatus::DROPPED);
+      newly_dropped_tracks_.push_back(f);
       // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
     }
   }
 
   // detect a new set of features
+  // this can rescue dropped featuers by matching them to newly detected ones
   if (num_valid_features < num_features_min_) {
     Detect(img_, num_features_max_ - num_valid_features);
     // TODO: rescue dropped featuers by matching them to newly detected ones
   }
+
+  // Mark all features that are still in newly_dropped_tracks_ at this point
+  // as dropped
+  for (auto f: newly_dropped_tracks_) {
+    f->SetTrackStatus(TrackStatus::DROPPED);
+  }
+
   // swap buffers ...
   std::swap(pyramid, pyramid_);
+
 }
 
 ////////////////////////////////////////

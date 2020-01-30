@@ -82,8 +82,16 @@ private:
   int num_features_min_;
   int num_features_max_;
 
+  // Matching newly detected tracks to tracks that were just dropped
+  bool match_dropped_tracks_;
+  int match_dropped_tracks_tol_;
+  std::list<FeaturePtr> newly_dropped_tracks_;
+
 private:
   void Detect(const cv::Mat &img, int num_to_add);
+
+  bool FindMatchInDroppedTracks(cv::Mat new_feature_descriptor,
+    FeaturePtr *output_match);
 };
 
 // helpers
