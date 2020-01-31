@@ -46,7 +46,7 @@ public:
 
   static Mat3 fitToSO3(const Mat3 &R_approx) {
     Eigen::JacobiSVD<Mat3> svd(R_approx,
-                               Eigen::ComputeThinU | Eigen::ComputeThinV);
+                               Eigen::ComputeFullU | Eigen::ComputeFullV);
     return svd.matrixU() * Mat3::Identity() * svd.matrixV().transpose();
   }
 
