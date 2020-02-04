@@ -3,17 +3,30 @@
 #include "glog/logging.h"
 #include "opencv2/highgui/highgui.hpp"
 
+#include "xivo/FeatureData.h"
+#include "xivo/FeatureMap.h"
+
 #include "utils.h"
 
 namespace xivo
 {
 
-void ROSPublisherAdapter::Publish(number_t ts, const cv::Mat &disp) {
+ros::Time xivoTimestamp_to_rosTime(timestamp_t ts) {
+  int nsec_total = ts.count();
+  int nsec = nsec_total % 1000000000UL;
+  int sec = nsec_total / 1000000000UL;
+  ros::Time ros_ts(sec, nsec);
+  return ros_ts;
+}
+
+
+void ROSPublisherAdapter::Publish(const timestamp_t &ts, const cv::Mat &disp) {
   if (!disp.empty()) {
     DLOG(INFO) << "Display image is ready";
     cv_bridge::CvImage cv_msg;
     // cv_msg.header.stamp    = msg->header.stamp;
     cv_msg.header.frame_id = "image";
+    cv_msg.header.stamp = xivoTimestamp_to_rosTime(ts);
     cv_msg.encoding        = disp.channels() > 1 ? "bgr8" : "mono8";
     cv_msg.image           = disp;
     sensor_msgs::Image ros_msg;
@@ -22,6 +35,56 @@ void ROSPublisherAdapter::Publish(number_t ts, const cv::Mat &disp) {
     cv_msg.image.release();
   }
 }
+
+
+void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
+  const SE3 &gsb, const Mat6 &cov)
+{
+  geometry_msgs::PoseWithCovarianceStamped msg;
+  msg.header.frame_id = "Robot State";
+  msg.header.stamp = xivoTimestamp_to_rosTime(ts);
+
+  Vec3 pos = gsb.translation();
+  msg.pose.pose.position.x = pos(0);
+  msg.pose.pose.position.y = pos(1);
+  msg.pose.pose.position.z = pos(2);
+
+  Mat3 rot = gsb.rotation();
+  Quat q(rot);
+  msg.pose.pose.orientation.x = q.x();
+  msg.pose.pose.orientation.y = q.y();
+  msg.pose.pose.orientation.z = q.z();
+  msg.pose.pose.orientation.w = q.w();
+
+  // Row-major covariance
+  int count = 0;
+  for (int i=0; i<6; i++) {
+    for (int j=0; j<6; j++) {
+      msg.pose.covariance[count] = cov(i,j);
+      count++;
+    }
+  }
+
+  rospub_.publish(msg);
+}
+
+
+void ROSMapPublisherAdapter::Publish(number_t ts, const int num_features,
+  const VecX &poses, const MatX &covs)
+{
+  FeatureMap msg;
+  msg.header.frame_id = "Feature Map";
+  msg.header.stamp = ros::Time(ts);
+
+  msg.num_features = (unsigned int) num_features;
+
+  for (int i=0; i<num_features; i++) {
+    FeatureData f;
+  }
+}
+
+
+
 SimpleNode::~SimpleNode() {
   if (est_proc_) {
     est_proc_->Wait();
@@ -95,6 +158,26 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
       LOG(FATAL) << "unknown viewer type; only support ros & pangolin (all lower case)";
     }
   }
+
+  nh_priv.param("publish_state", publish_egomotion_, true);
+  nh_priv.param("publish_map", publish_map_, true);
+  if (publish_egomotion_) {
+    std::cout << "publishing egomotion" << std::endl;
+    ego_motion_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+      "xivo/egomotion", 1000);
+    ego_motion_adapter_ = std::unique_ptr<ROSEgoMotionPublisherAdapter>(
+      new ROSEgoMotionPublisherAdapter(ego_motion_pub_));
+    est_proc_->SetPosePublisher(ego_motion_adapter_.get());
+  }
+  if (publish_map_) {
+    std::cout << "publishing map" << std::endl;
+    map_pub_ = nh_.advertise<xivo::FeatureMap>("xivo/map", 1000);
+    map_adapter_ = std::unique_ptr<ROSMapPublisherAdapter>(
+      new ROSMapPublisherAdapter(map_pub_));
+    est_proc_->SetMapPublisher(map_adapter_.get());
+  }
+
+
   // start the estimator thread
   est_proc_->Start();
 }

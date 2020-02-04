@@ -4,6 +4,7 @@
 #include "estimator_process.h"
 #include "tracker.h"
 #include "visualize.h"
+#include "core.h"
 
 namespace xivo {
 
@@ -44,6 +45,14 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     if (msg->viz() && publisher_ != nullptr) {
       publisher_->Publish(msg->ts(), Canvas::instance()->display());
     }
+
+    if (pose_publisher_ != nullptr) {
+      pose_publisher_->Publish(msg->ts(), estimator_->gsb(),
+        estimator_->Pstate());
+    } else {
+      std::cout << "pose publisher not set :(" << std::endl;
+    }
+
     return true;
   } else if (auto msg = dynamic_cast<InertialMeas *>(message)) {
 

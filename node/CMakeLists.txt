@@ -15,7 +15,22 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   pcl_ros
+  geometry_msgs
 )
+
+
+add_message_files(
+  FILES
+  FeatureData.msg
+  FeatureMap.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+  std_msgs
+)
+
 
 # Declare the message files to be built
 catkin_package(CATKIN_DEPENDS
@@ -28,6 +43,7 @@ catkin_package(CATKIN_DEPENDS
   tf
   cv_bridge
   nav_msgs
+  geometry_msgs
   roscpp
   CATKIN_DEPENDS
   INCLUDE_DIRS
