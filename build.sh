@@ -96,7 +96,7 @@ if [ $BUILD_G2O = true ]; then
   cd $PROJECT_DIR/thirdparty/g2o
   mkdir build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=../release
+  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen-3.3.7
   make install -j
 fi
 
