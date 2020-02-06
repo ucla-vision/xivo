@@ -58,6 +58,7 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
       int npts;
       estimator_->InstateFeaturePositionsAndCovs(max_pts_to_publish_, npts,
         InstateXs, InstateCov, feature_ids);
+      std::cout << InstateXs << std::endl;
       map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov,
         feature_ids);
     }
