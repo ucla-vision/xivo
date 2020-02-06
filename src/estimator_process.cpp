@@ -64,8 +64,28 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     }
 
     if (full_state_publisher_ != nullptr) {
-      full_state_publisher_->Publish(msg->ts(), estimator_->X(),
-        estimator_->Ca(), estimator_->Cg(), estimator_->Pstate());
+      bool MeasurementsInitialized = estimator_->MeasurementUpdateInitialized();
+      Vec3 inn_Wsb;
+      Vec3 inn_Tsb;
+      Vec3 inn_Vsb;
+      if (MeasurementsInitialized) {
+        inn_Wsb = estimator_->inn_Wsb();
+        inn_Tsb = estimator_->inn_Tsb();
+        inn_Vsb = estimator_->inn_Vsb();
+      }
+
+      full_state_publisher_->Publish(
+        msg->ts(),
+        estimator_->X(),
+        estimator_->Ca(),
+        estimator_->Cg(),
+        estimator_->Pstate(),
+        MeasurementsInitialized,
+        inn_Wsb,
+        inn_Tsb,
+        inn_Vsb,
+        estimator_->gauge_group(),
+        estimator_->gsc());
     }
 
     if (twod_nav_publisher_ != nullptr) {

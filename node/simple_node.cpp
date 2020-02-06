@@ -139,7 +139,10 @@ void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
 
 
 void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
-  const State &X, const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov)
+  const State &X, const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov,
+  const bool MeasurementsInitialized, const Vec3 &inn_Wsb,
+  const Vec3 &inn_Tsb, const Vec3 &inn_Vsb, const int gauge_group,
+  const SE3 &gsc)
 {
   FullState msg;
   msg.header.frame_id = "full state";
@@ -157,13 +160,25 @@ void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
   msg.td = X.td;
 
   copy_full_square_mat_to_ros(msg.Cg, Cg, 3);
-  copy_upper_triangle_to_ros(msg.Ca, Ca, 3);
+  copy_full_square_mat_to_ros(msg.Ca, Ca, 3);
 
   for (int i=0; i<kMotionSize; i++) {
     for (int j=i; j<kMotionSize; j++) {
       msg.covariance.emplace_back(Cov(i,j));
     }
   }
+
+  copy_vec3_to_ros(msg.gsc.translation, gsc.translation());
+  copy_rot_to_ros(msg.gsc.rotation, gsc.rotation());
+
+  msg.MeasurementUpdateInitialized = MeasurementsInitialized;
+  msg.group = gauge_group;
+
+  msg.MotionStateSize = kMotionSize;
+
+  copy_vec3_to_ros(msg.inn_Wsb, inn_Wsb); 
+  copy_vec3_to_ros(msg.inn_Tsb, inn_Tsb);
+  copy_vec3_to_ros(msg.inn_Vsb, inn_Vsb);
 
   rospub_.publish(msg);
 }

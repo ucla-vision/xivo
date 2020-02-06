@@ -59,7 +59,9 @@ public:
   ROSFullStatePublisherAdapter(ros::Publisher &rospub):
       Publisher{}, rospub_{rospub} {}
   void Publish(const timestamp_t &ts, const State &X, const Mat3 &Ca,
-    const Mat3 &Cg, const MatX &Cov) override;
+    const Mat3 &Cg, const MatX &Cov, const bool MeasurementsInitialized,
+    const Vec3 &inn_Wsb, const Vec3 &inn_Tsb, const Vec3 &inn_Vsb,
+    const int gauge_group, const SE3 &gsc) override;
 private:
   ros::Publisher &rospub_;
 };
