@@ -6,6 +6,7 @@
 #include "xivo/FeatureData.h"
 #include "xivo/FeatureMap.h"
 #include "xivo/FullState.h"
+#include "xivo/MotionState2dNav.h"
 
 #include "utils.h"
 
@@ -168,6 +169,42 @@ void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
 }
 
 
+void ROS2dNavPublisherAdapter::Publish(const timestamp_t &ts, const SE3 &gsb,
+  const Vec3 &Vsb, const SO3 &Rg, const MatX &Cov)
+{
+  MotionState2dNav msg;
+  msg.header.frame_id = "2d nav state";
+  msg.header.stamp = xivoTimestamp_to_rosTime(ts);
+
+  // For clarification
+  SO3 Rsg = Rg;
+  SO3 Rgs = Rsg.inv();
+  SO3 Rgb = Rgs * gsb.R();
+
+  Vec3 Xs = gsb.T();
+  Mat3 Rsb = gsb.R().matrix();
+  Mat3 posCov_sb = Cov.block<3,3>(Index::Tsb,Index::Tsb);
+  Mat3 velCov_sb = Cov.block<3,3>(Index::Vsb,Index::Vsb);
+
+  Vec3 Xg = Rgs * Xs;
+  Vec3 Vgb = Rgs * Vsb; // I think this holds because g frame and s frame are
+                        // permanently co-located
+  
+  Vec3 euler_angles = Rgb.matrix().eulerAngles(0, 1, 2);
+
+  Mat3 posCov_gb = Rgs.matrix() * posCov_sb * Rsg.matrix();
+  Mat3 velCov_gb = Rgs.matrix() * velCov_sb * Rsg.matrix();
+
+  copy_vec3_to_ros(msg.position, Xg);
+  copy_vec3_to_ros(msg.velocity, Vgb);
+  copy_full_square_mat_to_ros(msg.position_covariance, posCov_gb, 3);
+  copy_full_square_mat_to_ros(msg.velocity_covariance, velCov_gb, 3);
+  copy_vec3_to_ros(msg.euler_angles, euler_angles);
+
+  rospub_.publish(msg);
+}
+
+
 SimpleNode::~SimpleNode() {
   if (est_proc_) {
     est_proc_->Wait();
@@ -245,6 +282,7 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
   int max_features_to_publish;
   nh_priv.param("publish_state", publish_egomotion_, false);
   nh_priv.param("publish_full_state", publish_full_state_, false);
+  nh_priv.param("publish_2dnav_state", publish_2dnav_state_, false);
   nh_priv.param("publish_map", publish_map_, false);
   nh_priv.param("max_features_to_publish", max_features_to_publish, 100);
   if (publish_egomotion_) {
@@ -265,6 +303,12 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
     full_state_adapter_ = std::unique_ptr<ROSFullStatePublisherAdapter>(
       new ROSFullStatePublisherAdapter(full_state_pub_));
     est_proc_->SetFullStatePublisher(full_state_adapter_.get());
+  }
+  if (publish_2dnav_state_) {
+    twod_nav_pub_ = nh_.advertise<xivo::MotionState2dNav>("xivo/twod_nav", 1000);
+    twod_nav_adapter_ = std::unique_ptr<ROS2dNavPublisherAdapter>(
+      new ROS2dNavPublisherAdapter(twod_nav_pub_));
+    est_proc_->Set2dNavStatePublisher(twod_nav_adapter_.get());
   }
 
 

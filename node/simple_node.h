@@ -63,6 +63,17 @@ private:
 };
 
 
+class ROS2dNavPublisherAdapter: public Publisher {
+public:
+  ROS2dNavPublisherAdapter(ros::Publisher &rospub):
+      Publisher{}, rospub_{rospub} {}
+  void Publish(const timestamp_t &ts, const SE3 &gsb, const Vec3 &Vsb,
+    const SO3 &Rg, const MatX &Cov) override;
+private:
+  ros::Publisher &rospub_;
+};
+
+
 class SimpleNode
 {
 public:
@@ -102,6 +113,10 @@ private:
   bool publish_full_state_;
   ros::Publisher full_state_pub_;
   std::unique_ptr<ROSFullStatePublisherAdapter> full_state_adapter_;
+
+  bool publish_2dnav_state_;
+  ros::Publisher twod_nav_pub_;
+  std::unique_ptr<ROS2dNavPublisherAdapter> twod_nav_adapter_;
 };
 
 }

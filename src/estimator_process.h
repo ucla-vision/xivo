@@ -24,6 +24,8 @@ public:
     const MatX &covs, const VecXi &feature_ids) {}
   virtual void Publish(const timestamp_t &ts, const State &X,
     const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov) {}
+  virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Vec3 &Vsb,
+    const SO3 &Rg, const MatX &Cov) {}
 };
 
 class EstimatorMessage {
@@ -86,6 +88,9 @@ public:
   void SetFullStatePublisher(Publisher * publisher) {
     full_state_publisher_ = publisher;
   }
+  void Set2dNavStatePublisher(Publisher *publisher) {
+    twod_nav_publisher_ = publisher;
+  }
 
   ////////////////////////////////////////
   // used for synchronized communication
@@ -113,6 +118,7 @@ private:
   Publisher *pose_publisher_;
   Publisher *map_publisher_;
   Publisher *full_state_publisher_;
+  Publisher *twod_nav_publisher_;
   int max_pts_to_publish_;
 };                       // EstimatorProcess
 

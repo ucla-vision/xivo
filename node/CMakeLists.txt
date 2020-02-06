@@ -24,6 +24,7 @@ add_message_files(
   FeatureData.msg
   FeatureMap.msg
   FullState.msg
+  MotionState2dNav.msg
 )
 
 generate_messages(

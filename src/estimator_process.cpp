@@ -67,6 +67,11 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
         estimator_->Ca(), estimator_->Cg(), estimator_->Pstate());
     }
 
+    if (twod_nav_publisher_ != nullptr) {
+      twod_nav_publisher_->Publish(msg->ts(), estimator_->gsb(),
+        estimator_->Vsb(), estimator_->Rg(), estimator_->Pstate());
+    }
+
     return true;
   } else if (auto msg = dynamic_cast<InertialMeas *>(message)) {
 

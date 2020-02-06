@@ -18,6 +18,7 @@
     <param name="publish_state" value="true" type="bool" />
     <param name="publish_full_state" value="true" type="bool" />
     <param name="publish_map" value="true" type="bool" />
+    <param name="publish_2dnav_state" value="true" type="bool" />
   </node>
 
   <!--
