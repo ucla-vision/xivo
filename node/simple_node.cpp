@@ -91,17 +91,9 @@ void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
   msg.header.frame_id = "Robot State";
   msg.header.stamp = xivoTimestamp_to_rosTime(ts);
 
-  Vec3 pos = gsb.translation();
-  msg.pose.pose.position.x = pos(0);
-  msg.pose.pose.position.y = pos(1);
-  msg.pose.pose.position.z = pos(2);
-
-  Mat3 rot = gsb.rotation();
-  Quat q(rot);
-  msg.pose.pose.orientation.x = q.x();
-  msg.pose.pose.orientation.y = q.y();
-  msg.pose.pose.orientation.z = q.z();
-  msg.pose.pose.orientation.w = q.w();
+  copy_vec3_to_ros(msg.pose.pose.position, gsb.translation());
+  // Quaternion in pose is inverse of quaternion in transformation
+  copy_rot_to_ros(msg.pose.pose.orientation, gsb.rotation().inv());
 
   // Row-major covariance
   int count = 0;
@@ -249,13 +241,13 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
   }
 
   int max_features_to_publish;
-  nh_priv.param("publish_state", publish_egomotion_, true);
+  nh_priv.param("publish_state", publish_egomotion_, false);
   nh_priv.param("publish_full_state", publish_full_state_, false);
   nh_priv.param("publish_map", publish_map_, false);
   nh_priv.param("max_features_to_publish", max_features_to_publish, 100);
   if (publish_egomotion_) {
     ego_motion_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(
-      "xivo/egomotion", 1000);
+      "xivo/pose", 1000);
     ego_motion_adapter_ = std::unique_ptr<ROSEgoMotionPublisherAdapter>(
       new ROSEgoMotionPublisherAdapter(ego_motion_pub_));
     est_proc_->SetPosePublisher(ego_motion_adapter_.get());
