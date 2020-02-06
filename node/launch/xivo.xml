@@ -16,7 +16,7 @@
     <param name="imu_topic"   value="/imu0" />
     <param name="viewer_type" value="pangolin" />
     <param name="publish_state" value="1" />
-    <param name="viewer_type" value="ros" />
+    <param name="publish_map" value="true" type="bool" />
   </node>
 
   <!--

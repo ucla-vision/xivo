@@ -19,13 +19,9 @@ public:
   virtual ~Publisher(){};
   virtual void Publish(const timestamp_t &ts, const cv::Mat &image) {}
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const SE3 &gbc) {}
-  virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Mat6 &cov) {
-    std::cout << "I'm a cow girl!" << std::endl;
-  }
-  virtual void Publish(const timestamp_t &ts, const int num_features,
-    const VecX &poses, const MatX &covs) {
-    std::cout << "I can haz cheezburger?" << std::endl;
-  }
+  virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Mat6 &cov) {}
+  virtual void Publish(const timestamp_t &ts, const int npts, const VecX &poses,
+    const MatX &covs) {}
 };
 
 class EstimatorMessage {
@@ -80,12 +76,11 @@ public:
   }
   void Initialize(const std::string &config_path);
   void SetPublisher(Publisher *publisher) { publisher_ = publisher; }
-  void SetPosePublisher(Publisher *publisher) { pose_publisher_ = publisher; 
-  std::cout << "setting egomotion adapter" << std::endl;
-  std::cout << pose_publisher_ << std::endl; }
-  void SetMapPublisher(Publisher *publisher) { map_publisher_ = publisher;
-  std::cout << "setting map adapter" << std::endl;
-  std::cout << map_publisher_ << std::endl; }
+  void SetPosePublisher(Publisher *publisher) { pose_publisher_ = publisher; }
+  void SetMapPublisher(Publisher *publisher, int max_pts_to_publish) {
+    max_pts_to_publish_ = max_pts_to_publish;
+    map_publisher_ = publisher;
+  }
 
   ////////////////////////////////////////
   // used for synchronized communication
@@ -111,7 +106,8 @@ private:
   Publisher *publisher_; // non-owned
   // results publisher for asynchronized communication for pose and map.
   Publisher *pose_publisher_;
-  Publisher *map_publisher_; 
+  Publisher *map_publisher_;
+  int max_pts_to_publish_;
 };                       // EstimatorProcess
 
 } // namespace xivo

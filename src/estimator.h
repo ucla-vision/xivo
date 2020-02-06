@@ -110,6 +110,8 @@ public:
   int num_instate_features();
   MatX InstateFeaturePositions(int n_output) const;
   MatX InstateFeatureCovs(int n_output) const;
+  void InstateFeaturePositionsAndCovs(int max_output, int &npts,
+    MatX &positions, MatX &covs);
   MatXi InstateFeatureIDs(int n_output) const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }

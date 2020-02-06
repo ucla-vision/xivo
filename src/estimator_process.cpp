@@ -49,8 +49,15 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     if (pose_publisher_ != nullptr) {
       pose_publisher_->Publish(msg->ts(), estimator_->gsb(),
         estimator_->Pstate());
-    } else {
-      std::cout << "pose publisher not set :(" << std::endl;
+    }
+
+    if (map_publisher_ != nullptr) {
+      MatX InstateXs;
+      MatX InstateCov;
+      int npts;
+      estimator_->InstateFeaturePositionsAndCovs(max_pts_to_publish_, npts,
+        InstateXs, InstateCov);
+      map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov);
     }
 
     return true;

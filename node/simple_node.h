@@ -15,6 +15,8 @@ namespace xivo
 // Size of the small buffer used for sorting messages based on timestamps.
 constexpr int ros_msg_buf_size = 10;
 
+/** Converts `xivo::timestamp_t` objects (nanoseconds) to ROS timestamps
+ *  (seconds, nanoseconds into next second). */
 ros::Time xivoTimestamp_to_rosTime(timestamp_t ts);
 
 
@@ -41,10 +43,10 @@ private:
 
 class ROSMapPublisherAdapter: public Publisher {
 public:
-  ROSMapPublisherAdapter(ros::Publisher &rospub): Publisher{}, rospub_{rospub}
-  {}
-  void Publish(const number_t ts, const int num_features, const VecX &poses,
-    const MatX &covs);
+  ROSMapPublisherAdapter(ros::Publisher &rospub):
+      Publisher{}, rospub_{rospub} {}
+  void Publish(const timestamp_t &ts, const int npts, const VecX &InstateXs,
+    const MatX &InstateCov) override;
 private:
   ros::Publisher &rospub_;
 };
@@ -65,18 +67,25 @@ private:
   // std::priority_queue<std::unique_ptr<EstimatorMessage>> queue_;
   std::vector<std::unique_ptr<EstimatorMessage>> buf_;
 
-  bool viz_;  // enable vizualization if true
-  // the following two (viz_pub and adapter) are used together
-  ros::Publisher viz_pub_;
-  std::unique_ptr<ROSPublisherAdapter> adapter_;  // to be shared with the estimator process
+  /** If true, will publish a visualization, eitheron a ROS topic or a Pangolin,
+   *  viewer. */
+  bool viz_;
 
-  std::unique_ptr<ViewPublisher> viewer_; // pangolin-based view publisher
+  /** ROS publisher for visualization */
+  ros::Publisher viz_pub_;
+  /** A wrapper object that allows an `xivo::EstimatorProcess` object to
+   *  publish messages without being linked to ROS. */
+  std::unique_ptr<ROSPublisherAdapter> adapter_;
+
+  /** pangolin-based view publisher for visualization. */
+  std::unique_ptr<ViewPublisher> viewer_;
 
   bool publish_egomotion_; // Publishes state and covariance if true
-  bool publish_map_; // Publishes instate features and covariances if true
   ros::Publisher ego_motion_pub_;
-  ros::Publisher map_pub_;
   std::unique_ptr<ROSEgoMotionPublisherAdapter> ego_motion_adapter_;
+
+  bool publish_map_; // Publishes instate features and covariances if true
+  ros::Publisher map_pub_;
   std::unique_ptr<ROSMapPublisherAdapter> map_adapter_;
 };
 

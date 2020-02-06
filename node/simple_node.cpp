@@ -69,18 +69,36 @@ void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
 }
 
 
-void ROSMapPublisherAdapter::Publish(number_t ts, const int num_features,
-  const VecX &poses, const MatX &covs)
+void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
+  const VecX &InstateXs, const MatX &InstateCov)
 {
   FeatureMap msg;
   msg.header.frame_id = "Feature Map";
-  msg.header.stamp = ros::Time(ts);
+  msg.header.stamp = xivoTimestamp_to_rosTime(ts);
+  msg.num_features = npts;
 
-  msg.num_features = (unsigned int) num_features;
-
-  for (int i=0; i<num_features; i++) {
+  for (int i=0; i<npts; i++) {
     FeatureData f;
+    f.Xs.x = InstateXs(i,0);
+    f.Xs.y = InstateXs(i,1);
+    f.Xs.z = InstateXs(i,2);
+
+    f.covariance[0] = InstateCov(i,0);
+    f.covariance[1] = InstateCov(i,1);
+    f.covariance[2] = InstateCov(i,2);
+
+    f.covariance[3] = InstateCov(i,1);
+    f.covariance[4] = InstateCov(i,3);
+    f.covariance[5] = InstateCov(i,4);
+
+    f.covariance[6] = InstateCov(i,2);
+    f.covariance[7] = InstateCov(i,4);
+    f.covariance[8] = InstateCov(i,5);
+
+    msg.features.push_back(f);
   }
+
+  rospub_.publish(msg);
 }
 
 
@@ -159,10 +177,11 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
     }
   }
 
+  int max_features_to_publish;
   nh_priv.param("publish_state", publish_egomotion_, true);
-  nh_priv.param("publish_map", publish_map_, true);
+  nh_priv.param("publish_map", publish_map_, false);
+  nh_priv.param("max_features_to_publish", max_features_to_publish, 100);
   if (publish_egomotion_) {
-    std::cout << "publishing egomotion" << std::endl;
     ego_motion_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(
       "xivo/egomotion", 1000);
     ego_motion_adapter_ = std::unique_ptr<ROSEgoMotionPublisherAdapter>(
@@ -170,11 +189,10 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
     est_proc_->SetPosePublisher(ego_motion_adapter_.get());
   }
   if (publish_map_) {
-    std::cout << "publishing map" << std::endl;
     map_pub_ = nh_.advertise<xivo::FeatureMap>("xivo/map", 1000);
     map_adapter_ = std::unique_ptr<ROSMapPublisherAdapter>(
       new ROSMapPublisherAdapter(map_pub_));
-    est_proc_->SetMapPublisher(map_adapter_.get());
+    est_proc_->SetMapPublisher(map_adapter_.get(), max_features_to_publish);
   }
 
 
