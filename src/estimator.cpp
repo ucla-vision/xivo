@@ -1173,7 +1173,7 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
     [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
   );
   MakePtrVectorUnique(instate_features);
-  npts = std::max((int) instate_features.size(), max_output);
+  npts = std::min((int) instate_features.size(), max_output);
 
   // Sort features by subfilter depth uncertainty. (anything else takes
   // computation and more time)
