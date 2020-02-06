@@ -5,6 +5,7 @@
 
 #include "xivo/FeatureData.h"
 #include "xivo/FeatureMap.h"
+#include "xivo/FullState.h"
 
 #include "utils.h"
 
@@ -17,6 +18,52 @@ ros::Time xivoTimestamp_to_rosTime(timestamp_t ts) {
   int sec = nsec_total / 1000000000UL;
   ros::Time ros_ts(sec, nsec);
   return ros_ts;
+}
+
+
+
+template<class T> // T is either geometry_msgs/Vector3 or geometry_msgs/Point
+void copy_vec3_to_ros(T &ros_dest, const Vec3 &vector)
+{
+  ros_dest.x = vector(0);
+  ros_dest.y = vector(1);
+  ros_dest.z = vector(2);
+}
+
+
+void copy_rot_to_ros(geometry_msgs::Quaternion &ros_quat, const SO3 &xivo_rot)
+{
+  Mat3 R = xivo_rot.matrix();
+  Quat q(R);
+  ros_quat.x = q.x();
+  ros_quat.y = q.y();
+  ros_quat.z = q.z();
+  ros_quat.w = q.w();
+}
+
+
+template<class T, unsigned long l>
+void copy_full_square_mat_to_ros(boost::array<double, l> &rosarr, T &matrix, int dim)
+{
+  int count = 0;
+  for (int i=0; i<dim; i++) {
+    for (int j=0; j<dim; j++) {
+      rosarr[count] = matrix(i,j);
+      count++;
+    }
+  }
+}
+
+template<class T, unsigned long l>
+void copy_upper_triangle_to_ros(boost::array<double, l> &rosarr, T matrix, int dim)
+{
+  int count = 0;
+  for (int i=0; i<dim; i++) {
+    for (int j=i; j<dim; j++) {
+      rosarr[count] = matrix(i,j);
+      count++;
+    }
+  }
 }
 
 
@@ -102,6 +149,30 @@ void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
 }
 
 
+void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
+  const State &X, const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov)
+{
+  FullState msg;
+  msg.header.frame_id = "full state";
+  msg.header.stamp = xivoTimestamp_to_rosTime(ts);
+
+  copy_vec3_to_ros(msg.gsb.translation, X.Tsb);
+  copy_rot_to_ros(msg.gsb.rotation, X.Rsb);
+  copy_vec3_to_ros(msg.Vsb, X.Vsb);
+  copy_vec3_to_ros(msg.gbc.translation, X.Tbc);
+  copy_rot_to_ros(msg.gbc.rotation, X.Rbc);
+  copy_vec3_to_ros(msg.bg, X.bg);
+  copy_vec3_to_ros(msg.ba, X.ba);
+  copy_rot_to_ros(msg.qg, X.Rg);
+
+  msg.td = X.td;
+
+  copy_full_square_mat_to_ros(msg.Cg, Cg, 3);
+  copy_upper_triangle_to_ros(msg.Ca, Ca, 3);
+
+  rospub_.publish(msg);
+}
+
 
 SimpleNode::~SimpleNode() {
   if (est_proc_) {
@@ -179,6 +250,7 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
 
   int max_features_to_publish;
   nh_priv.param("publish_state", publish_egomotion_, true);
+  nh_priv.param("publish_full_state", publish_full_state_, false);
   nh_priv.param("publish_map", publish_map_, false);
   nh_priv.param("max_features_to_publish", max_features_to_publish, 100);
   if (publish_egomotion_) {
@@ -193,6 +265,12 @@ SimpleNode::SimpleNode(): adapter_{nullptr}, viewer_{nullptr}, viz_{false}
     map_adapter_ = std::unique_ptr<ROSMapPublisherAdapter>(
       new ROSMapPublisherAdapter(map_pub_));
     est_proc_->SetMapPublisher(map_adapter_.get(), max_features_to_publish);
+  }
+  if (publish_full_state_) {
+    full_state_pub_ = nh_.advertise<xivo::FullState>("xivo/fullstate", 1000);
+    full_state_adapter_ = std::unique_ptr<ROSFullStatePublisherAdapter>(
+      new ROSFullStatePublisherAdapter(full_state_pub_));
+    est_proc_->SetFullStatePublisher(full_state_adapter_.get());
   }
 
 

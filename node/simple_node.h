@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "Eigen/Core"
-#include "alias.h"
+#include "core.h"
 #include "ros_setup.h"
 
 #include "estimator_process.h"
@@ -52,6 +52,17 @@ private:
 };
 
 
+class ROSFullStatePublisherAdapter: public Publisher {
+public:
+  ROSFullStatePublisherAdapter(ros::Publisher &rospub):
+      Publisher{}, rospub_{rospub} {}
+  void Publish(const timestamp_t &ts, const State &X, const Mat3 &Ca,
+    const Mat3 &Cg, const MatX &Cov) override;
+private:
+  ros::Publisher &rospub_;
+};
+
+
 class SimpleNode
 {
 public:
@@ -87,6 +98,10 @@ private:
   bool publish_map_; // Publishes instate features and covariances if true
   ros::Publisher map_pub_;
   std::unique_ptr<ROSMapPublisherAdapter> map_adapter_;
+
+  bool publish_full_state_;
+  ros::Publisher full_state_pub_;
+  std::unique_ptr<ROSFullStatePublisherAdapter> full_state_adapter_;
 };
 
 }

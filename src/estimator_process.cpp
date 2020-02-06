@@ -60,6 +60,11 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
       map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov);
     }
 
+    if (full_state_publisher_ != nullptr) {
+      full_state_publisher_->Publish(msg->ts(), estimator_->X(),
+        estimator_->Ca(), estimator_->Cg(), estimator_->Pstate());
+    }
+
     return true;
   } else if (auto msg = dynamic_cast<InertialMeas *>(message)) {
 

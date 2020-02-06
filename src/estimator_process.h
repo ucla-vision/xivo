@@ -22,6 +22,8 @@ public:
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Mat6 &cov) {}
   virtual void Publish(const timestamp_t &ts, const int npts, const VecX &poses,
     const MatX &covs) {}
+  virtual void Publish(const timestamp_t &ts, const State &X,
+    const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov) {}
 };
 
 class EstimatorMessage {
@@ -81,6 +83,9 @@ public:
     max_pts_to_publish_ = max_pts_to_publish;
     map_publisher_ = publisher;
   }
+  void SetFullStatePublisher(Publisher * publisher) {
+    full_state_publisher_ = publisher;
+  }
 
   ////////////////////////////////////////
   // used for synchronized communication
@@ -107,6 +112,7 @@ private:
   // results publisher for asynchronized communication for pose and map.
   Publisher *pose_publisher_;
   Publisher *map_publisher_;
+  Publisher *full_state_publisher_;
   int max_pts_to_publish_;
 };                       // EstimatorProcess
 

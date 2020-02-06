@@ -23,6 +23,7 @@ add_message_files(
   FILES
   FeatureData.msg
   FeatureMap.msg
+  FullState.msg
 )
 
 generate_messages(

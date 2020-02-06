@@ -1,0 +1,12 @@
+std_msgs/Header            header
+geometry_msgs/Transform    gsb
+geometry_msgs/Vector3      Vsb
+geometry_msgs/Transform    gbc
+geometry_msgs/Vector3      bg
+geometry_msgs/Vector3      ba
+geometry_msgs/Quaternion   qg
+float64                    td
+float64[9]                 Cg
+float64[6]                 Ca
+float64[9]                 camera_intrinsics
+float64[]                  covariance
