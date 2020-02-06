@@ -1164,7 +1164,9 @@ MatX Estimator::InstateFeatureCovs(int n_output) const {
 
 
 void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
-  MatX &feature_positions, MatX &feature_covs, VecXi &feature_ids) {
+  Eigen::Matrix<number_t, Eigen::Dynamic, 3> &feature_positions,
+  Eigen::Matrix<number_t, Eigen::Dynamic, 6> &feature_covs,
+  VecXi &feature_ids) {
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
 
@@ -1191,11 +1193,9 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
     FeaturePtr f = *it;
 
     Vec3 Xs = f->Xs();
-    std::cout << Xs << std::endl;
     feature_positions(i,0) = Xs(0);
     feature_positions(i,1) = Xs(1);
     feature_positions(i,2) = Xs(2);
-    std::cout << feature_positions.block<1,3>(i,0) << std::endl;
 
     int foff = kFeatureBegin + 3*f->sind();
     Mat3 cov = P_.block<3,3>(foff, foff);

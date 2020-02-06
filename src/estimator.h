@@ -111,7 +111,9 @@ public:
   MatX InstateFeaturePositions(int n_output) const;
   MatX InstateFeatureCovs(int n_output) const;
   void InstateFeaturePositionsAndCovs(int max_output, int &npts,
-    MatX &positions, MatX &covs, VecXi &feature_ids);
+    Eigen::Matrix<number_t, Eigen::Dynamic, 3> &positions,
+    Eigen::Matrix<number_t, Eigen::Dynamic, 6> &covs,
+    VecXi &feature_ids);
   MatXi InstateFeatureIDs(int n_output) const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }

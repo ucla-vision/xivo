@@ -45,8 +45,10 @@ class ROSMapPublisherAdapter: public Publisher {
 public:
   ROSMapPublisherAdapter(ros::Publisher &rospub):
       Publisher{}, rospub_{rospub} {}
-  void Publish(const timestamp_t &ts, const int npts, const VecX &InstateXs,
-    const MatX &InstateCov, const VecXi &feature_ids) override;
+  void Publish(const timestamp_t &ts, const int npts,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 3> &InstateXs,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 6> &InstateCov,
+    const VecXi &feature_ids) override;
 private:
   ros::Publisher &rospub_;
 };

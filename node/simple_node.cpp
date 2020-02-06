@@ -110,14 +110,14 @@ void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
 
 
 void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
-  const VecX &InstateXs, const MatX &InstateCov, const VecXi &feature_ids)
+  const Eigen::Matrix<number_t, Eigen::Dynamic, 3> &InstateXs,
+  const Eigen::Matrix<number_t, Eigen::Dynamic, 6> &InstateCov,
+  const VecXi &feature_ids)
 {
   FeatureMap msg;
   msg.header.frame_id = "Feature Map";
   msg.header.stamp = xivoTimestamp_to_rosTime(ts);
   msg.num_features = npts;
-
-  std::cout << InstateXs << std::endl;
 
   for (int i=0; i<npts; i++) {
     FeatureData f;
@@ -126,11 +126,6 @@ void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
     f.Xs.x = InstateXs(i,0);
     f.Xs.y = InstateXs(i,1);
     f.Xs.z = InstateXs(i,2);
-    std::cout << f.Xs.x << "," << f.Xs.y << "," << f.Xs.z << std::endl;
-    std::cout << InstateXs(i,0) << "," << InstateXs(i,1) << "," << InstateXs(i,2) << "," << InstateXs.rows() << "," << InstateXs.cols() << std::endl;
-    //copy_vec3_to_ros(f.Xs, InstateXs.block<1,3>(i,0));
-//    std::cout << InstateXs.block<1,3>(i,0) << std::endl;
-//    std::cout << f.Xs << std::endl;
 
     f.covariance[0] = InstateCov(i,0);
     f.covariance[1] = InstateCov(i,1);

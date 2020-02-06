@@ -20,8 +20,10 @@ public:
   virtual void Publish(const timestamp_t &ts, const cv::Mat &image) {}
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const SE3 &gbc) {}
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Mat6 &cov) {}
-  virtual void Publish(const timestamp_t &ts, const int npts, const VecX &poses,
-    const MatX &covs, const VecXi &feature_ids) {}
+  virtual void Publish(const timestamp_t &ts, const int npts,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 3> &poses,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 6> &covs,
+    const VecXi &feature_ids) {}
   virtual void Publish(const timestamp_t &ts, const State &X,
     const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov) {}
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Vec3 &Vsb,
