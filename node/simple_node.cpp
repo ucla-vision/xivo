@@ -97,13 +97,7 @@ void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
   copy_rot_to_ros(msg.pose.pose.orientation, gsb.rotation().inv());
 
   // Row-major covariance
-  int count = 0;
-  for (int i=0; i<6; i++) {
-    for (int j=0; j<6; j++) {
-      msg.pose.covariance[count] = cov(i,j);
-      count++;
-    }
-  }
+  copy_full_square_mat_to_ros(msg.pose.covariance, cov, 6);
 
   rospub_.publish(msg);
 }
@@ -123,9 +117,7 @@ void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
     FeatureData f;
     f.id = feature_ids(i);
 
-    f.Xs.x = InstateXs(i,0);
-    f.Xs.y = InstateXs(i,1);
-    f.Xs.z = InstateXs(i,2);
+    copy_vec3_to_ros(f.Xs, InstateXs.block<1,3>(i,0));
 
     f.covariance[0] = InstateCov(i,0);
     f.covariance[1] = InstateCov(i,1);
@@ -166,6 +158,12 @@ void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
 
   copy_full_square_mat_to_ros(msg.Cg, Cg, 3);
   copy_upper_triangle_to_ros(msg.Ca, Ca, 3);
+
+  for (int i=0; i<kMotionSize; i++) {
+    for (int j=i; j<kMotionSize; j++) {
+      msg.covariance.emplace_back(Cov(i,j));
+    }
+  }
 
   rospub_.publish(msg);
 }

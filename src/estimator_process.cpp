@@ -47,8 +47,9 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     }
 
     if (pose_publisher_ != nullptr) {
-      pose_publisher_->Publish(msg->ts(), estimator_->gsb(),
-        estimator_->Pstate());
+      MatX fullcov = estimator_->Pstate();
+      Mat6 posecov = fullcov.block<6,6>(0,0);
+      pose_publisher_->Publish(msg->ts(), estimator_->gsb(), posecov);
     }
 
     if (map_publisher_ != nullptr) {
