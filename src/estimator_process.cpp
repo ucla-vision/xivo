@@ -54,10 +54,12 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     if (map_publisher_ != nullptr) {
       MatX InstateXs;
       MatX InstateCov;
+      VecXi feature_ids;
       int npts;
       estimator_->InstateFeaturePositionsAndCovs(max_pts_to_publish_, npts,
-        InstateXs, InstateCov);
-      map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov);
+        InstateXs, InstateCov, feature_ids);
+      map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov,
+        feature_ids);
     }
 
     if (full_state_publisher_ != nullptr) {

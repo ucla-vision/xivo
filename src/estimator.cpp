@@ -1164,7 +1164,7 @@ MatX Estimator::InstateFeatureCovs(int n_output) const {
 
 
 void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
-  MatX &feature_positions, MatX &feature_covs) {
+  MatX &feature_positions, MatX &feature_covs, VecXi &feature_ids) {
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
 
@@ -1182,6 +1182,7 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
 
   feature_positions.resize(npts,3);
   feature_covs.resize(npts,6);
+  feature_ids.resize(npts);
 
   int i = 0; 
   for (auto it = instate_features.begin();
@@ -1199,6 +1200,8 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
 
     feature_covs.block(i, 0, 1, 6) <<
       cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
+
+    feature_ids(i) = f->id();
 
     ++i;
     ++it;

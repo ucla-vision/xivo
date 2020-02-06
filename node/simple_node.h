@@ -46,7 +46,7 @@ public:
   ROSMapPublisherAdapter(ros::Publisher &rospub):
       Publisher{}, rospub_{rospub} {}
   void Publish(const timestamp_t &ts, const int npts, const VecX &InstateXs,
-    const MatX &InstateCov) override;
+    const MatX &InstateCov, const VecXi &feature_ids) override;
 private:
   ros::Publisher &rospub_;
 };

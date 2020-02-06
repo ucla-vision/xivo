@@ -109,7 +109,7 @@ void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
 
 
 void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
-  const VecX &InstateXs, const MatX &InstateCov)
+  const VecX &InstateXs, const MatX &InstateCov, const VecXi &feature_ids)
 {
   FeatureMap msg;
   msg.header.frame_id = "Feature Map";
@@ -118,6 +118,8 @@ void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
 
   for (int i=0; i<npts; i++) {
     FeatureData f;
+    f.id = feature_ids(i);
+
     f.Xs.x = InstateXs(i,0);
     f.Xs.y = InstateXs(i,1);
     f.Xs.z = InstateXs(i,2);
