@@ -9,13 +9,17 @@
   <!-- launch-prefix="GLOG_v=0 GLOG_logtostderr=-1 GLOG_log_dir=log" logging options -->
 
   <node pkg="xivo" type="mynode" name="xivo" output="screen" >
-    <param name="config_path" value="$(find xivo)/../cfg/estimator.json"/>
+    <param name="config_path" value="$(find xivo)/../cfg/tumvi_cam0.json"/>
     <param name="viewer_config_path" value="$(find xivo)/../cfg/viewer.json"/>
     <param name="estimator_queue_size" value="1000" />
     <param name="image_topic"   value="/cam0/image_raw" />
     <param name="imu_topic"   value="/imu0" />
     <param name="viewer_type" value="pangolin" />
     <!-- <param name="viewer_type" value="ros" /> -->
+    <param name="publish_state" value="true" type="bool" />
+    <param name="publish_full_state" value="true" type="bool" />
+    <param name="publish_map" value="true" type="bool" />
+    <param name="publish_2dnav_state" value="true" type="bool" />
   </node>
 
   <!--
