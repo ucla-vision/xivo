@@ -71,7 +71,7 @@ if (BUILD_G2O)
 endif(BUILD_G2O)
 
 
-add_executable(mynode main.cpp simple_node.cpp simple_node.h)
+add_executable(mynode main.cpp simple_node.cpp simple_node.h ../src/factory.cpp)
 target_link_libraries(mynode
   ${libxivo}
   gflags::gflags
