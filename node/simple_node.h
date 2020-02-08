@@ -48,6 +48,7 @@ public:
   void Publish(const timestamp_t &ts, const int npts,
     const Eigen::Matrix<number_t, Eigen::Dynamic, 3> &InstateXs,
     const Eigen::Matrix<number_t, Eigen::Dynamic, 6> &InstateCov,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 2> &InstatePixels,
     const VecXi &feature_ids) override;
 private:
   ros::Publisher &rospub_;

@@ -55,12 +55,13 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     if (map_publisher_ != nullptr) {
       Eigen::Matrix<number_t, Eigen::Dynamic, 3> InstateXs;
       Eigen::Matrix<number_t, Eigen::Dynamic, 6> InstateCov;
+      Eigen::Matrix<number_t, Eigen::Dynamic, 2> InstatePx;
       VecXi feature_ids;
       int npts;
       estimator_->InstateFeaturePositionsAndCovs(max_pts_to_publish_, npts,
-        InstateXs, InstateCov, feature_ids);
+        InstateXs, InstateCov, InstatePx, feature_ids);
       map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov,
-        feature_ids);
+        InstatePx, feature_ids);
     }
 
     if (full_state_publisher_ != nullptr) {

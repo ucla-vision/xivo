@@ -113,6 +113,7 @@ public:
   void InstateFeaturePositionsAndCovs(int max_output, int &npts,
     Eigen::Matrix<number_t, Eigen::Dynamic, 3> &positions,
     Eigen::Matrix<number_t, Eigen::Dynamic, 6> &covs,
+    Eigen::Matrix<number_t, Eigen::Dynamic, 2> &pixels,
     VecXi &feature_ids);
   MatXi InstateFeatureIDs(int n_output) const;
 

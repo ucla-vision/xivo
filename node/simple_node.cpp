@@ -106,6 +106,7 @@ void ROSEgoMotionPublisherAdapter::Publish(const timestamp_t &ts,
 void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
   const Eigen::Matrix<number_t, Eigen::Dynamic, 3> &InstateXs,
   const Eigen::Matrix<number_t, Eigen::Dynamic, 6> &InstateCov,
+  const Eigen::Matrix<number_t, Eigen::Dynamic, 2> &InstatePixels,
   const VecXi &feature_ids)
 {
   FeatureMap msg;
@@ -130,6 +131,9 @@ void ROSMapPublisherAdapter::Publish(const timestamp_t &ts, const int npts,
     f.covariance[6] = InstateCov(i,2);
     f.covariance[7] = InstateCov(i,4);
     f.covariance[8] = InstateCov(i,5);
+
+    f.col_coord_px = InstatePixels(i,0);
+    f.row_coord_px = InstatePixels(i,1);
 
     msg.features.push_back(f);
   }
