@@ -37,5 +37,20 @@
     "k012": [-0.0012152999902019673, 0.0011056450750157262, 0.0],
     "max_iter": 20,
     "comment": "Intel RealSense 435i, calibrated with Kalibr"
+  },
+
+  "phab_equi": {
+    "model": "equidistant",
+    "max_iter": 25,
+
+    "rows": 480,
+    "cols": 640,
+
+    "fx": 274.00289785,
+    "fy": 275.2699115,
+    "cx": 319.72871392,
+    "cy": 234.57458689,
+    "k0123":[0.02259339, -0.03359065,  0.04207969, -0.01753983],
+    "comment": "calibrated with kalibr"
   }
 }
