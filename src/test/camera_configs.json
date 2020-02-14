@@ -1,0 +1,41 @@
+{
+  "perfect_radtan": {
+    "model": "radtan",
+    "rows": 480, 
+    "cols": 640,
+    "fx": 580,
+    "fy": 580,
+    "cx": 320,
+    "cy": 240,
+    "px": 0,
+    "py": 0,
+    "k012": [ 0.0, 0.0, 0.0],
+    "max_iter": 20,
+    "comment": "idealized model that somewhat looks like Intel RealSense; for testing radtan iterations"
+  },
+
+  "perfect_pinhole": {
+    "model": "pinhole",
+    "rows": 480,
+    "cols": 640,
+    "fx": 580,
+    "fy": 580,
+    "cx": 320,
+    "cy": 240
+  },
+
+  "realsense_radtan": {
+    "model": "radtan",
+    "rows": 480, 
+    "cols": 640,
+    "fx": 584.5056312645837,
+    "fy": 585.0012411620038,
+    "cx": 320.01046039337496,
+    "cy": 234.43114000886206,
+    "px": 0.13586900513325845,
+    "py": -0.302490564136585,
+    "k012": [-0.0012152999902019673, 0.0011056450750157262, 0.0],
+    "max_iter": 20,
+    "comment": "Intel RealSense 435i, calibrated with Kalibr"
+  }
+}
