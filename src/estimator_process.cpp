@@ -4,6 +4,7 @@
 #include "estimator_process.h"
 #include "tracker.h"
 #include "visualize.h"
+#include "core.h"
 
 namespace xivo {
 
@@ -44,6 +45,55 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
     if (msg->viz() && publisher_ != nullptr) {
       publisher_->Publish(msg->ts(), Canvas::instance()->display());
     }
+
+    if (pose_publisher_ != nullptr) {
+      MatX fullcov = estimator_->Pstate();
+      Mat6 posecov = fullcov.block<6,6>(0,0);
+      pose_publisher_->Publish(msg->ts(), estimator_->gsb(), posecov);
+    }
+
+    if (map_publisher_ != nullptr) {
+      Eigen::Matrix<number_t, Eigen::Dynamic, 3> InstateXs;
+      Eigen::Matrix<number_t, Eigen::Dynamic, 6> InstateCov;
+      Eigen::Matrix<number_t, Eigen::Dynamic, 2> InstatePx;
+      VecXi feature_ids;
+      int npts;
+      estimator_->InstateFeaturePositionsAndCovs(max_pts_to_publish_, npts,
+        InstateXs, InstateCov, InstatePx, feature_ids);
+      map_publisher_->Publish(msg->ts(), npts, InstateXs, InstateCov,
+        InstatePx, feature_ids);
+    }
+
+    if (full_state_publisher_ != nullptr) {
+      bool MeasurementsInitialized = estimator_->MeasurementUpdateInitialized();
+      Vec3 inn_Wsb;
+      Vec3 inn_Tsb;
+      Vec3 inn_Vsb;
+      if (MeasurementsInitialized) {
+        inn_Wsb = estimator_->inn_Wsb();
+        inn_Tsb = estimator_->inn_Tsb();
+        inn_Vsb = estimator_->inn_Vsb();
+      }
+
+      full_state_publisher_->Publish(
+        msg->ts(),
+        estimator_->X(),
+        estimator_->Ca(),
+        estimator_->Cg(),
+        estimator_->Pstate(),
+        MeasurementsInitialized,
+        inn_Wsb,
+        inn_Tsb,
+        inn_Vsb,
+        estimator_->gauge_group(),
+        estimator_->gsc());
+    }
+
+    if (twod_nav_publisher_ != nullptr) {
+      twod_nav_publisher_->Publish(msg->ts(), estimator_->gsb(),
+        estimator_->Vsb(), estimator_->Rg(), estimator_->Pstate());
+    }
+
     return true;
   } else if (auto msg = dynamic_cast<InertialMeas *>(message)) {
 

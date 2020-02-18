@@ -21,8 +21,8 @@ class OOSJacobiansTest : public::testing::Test {
 
         // Create feature object and testing parameters
         MemoryManager::Create(256, 128);
-        auto cfg_ = LoadJson("cfg/phab.json");
-        Camera::Create(cfg_["camera_cfg"]);
+        auto cfg_ = LoadJson("src/test/camera_configs.json");
+        Camera::Create(cfg_["perfect_pinhole"]);
         delta = 1e-6;
         tol = 1e-6;
 

@@ -15,7 +15,24 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   pcl_ros
+  geometry_msgs
 )
+
+
+add_message_files(
+  FILES
+  FeatureData.msg
+  FeatureMap.msg
+  FullState.msg
+  MotionState2dNav.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
+  std_msgs
+)
+
 
 # Declare the message files to be built
 catkin_package(CATKIN_DEPENDS
@@ -28,6 +45,7 @@ catkin_package(CATKIN_DEPENDS
   tf
   cv_bridge
   nav_msgs
+  geometry_msgs
   roscpp
   CATKIN_DEPENDS
   INCLUDE_DIRS
@@ -53,7 +71,7 @@ if (BUILD_G2O)
 endif(BUILD_G2O)
 
 
-add_executable(mynode main.cpp simple_node.cpp simple_node.h)
+add_executable(mynode main.cpp simple_node.cpp simple_node.h ../src/factory.cpp)
 target_link_libraries(mynode
   ${libxivo}
   gflags::gflags

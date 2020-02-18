@@ -1163,5 +1163,58 @@ MatX Estimator::InstateFeatureCovs(int n_output) const {
 }
 
 
+void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
+  Eigen::Matrix<number_t, Eigen::Dynamic, 3> &feature_positions,
+  Eigen::Matrix<number_t, Eigen::Dynamic, 6> &feature_covs,
+  Eigen::Matrix<number_t, Eigen::Dynamic, 2> &feature_last_px,
+  VecXi &feature_ids) {
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+  MakePtrVectorUnique(instate_features);
+  npts = std::min((int) instate_features.size(), max_output);
+
+  // Sort features by subfilter depth uncertainty. (anything else takes
+  // computation and more time)
+  std::sort(instate_features.begin(), instate_features.end(),
+            Criteria::CandidateComparison);
+
+  feature_positions.resize(npts,3);
+  feature_covs.resize(npts,6);
+  feature_last_px.resize(npts,2);
+  feature_ids.resize(npts);
+
+  int i = 0; 
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < npts;
+       ) {
+    FeaturePtr f = *it;
+
+    Vec3 Xs = f->Xs();
+    feature_positions(i,0) = Xs(0);
+    feature_positions(i,1) = Xs(1);
+    feature_positions(i,2) = Xs(2);
+
+    int foff = kFeatureBegin + 3*f->sind();
+    Mat3 cov = P_.block<3,3>(foff, foff);
+
+    feature_covs.block(i, 0, 1, 6) <<
+      cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
+
+    feature_ids(i) = f->id();
+
+    Vec2 xp = f->xp();
+    feature_last_px(i,0) = xp(0);
+    feature_last_px(i,1) = xp(1);
+
+    ++i;
+    ++it;
+  }
+}
+
 
 } // xivo

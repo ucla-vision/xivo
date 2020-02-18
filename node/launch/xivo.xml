@@ -7,6 +7,7 @@
   <!-- launch-prefix="valgrind" for using valgrind -->
   <!-- launch-prefix="GLOG_v=0 GLOG_logtostderr=-1 GLOG_log_dir=log" logging options -->
 
+  <!-- <node pkg="xivo" type="mynode" name="xivo" output="screen" launch-prefix="xterm -e gdb \-\-args"> -->
   <node pkg="xivo" type="mynode" name="xivo" output="screen" >
     <param name="config_path" value="$(find xivo)/../cfg/phab.json"/>
     <param name="viewer_config_path" value="$(find xivo)/../cfg/phab_viewer.json"/>
@@ -14,7 +15,10 @@
     <param name="image_topic"   value="/cam0/image_raw" />
     <param name="imu_topic"   value="/imu0" />
     <param name="viewer_type" value="pangolin" />
-    <!-- <param name="viewer_type" value="ros" /> -->
+    <param name="publish_state" value="true" type="bool" />
+    <param name="publish_full_state" value="true" type="bool" />
+    <param name="publish_map" value="true" type="bool" />
+    <param name="publish_2dnav_state" value="true" type="bool" />
   </node>
 
   <!--

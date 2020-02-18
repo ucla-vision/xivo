@@ -26,74 +26,73 @@ public:
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Derived, 2, 1);
 
     using f_t = typename Derived::Scalar;
-    // intermediate quantities
-    f_t x2 = xc(0) * xc(0);
-    f_t y2 = xc(1) * xc(1);
-    f_t xy = xc(0) * xc(1);
-    f_t r2{x2 + y2};
-    f_t r4{r2 * r2};
-    f_t r6{r2 * r4};
-    // compute the correction for radial distortion
-    f_t kr{1.0 + k1_ * r2 + k2_ * r4 + k3_ * r6};
-    // compute the correction for tangential distortion
-    Eigen::Matrix<f_t, 2, 1> kt{2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
-                                2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)};
-    // apply distortion
-    Eigen::Matrix<f_t, 2, 1> xk{kr * xc + kt};
-    // convert to pixels
-    Eigen::Matrix<f_t, 2, 1> xp{xk(0) * fx_ + cx_, xk(1) * fy_ + cy_};
 
-    // optionally compute the jacobian
+    f_t x = xc(0);
+    f_t y = xc(1);
+
+    f_t t2 = x*x;
+    f_t t3 = y*y;
+    f_t t4 = k1_*x*2.0;
+    f_t t5 = k1_*y*2.0;
+    f_t t6 = p1_*x*2.0;
+    f_t t7 = p2_*y*2.0;
+    f_t t8 = t2*3.0;
+    f_t t9 = t3*3.0;
+    f_t t10 = t6*y;
+    f_t t11 = t7*x;
+    f_t t12 = t2+t3;
+    f_t t13 = t3+t8;
+    f_t t14 = t2+t9;
+    f_t t15 = t12*t12;
+    f_t t16 = t12*t12*t12;
+    f_t t17 = k1_*t12;
+    f_t t22 = k2_*t12*x*4.0;
+    f_t t23 = k2_*t12*y*4.0;
+    f_t t18 = k2_*t15;
+    f_t t19 = k3_*t16;
+    f_t t20 = p1_*t14;
+    f_t t21 = p2_*t13;
+    f_t t24 = k3_*t15*x*6.0;
+    f_t t25 = k3_*t15*y*6.0;
+    f_t t26 = t4+t22+t24;
+    f_t t27 = t5+t23+t25;
+    f_t t28 = t17+t18+t19+1.0;
+    f_t t29 = t28*x;
+    f_t t30 = t28*y;
+    f_t t31 = t10+t21+t29;
+    f_t t32 = t11+t20+t30;
+
+    Eigen::Matrix<f_t, 2, 1> xp;
+    xp(0) = cx_+fx_*t31;
+    xp(1) = cy_+fy_*t32;
+
     if (jac != nullptr) {
-      // fill in jacobians
-      // dxp_dxc = dxp_dxk * dxk_dxc
-      // dxk_dxc = dxk_dkr * dkr_dxc + diag([kr, kr]) + dxk_dkt * dkt_dxc
-      Eigen::Matrix<f_t, 2, 2> dxp_dxk;
-      dxp_dxk << fx_, 0, 0, fy_;
-      Eigen::Matrix<f_t, 2, 1> dxk_dkr{xc};
-
-      // dkr_dx = k1_ * 2 * r * dr_dx + k2_ * 4.0 * r3 * dr_dx + k3_ * 6.0
-      // * r5 * dr_dx;
-      // dkr_dy = k1_ * 2 * r * dr_dy + k2_ * 4.0 * r3 * dr_dy + k3_ * 6.0
-      // * r5 * dr_dy;
-      // Since dr_dx = x/r and dr_dy = y / r
-      // dkr_dx = k1_ * 2 * x + k2_ * 4.0 * r2 * x + k3_ * 6.0 * r4 * x;
-      // = (k1_ * 2 + k2_ * 4 * r2 + k3_ * 6 * r4) * x;
-      f_t dkr_dxc_coeff = k1_ * 2 + k2_ * 4 * r2 + k3_ * 6 * r4;
-      Eigen::Matrix<f_t, 1, 2> dkr_dxc{dkr_dxc_coeff, dkr_dxc_coeff};
-
-      // kt = [2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
-      //   2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)]
-      Eigen::Matrix<f_t, 2, 2> dkt_dxc;
-      dkt_dxc << 2.0 * p1_ * xc(1) + p2_ * (2 * xc(0) + 4.0 * xc(0)),
-          2.0 * p1_ * xc(0) + p2_ * (2 * xc(1)),
-          2.0 * p2_ * xc(1) + p1_ * (2.0 * xc(0)),
-          2.0 * p2_ * xc(0) + p1_ * (2 * xc(1) + 4 * xc(1));
-
-      Eigen::Matrix<f_t, 2, 2> dxk_dxc{dxk_dkr * dkr_dxc + dkt_dxc};
-      dxk_dxc(0, 0) += kr;
-      dxk_dxc(1, 1) += kr;
-      *jac = dxp_dxk * dxk_dxc;
+      auto &J(*jac);
+      J(0,0) = fx_*(t28+p2_*x*6.0+p1_*y*2.0+t26*x);
+      J(0,1) = fx_*(t6+t7+t27*x);
+      J(1,0) = fy_*(t6+t7+t26*y);
+      J(1,1) = fy_*(t28+p2_*x*2.0+p1_*y*6.0+t27*y);
     }
 
     if (jacc != nullptr) {
       auto &J{*jacc};
       J.setZero(2, DIM); // d[x, y]_d[fx, fy, cx, cy, p1, p2, k1, k2, k3]
-      J(0, 0) = xk(0);
-      J(0, 2) = 1;
-      J(1, 1) = xk(1);
-      J(1, 3) = 1;
-      Eigen::Matrix<f_t, 2, 2> dxk_dp; // d[x, y]_d[p1, p2]
-      dxk_dp << 2.0 * xy, r2 + 2.0 * x2, r2 + 2.0 * y2, 2.0 * xy;
-
-      Eigen::Matrix<f_t, 1, 3> dkr_dk{r2, r4, r6}; // dkr_d[k1, k2, k3]
-      Eigen::Matrix<f_t, 2, 3> dxk_dk{xc * dkr_dk};
-      // dxk_dk << xc(0) * dkr_dk,
-      //        xc(1) * dkr_dk;
-
-      J.template block<1, 5>(0, 4) << fx_ * dxk_dp.row(0), fx_ * dxk_dk.row(0);
-      J.template block<1, 5>(1, 4) << fy_ * dxk_dp.row(1), fy_ * dxk_dk.row(1);
+      J(0,0) = t31; // fx
+      J(0,2) = 1.0; // cx
+      J(0,4) = fx_*x*y*2.0; // p1
+      J(0,5) = fx_*t13; // p2
+      J(0,6) = fx_*t12*x; // k1
+      J(0,7) = fx_*t15*x; // k2
+      J(0,8) = fx_*t16*x; // k3
+      J(1,1) = t32; // fy
+      J(1,3) = 1.0; // cy
+      J(1,5) = fy_*t14; // p1
+      J(1,6) = fy_*x*y*2.0;  // p2
+      J(1,7) = fy_*t12*y;    // k1
+      J(1,8) = fy_*t15*y;    // k2
+      J(1,9) = fy_*t16*y;    // k3
     }
+
     return xp;
   }
 
@@ -113,50 +112,48 @@ public:
     // Use Newton's method to solve for the undistorted point
     for (int i=0; i<max_iter_; i++) {
 
-      // intermediate quantities
-      f_t x2 = xc(0) * xc(0);
-      f_t y2 = xc(1) * xc(1);
-      f_t xy = xc(0) * xc(1);
-      f_t r2{x2 + y2};
-      f_t r4{r2 * r2};
-      f_t r6{r2 * r4};
-      // compute the correction for radial distortion
-      f_t kr{1.0 + k1_ * r2 + k2_ * r4 + k3_ * r6};
-      // compute the correction for tangential distortion
-      Eigen::Matrix<f_t, 2, 1> kt{2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
-                                  2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)};
+      f_t x = xc(0);
+      f_t y = xc(1);
 
-      // compute function
-      Eigen::Matrix<f_t, 2, 1> f{kr*xc + kt - xk};
+      f_t t2 = x*x;
+      f_t t3 = y*y;
+      f_t t4 = k1_*x*2.0;
+      f_t t5 = k1_*y*2.0;
+      f_t t6 = p1_*x*2.0;
+      f_t t7 = p2_*y*2.0;
+      f_t t8 = t2+t3;
+      f_t t9 = t8*t8;
+      f_t t10 = t8*t8*t8;
+      f_t t11 = k1_*t8;
+      f_t t14 = k2_*t8*x*4.0;
+      f_t t15 = k2_*t8*y*4.0;
+      f_t t12 = k2_*t9;
+      f_t t13 = k3_*t10;
+      f_t t16 = k3_*t9*x*6.0;
+      f_t t17 = k3_*t9*y*6.0;
+      f_t t18 = t4+t14+t16;
+      f_t t19 = t5+t15+t17;
+      f_t t20 = t11+t12+t13+1.0;
 
-      // compute gradient of f - same as dxk_dxc from above.
-      Eigen::Matrix<f_t, 2, 1> dxk_dkr{xc};
+      Eigen::Matrix<f_t, 2, 1> f;
+      Eigen::Matrix<f_t, 2, 2> grad_F;
 
-      // dkr_dx = k1_ * 2 * r * dr_dx + k2_ * 4.0 * r3 * dr_dx + k3_ * 6.0
-      // * r5 * dr_dx;
-      // dkr_dy = k1_ * 2 * r * dr_dy + k2_ * 4.0 * r3 * dr_dy + k3_ * 6.0
-      // * r5 * dr_dy;
-      // Since dr_dx = x/r and dr_dy = y / r
-      // dkr_dx = k1_ * 2 * x + k2_ * 4.0 * r2 * x + k3_ * 6.0 * r4 * x;
-      // = (k1_ * 2 + k2_ * 4 * r2 + k3_ * 6 * r4) * x;
-      f_t dkr_dxc_coeff = k1_ * 2 + k2_ * 4 * r2 + k3_ * 6 * r4;
-      Eigen::Matrix<f_t, 1, 2> dkr_dxc{dkr_dxc_coeff, dkr_dxc_coeff};
+      f_t xkk = t20*x+t6*y+p2_*(t2*2.0+t8);
+      f_t ykk = t7*x+t20*y+p1_*(t3*2.0+t8);
 
-      // kt = [2.0 * p1_ * xy + p2_ * (r2 + 2.0 * x2),
-      //   2.0 * p2_ * xy + p1_ * (r2 + 2.0 * y2)]
-      Eigen::Matrix<f_t, 2, 2> dkt_dxc;
-      dkt_dxc << 2.0 * p1_ * xc(1) + p2_ * (2 * xc(0) + 4.0 * xc(0)),
-          2.0 * p1_ * xc(0) + p2_ * (2 * xc(1)),
-          2.0 * p2_ * xc(1) + p1_ * (2.0 * xc(0)),
-          2.0 * p2_ * xc(0) + p1_ * (2 * xc(1) + 4 * xc(1));
+      f_t dxk_dx = t20+p2_*x*6.0+p1_*y*2.0+t18*x;
+      f_t dxk_dy = t6+t7+t19*x;
+      f_t dyk_dx = t6+t7+t18*y;
+      f_t dyk_dy = t20+p2_*x*2.0+p1_*y*6.0+t19*y;
 
-      Eigen::Matrix<f_t, 2, 2> dxk_dxc{dxk_dkr * dkr_dxc + dkt_dxc};
-      dxk_dxc(0, 0) += kr;
-      dxk_dxc(1, 1) += kr;
+      f(0) = xkk - xk(0);
+      f(1) = ykk - xk(1);
 
-      Eigen::Matrix<f_t, 2, 2> grad_F{dxk_dxc};
+      grad_F(0,0) = dxk_dx;
+      grad_F(0,1) = dxk_dy;
+      grad_F(1,0) = dyk_dx;
+      grad_F(1,1) = dyk_dy;
 
-      // next step update
       xc << xc - (grad_F.inverse())*f;
     }
 

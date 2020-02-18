@@ -19,6 +19,19 @@ public:
   virtual ~Publisher(){};
   virtual void Publish(const timestamp_t &ts, const cv::Mat &image) {}
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const SE3 &gbc) {}
+  virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Mat6 &cov) {}
+  virtual void Publish(const timestamp_t &ts, const int npts,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 3> &poses,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 6> &covs,
+    const Eigen::Matrix<number_t, Eigen::Dynamic, 2> &pixels,
+    const VecXi &feature_ids) {}
+  virtual void Publish(const timestamp_t &ts, const State &X,
+    const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov,
+    const bool MeasurementsInitialized, const Vec3 &inn_Wsb,
+    const Vec3 &inn_Tsb, const Vec3 &inn_Vsb, const int gauge_group,
+    const SE3 &gsc) {}
+  virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Vec3 &Vsb,
+    const SO3 &Rg, const MatX &Cov) {}
 };
 
 class EstimatorMessage {
@@ -73,6 +86,17 @@ public:
   }
   void Initialize(const std::string &config_path);
   void SetPublisher(Publisher *publisher) { publisher_ = publisher; }
+  void SetPosePublisher(Publisher *publisher) { pose_publisher_ = publisher; }
+  void SetMapPublisher(Publisher *publisher, int max_pts_to_publish) {
+    max_pts_to_publish_ = max_pts_to_publish;
+    map_publisher_ = publisher;
+  }
+  void SetFullStatePublisher(Publisher * publisher) {
+    full_state_publisher_ = publisher;
+  }
+  void Set2dNavStatePublisher(Publisher *publisher) {
+    twod_nav_publisher_ = publisher;
+  }
 
   ////////////////////////////////////////
   // used for synchronized communication
@@ -94,8 +118,14 @@ private:
   std::string name_;
   // std::unique_ptr<Estimator> estimator_; // owned
   EstimatorPtr estimator_; // owned
-  // results publisher for asynchronized communication
+  // results publisher for asynchronized communication for viewer
   Publisher *publisher_; // non-owned
+  // results publisher for asynchronized communication for pose and map.
+  Publisher *pose_publisher_;
+  Publisher *map_publisher_;
+  Publisher *full_state_publisher_;
+  Publisher *twod_nav_publisher_;
+  int max_pts_to_publish_;
 };                       // EstimatorProcess
 
 } // namespace xivo

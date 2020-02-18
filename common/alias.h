@@ -17,6 +17,7 @@ using Mat2 = Eigen::Matrix<number_t, 2, 2>;
 using Vec2 = Eigen::Matrix<number_t, 2, 1>;
 using Vec6 = Eigen::Matrix<number_t, 6, 1>;
 using Vec9 = Eigen::Matrix<number_t, 9, 1>;
+using Mat6 = Eigen::Matrix<number_t, 6, 6>;
 using Mat23 = Eigen::Matrix<number_t, 2, 3>;
 using Mat32 = Eigen::Matrix<number_t, 3, 2>;
 using Mat34 = Eigen::Matrix<number_t, 3, 4>;

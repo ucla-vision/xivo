@@ -30,6 +30,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <nav_msgs/Odometry.h>
 

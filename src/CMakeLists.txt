@@ -118,6 +118,21 @@ add_executable(unitTests_Rodrigues
 target_link_libraries(unitTests_Rodrigues ${libxivo} ${deps} gtest gtest_main)
 add_test(NAME Rodrigues COMMAND unitTests_Rodrigues)
 
+add_executable(unitTests_pinhole
+               test/unittest_camera_pinhole.cpp)
+target_link_libraries(unitTests_pinhole ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME CamerasPinhole COMMAND unitTests_pinhole)
+
+add_executable(unitTests_radtan
+               test/unittest_camera_radtan.cpp)
+target_link_libraries(unitTests_radtan ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME CamerasRadtan COMMAND unitTests_radtan)
+
+add_executable(unitTests_equi
+               test/unittest_camera_equi.cpp)
+target_link_libraries(unitTests_equi ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME CamerasEqui COMMAND unitTests_equi)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)
