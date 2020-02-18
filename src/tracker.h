@@ -84,8 +84,10 @@ private:
 
   // Matching newly detected tracks to tracks that were just dropped
   bool match_dropped_tracks_;
-  int match_dropped_tracks_tol_;
-  std::list<FeaturePtr> newly_dropped_tracks_;
+  //int match_dropped_tracks_tol_;
+  std::vector<FeaturePtr> newly_dropped_tracks_;
+  cv::Ptr<cv::DescriptorMatcher> matcher_;
+  number_t ratio_thresh_;
 
 private:
   void Detect(const cv::Mat &img, int num_to_add);
