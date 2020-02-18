@@ -99,6 +99,12 @@ Estimator::Estimator(const Json::Value &cfg)
   OOS_update_min_observations_ =
       cfg_.get("OOS_update_min_observations", 5).asInt();
 
+  // IMU clamping
+  Vec3 _vec_;
+  clamp_signals_ = cfg_.get("clamp_signals", false).asBool();
+  max_accel_ = GetVectorFromJson<number_t, 3>(cfg_, "max_accel");
+  max_gyro_ = GetVectorFromJson<number_t, 3>(cfg_, "max_gyro");
+
    // one point ransac parameters
   use_1pt_RANSAC_ = cfg_.get("use_1pt_RANSAC", false).asBool();
   ransac_thresh_ = cfg_.get("1pt_RANSAC_thresh", 5).asDouble();
@@ -404,9 +410,33 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
 
   ++imu_counter_;
 
+  Vec3 gyro_new;
+  Vec3 accel_new;
+
+  if (clamp_signals_) {
+    for (int i=0; i < 3; i++) {
+      number_t sign_gyro = (gyro(i) > 0) ? 1.0 : -1.0;
+      number_t sign_accel = (accel(i) > 0) ? 1.0 : -1.0;
+
+      number_t gyro_mag = (abs(gyro(i)) > max_gyro_(i)) ? max_gyro_(i) : abs(gyro(i));
+      number_t accel_mag = (abs(accel(i)) > max_accel_(i)) ? max_accel_(i) : abs(accel(i));
+      
+      gyro_new(i) = sign_gyro * gyro_mag;
+      accel_new(i) = sign_accel * accel_mag;
+
+      /*
+      gyro_new(i) = (abs(gyro(i)) > max_gyro_(i)) ? last_gyro_(i) : gyro(i);
+      accel_new(i) = (abs(accel(i)) > max_accel_(i)) ? last_accel_(i) : accel(i);
+      */
+    }
+  } else{
+    gyro_new = gyro;
+    accel_new = accel;
+  }
+
   // initialize imu -- basically gravity
   if (!gravity_initialized_) {
-    gravity_init_buf_.emplace_back(accel);
+    gravity_init_buf_.emplace_back(accel_new);
 
     if (InitializeGravity()) {
       // lock 4DoF gauge freedom
@@ -419,8 +449,8 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
 
       curr_imu_time_ = last_time_ = ts;
 
-      curr_accel_ = last_accel_ = accel;
-      curr_gyro_ = last_gyro_ = gyro;
+      curr_accel_ = last_accel_ = accel_new;
+      curr_gyro_ = last_gyro_ = gyro_new;
 
       gravity_initialized_ = true;
       gravity_init_buf_.clear();
@@ -432,8 +462,8 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
       last_time_ = curr_time_;
       curr_time_ = ts;
 
-      curr_accel_ = accel;
-      curr_gyro_ = gyro;
+      curr_accel_ = accel_new;
+      curr_gyro_ = gyro_new;
 
       last_imu_time_ = curr_imu_time_;
       curr_imu_time_ = ts;
