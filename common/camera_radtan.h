@@ -180,6 +180,14 @@ public:
         << std::endl;
   }
 
+  Eigen::Matrix<T, 9, 1> GetIntrinsics() {
+    Eigen::Matrix<T, 9, 1> output;
+    output << fx_, fy_, cx_, cy_, p1_, p2_, k1_, k2_, k3_;
+    return output;
+  }
+
+  DistortionType GetDistortionType() { return DistortionType::RADTAN; }
+
 protected:
   using MyBase::rows_;
   using MyBase::cols_;

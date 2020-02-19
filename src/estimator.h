@@ -95,6 +95,15 @@ public:
   const timestamp_t &ts() const { return curr_time_; }
   MatX P() const { return P_; }
   MatX Pstate() const { return P_.block<kMotionSize,kMotionSize>(0,0); }
+  MatX CameraCov() const {
+#ifdef USE_ONLINE_CAMERA_CALIB
+    return P_.block<kMaxCameraIntrinsics,kMaxCameraIntrinsics>(kCameraBegin,
+      kCameraBegin);
+#else
+    Eigen::Matrix<number_t, 9, 9> all_zeros;
+    return all_zeros;
+#endif
+  }
   Vec3 Vsb() const { return X_.Vsb; }
   Vec3 bg() const { return X_.bg; }
   Vec3 ba() const { return X_.ba; }

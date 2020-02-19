@@ -133,6 +133,15 @@ public:
         << cy_ << "," << w_ << "]" << std::endl;
   }
 
+  Eigen::Matrix<T, 9, 1> GetIntrinsics() {
+    Eigen::Matrix<T, 9, 1> output;
+    output << fx_, fy_, cx_, cy_, w_, invw_, w2_, 0, 0;
+    return output;
+  }
+
+  DistortionType GetDistortionType() { return DistortionType::ATAN; }
+
+
 protected:
   using MyBase::rows_;
   using MyBase::cols_;
