@@ -100,7 +100,7 @@ public:
     } else {
       LOG(FATAL) << "unknown camera model";
     }
-    // also update intrinsics for the camer manager ...
+    // also update intrinsics for the camera manager ...
     fx_ += dX(0);
     fy_ += dX(1);
     cx_ += dX(2);

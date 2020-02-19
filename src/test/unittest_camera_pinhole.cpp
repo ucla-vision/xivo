@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
+#include <random>
 
 #include "core.h"
 
-#include <random>
 
 using namespace Eigen;
 using namespace xivo;
+
 
 
 TEST(CamerasPinhole, Pinhole) {
@@ -59,4 +60,53 @@ TEST(CamerasPinhole, PinholeProjectionJac) {
   EXPECT_FLOAT_EQ(approx_dx1(1), px_jac(1,0));
   EXPECT_FLOAT_EQ(approx_dx2(0), px_jac(0,1));
   EXPECT_FLOAT_EQ(approx_dx2(1), px_jac(1,1));
+}
+
+
+TEST(CamerasPinhole, PinholeJacc) {
+  auto cfg_ = LoadJson("src/test/camera_configs.json");
+  CameraManager *cam = Camera::Create(cfg_["perfect_pinhole"]);
+
+  std::default_random_engine generator;
+  std::uniform_real_distribution<number_t> distribution(0.0, 5.0);
+
+  number_t delta = 100.0;
+
+  Vec2 px;
+  Vec2 px_proj;
+  Eigen::Matrix<number_t, 2, Eigen::Dynamic> px_jacc;
+  px(0) = distribution(generator);
+  px(1) = distribution(generator);
+
+  px_proj = cam->Project(px, nullptr, &px_jacc);
+
+  Vec9 Intrinsics = cam->GetIntrinsics();
+
+  Vec4 dX_fx{delta, 0, 0, 0};
+  cam->UpdateState(dX_fx);
+  Vec2 px_proj_fx = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_fx(0) - px_proj(0)) / delta, px_jacc(0,0));
+  EXPECT_FLOAT_EQ((px_proj_fx(1) - px_proj(1)) / delta, px_jacc(1,0));
+  cam->UpdateState(-dX_fx);
+
+  Vec4 dX_fy{0, delta, 0, 0};
+  cam->UpdateState(dX_fy);
+  Vec2 px_proj_fy = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_fy(0) - px_proj(0)) / delta, px_jacc(0,1));
+  EXPECT_FLOAT_EQ((px_proj_fy(1) - px_proj(1)) / delta, px_jacc(1,1));
+  cam->UpdateState(-dX_fy);
+
+  Vec4 dX_cx{0, 0, delta, 0};
+  cam->UpdateState(dX_cx);
+  Vec2 px_proj_cx = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_cx(0) - px_proj(0)) / delta, px_jacc(0,2));
+  EXPECT_FLOAT_EQ((px_proj_cx(1) - px_proj(1)) / delta, px_jacc(1,2));
+  cam->UpdateState(-dX_cx);
+
+  Vec4 dX_cy{0, 0, 0, delta};
+  cam->UpdateState(dX_cy);
+  Vec2 px_proj_cy = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_cy(0) - px_proj(0)) / delta, px_jacc(0,3));
+  EXPECT_FLOAT_EQ((px_proj_cy(1) - px_proj(1)) / delta, px_jacc(1,3));
+  cam->UpdateState(-dX_cy);
 }

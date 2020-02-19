@@ -64,6 +64,7 @@ public:
   Eigen::Matrix<T, 9, 1> GetIntrinsics() {
     Eigen::Matrix<T, 9, 1> output;
     output << fx_, fy_, cx_, cy_, 0, 0, 0, 0, 0;
+    return output;
   }
 
   DistortionType GetDistortionType() { return DistortionType::PINHOLE; }
