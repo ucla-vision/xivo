@@ -86,11 +86,11 @@ public:
       J(0,8) = fx_*t16*x; // k3
       J(1,1) = t32; // fy
       J(1,3) = 1.0; // cy
-      J(1,5) = fy_*t14; // p1
-      J(1,6) = fy_*x*y*2.0;  // p2
-      J(1,7) = fy_*t12*y;    // k1
-      J(1,8) = fy_*t15*y;    // k2
-      J(1,9) = fy_*t16*y;    // k3
+      J(1,4) = fy_*t14; // p1
+      J(1,5) = fy_*x*y*2.0;  // p2
+      J(1,6) = fy_*t12*y;    // k1
+      J(1,7) = fy_*t15*y;    // k2
+      J(1,8) = fy_*t16*y;    // k3
     }
 
     return xp;
@@ -176,6 +176,14 @@ public:
         << "[k0, k1, k2]=[" << k1_ << "," << k2_ << "," << k3_ << "]"
         << std::endl;
   }
+
+  Eigen::Matrix<T, 9, 1> GetIntrinsics() {
+    Eigen::Matrix<T, 9, 1> output;
+    output << fx_, fy_, cx_, cy_, p1_, p2_, k1_, k2_, k3_;
+    return output;
+  }
+
+  DistortionType GetDistortionType() { return DistortionType::RADTAN; }
 
 protected:
   using MyBase::rows_;

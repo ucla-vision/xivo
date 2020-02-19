@@ -75,6 +75,8 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
         inn_Vsb = estimator_->inn_Vsb();
       }
 
+      MatX CameraCov = estimator_->CameraCov();
+
       full_state_publisher_->Publish(
         msg->ts(),
         estimator_->X(),
@@ -86,7 +88,8 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
         inn_Tsb,
         inn_Vsb,
         estimator_->gauge_group(),
-        estimator_->gsc());
+        estimator_->gsc(),
+        CameraCov);
     }
 
     if (twod_nav_publisher_ != nullptr) {

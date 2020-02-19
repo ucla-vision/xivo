@@ -61,3 +61,96 @@ TEST(CamerasRadtan, RadTanProjectionJac) {
   EXPECT_FLOAT_EQ(approx_dx2(0), px_jac(0,1));
   EXPECT_FLOAT_EQ(approx_dx2(1), px_jac(1,1));
 }
+
+
+TEST(CamerasRadtan, RadTanProjectionJacc) {
+  auto cfg_ = LoadJson("src/test/camera_configs.json");
+  CameraManager *cam = Camera::Create(cfg_["realsense_radtan"]);
+
+  std::default_random_engine generator;
+  std::uniform_real_distribution<number_t> distribution(0.0, 5.0);
+
+  number_t delta = 1e-6;
+
+  Vec2 px;
+  Vec2 px_proj;
+  Eigen::Matrix<number_t, 2, Eigen::Dynamic> px_jacc;
+  px(0) = distribution(generator);
+  px(1) = distribution(generator);
+
+  px_proj = cam->Project(px, nullptr, &px_jacc);
+
+  Vec9 Intrinsics = cam->GetIntrinsics();
+
+  Vec9 dX_fx;
+  dX_fx << delta, 0, 0, 0, 0, 0, 0, 0, 0;
+  cam->UpdateState(dX_fx);
+  Vec2 px_proj_fx = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_fx(0) - px_proj(0)) / delta, px_jacc(0,0));
+  EXPECT_FLOAT_EQ((px_proj_fx(1) - px_proj(1)) / delta, px_jacc(1,0));
+  cam->UpdateState(-dX_fx);
+
+  Vec9 dX_fy;
+  dX_fy << 0, delta, 0, 0, 0, 0, 0, 0, 0;
+  cam->UpdateState(dX_fy);
+  Vec2 px_proj_fy = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_fy(0) - px_proj(0)) / delta, px_jacc(0,1));
+  EXPECT_FLOAT_EQ((px_proj_fy(1) - px_proj(1)) / delta, px_jacc(1,1));
+  cam->UpdateState(-dX_fy);
+
+  Vec9 dX_cx;
+  dX_cx << 0, 0, delta, 0, 0, 0, 0, 0, 0;
+  cam->UpdateState(dX_cx);
+  Vec2 px_proj_cx = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_cx(0) - px_proj(0)) / delta, px_jacc(0,2));
+  EXPECT_FLOAT_EQ((px_proj_cx(1) - px_proj(1)) / delta, px_jacc(1,2));
+  cam->UpdateState(-dX_cx);
+
+  Vec9 dX_cy;
+  dX_cy << 0, 0, 0, delta, 0, 0, 0, 0, 0;
+  cam->UpdateState(dX_cy);
+  Vec2 px_proj_cy = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_cy(0) - px_proj(0)) / delta, px_jacc(0,3));
+  EXPECT_FLOAT_EQ((px_proj_cy(1) - px_proj(1)) / delta, px_jacc(1,3));
+  cam->UpdateState(-dX_cy);
+
+  Vec9 dX_px;
+  dX_px << 0, 0, 0, 0, delta, 0, 0, 0, 0;
+  cam->UpdateState(dX_px);
+  Vec2 px_proj_px = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_px(0) - px_proj(0)) / delta, px_jacc(0,4));
+  EXPECT_FLOAT_EQ((px_proj_px(1) - px_proj(1)) / delta, px_jacc(1,4));
+  cam->UpdateState(-dX_px);
+
+  Vec9 dX_py;
+  dX_py << 0, 0, 0, 0, 0, delta, 0, 0, 0;
+  cam->UpdateState(dX_py);
+  Vec2 px_proj_py = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_py(0) - px_proj(0)) / delta, px_jacc(0,5));
+  EXPECT_FLOAT_EQ((px_proj_py(1) - px_proj(1)) / delta, px_jacc(1,5));
+  cam->UpdateState(-dX_py);
+
+  Vec9 dX_k0;
+  dX_k0 << 0, 0, 0, 0, 0, 0, delta, 0, 0;
+  cam->UpdateState(dX_k0);
+  Vec2 px_proj_k0 = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_k0(0) - px_proj(0)) / delta, px_jacc(0,6));
+  EXPECT_FLOAT_EQ((px_proj_k0(1) - px_proj(1)) / delta, px_jacc(1,6));
+  cam->UpdateState(-dX_k0);
+
+  Vec9 dX_k1;
+  dX_k1 << 0, 0, 0, 0, 0, 0, 0, delta, 0;
+  cam->UpdateState(dX_k1);
+  Vec2 px_proj_k1 = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_k1(0) - px_proj(0)) / delta, px_jacc(0,7));
+  EXPECT_FLOAT_EQ((px_proj_k1(1) - px_proj(1)) / delta, px_jacc(1,7));
+  cam->UpdateState(-dX_k1);
+
+  Vec9 dX_k2;
+  dX_k2 << 0, 0, 0, 0, 0, 0, 0, 0, delta;
+  cam->UpdateState(dX_k2);
+  Vec2 px_proj_k2 = cam->Project(px);
+  EXPECT_FLOAT_EQ((px_proj_k2(0) - px_proj(0)) / delta, px_jacc(0,8));
+  EXPECT_FLOAT_EQ((px_proj_k2(1) - px_proj(1)) / delta, px_jacc(1,8));
+  cam->UpdateState(-dX_k2);
+}
