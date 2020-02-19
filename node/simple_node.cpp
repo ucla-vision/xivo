@@ -146,7 +146,7 @@ void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
   const State &X, const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov,
   const bool MeasurementsInitialized, const Vec3 &inn_Wsb,
   const Vec3 &inn_Tsb, const Vec3 &inn_Vsb, const int gauge_group,
-  const SE3 &gsc)
+  const SE3 &gsc, const MatX &CameraCov)
 {
   FullState msg;
   msg.header.frame_id = "full state";
@@ -183,6 +183,49 @@ void ROSFullStatePublisherAdapter::Publish(const timestamp_t &ts,
   copy_vec3_to_ros(msg.inn_Wsb, inn_Wsb); 
   copy_vec3_to_ros(msg.inn_Tsb, inn_Tsb);
   copy_vec3_to_ros(msg.inn_Vsb, inn_Vsb);
+
+  CameraManager *cameraptr = Camera::instance();
+  Vec9 intrinsics = cameraptr->GetIntrinsics();
+
+  // Camera distortion_model
+  std::string distortion_model;
+  int num_params;
+  switch (cameraptr->GetDistortionType()) {
+    case DistortionType::ATAN:
+      distortion_model = "atan";
+      num_params = 7;
+      break;
+    case DistortionType::EQUI:
+      distortion_model = "equi";
+      num_params = 8;
+      break;
+    case DistortionType::PINHOLE:
+      distortion_model = "pinhole";
+      num_params = 4;
+      break;
+    case DistortionType::RADTAN:
+      distortion_model = "radtan";
+      num_params = 9;
+      break;
+    default:
+      LOG(ERROR) << "ROS node: Invalid camera type";
+  }
+
+  msg.num_camera_params = num_params;
+  msg.distortion_model = distortion_model;
+  for (int i=0; i<num_params; i++) {
+    msg.camera_intrinsics[i] = intrinsics[i];
+  }
+
+  for (int i=0; i<num_params; i++) {
+    for (int j=i; j<num_params; j++) {
+      msg.camera_covariance.emplace_back(CameraCov(i,j));
+    }
+  }
+
+  // Projection model
+  msg.projection_model = "pinhole";
+
 
   rospub_.publish(msg);
 }

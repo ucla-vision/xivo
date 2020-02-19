@@ -8,6 +8,15 @@
 
 namespace xivo {
 
+
+enum class DistortionType : int {
+  PINHOLE = 0,
+  ATAN = 1,
+  RADTAN = 2,
+  EQUI = 3
+};
+
+
 template <typename T, typename D> class BaseCamera {
 public:
   // constructor
@@ -51,7 +60,14 @@ public:
   // print intrinsics of the camer amodel
   void Print(std::ostream &out) const { static_cast<D *>(this)->Print(out); }
 
-  // handy accessors
+  // Get all intrinsics
+  Eigen::Matrix<T, 9, 1> GetIntrinsics() {
+    Eigen::Matrix<T, 9, 1> output;
+    output << fx_, fy_, cx_, cy_, 0, 0, 0, 0, 0;
+  }
+
+  DistortionType GetDistortionType() { return DistortionType::PINHOLE; }
+
   int rows() const { return rows_; }
   int cols() const { return cols_; }
   T cx() const { return cx_; }

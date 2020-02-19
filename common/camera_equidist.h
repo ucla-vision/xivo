@@ -165,6 +165,14 @@ public:
         << "]" << std::endl;
   }
 
+  Eigen::Matrix<T, 9, 1> GetIntrinsics() {
+    Eigen::Matrix<T, 9, 1> output;
+    output << fx_, fy_, cx_, cy_, k0_, k1_, k2_, k3_, 0;
+    return output;
+  }
+
+  DistortionType GetDistortionType() { return DistortionType::EQUI; }
+
 protected:
   using MyBase::rows_;
   using MyBase::cols_;

@@ -117,6 +117,35 @@ public:
   number_t cy() const { return cy_; }
   int dim() const { return dim_; }
 
+  Vec9 GetIntrinsics() { 
+    if (std::holds_alternative<ATAN>(model_)) {
+      return std::get<ATAN>(model_).GetIntrinsics();
+    } else if (std::holds_alternative<EquiDist>(model_)) {
+      return std::get<EquiDist>(model_).GetIntrinsics();
+    } else if (std::holds_alternative<RadTan>(model_)) {
+      return std::get<RadTan>(model_).GetIntrinsics();
+    } else if (std::holds_alternative<Pinhole>(model_)) {
+      return std::get<Pinhole>(model_).GetIntrinsics();
+    } else {
+      LOG(FATAL) << "unknown camera model";
+    }
+  }
+
+  DistortionType GetDistortionType() {
+    if (std::holds_alternative<ATAN>(model_)) {
+      return std::get<ATAN>(model_).GetDistortionType();
+    } else if (std::holds_alternative<EquiDist>(model_)) {
+      return std::get<EquiDist>(model_).GetDistortionType();
+    } else if (std::holds_alternative<RadTan>(model_)) {
+      return std::get<RadTan>(model_).GetDistortionType();
+    } else if (std::holds_alternative<Pinhole>(model_)) {
+      return std::get<Pinhole>(model_).GetDistortionType();
+    } else {
+      LOG(FATAL) << "unknown camera model";
+    }
+  }
+
+
 private:
   CameraManager &operator=(const CameraManager &) = delete;
   CameraManager(const CameraManager &) = delete;
