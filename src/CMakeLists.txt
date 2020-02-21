@@ -133,6 +133,11 @@ add_executable(unitTests_equi
 target_link_libraries(unitTests_equi ${libxivo} ${deps} gtest gtest_main)
 add_test(NAME CamerasEqui COMMAND unitTests_equi)
 
+add_executable(unitTests_atan
+               test/unittest_camera_atan.cpp)
+target_link_libraries(unitTests_atan ${libxivo} ${deps} gtest gtest_main)
+add_test(NAME CamerasAtan COMMAND unitTests_atan)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)

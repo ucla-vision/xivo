@@ -1,19 +1,4 @@
 {
-  "perfect_radtan": {
-    "model": "radtan",
-    "rows": 480, 
-    "cols": 640,
-    "fx": 580,
-    "fy": 580,
-    "cx": 320,
-    "cy": 240,
-    "px": 0,
-    "py": 0,
-    "k012": [ 0.0, 0.0, 0.0],
-    "max_iter": 20,
-    "comment": "idealized model that somewhat looks like Intel RealSense; for testing radtan iterations"
-  },
-
   "perfect_pinhole": {
     "model": "pinhole",
     "rows": 480,
@@ -51,6 +36,36 @@
     "cx": 319.72871392,
     "cy": 234.57458689,
     "k0123":[0.02259339, -0.03359065,  0.04207969, -0.01753983],
-    "comment": "calibrated with kalibr"
+    "comment": "calibrated with kalibr, from TUMVI dataset"
+  },
+
+  "atan_cam": {
+    "model": "atan",
+
+    "rows": 480,
+    "cols": 640,
+
+    "fx": 0.392,
+    "fy": 0.613,
+    "cx": 0.484,
+    "cy": 0.476,
+    "w": 0.967,
+
+    "comment": "Numbers stolen from ETHZ-ASL PTAM file: https://github.com/ethz-asl/ethzasl_ptam/blob/master/ptam/src/Params.cpp"
+  },
+
+  "atan_singular": {
+    "model": "atan",
+
+    "rows": 480,
+    "cols": 640,
+
+    "fx": 0.392,
+    "fy": 0.613,
+    "cx": 0.484,
+    "cy": 0.476,
+    "w": 0.0,
+
+    "comment": "Numbers stolen from ETHZ-ASL PTAM file: https://github.com/ethz-asl/ethzasl_ptam/blob/master/ptam/src/Params.cpp"
   }
 }

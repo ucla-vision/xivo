@@ -135,7 +135,7 @@ public:
 
   Eigen::Matrix<T, 9, 1> GetIntrinsics() {
     Eigen::Matrix<T, 9, 1> output;
-    output << fx_, fy_, cx_, cy_, w_, invw_, w2_, 0, 0;
+    output << fx_, fy_, cx_, cy_, w_, 0, 0, 0, 0;
     return output;
   }
 
