@@ -307,5 +307,19 @@ std::string StrFormat(const char *format, Args... args) {
 
 std::vector<std::string> StrSplit(const std::string &str, char delimiter);
 
+/*
+template<typename T>
+void col_major_Mat33_copy(Eigen::Matrix<T, 3, 3> &out, number_t *input) {
+  out(0,0) = input[0];
+  out(1,0) = input[1];
+  out(2,0) = input[2];
+  out(0,1) = input[3];
+  out(1,1) = input[4];
+  out(2,1) = input[5];
+  out(0,2) = input[6];
+  out(1,2) = input[7];
+  out(2,2) = input[8];
+}
+*/
 
 } // namespace xivo
