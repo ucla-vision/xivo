@@ -68,7 +68,9 @@ class InstateJacobiansTest : public ::testing::Test {
         f->x_(1) = xc(1);
         // f->x_(2) = 2.0;
         group = Group::Create(SO3(Rr_nom), Tr_nom);
+        group->SetSind(0);
         f->ref_ = group;
+        f->SetSind(0);
 
         // Compute the analytic Jacobians and nominal states
         ComputeNominalStates();
