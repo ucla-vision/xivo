@@ -1,7 +1,9 @@
 #include "pybind11/eigen.h"
+#include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 
 #include "estimator.h"
+#include "opencv2/core/eigen.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "utils.h"
 
@@ -9,6 +11,11 @@
 #include "viewer.h"
 #include "visualize.h"
 
+typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
+typedef Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Matrix;
+typedef Matrix::Scalar Scalar;
+constexpr bool rowMajor = Matrix::Flags & Eigen::RowMajorBit;
+  
 namespace py = pybind11;
 using namespace xivo;
 
@@ -68,6 +75,25 @@ public:
       }
     }
   }
+
+
+  void VisualMeas2(uint64_t ts, py::array_t<int, py::array::c_style | py::array::forcecast> b)
+  {
+    py::buffer_info info = b.request();
+
+    cv::Mat image(640, 480, CV_32S, info.ptr);
+
+    estimator_->VisualMeas(timestamp_t{ts}, image);
+
+    if (viewer_) {
+      auto disp = Canvas::instance()->display();
+      if (!disp.empty()) {
+        LOG(INFO) << "Display image is ready";
+        viewer_->Update(disp);
+      }
+    }
+  }
+
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
@@ -129,6 +155,7 @@ PYBIND11_MODULE(pyxivo, m) {
                     const std::string &>())
       .def("InertialMeas", &EstimatorWrapper::InertialMeas)
       .def("VisualMeas", &EstimatorWrapper::VisualMeas)
+      .def("VisualMeas2", &EstimatorWrapper::VisualMeas2)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)
