@@ -81,7 +81,7 @@ public:
   {
     py::buffer_info info = b.request();
 
-    cv::Mat image(640, 480, CV_32S, info.ptr);
+    cv::Mat image(640, 480, CV_16U, info.ptr);
 
     estimator_->VisualMeas(timestamp_t{ts}, image);
 
