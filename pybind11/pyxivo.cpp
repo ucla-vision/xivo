@@ -75,7 +75,7 @@ public:
   void VisualMeas2(uint64_t ts, py::array_t<unsigned char, py::array::c_style | py::array::forcecast> b)
   {
     py::buffer_info info = b.request();
-    cv::Mat image(640, 480, CV_8UC3, info.ptr);
+    cv::Mat image(480, 640, CV_8UC3, info.ptr);
 
     estimator_->VisualMeas(timestamp_t{ts}, image);
 
