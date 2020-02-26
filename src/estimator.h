@@ -119,6 +119,7 @@ public:
   int num_instate_features();
   MatX InstateFeaturePositions(int n_output) const;
   MatX InstateFeatureCovs(int n_output) const;
+  MatX InstateFeaturePixels(int n_output) const;
   void InstateFeaturePositionsAndCovs(int max_output, int &npts,
     Eigen::Matrix<number_t, Eigen::Dynamic, 3> &positions,
     Eigen::Matrix<number_t, Eigen::Dynamic, 6> &covs,
