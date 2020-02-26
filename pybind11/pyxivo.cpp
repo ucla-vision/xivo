@@ -11,11 +11,6 @@
 #include "viewer.h"
 #include "visualize.h"
 
-typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
-typedef Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Matrix;
-typedef Matrix::Scalar Scalar;
-constexpr bool rowMajor = Matrix::Flags & Eigen::RowMajorBit;
-  
 namespace py = pybind11;
 using namespace xivo;
 
@@ -77,11 +72,10 @@ public:
   }
 
 
-  void VisualMeas2(uint64_t ts, py::array_t<int, py::array::c_style | py::array::forcecast> b)
+  void VisualMeas2(uint64_t ts, py::array_t<unsigned char, py::array::c_style | py::array::forcecast> b)
   {
     py::buffer_info info = b.request();
-
-    cv::Mat image(640, 480, CV_16U, info.ptr);
+    cv::Mat image(512, 512, CV_8UC3, info.ptr);
 
     estimator_->VisualMeas(timestamp_t{ts}, image);
 
