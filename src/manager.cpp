@@ -401,6 +401,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     std::cout << print_counter << std::endl;
     std::cout << timer_;
   }
+
+  // Save the frame (only if set to true in json file)
+  Canvas::instance()->SaveFrame();
 }
 
 } // namespace xivo
