@@ -176,6 +176,7 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   std::vector<int> matchIdx;
   for (int i=0;  i<kps.size(); i++) {
     matched.push_back(false);
+    matchIdx.push_back(-1);
   }
 
   if (match_dropped_tracks_ && (newly_dropped_tracks_.size() > 0)) {
@@ -188,7 +189,7 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
       i++;
     }
 
-    // nearest neighbor match
+    // k-nearest neighbor match
     // query = just-found descriptors
     // train = newly dropped descriptors
     std::vector<std::vector<cv::DMatch>> knn_matches;
