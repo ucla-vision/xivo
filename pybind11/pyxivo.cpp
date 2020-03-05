@@ -69,6 +69,28 @@ public:
     }
   }
 
+  void VisualMeas(uint64_t ts,
+    py::array_t<unsigned char, py::array::c_style | py::array::forcecast> b)
+  {
+    py::buffer_info info = b.request();
+
+    int size_row = info.strides[0];
+    int num_col = size_row / info.strides[1] / info.itemsize;
+    int num_row = info.size / size_row;
+
+    cv::Mat image(num_row, num_col, CV_8UC3, info.ptr);
+
+    estimator_->VisualMeas(timestamp_t{ts}, image);
+
+    if (viewer_) {
+      auto disp = Canvas::instance()->display();
+      if (!disp.empty()) {
+        LOG(INFO) << "Display image is ready";
+        viewer_->Update(disp);
+      }
+    }
+  }
+
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gbc() { return estimator_->gbc().matrix3x4(); }
@@ -128,7 +150,8 @@ PYBIND11_MODULE(pyxivo, m) {
       .def(py::init<const std::string &, const std::string &,
                     const std::string &>())
       .def("InertialMeas", &EstimatorWrapper::InertialMeas)
-      .def("VisualMeas", &EstimatorWrapper::VisualMeas)
+      .def("VisualMeas", py::overload_cast<uint64_t, std::string &>(&EstimatorWrapper::VisualMeas))
+      .def("VisualMeas", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeas))
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)
