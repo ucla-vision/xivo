@@ -75,7 +75,7 @@ add_library(xest STATIC
         mm.cpp
         camera_manager.cpp
         imu.cpp)
-target_link_libraries(xest ${deps})
+target_link_libraries(xest INTERFACE ${deps} "-Wl,-lstdc++fs")
 
 set(libxivo xest xapp)
 
