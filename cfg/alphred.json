@@ -1,5 +1,5 @@
 {
-    "estimator_cfg": "cfg/alphred_realsense.json",
+    "estimator_cfg": "cfg/alphred_simulation.json",
     "viewer_cfg": "cfg/phab_viewer.json",
 
     "visualize": true,
