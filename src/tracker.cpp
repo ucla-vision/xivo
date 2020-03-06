@@ -116,40 +116,13 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
 
   // Rescuing dropped tracks
   match_dropped_tracks_ = cfg_.get("match_dropped_tracks", false).asBool();
-//  match_dropped_tracks_tol_ = cfg_.get("match_dropped_tracks_tol", 80).asInt();
-  ratio_thresh_ = cfg_.get("match_dropped_tracks_ratio_thresh", 0.7).asDouble();
   if (match_dropped_tracks_ && !extract_descriptor_) {
     throw std::invalid_argument("must extract descriptors in order to match dropped tracks");
   }
   if (match_dropped_tracks_) {
-    matcher_ = cv::DescriptorMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_HAMMING);
+    matcher_ = cv::BFMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_HAMMING, true);
   }
 }
-
-
-/*
-bool Tracker::FindMatchInDroppedTracks(cv::Mat new_feature_descriptor,
-  FeaturePtr *output_match)
-{
-  bool match_found = false;
-  for (auto f: newly_dropped_tracks_) {
-    int dist = cv::norm(f->descriptor(), new_feature_descriptor, cv::NORM_HAMMING);
-    //LOG(INFO) << "distance is " << dist;
-    if (dist <= match_dropped_tracks_tol_) {
-      LOG(INFO) << "match found! " << dist << "/" << match_dropped_tracks_tol_;
-      match_found = true;
-      *output_match = f;
-      break;
-    }
-  }
-
-  if (match_found) {
-    newly_dropped_tracks_.remove(*output_match);
-  }
-
-  return match_found;
-}
-*/
 
 
 
@@ -171,7 +144,8 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   // now every keypoint is equipped with a descriptor
 
 
-  // match keypoints to old features
+  // match keypoints to old features - indices of these vectors correspond to
+  // new features
   std::vector<bool> matched;
   std::vector<int> matchIdx;
   for (int i=0;  i<kps.size(); i++) {
@@ -190,24 +164,18 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
     }
 
     // k-nearest neighbor match
-    // query = just-found descriptors
-    // train = newly dropped descriptors
+    // query = newly-dropped descriptors
+    // train = just-found descriptors
     std::vector<std::vector<cv::DMatch>> knn_matches;
-    matcher_->knnMatch(descriptors, newly_dropped_descriptors, knn_matches, 2);
+    matcher_->knnMatch(newly_dropped_descriptors, descriptors, knn_matches, 1);
 
-    // filter matches using Lowe's ratio test
-    std::vector<cv::DMatch> good_matches;
     for (int i=0; i<knn_matches.size(); i++) {
-      if (knn_matches[i][0].distance < ratio_thresh_ * knn_matches[i][1].distance) {
-        good_matches.push_back(knn_matches[i][0]);
+      if (knn_matches[i].size() > 0) {
+        matched[knn_matches[i][0].trainIdx] = true;
+        matchIdx[knn_matches[i][0].trainIdx] = knn_matches[i][0].queryIdx;
       }
     }
 
-    // collect indices of newly dropped escriptors
-    for (int i=0; i<good_matches.size(); i++) {
-      matched[good_matches[i].queryIdx] = true;
-      matchIdx[good_matches[i].queryIdx] = good_matches[i].trainIdx;
-    }
   }
 
   // collect keypoints
@@ -226,26 +194,6 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
         --num_to_add;
         continue;
       }
-
-      /*
-      // Try to match feature to a track that was recently dropped before
-      // creating a new one.
-      if (match_dropped_tracks_) {
-        //LOG(INFO) << "Attempting to match dropped features";
-        FeaturePtr f1;
-        if (FindMatchInDroppedTracks(descriptors.row(i), &f1)) {
-          f1->SetDescriptor(descriptors.row(i));
-          f1->UpdateTrack(kp.pt.x, kp.pt.y);
-          f1->SetTrackStatus(TrackStatus::TRACKED);
-
-          LOG(INFO) << "Rescued dropped feature #" << f1->id();
-
-          MaskOut(mask_, kp.pt.x, kp.pt.y, mask_size_);
-          --num_to_add;
-          continue;
-        }
-      }
-      */
 
       // Didn't match to a previously-dropped track, so create a new feature
       FeaturePtr f = Feature::Create(kp.pt.x, kp.pt.y);
@@ -409,7 +357,6 @@ void Tracker::Update(const cv::Mat &image) {
   // this can rescue dropped featuers by matching them to newly detected ones
   if (num_valid_features < num_features_min_) {
     Detect(img_, num_features_max_ - num_valid_features);
-    // TODO: rescue dropped featuers by matching them to newly detected ones
   }
 
   // Mark all features that are still in newly_dropped_tracks_ at this point
