@@ -27,8 +27,8 @@ class OOSJacobiansTest : public::testing::Test {
         tol = 1e-6;
 
         // Set nominal and error variables to random values
-        Rr_nom = RandomTransformationMatrix();
-        Tr_nom = Vec3::Random();
+        //Rr_nom = RandomTransformationMatrix();
+        //Tr_nom = Vec3::Random();
         Rsb_nom = RandomTransformationMatrix();
         Tsb_nom = Vec3::Random();
         Rbc_nom = RandomTransformationMatrix();
@@ -50,7 +50,7 @@ class OOSJacobiansTest : public::testing::Test {
         Vec2 xc = Camera::instance()->UnProject(xp);
         f->x_(0) = xc(0);
         f->x_(1) = xc(1);
-        group = Group::Create(SO3(Rr_nom), Tr_nom);
+        group = Group::Create(SO3(Rsb_nom), Tsb_nom);
         //group->sind_ = 0;
         group->SetSind(0);
         f->ref_ = group;
@@ -109,8 +109,6 @@ class OOSJacobiansTest : public::testing::Test {
     Vec3 Xs;
 
     // Nominal state variables containing placeholder values
-    Mat3 Rr_nom;
-    Vec3 Tr_nom;
     Mat3 Rsb_nom;
     Vec3 Tsb_nom;
     Mat3 Rbc_nom;
@@ -136,6 +134,9 @@ class OOSJacobiansTest : public::testing::Test {
 
 
 TEST_F(OOSJacobiansTest, Wsb) {
+
+    number_t tol = 1e-5;
+
     Vec3 Xcn0 = ComputeXcn();
 
     Wsb_err(0) = delta;
@@ -154,17 +155,17 @@ TEST_F(OOSJacobiansTest, Wsb) {
     Vec3 dXcn_dWsb1 = (Xcn1_1 - Xcn0) / delta;
     Vec3 dXcn_dWsb2 = (Xcn1_2 - Xcn0) / delta;
 
-    EXPECT_FLOAT_EQ(dXcn_dWsb0(0), f->cache_.dXcn_dWsb(0,0));
-    EXPECT_FLOAT_EQ(dXcn_dWsb0(1), f->cache_.dXcn_dWsb(1,0));
-    EXPECT_FLOAT_EQ(dXcn_dWsb0(2), f->cache_.dXcn_dWsb(2,0));
+    EXPECT_NEAR(dXcn_dWsb0(0), f->cache_.dXcn_dWsb(0,0), tol);
+    EXPECT_NEAR(dXcn_dWsb0(1), f->cache_.dXcn_dWsb(1,0), tol);
+    EXPECT_NEAR(dXcn_dWsb0(2), f->cache_.dXcn_dWsb(2,0), tol);
     
-    EXPECT_FLOAT_EQ(dXcn_dWsb1(0), f->cache_.dXcn_dWsb(0,1));
-    EXPECT_FLOAT_EQ(dXcn_dWsb1(1), f->cache_.dXcn_dWsb(1,1));
-    EXPECT_FLOAT_EQ(dXcn_dWsb1(2), f->cache_.dXcn_dWsb(2,1));
+    EXPECT_NEAR(dXcn_dWsb1(0), f->cache_.dXcn_dWsb(0,1), tol);
+    EXPECT_NEAR(dXcn_dWsb1(1), f->cache_.dXcn_dWsb(1,1), tol);
+    EXPECT_NEAR(dXcn_dWsb1(2), f->cache_.dXcn_dWsb(2,1), tol);
 
-    EXPECT_FLOAT_EQ(dXcn_dWsb2(0), f->cache_.dXcn_dWsb(0,2));
-    EXPECT_FLOAT_EQ(dXcn_dWsb2(1), f->cache_.dXcn_dWsb(1,2));
-    EXPECT_FLOAT_EQ(dXcn_dWsb2(2), f->cache_.dXcn_dWsb(2,2));
+    EXPECT_NEAR(dXcn_dWsb2(0), f->cache_.dXcn_dWsb(0,2), tol);
+    EXPECT_NEAR(dXcn_dWsb2(1), f->cache_.dXcn_dWsb(1,2), tol);
+    EXPECT_NEAR(dXcn_dWsb2(2), f->cache_.dXcn_dWsb(2,2), tol);
 
 }
 
@@ -205,6 +206,9 @@ TEST_F(OOSJacobiansTest, Tsb) {
 
 
 TEST_F(OOSJacobiansTest, Wbc) {
+
+    number_t tol = 1e-5;
+
     Vec3 Xcn0 = ComputeXcn();
 
     Wbc_err(0) = delta;
@@ -223,17 +227,17 @@ TEST_F(OOSJacobiansTest, Wbc) {
     Vec3 dXcn_dWbc1 = (Xcn1_1 - Xcn0) / delta;
     Vec3 dXcn_dWbc2 = (Xcn1_2 - Xcn0) / delta;
 
-    EXPECT_FLOAT_EQ(dXcn_dWbc0(0), f->cache_.dXcn_dWbc(0,0));
-    EXPECT_FLOAT_EQ(dXcn_dWbc0(1), f->cache_.dXcn_dWbc(1,0));
-    EXPECT_FLOAT_EQ(dXcn_dWbc0(2), f->cache_.dXcn_dWbc(2,0));
+    EXPECT_NEAR(dXcn_dWbc0(0), f->cache_.dXcn_dWbc(0,0), tol);
+    EXPECT_NEAR(dXcn_dWbc0(1), f->cache_.dXcn_dWbc(1,0), tol);
+    EXPECT_NEAR(dXcn_dWbc0(2), f->cache_.dXcn_dWbc(2,0), tol);
     
-    EXPECT_FLOAT_EQ(dXcn_dWbc1(0), f->cache_.dXcn_dWbc(0,1));
-    EXPECT_FLOAT_EQ(dXcn_dWbc1(1), f->cache_.dXcn_dWbc(1,1));
-    EXPECT_FLOAT_EQ(dXcn_dWbc1(2), f->cache_.dXcn_dWbc(2,1));
+    EXPECT_NEAR(dXcn_dWbc1(0), f->cache_.dXcn_dWbc(0,1), tol);
+    EXPECT_NEAR(dXcn_dWbc1(1), f->cache_.dXcn_dWbc(1,1), tol);
+    EXPECT_NEAR(dXcn_dWbc1(2), f->cache_.dXcn_dWbc(2,1), tol);
 
-    EXPECT_FLOAT_EQ(dXcn_dWbc2(0), f->cache_.dXcn_dWbc(0,2));
-    EXPECT_FLOAT_EQ(dXcn_dWbc2(1), f->cache_.dXcn_dWbc(1,2));
-    EXPECT_FLOAT_EQ(dXcn_dWbc2(2), f->cache_.dXcn_dWbc(2,2));
+    EXPECT_NEAR(dXcn_dWbc2(0), f->cache_.dXcn_dWbc(0,2), tol);
+    EXPECT_NEAR(dXcn_dWbc2(1), f->cache_.dXcn_dWbc(1,2), tol);
+    EXPECT_NEAR(dXcn_dWbc2(2), f->cache_.dXcn_dWbc(2,2), tol);
 
 }
 
