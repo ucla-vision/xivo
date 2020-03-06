@@ -186,6 +186,7 @@
     "num_features_max": 60,
     "max_pixel_displacement": 64,
     "normalize": false,
+    "match_dropped_tracks": false,
 
     "KLT": {
       "win_size": 15,
@@ -194,7 +195,7 @@
       "eps": 0.01
     },
 
-    "extract_descriptor": false,
+    "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
     "default_descriptor": "BRIEF",
 

@@ -1,6 +1,9 @@
 // Drawing functions to overlay feature tracks & system
 // info on input images.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
+#include <cstdint>
+
+#include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include "feature.h"
@@ -20,11 +23,45 @@ static cv::Scalar kColorYellow(0, 255, 255);
 static cv::Scalar kColorBlue(255, 0, 0);
 static cv::Scalar kColorLakeBlue(219, 152, 52);
 
+
+
+Canvas::Canvas() {
+  save_frames_ =
+    ParameterServer::instance()->get("save_frames", false).asBool();
+
+  if (save_frames_) {
+    save_folder_ =
+      ParameterServer::instance()->get("save_folder", "xivo_frames").asString();
+    frame_number_ = 0;
+
+    if (!std::experimental::filesystem::exists(save_folder_)) {
+      std::experimental::filesystem::create_directory(save_folder_);
+    }
+  }
+}
+
+
 CanvasPtr Canvas::instance() {
   if (instance_ == nullptr) {
     instance_ = std::unique_ptr<Canvas>(new Canvas());
   }
   return instance_.get();
+}
+
+const void Canvas::SaveFrame() {
+  if (save_frames_) {
+    std::experimental::filesystem::path folder = save_folder_;
+    std::experimental::filesystem::path filename = folder /=
+      ("frame_" + std::to_string(frame_number_) + ".png");
+    try {
+      cv::imwrite(filename.string(), disp_);
+    }
+    catch (const cv::Exception& ex) {
+      fprintf(stderr, "Exception converting image to PNG format :%s\n",
+        ex.what());
+    }
+    frame_number_++;
+  }
 }
 
 void Canvas::Update(const cv::Mat &img) {
