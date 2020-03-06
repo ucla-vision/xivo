@@ -165,8 +165,8 @@ public:
   void SetSind(int ind) { sind_ = ind; }
 
   int lifetime() const { return lifetime_; }
-  int IncrementLifetime() { lifetime_++; }
-  int ResetLifetime() { lifetime_ = 0; }
+  void IncrementLifetime() { lifetime_++; }
+  void ResetLifetime() { lifetime_ = 0; }
 
   GroupPtr ref() const { return ref_; }
   void SetRef(GroupPtr ref);
