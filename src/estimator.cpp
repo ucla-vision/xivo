@@ -1042,22 +1042,7 @@ void Estimator::SwitchRefGroup() {
 }
 
 
-int Estimator::num_instate_features() {
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
-
-  MakePtrVectorUnique(instate_features);
-
-  return instate_features.size();
-}
-
-
-MatXi Estimator::InstateFeatureIDs(int n_output) const {
+VecXi Estimator::InstateFeatureSinds(int n_output) const {
 
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
@@ -1075,23 +1060,21 @@ MatXi Estimator::InstateFeatureIDs(int n_output) const {
             Criteria::CandidateComparison);
 
   //std::vector<int> FeatureIDs;
-  MatXi FeatureIDs(npts,1);
+  VecXi FeatureSinds(npts);
 
   int i = 0;
   for (auto it = instate_features.begin();
        it != instate_features.end() && i < n_output;
        ) {
     FeaturePtr f = *it;
-    Vec3 Xc = f->Xc();
-    FeatureIDs(i,0) = f->id();
+    FeatureSinds(i,0) = f->sind();
     ++i;
     ++it;
   }
-  return FeatureIDs;
+  return FeatureSinds;
 }
 
-
-MatX Estimator::InstateFeaturePositions(int n_output) const {
+VecXi Estimator::InstateFeatureIDs(int n_output) const {
 
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
@@ -1108,7 +1091,40 @@ MatX Estimator::InstateFeaturePositions(int n_output) const {
   std::sort(instate_features.begin(), instate_features.end(),
             Criteria::CandidateComparison);
 
-  MatX feature_positions(npts,3);
+  //std::vector<int> FeatureIDs;
+  VecXi FeatureIDs(npts);
+
+  int i = 0;
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
+       ) {
+    FeaturePtr f = *it;
+    FeatureIDs(i,0) = f->id();
+    ++i;
+    ++it;
+  }
+  return FeatureIDs;
+}
+
+
+MatX3 Estimator::InstateFeaturePositions(int n_output) const {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
+    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
+  );
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by subfilter depth uncertainty. (anything else takes
+  // computation and more time)
+  std::sort(instate_features.begin(), instate_features.end(),
+            Criteria::CandidateComparison);
+
+  MatX3 feature_positions(npts,3);
 
   int i = 0; 
   for (auto it = instate_features.begin();
@@ -1126,7 +1142,7 @@ MatX Estimator::InstateFeaturePositions(int n_output) const {
 }
 
 
-MatX Estimator::InstateFeatureCovs(int n_output) const {
+MatX6 Estimator::InstateFeatureCovs(int n_output) const {
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
 
@@ -1142,7 +1158,7 @@ MatX Estimator::InstateFeatureCovs(int n_output) const {
   std::sort(instate_features.begin(), instate_features.end(),
             Criteria::CandidateComparison);
 
-  MatX feature_covs(npts,6);
+  MatX6 feature_covs(npts,6);
 
   int i = 0; 
   for (auto it = instate_features.begin();
@@ -1164,10 +1180,9 @@ MatX Estimator::InstateFeatureCovs(int n_output) const {
 
 
 void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
-  Eigen::Matrix<number_t, Eigen::Dynamic, 3> &feature_positions,
-  Eigen::Matrix<number_t, Eigen::Dynamic, 6> &feature_covs,
-  Eigen::Matrix<number_t, Eigen::Dynamic, 2> &feature_last_px,
-  VecXi &feature_ids) {
+  MatX3 &feature_positions, MatX6 &feature_covs, MatX2 &feature_last_px,
+  VecXi &feature_ids)
+{
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
 
@@ -1214,6 +1229,191 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
     ++i;
     ++it;
   }
+}
+
+
+VecXi Estimator::InstateFeatureIDs() const
+{
+  int num_instate_features = instate_features_.size();
+
+  // Get all features
+  VecXi FeatureIDs(num_instate_features);
+
+  int i = 0;
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_instate_features;
+       ) {
+    FeaturePtr f = *it;
+    FeatureIDs(i) = f->id();
+    ++i;
+    ++it;
+  }
+  return FeatureIDs;
+}
+
+
+VecXi Estimator::InstateFeatureSinds() const
+{
+  int num_instate_features = instate_features_.size();
+
+  // Get all features
+  VecXi FeatureSinds(num_instate_features);
+
+  int i = 0;
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_instate_features;
+       ) {
+    FeaturePtr f = *it;
+    FeatureSinds(i) = f->sind();
+    ++i;
+    ++it;
+  }
+  return FeatureSinds;
+}
+
+
+MatX3 Estimator::InstateFeaturePositions() const
+{
+  int num_features = instate_features_.size();
+
+  MatX3 feature_positions(num_features,3);
+
+  int i = 0; 
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_features;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 Xs = f->Xs();
+    feature_positions(i,0) = Xs(0);
+    feature_positions(i,1) = Xs(1);
+    feature_positions(i,2) = Xs(2);
+    ++i;
+    ++it;
+  }
+  return feature_positions;
+}
+
+MatX6 Estimator::InstateFeatureCovs() const {
+
+  int num_features = instate_features_.size();
+
+  MatX6 feature_covs(num_features,6);
+
+  int i = 0; 
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_features;
+       ) {
+    FeaturePtr f = *it;
+    int foff = kFeatureBegin + 3*f->sind();
+    Mat3 cov = P_.block<3,3>(foff, foff);
+
+    feature_covs.block(i, 0, 1, 6) <<
+      cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
+
+    ++i;
+    ++it;
+  }
+
+  return feature_covs;
+}
+
+
+VecXi Estimator::InstateGroupIDs() const
+{
+  int num_groups = instate_groups_.size();
+
+  VecXi GroupIDs(num_groups);
+
+  int i = 0;
+  for (auto it = instate_groups_.begin();
+       it != instate_groups_.end() && i<num_groups;) {
+    GroupPtr g = *it;
+    GroupIDs(i) = g->id();
+    ++i;
+    ++it;
+  }
+  return GroupIDs;
+}
+
+
+VecXi Estimator::InstateGroupSinds() const
+{
+  int num_groups = instate_groups_.size();
+
+  VecXi GroupSinds(num_groups);
+
+  int i = 0;
+  for (auto it = instate_groups_.begin();
+       it != instate_groups_.end() && i<num_groups;) {
+    GroupPtr g = *it;
+    GroupSinds(i) = g->sind();
+    ++i;
+    ++it;
+  }
+  return GroupSinds;
+}
+
+
+MatX7 Estimator::InstateGroupPoses() const
+{
+  int num_groups = instate_groups_.size();
+
+  MatX7 group_poses(num_groups, 7);
+
+  int i = 0;
+  for (auto it = instate_groups_.begin();
+       it != instate_groups_.end() && i < num_groups;
+       ) {
+    GroupPtr g = *it;
+    Vec3 Tsb = g->Tsb();
+    Mat3 Rsb = g->Rsb().matrix();
+    Quat Qsb(Rsb);
+
+    group_poses(i,0) = Qsb.x();
+    group_poses(i,1) = Qsb.y();
+    group_poses(i,2) = Qsb.z();
+    group_poses(i,3) = Qsb.w();
+    group_poses(i,4) = Tsb(0);
+    group_poses(i,5) = Tsb(1);
+    group_poses(i,6) = Tsb(2);
+
+    ++i;
+    ++it;
+  }
+
+  return group_poses;
+}
+
+
+MatX Estimator::InstateGroupCovs() const
+{
+  int num_groups = instate_groups_.size();
+
+  MatX group_covs(num_groups, 21);
+
+  int i = 0; 
+  for (auto it = instate_groups_.begin();
+       it != instate_groups_.end() && i < num_groups;
+       ) {
+    GroupPtr g = *it;
+    int goff = kGroupBegin + 6*g->sind();
+    Mat6 cov = P_.block<6,6>(goff, goff);
+
+    int cnt;
+    for (int ii = 0; ii<6; ii++) {
+      cnt = 0;
+      for (int jj = ii; jj<6; jj++) {
+        group_covs(i,cnt) = cov(ii,jj);
+        cnt++;
+      }
+    }
+
+    ++i;
+    ++it;
+  }
+
+  return group_covs;
+
 }
 
 

@@ -95,6 +95,7 @@ public:
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gbc() { return estimator_->gbc().matrix3x4(); }
   Eigen::Matrix<double, -1, -1> Pstate() { return estimator_->Pstate(); }
+  Eigen::Matrix<double, -1, -1> P() { return estimator_-> P(); }
   Vec3 Vsb() { return estimator_->Vsb(); }
   Vec3 bg() { return estimator_->bg(); }
   Vec3 ba() { return estimator_->ba(); }
@@ -114,19 +115,57 @@ public:
 
   int gauge_group() { return estimator_->gauge_group(); }
 
-  MatX InstateFeaturePositions(int n_output) {
+  MatX3 InstateFeaturePositions(int n_output) {
     return estimator_->InstateFeaturePositions(n_output);
   }
 
-  MatX InstateFeatureCovs(int n_output) {
+  MatX6 InstateFeatureCovs(int n_output) {
     return estimator_->InstateFeatureCovs(n_output);
   }
 
-  MatXi InstateFeatureIDs(int n_output) {
+  VecXi InstateFeatureIDs(int n_output) {
     return estimator_->InstateFeatureIDs(n_output);
   }
 
+  MatX3 InstateFeaturePositions() {
+    return estimator_->InstateFeaturePositions();
+  }
+
+  MatX6 InstateFeatureCovs() {
+    return estimator_->InstateFeatureCovs();
+  }
+
+  VecXi InstateFeatureIDs() {
+    return estimator_->InstateFeatureIDs();
+  }
+
+  VecXi InstateFeatureSinds() {
+    return estimator_->InstateFeatureSinds();
+  }
+
+  VecXi InstateFeatureSinds(int n_output) {
+    return estimator_->InstateFeatureSinds(n_output);
+  }
+
+  VecXi InstateGroupIDs() {
+    return estimator_->InstateGroupIDs();
+  }
+
+  MatX7 InstateGroupPoses() {
+    return estimator_->InstateGroupPoses();
+  }
+
+  MatX InstateGroupCovs() {
+    return estimator_->InstateGroupCovs();
+  }
+
+  VecXi InstateGroupSinds() {
+    return estimator_->InstateGroupSinds();
+  }
+
   int num_instate_features() { return estimator_->num_instate_features(); }
+
+  int num_instate_groups() { return estimator_->num_instate_groups(); }
 
   void Visualize() {
     if (viewer_)
@@ -160,16 +199,27 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("inn_Wsb", &EstimatorWrapper::inn_Wsb)
       .def("inn_Vsb", &EstimatorWrapper::inn_Vsb)
       .def("Pstate", &EstimatorWrapper::Pstate)
+      .def("P", &EstimatorWrapper::P)
       .def("bg", &EstimatorWrapper::bg)
       .def("ba", &EstimatorWrapper::ba)
       .def("Rg", &EstimatorWrapper::Rg)
       .def("td", &EstimatorWrapper::td)
       .def("Ca", &EstimatorWrapper::Ca)
       .def("Cg", &EstimatorWrapper::Cg)
-      .def("InstateFeaturePositions", &EstimatorWrapper::InstateFeaturePositions)
-      .def("InstateFeatureCovs", &EstimatorWrapper::InstateFeatureCovs)
-      .def("InstateFeatureIDs", &EstimatorWrapper::InstateFeatureIDs)
+      .def("InstateFeaturePositions", py::overload_cast<int>(&EstimatorWrapper::InstateFeaturePositions))
+      .def("InstateFeaturePositions", py::overload_cast<>(&EstimatorWrapper::InstateFeaturePositions))
+      .def("InstateFeatureCovs", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureCovs))
+      .def("InstateFeatureCovs", py::overload_cast<>(&EstimatorWrapper::InstateFeatureCovs))
+      .def("InstateFeatureIDs", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureIDs))
+      .def("InstateFeatureIDs", py::overload_cast<>(&EstimatorWrapper::InstateFeatureIDs))
+      .def("InstateFeatureSinds", py::overload_cast<>(&EstimatorWrapper::InstateFeatureSinds))
+      .def("InstateFeatureSinds", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureSinds))
+      .def("InstateGroupIDs", &EstimatorWrapper::InstateGroupIDs)
+      .def("InstateGroupSinds", &EstimatorWrapper::InstateGroupSinds)
+      .def("InstateGroupPoses", &EstimatorWrapper::InstateGroupPoses)
+      .def("InstateGroupCovs", &EstimatorWrapper::InstateGroupCovs)
       .def("num_instate_features", &EstimatorWrapper::num_instate_features)
+      .def("num_instate_groups", &EstimatorWrapper::num_instate_groups)
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize)
       .def("gauge_group", &EstimatorWrapper::gauge_group)

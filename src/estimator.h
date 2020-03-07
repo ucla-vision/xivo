@@ -116,15 +116,22 @@ public:
   Vec3 inn_Vsb() const { return inn_.segment(Index::Vsb,3); }
   bool MeasurementUpdateInitialized() const { return MeasurementUpdateInitialized_; }
   int gauge_group() const { return gauge_group_; }
-  int num_instate_features();
-  MatX InstateFeaturePositions(int n_output) const;
-  MatX InstateFeatureCovs(int n_output) const;
+  int num_instate_features() const { return instate_features_.size(); };
+  int num_instate_groups() const {return instate_groups_.size(); };
+  MatX3 InstateFeaturePositions(int n_output) const;
+  MatX6 InstateFeatureCovs(int n_output) const;
   void InstateFeaturePositionsAndCovs(int max_output, int &npts,
-    Eigen::Matrix<number_t, Eigen::Dynamic, 3> &positions,
-    Eigen::Matrix<number_t, Eigen::Dynamic, 6> &covs,
-    Eigen::Matrix<number_t, Eigen::Dynamic, 2> &pixels,
-    VecXi &feature_ids);
-  MatXi InstateFeatureIDs(int n_output) const;
+    MatX3 &positions, MatX6 &covs, MatX2 &pixels, VecXi &feature_ids);
+  VecXi InstateFeatureIDs(int n_output) const;
+  VecXi InstateFeatureIDs() const;
+  VecXi InstateFeatureSinds() const;
+  VecXi InstateFeatureSinds(int n_output) const;
+  MatX3 InstateFeaturePositions() const;
+  MatX6 InstateFeatureCovs() const;
+  VecXi InstateGroupIDs() const;
+  MatX7 InstateGroupPoses() const;
+  MatX InstateGroupCovs() const;
+  VecXi InstateGroupSinds() const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 

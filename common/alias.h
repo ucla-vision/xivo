@@ -26,6 +26,10 @@ using Mat93 = Eigen::Matrix<number_t, 9, 3>;
 using Mat39 = Eigen::Matrix<number_t, 3, 9>;
 using MatX = Eigen::Matrix<number_t, Eigen::Dynamic, Eigen::Dynamic>;
 using VecX = Eigen::Matrix<number_t, Eigen::Dynamic, 1>;
+using MatX2 = Eigen::Matrix<number_t, Eigen::Dynamic, 2>;
+using MatX3 = Eigen::Matrix<number_t, Eigen::Dynamic, 3>;
+using MatX6 = Eigen::Matrix<number_t, Eigen::Dynamic, 6>;
+using MatX7 = Eigen::Matrix<number_t, Eigen::Dynamic, 7>;
 
 using Mat3f = Eigen::Matrix<float, 3, 3>;
 using Mat4f = Eigen::Matrix<float, 4, 4>;
