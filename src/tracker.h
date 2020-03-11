@@ -14,6 +14,23 @@
 
 namespace xivo {
 
+
+/** Category of Optical Flow Algorithm for low-level feature tracking. */
+enum class OpticalFlowType : int {
+  LUCAS_KANADE = 0,
+  FARNEBACK = 1
+};
+
+
+/** Lucas-Kanade Tracker Params */
+typedef struct LKParams {
+  int win_size;
+  int max_level;
+  int max_iter;
+  number_t eps;
+} LKParams;
+
+
 class Tracker {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -35,6 +52,9 @@ private:
 
   Tracker(const Json::Value &cfg);
   static std::unique_ptr<Tracker> instance_;
+
+  // Optical Flow Variant
+  OpticalFlowType optflow_class_;
 
   // variables
   bool initialized_;
@@ -72,22 +92,24 @@ private:
   int mask_size_;
   int margin_;
 
-  // optical flow params
-  int win_size_;
-  int max_level_;
-  int max_iter_;
-  number_t eps_;
+  // LK optical flow params
+  LKParams lk_params_;
 
   // fast params
   int num_features_min_;
   int num_features_max_;
 
-  // Matching newly detected tracks to tracks that were just dropped
+  // Matching newly detected tracks to tracks that were just dropped by
+  // the optical flow algorithm
   bool match_dropped_tracks_;
   std::vector<FeaturePtr> newly_dropped_tracks_;
   cv::Ptr<cv::BFMatcher> matcher_;
 
 private:
+  void InitializeTracker(const cv::Mat &image);
+  void UpdateFarneback(const cv::Mat &image);
+  void UpdatePyrLK(const cv::Mat &image);
+
   void Detect(const cv::Mat &img, int num_to_add);
 
   bool FindMatchInDroppedTracks(cv::Mat new_feature_descriptor,

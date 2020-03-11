@@ -32,11 +32,20 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
   num_features_max_ = cfg_.get("num_features_max", 150).asInt();
   max_pixel_displacement_ = cfg_.get("max_pixel_displacement", 64).asInt();
 
+  std::string optflow = cfg_.get("optical_flow_type", "LucasKanade").asString();
+  if (optflow == "LucasKanade") {
+    optflow_class_ = OpticalFlowType::LUCAS_KANADE;
+  } else if (optflow == "Farneback") {
+    optflow_class_ = OpticalFlowType::FARNEBACK;
+  } else {
+    throw NotImplemented();
+  }
+
   auto klt_cfg = cfg_["KLT"];
-  win_size_ = klt_cfg.get("win_size", 15).asInt();
-  max_level_ = klt_cfg.get("max_level", 4).asInt();
-  max_iter_ = klt_cfg.get("max_iter", 15).asInt();
-  eps_ = klt_cfg.get("eps", 0.01).asDouble();
+  lk_params_.win_size = klt_cfg.get("win_size", 15).asInt();
+  lk_params_.max_level = klt_cfg.get("max_level", 4).asInt();
+  lk_params_.max_iter = klt_cfg.get("max_iter", 15).asInt();
+  lk_params_.eps = klt_cfg.get("eps", 0.01).asDouble();
 
   std::string detector_type = cfg_.get("detector", "FAST").asString();
   LOG(INFO) << "detector type=" << detector_type;
@@ -213,28 +222,73 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   }
 }
 
+
 void Tracker::Update(const cv::Mat &image) {
+  switch (optflow_class_) {
+    case OpticalFlowType::LUCAS_KANADE:
+      UpdatePyrLK(image);
+      break;
+    case OpticalFlowType::FARNEBACK:
+      UpdateFarneback(image);
+      break;
+    default:
+      throw std::runtime_error("Invalid Tracker Type, we shouldn't get here");
+  }
+}
+
+
+void Tracker::InitializeTracker(const cv::Mat &image) {
+  rows_ = image.rows;
+  cols_ = image.cols;
+  mask_ = cv::Mat(rows_, cols_, CV_8UC1);
+  mask_.setTo(0);
+
+  // build image pyramid if using Lucas Kanade
+  if (optflow_class_ == OpticalFlowType::LUCAS_KANADE) {
+    cv::buildOpticalFlowPyramid(img_, pyramid_, 
+      cv::Size(lk_params_.win_size, lk_params_.win_size),
+      lk_params_.max_level);
+  }
+
+  // setup the mask
+  ResetMask(mask_(
+      cv::Rect(margin_, margin_, cols_ - 2 * margin_, rows_ - 2 * margin_)));
+  // detect an initial set of features
+  Detect(img_, num_features_max_);
+  initialized_ = true;
+  // std::cout << "tracker initialized";
+
+}
+
+
+void Tracker::UpdateFarneback(const cv::Mat &image) {
+
+  if (!initialized_) {
+    InitializeTracker(image);
+    img_ = image.clone();
+    if (cfg_.get("normalize", false).asBool()) {
+      cv::normalize(image, img_, 0, 255, cv::NORM_MINMAX);
+    }
+    return;
+  }
+
+  // Reset mask
+  ResetMask(mask_(
+      cv::Rect(margin_, margin_, cols_ - 2 * margin_, rows_ - 2 * margin_)));
+
+  // 
+}
+
+
+
+void Tracker::UpdatePyrLK(const cv::Mat &image) {
   img_ = image.clone();
   if (cfg_.get("normalize", false).asBool()) {
     cv::normalize(image, img_, 0, 255, cv::NORM_MINMAX);
   }
 
   if (!initialized_) {
-    rows_ = img_.rows;
-    cols_ = img_.cols;
-    mask_ = cv::Mat(rows_, cols_, CV_8UC1);
-    mask_.setTo(0);
-
-    // build image pyramid
-    cv::buildOpticalFlowPyramid(img_, pyramid_, cv::Size(win_size_, win_size_),
-                                max_level_);
-    // setup the mask
-    ResetMask(mask_(
-        cv::Rect(margin_, margin_, cols_ - 2 * margin_, rows_ - 2 * margin_)));
-    // detect an initial set of features
-    Detect(img_, num_features_max_);
-    initialized_ = true;
-    // std::cout << "tracker initialized";
+    InitializeTracker(image);
     return;
   }
   // reset mask
@@ -244,12 +298,13 @@ void Tracker::Update(const cv::Mat &image) {
 
   // build new pyramid
   std::vector<cv::Mat> pyramid;
-  cv::buildOpticalFlowPyramid(img_, pyramid, cv::Size(win_size_, win_size_),
-                              max_level_);
+  cv::buildOpticalFlowPyramid(img_, pyramid,
+    cv::Size(lk_params_.win_size, lk_params_.win_size),
+    lk_params_.max_level);
 
   // prepare for optical flow
   cv::TermCriteria criteria(cv::TermCriteria::MAX_ITER | cv::TermCriteria::EPS,
-                            max_iter_, eps_);
+                            lk_params_.max_iter, lk_params_.eps);
 
   std::vector<cv::Point2f> pts0, pts1;
   std::vector<uint8_t> status;
@@ -283,7 +338,8 @@ void Tracker::Update(const cv::Mat &image) {
   //                          cv::OPTFLOW_LK_GET_MIN_EIGENVALS,
   //                          1e-4);
   cv::calcOpticalFlowPyrLK(pyramid_, pyramid, pts0, pts1, status, err,
-                           cv::Size(win_size_, win_size_), max_level_, criteria,
+                           cv::Size(lk_params_.win_size, lk_params_.win_size),
+                           lk_params_.max_level, criteria,
                            cv::OPTFLOW_USE_INITIAL_FLOW);
 
   std::vector<cv::KeyPoint> kps;
@@ -326,6 +382,7 @@ void Tracker::Update(const cv::Mat &image) {
   // Clear list of newly dropped tracks from last time
   newly_dropped_tracks_.clear();
 
+  // Update tracks
   for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
     FeaturePtr f(*it);
 
