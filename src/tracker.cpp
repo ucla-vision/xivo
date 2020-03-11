@@ -35,17 +35,36 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
   std::string optflow = cfg_.get("optical_flow_type", "LucasKanade").asString();
   if (optflow == "LucasKanade") {
     optflow_class_ = OpticalFlowType::LUCAS_KANADE;
-  } else if (optflow == "Farneback") {
+    auto klt_cfg = cfg_["KLT"];
+    lk_params_.win_size = klt_cfg.get("win_size", 15).asInt();
+    lk_params_.max_level = klt_cfg.get("max_level", 4).asInt();
+    lk_params_.max_iter = klt_cfg.get("max_iter", 15).asInt();
+    lk_params_.eps = klt_cfg.get("eps", 0.01).asDouble();
+  } 
+  else if (optflow == "Farneback") {
     optflow_class_ = OpticalFlowType::FARNEBACK;
-  } else {
+    auto fb_cfg = cfg_["FARNEBACK"];
+    fb_params_.num_levels = fb_cfg.get("num_levels", 5).asInt();
+    fb_params_.pyr_scale = fb_cfg.get("pyr_scale", 0.5).asDouble();
+    fb_params_.win_size = fb_cfg.get("win_size", 13).asInt();
+    fb_params_.num_iter = fb_cfg.get("num_iter", 10).asInt();
+    fb_params_.polyN = fb_cfg.get("polyN", 5).asInt();
+
+    std::string opencv_flag = fb_cfg.get("flags", "initial_flow").asString();
+    if (opencv_flag == "initial_flow") {
+      fb_params_.flags = cv::OPTFLOW_USE_INITIAL_FLOW;
+    } else if (opencv_flag == "farneback_gaussian") {
+      fb_params_.flags = cv::OPTFLOW_FARNEBACK_GAUSSIAN;
+    } else {
+      throw std::runtime_error("invalid Farneback flag. Expected [initial_flow|farneback_gaussian]");
+    }
+
+    farneback_flow_initialized_ = false;
+  }
+  else {
     throw NotImplemented();
   }
 
-  auto klt_cfg = cfg_["KLT"];
-  lk_params_.win_size = klt_cfg.get("win_size", 15).asInt();
-  lk_params_.max_level = klt_cfg.get("max_level", 4).asInt();
-  lk_params_.max_iter = klt_cfg.get("max_iter", 15).asInt();
-  lk_params_.eps = klt_cfg.get("eps", 0.01).asDouble();
 
   std::string detector_type = cfg_.get("detector", "FAST").asString();
   LOG(INFO) << "detector type=" << detector_type;
@@ -249,6 +268,9 @@ void Tracker::InitializeTracker(const cv::Mat &image) {
       cv::Size(lk_params_.win_size, lk_params_.win_size),
       lk_params_.max_level);
   }
+  else if (optflow_class_ == OpticalFlowType::FARNEBACK) {
+    farneback_flow_ = new cv::Mat(rows_, cols_, CV_32FC2);
+  }
 
   // setup the mask
   ResetMask(mask_(
@@ -265,18 +287,88 @@ void Tracker::UpdateFarneback(const cv::Mat &image) {
 
   if (!initialized_) {
     InitializeTracker(image);
-    img_ = image.clone();
+    cv::Mat grey_image;
+    cv::cvtColor(image, grey_image, CV_BGR2GRAY);
+    img_ = grey_image.clone();
     if (cfg_.get("normalize", false).asBool()) {
-      cv::normalize(image, img_, 0, 255, cv::NORM_MINMAX);
+      cv::normalize(grey_image, img_, 0, 255, cv::NORM_MINMAX);
     }
     return;
   }
+
+  // convert image to greyscale
+  cv::Mat grey_image;
+  cv::cvtColor(image, grey_image, CV_BGR2GRAY);
 
   // Reset mask
   ResetMask(mask_(
       cv::Rect(margin_, margin_, cols_ - 2 * margin_, rows_ - 2 * margin_)));
 
-  // 
+  // Compute optical flow
+  if (farneback_flow_initialized_) {
+    cv::calcOpticalFlowFarneback(img_, grey_image, *farneback_flow_,
+      fb_params_.pyr_scale, fb_params_.num_levels, fb_params_.win_size,
+      fb_params_.num_iter, fb_params_.polyN, fb_params_.polySigma,
+      cv::OPTFLOW_FARNEBACK_GAUSSIAN);
+    farneback_flow_initialized_ = true;
+  }
+  else {
+    cv::calcOpticalFlowFarneback(img_, grey_image, *farneback_flow_,
+      fb_params_.pyr_scale, fb_params_.num_levels, fb_params_.win_size,
+      fb_params_.num_iter, fb_params_.polyN, fb_params_.polySigma,
+      fb_params_.flags);
+  }
+
+  // Toss out features that are no longer in the image
+  newly_dropped_tracks_.clear();
+  int num_valid_features = 0;
+  int i = 0;
+  for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
+    FeaturePtr f(*it);
+
+    Vec2 last_pix(f->xp()); // x, y
+    number_t last_pix_x = last_pix(0);
+    number_t last_pix_y = last_pix(1);
+
+    cv::Vec2d flow = (*farneback_flow_).at<cv::Vec2d>(last_pix_y, last_pix_x);
+    number_t curr_pix_x = last_pix_x + flow.val[0];
+    number_t curr_pix_y = last_pix_y + flow.val[1];
+
+    if (MaskValid(mask_, curr_pix_x, curr_pix_y) &&
+        (last_pix - Vec2{curr_pix_x, curr_pix_y}).norm() <
+            max_pixel_displacement_) {
+      // FIXME: SUPER HACK drop features to enforce update
+      // update track status
+      f->SetTrackStatus(TrackStatus::TRACKED);
+      f->UpdateTrack(curr_pix_x, curr_pix_y);
+      // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
+      MaskOut(mask_, curr_pix_x, curr_pix_y, mask_size_);
+      ++num_valid_features;
+    } else {
+      // failed to extract descriptors or invalid mask
+      newly_dropped_tracks_.push_back(f);
+      // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
+    }
+  }
+
+  // detect a new set of features
+  // this can rescue dropped featuers by matching them to newly detected ones
+  if (num_valid_features < num_features_min_) {
+    Detect(img_, num_features_max_ - num_valid_features);
+  }
+
+  // Mark all features that are still in newly_dropped_tracks_ at this point
+  // as dropped
+  for (auto f: newly_dropped_tracks_) {
+    f->SetTrackStatus(TrackStatus::DROPPED);
+  }
+
+  // Save the image
+  img_ = grey_image.clone();
+  if (cfg_.get("normalize", false).asBool()) {
+    cv::normalize(grey_image, img_, 0, 255, cv::NORM_MINMAX);
+  }
+
 }
 
 

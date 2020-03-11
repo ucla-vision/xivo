@@ -31,6 +31,19 @@ typedef struct LKParams {
 } LKParams;
 
 
+/** Farneback optical flow params */
+typedef struct FarnebackParams {
+  int num_levels;
+  number_t pyr_scale;
+  bool use_fast_pyramids;
+  int win_size;
+  int num_iter;
+  int polyN;
+  number_t polySigma;
+  int flags;
+} FarnebackParams;
+
+
 class Tracker {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -68,6 +81,10 @@ private:
   /** Last computed LK pyramid */
   std::vector<cv::Mat> pyramid_;
 
+  /** Last computed Farneback Optical Flow */
+  bool farneback_flow_initialized_;
+  cv::Ptr<cv::Mat> farneback_flow_;
+
   /** Number of rows in the input image. */
   int rows_;
   /** Number of columns in the input image. */
@@ -94,6 +111,9 @@ private:
 
   // LK optical flow params
   LKParams lk_params_;
+
+  // Farneback Optical flow parameters
+  FarnebackParams fb_params_;
 
   // fast params
   int num_features_min_;
