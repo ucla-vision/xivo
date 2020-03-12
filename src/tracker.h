@@ -150,4 +150,8 @@ void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size = 15);
  *  (x,y) is not too close to the edge of the image. */
 bool MaskValid(const cv::Mat &mask, number_t x, number_t y);
 
+/** Marks keypoints whose descriptors could not be computed to be dropped. */
+void MatchKeypointsAndStatus(const std::vector<cv::KeyPoint> &orig_kps,
+  const std::vector<cv::KeyPoint> &kps, std::vector<uint8_t> &status);
+
 } // namespace xivo

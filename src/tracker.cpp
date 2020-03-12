@@ -449,7 +449,11 @@ void Tracker::UpdatePyrLK(const cv::Mat &image) {
       kp.class_id = i;
       kps.push_back(kp);
     }
+    std::vector<cv::KeyPoint> kps_copy = kps;
     extractor_->compute(img_, kps, descriptors);
+    if (kps_copy.size() > kps.size()) {
+      MatchKeypointsAndStatus(kps_copy, kps, status);
+    }
 
     for (int i = 0; i < kps.size(); ++i) {
       auto f = vf[kps[i].class_id];
@@ -537,5 +541,27 @@ bool MaskValid(const cv::Mat &mask, number_t x, number_t y) {
     return false;
   return static_cast<bool>(mask.at<uint8_t>(row, col));
 }
+
+
+void MatchKeypointsAndStatus(const std::vector<cv::KeyPoint> &orig_kps,
+  const std::vector<cv::KeyPoint> &kps, std::vector<uint8_t> &status) {
+
+  int n_diff = orig_kps.size() - kps.size();
+  int n_found = 0;
+  int orig_i = 0; // tracks indices in orig_kps
+  int new_i = 0; // tracks indices in kps
+
+  while (n_found < n_diff) {
+    if (orig_kps[orig_i].class_id != kps[new_i].class_id) {
+      status[orig_kps[orig_i].class_id] = 0;
+      n_found++;
+      orig_i++;
+    } else {
+      orig_i++;
+      new_i++;
+    }
+  }
+}
+
 
 } // namespace xivo
