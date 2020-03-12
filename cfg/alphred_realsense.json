@@ -1,0 +1,316 @@
+{
+  // verbose
+  "simulation": false,
+  "print_timing": false,
+  "use_canvas": true,
+  "use_debug_view": false,  // draw rejected & dropped features on canvas
+  "async_run": false, // turn this off in benchmarking
+
+  // visualization (tracker view) option
+  "print_bias_info": true,
+  "draw_OOS": true,
+
+  // algorithmic-level knobs
+  "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
+  "use_OOS": false, // update with Out-Of-State features
+  "use_depth_opt": true,  // depth optimization
+  "use_MH_gating": true,
+  "use_1pt_RANSAC": false,   
+  "use_compression": false,  // measurement compression
+  "triangulate_pre_subfilter": true,
+  "compression_trigger_ratio": 1.5,
+  "max_group_lifetime": 60,
+  "remove_outlier_counter": 10,
+  "OOS_update_min_observations": 5,
+
+  // signal clamping - XYZ are in the IMU frame - make sure you know which way
+  // gravity is aligned!
+  "clamp_signals": true,
+  "max_accel": [0.5, 10, 5],
+  "max_gyro": [0.02, 0.01, 0.01],
+
+  "PrinceDormand": {
+    "control_stepsize": false,
+    "tolerance": 1e-15,
+    "attempts": 12,
+    "min_scale_factor": 0.125,
+    "max_scale_factor": 4.0,
+    "stepsize": 0.001
+  },
+
+  "RK4": {
+    "stepsize": 0.002
+  },
+
+  // memory
+  "memory": {
+    "max_features": 256,
+    "max_groups": 256  // max groups should increase as allowed group lifetime increases
+  },
+
+  // gravity constant
+  "gravity": [0, 0, -9.8],
+
+  // Initial State (pinhole-radtan allen2-10x calibrated)
+  // I read the bias numbers off the charts
+  "X" : {
+    "W"   : [0, 0, 0],
+    "T"   : [0, 0, 0],
+    "V"   : [0, 0, 0],
+    "bg"  : [-0.00299, -0.001855, -0.001183],
+    "ba"  : [0.0815, 0.1984, 0.2991],
+    "Wbc" : [[ 0.99983897,  0.01446741, -0.01061765],
+             [-0.01450073,  0.99989015, -0.00306809],
+             [ 0.0105721,   0.00322156,  0.99993892]],
+    "Tbc": [-0.01409897, 0.00392674, 0.04414648],
+    "Wg"  : [0, 0, 0],
+    "td"  : 0.012815604139014822
+  },
+
+  "P" : {
+    "W"   : 2,
+    "T"   : 0.4,
+    "V"   : 0.8,
+    "bg"  : 1e-4,
+    "ba"  : 1e-3,
+    "Wbc" : 0.01,
+    "Tbc" : 0.001,
+    "Wg"  : 3.01,
+    "td"  : 1e-5, // 1ms
+    "Cg"  : 5e-6,
+    "Ca"  : 5e-6,
+    "FC"  : [9, 0.9],
+    "distortion": 0.01
+  },
+
+  "Qmodel" : {
+    "W"   : 10,
+    "T"   : 8,
+    "V"   : 5,
+    "wb"  : 0.01,
+    "ab"  : 0.001,
+    "Wbc" : 0,
+    "Tbc" : 0.0,
+    "Wg"  : 0
+  },
+
+
+  // From allen plot 1
+  /*
+  "Qimu": {
+    "gyro": 0.00013455,
+    "gyro_bias": 3.2529e-06,
+    "accel": 0.0011642,
+    "accel_bias": 0.00037851
+  },
+  */
+
+  // From allen plot 2
+  /*
+  "Qimu": {
+    "gyro": 9.141e-05,
+    "gyro_bias": 3.86083e-06,
+    "accel": 0.0012234,
+    "accel_bias": 0.00021732
+  },
+  */
+
+  // Average of allen plots 1 and 2
+  /*
+  "Qimu": {
+    "gyro": 1.1298e-04,
+    "gyro_bias": 3.5569e-06,
+    "accel": 0.0012,
+    "accel_bias": 2.9791e-04
+  },
+  */
+
+  // Allen plot 2, inflated 10x
+  /*
+  "Qimu": {
+    "gyro": 9.141e-04,
+    "gyro_bias": 3.86083e-05,
+    "accel": 0.012234,
+    "accel_bias": 0.0021732
+  },
+  */
+  /*
+  // Allen plot 2, inflated 100x
+  "Qimu": {
+    "gyro": 9.141e-03,
+    "gyro_bias": 3.86083e-04,
+    "accel": 0.12234,
+    "accel_bias": 0.021732
+  },
+  */
+  // big numbers!
+  "Qimu": {
+    //"gyro": 9.141e-01,
+    //"gyro": 0.22,
+    "gyro": 2,
+    "gyro_bias": 3.86083e-05,
+    //"accel": 1.2234,
+    "accel": 4,
+    "accel_bias": 0.0021732
+  },
+
+  // initial std on feature state
+  "initial_z": 3.5, // meter
+  "initial_std_x": 8, // pixel
+  "initial_std_y": 8, // pixel
+  "initial_std_z": 1.5,  // meter
+
+  // std of visual measurement, in pixels
+  "visual_meas_std":  5,
+  "outlier_thresh": 10,
+  "oos_meas_std": 10,
+  "max_depth": 5.0,
+  "min_depth": 0.25,
+
+
+  // depth sub-filter setting
+  "subfilter": {
+    "visual_meas_std": 5,
+    "ready_steps": 2,
+    "MH_thresh": 15.991
+  },
+
+  // pre-subfilter triangulation options
+  "triangulation": {
+    "method": 2,
+    "zmin": 0.25,
+    "zmax": 5.0
+  },
+
+  "depth_opt": {
+    "two_view": false,
+    "use_hessian": true,
+    "max_iters": 15,
+    "eps": 1e-3,
+    "damping": 1e-3,
+    "max_res_norm": 2.5 // maximal norm of per observation residuals
+  },
+
+  // "feature_P0_damping": 1.0, // 10.0 seems most appropriate
+
+  // "calibrated" model
+  "imu_calib": {
+    "Cas": [1, 1, 1],
+    "Car": [[1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]],
+    "Cgs": [1, 1, 1],
+    "Cgr": [[1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]]
+  },
+  "gravity_init_counter": 40,
+
+  "camera_cfg": {
+    "model": "radtan",
+    "rows": 480, 
+    "cols": 640,
+    "fx": 584.5056312645837,
+    "fy": 585.0012411620038,
+    "cx": 320.01046039337496,
+    "cy": 234.43114000886206,
+    "px": 0.13586900513325845,
+    "py": -0.302490564136585,
+    "k012": [-0.0012152999902019673, 0.0011056450750157262, 0.0],
+    "max_iter": 20,
+    "comment": "from Kalibr"
+  },
+
+  "min_inliers": 2, // minimum number of inlier measurements
+
+  "MH_thresh": 15.991, // 8.991
+  "MH_adjust_factor": 2.5,
+
+  "1pt_RANSAC_thresh": 1.5,
+  "1pt_RANSAC_prob": 0.95,
+  "1pt_RANSAC_Chi2": 5.89,
+
+  "tracker_cfg": {
+    "use_prediction": false,
+    "mask_size": 15,
+    "margin": 8, // image boundary to mask out
+    "num_features_min": 45,
+    "num_features_max": 60,
+    "max_pixel_displacement": 64,
+    "normalize": false,
+    "match_dropped_tracks": false,
+    "match_dropped_tracks_tol": 80,
+
+    "KLT": {
+      "win_size": 15,
+      "max_level": 10,
+      "max_iter": 30,
+      "eps": 0.01
+    },
+
+    "extract_descriptor": false,
+    "descriptor_distance_thresh": -1, // -1 to disable descriptor check
+    "default_descriptor": "BRIEF",
+
+    // "detector": "BRISK",
+    "detector": "FAST",
+    // "detector": "ORB",
+    // "detector": "AGAST",
+    // "detector": "GFTT",
+
+    "FAST": {
+      // https://docs.opencv.org/3.4/df/d74/classcv_1_1FastFeatureDetector.html
+      "threshold": 20,
+      "nonmaxSuppression": true
+    },
+
+    "BRISK": {
+      // https://docs.opencv.org/3.4/de/dbf/classcv_1_1BRISK.html
+      "thresh": 25,
+      "octaves": 3,
+      "patternScale": 1.0
+    },
+
+    "ORB": {
+      // https://docs.opencv.org/3.3.0/db/d95/classcv_1_1ORB.html
+      "nfeatures": 500,
+      "scaleFactor": 1.2,
+      "nlevels": 4,
+      "edgeThreshold": 31,
+      "firstLevel": 0,
+      "WTA_K": 2,
+      "patchSize": 31,
+      "fastThreshold": 20
+    },
+
+    "AGAST": {
+      // https://docs.opencv.org/3.4/d7/d19/classcv_1_1AgastFeatureDetector.html
+      "threshold": 10,
+      "nonmaxSuppression": true
+    },
+
+    "GFTT": {
+      // Good Feature To Track 
+      // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
+      "maxCorners": 1000,
+      "qualityLevel": 0.01,
+      "minDistance": 1.0,
+      "blockSize": 3,
+      "useHarrisDetector": false,
+      "k": 0.04
+    },
+
+    "BRIEF": {
+      "bytes": 64,
+      "use_orientation": false
+    },
+
+    "FREAK": {
+      "orientationNormalized": true,
+      "scaleNormalized": true,
+      "patternScale": 22.0,
+      "nOctaves": 4
+    }
+  } 
+
+}
