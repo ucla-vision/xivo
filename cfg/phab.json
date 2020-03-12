@@ -199,6 +199,7 @@
   "1pt_RANSAC_Chi2": 5.89,
 
   "tracker_cfg": {
+    "optical_flow_type": "LucasKanade",
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
@@ -207,7 +208,6 @@
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": false,
-    "match_dropped_tracks_tol": 50,
 
     "KLT": {
       "win_size": 15,
@@ -216,7 +216,16 @@
       "eps": 0.01
     },
 
-    "extract_descriptor": false,
+    "FARNEBACK": {
+      "num_levels": 5,
+      "pyr_scale": 0.5,
+      "win_size": 13,
+      "num_iter": 10,
+      "polyN": 5,
+      "flags": "initial_flow"
+    },
+
+    "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
     "default_descriptor": "BRIEF",
 
