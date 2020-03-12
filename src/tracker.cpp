@@ -319,35 +319,90 @@ void Tracker::UpdateFarneback(const cv::Mat &image) {
       fb_params_.flags);
   }
 
-  // Toss out features that are no longer in the image
-  newly_dropped_tracks_.clear();
-  int num_valid_features = 0;
-  int i = 0;
-  for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
-    FeaturePtr f(*it);
+  // reserve memory for keypoints and descriptors
+  std::vector<cv::KeyPoint> kps;
+  std::vector<uint8_t> status;
+  cv::Mat descriptors;
+  std::vector<FeaturePtr> vf{features_.begin(), features_.end()};
+  //kps.reserve(vf.size());
+  //status.reserve(vf.size());
+  descriptors.reserveBuffer(vf.size() * 256);
 
-    Vec2 last_pix(f->xp()); // x, y
-    number_t last_pix_x = last_pix(0);
-    number_t last_pix_y = last_pix(1);
+  // Translate old locations to new locations, save keypoints that are not to
+  // be dropped
+  for (int i = 0; i < vf.size(); ++i) {
+    auto f = vf[i];
+    cv::KeyPoint kp =
+        f->keypoint(); // preserve all the properties of the initial keypoint
+
+    // calculate updated pixel location
+    number_t last_pix_x = kp.pt.x;
+    number_t last_pix_y = kp.pt.y;
 
     cv::Vec2d flow = (*farneback_flow_).at<cv::Vec2d>(last_pix_y, last_pix_x);
     number_t curr_pix_x = last_pix_x + flow.val[0];
     number_t curr_pix_y = last_pix_y + flow.val[1];
 
+    // Only compute descriptor if we haven't yet fallen off the image
     if (MaskValid(mask_, curr_pix_x, curr_pix_y) &&
-        (last_pix - Vec2{curr_pix_x, curr_pix_y}).norm() <
-            max_pixel_displacement_) {
-      // FIXME: SUPER HACK drop features to enforce update
-      // update track status
+        (Vec2{last_pix_x, last_pix_y} - Vec2{curr_pix_x, curr_pix_y}).norm()
+          < max_pixel_displacement_) {
+      status.push_back(1);
+      kp.pt.x = curr_pix_x;
+      kp.pt.y = curr_pix_y;
+      kp.class_id = i;
+      kps.push_back(kp);
+    }
+    else {
+      status.push_back(0);
+    }
+  }
+
+  // Extract descriptors
+  // mark features that don't meet the descriptor distance threshold to be
+  // dropped
+  std::vector<cv::KeyPoint> kps_copy = kps;
+  if (extract_descriptor_ && kps.size() > 0) {
+    extractor_->compute(image, kps, descriptors);
+
+    if (kps.size() < kps_copy.size()) {
+      MatchKeypointsAndStatus(kps_copy, kps, status);
+    }
+
+    for (int i = 0; i < kps.size(); ++i) {
+      auto f = vf[kps[i].class_id];
+      if (descriptor_distance_thresh_ != -1) {
+        int dist =
+            cv::norm(f->descriptor(), descriptors.row(i), cv::NORM_HAMMING);
+        if (dist > descriptor_distance_thresh_) {
+          status[kps[i].class_id] = 0; // enforce to be dropped
+        }
+      }
+      // FIXME: so if the distance test fails, we probably do not want to update
+      // the descriptor
+      // set new descriptor
+      f->SetDescriptor(descriptors.row(i));
+    }
+  }
+
+  // Update tracks of features that are good
+  int num_valid_features = 0;
+  for (int i=0; i<kps.size(); ++i) {
+    auto f = vf[kps[i].class_id];
+    if (status[kps[i].class_id]) {
       f->SetTrackStatus(TrackStatus::TRACKED);
-      f->UpdateTrack(curr_pix_x, curr_pix_y);
-      // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
-      MaskOut(mask_, curr_pix_x, curr_pix_y, mask_size_);
+      f->UpdateTrack(kps[i].pt.x, kps[i].pt.y);
+      MaskOut(mask_, kps[i].pt.x, kps[i].pt.y, mask_size_);
       ++num_valid_features;
-    } else {
-      // failed to extract descriptors or invalid mask
+    }
+  }
+
+  // Toss out features that are no longer in the image
+  newly_dropped_tracks_.clear();
+  for (int i=0; i<status.size(); i++) {
+    auto f = vf[i];
+    if (!status[i]) {
       newly_dropped_tracks_.push_back(f);
-      // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
     }
   }
 
