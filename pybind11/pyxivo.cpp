@@ -1,7 +1,9 @@
 #include "pybind11/eigen.h"
+#include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 
 #include "estimator.h"
+#include "opencv2/core/eigen.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "utils.h"
 

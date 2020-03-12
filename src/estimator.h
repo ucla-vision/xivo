@@ -310,6 +310,11 @@ private:
    * respectively. */
   MatX Qimu_;
 
+  // for clamping signals
+  bool clamp_signals_;
+  Vec3 max_gyro_;
+  Vec3 max_accel_;
+
   // for update
 
   /** Set to true once update has been initialized */
