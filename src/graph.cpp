@@ -199,6 +199,7 @@ std::vector<GroupPtr> Graph::GetGroupsOf(FeaturePtr f) const {
   for (const auto &obs : feature_adj_.at(f->id())) {
     out.push_back(groups_.at(obs.first));
   }
+  return out;
 }
 
 std::vector<Observation> Graph::GetObservationsOf(FeaturePtr f) const {

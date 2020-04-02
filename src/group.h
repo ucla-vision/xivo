@@ -41,8 +41,8 @@ public:
   int sind() const { return sind_; }
   void SetSind(int ind) { sind_ = ind; }
   int lifetime() const { return lifetime_; }
-  int IncrementLifetime() { lifetime_++; }
-  int ResetLifetime() { lifetime_ = 0; }
+  void IncrementLifetime() { lifetime_++; }
+  void ResetLifetime() { lifetime_ = 0; }
 
   void BackupState() { X0_ = X_; }
   void RestoreState() { X_ = X0_; }
