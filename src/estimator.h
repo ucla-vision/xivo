@@ -119,15 +119,17 @@ public:
   int num_instate_features() const { return instate_features_.size(); };
   int num_instate_groups() const {return instate_groups_.size(); };
   MatX3 InstateFeaturePositions(int n_output) const;
+  MatX3 InstateFeaturePositions() const;
   MatX6 InstateFeatureCovs(int n_output) const;
+  MatX6 InstateFeatureCovs() const;
+  MatX3 InstateFeatureXc(int n_output) const;
+  MatX3 InstateFeatureXc() const;
   void InstateFeaturePositionsAndCovs(int max_output, int &npts,
     MatX3 &positions, MatX6 &covs, MatX2 &pixels, VecXi &feature_ids);
   VecXi InstateFeatureIDs(int n_output) const;
   VecXi InstateFeatureIDs() const;
-  VecXi InstateFeatureSinds() const;
   VecXi InstateFeatureSinds(int n_output) const;
-  MatX3 InstateFeaturePositions() const;
-  MatX6 InstateFeatureCovs() const;
+  VecXi InstateFeatureSinds() const;
   VecXi InstateGroupIDs() const;
   MatX7 InstateGroupPoses() const;
   MatX InstateGroupCovs() const;

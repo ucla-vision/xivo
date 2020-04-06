@@ -121,32 +121,40 @@ public:
     return estimator_->InstateFeaturePositions(n_output);
   }
 
-  MatX6 InstateFeatureCovs(int n_output) {
-    return estimator_->InstateFeatureCovs(n_output);
-  }
-
-  VecXi InstateFeatureIDs(int n_output) {
-    return estimator_->InstateFeatureIDs(n_output);
-  }
-
   MatX3 InstateFeaturePositions() {
     return estimator_->InstateFeaturePositions();
+  }
+
+  MatX6 InstateFeatureCovs(int n_output) {
+    return estimator_->InstateFeatureCovs(n_output);
   }
 
   MatX6 InstateFeatureCovs() {
     return estimator_->InstateFeatureCovs();
   }
 
+  VecXi InstateFeatureIDs(int n_output) {
+    return estimator_->InstateFeatureIDs(n_output);
+  }
+
   VecXi InstateFeatureIDs() {
     return estimator_->InstateFeatureIDs();
   }
 
-  VecXi InstateFeatureSinds() {
-    return estimator_->InstateFeatureSinds();
-  }
-
   VecXi InstateFeatureSinds(int n_output) {
     return estimator_->InstateFeatureSinds(n_output);
+  }
+
+  MatX3 InstateFeatureXc(int n_output) {
+    return estimator_->InstateFeatureXc(n_output);
+  }
+
+  MatX3 InstateFeatureXc() {
+    return estimator_->InstateFeatureXc();
+  }
+
+  VecXi InstateFeatureSinds() {
+    return estimator_->InstateFeatureSinds();
   }
 
   VecXi InstateGroupIDs() {
@@ -216,6 +224,8 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("InstateFeatureIDs", py::overload_cast<>(&EstimatorWrapper::InstateFeatureIDs))
       .def("InstateFeatureSinds", py::overload_cast<>(&EstimatorWrapper::InstateFeatureSinds))
       .def("InstateFeatureSinds", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureSinds))
+      .def("InstateFeatureXc", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureXc))
+      .def("InstateFeatureXc", py::overload_cast<>(&EstimatorWrapper::InstateFeatureXc))
       .def("InstateGroupIDs", &EstimatorWrapper::InstateGroupIDs)
       .def("InstateGroupSinds", &EstimatorWrapper::InstateGroupSinds)
       .def("InstateGroupPoses", &EstimatorWrapper::InstateGroupPoses)
