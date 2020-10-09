@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(feh)
 
-option(BUILD_ROSNODE "wrap the system in a rosnode" OFF)
 option(BUILD_G2O "build with g2o support" OFF)
 option(USE_GPERFTOOLS "use gperf for performance profiling" OFF)
 
@@ -89,9 +88,6 @@ endif(BUILD_G2O)
 # feh
 add_subdirectory(common)
 add_subdirectory(src)
-if (BUILD_ROSNODE)
-  add_subdirectory(node)
-endif(BUILD_ROSNODE)
 
 ########################################
 # PYTHON BINDING

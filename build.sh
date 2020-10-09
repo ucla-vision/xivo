@@ -11,16 +11,11 @@
 # ./build.sh ros g2o gperf
 
 # parsing options
-BUILD_ROSNODE=false
 BUILD_G2O=false
 USE_GPERFTOOLS=false
 
 for arg in "$@"
 do
-  if [ $arg == "ros" ]; then
-    BUILD_ROSNODE=true
-  fi
-
   if [ $arg == "g2o" ]; then
     BUILD_G2O=true
   fi
@@ -29,10 +24,6 @@ do
     USE_GPERFTOOLS=true
   fi
 done
-
-if [ $BUILD_ROSNODE = true ]; then
-  echo "BUILD WITH ROS SUPPORT"
-fi
 
 if [ $BUILD_G2O = true ]; then
   echo "BUILD WITH G2O SUPPORT"
@@ -105,6 +96,6 @@ fi
 mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
 
-cmake .. -DBUILD_G2O=$BUILD_G2O -DBUILD_ROSNODE=$BUILD_ROSNODE -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
+cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
 
 make -j
