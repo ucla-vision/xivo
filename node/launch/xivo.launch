@@ -1,5 +1,0 @@
-<!-- -*- mode: XML -*- -->
-<launch>
-  <include file="$(find xivo)/launch/xivo.xml" />
-</launch>
-
