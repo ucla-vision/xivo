@@ -1,10 +1,6 @@
 ## Usage
 
-The current implementation supports two execution modes: Batch, requiring a folder of image sequences and a text file of time-stamped inertial measurements, or online using a ROS bag. The format for the image sequences and text files are described [here](dataformat.md). The format of the ROS messages is described here ([imu][imu_msg],[image][image_msg]).
-
-[imu_msg]: https://docs.ros.org/api/sensor_msgs/html/msg/Imu.html
-[image_msg]: https://docs.ros.org/api/sensor_msgs/html/msg/Image.html
-
+The current implementation supports two execution modes: Batch, requiring a folder of image sequences and a text file of time-stamped inertial measurements, or [through ROS](https://github.com/ucla-vision/xivo_ros), either using a rosbag or online. The format for the image sequences and text files are described [here](dataformat.md). 
 
 ### Datasets
 
@@ -68,22 +64,9 @@ To build, run `./build.sh` in XIVO's root directory.
 
 ## ROS support
 
-### Build
+ROS support is provided through [this wrapper in a catkin environment](https://github.com/ucla-vision/xivo_ros). The input to XIVO can either come from a rosbag or a simulation in a catkin environment.
 
-By default the ROS node of the system will not be built in case that your operating system does not have ROS installed. 
-
-However, if you want to use the system with ROS support, you need to first install ROS (see instructions [here](http://wiki.ros.org/ROS/Installation)), and then build with both ROS and g2o.
-
-```
-./build.sh ros g2o
-```
-
-
-### Launch
-
-1. In the project root directory, `source build/devel/setup.zsh`. If another shell, such as bash/sh, is used, source the corresponding shell script (`setup.bash`/`setup.sh`) respectively.
-2. `roslaunch node/launch/xivo.launch` to launch the ros node, which subscribes to `/imu0` and `/cam0/image_raw` topics.
-3. In antoher terminal, playback the rosbag of your choice, i.e., `rosbag play /PATH/TO/YOUR/ROSBAG`.
+Please note that performance in the catkin environment is (at first glance) slower than without ROS.
 
 <!-- ## Profiling
 
@@ -120,13 +103,13 @@ pip install -r requirements.txt
 **Note:** Since Python 2 is no longer being supported, we are only supporting Python 3. If your default Python version (output of `which python`) is below Python 3, then in `build.sh`, you will need to change the line 
 
 ```
-cmake .. -DBUILD_G2O=$BUILD_G2O -DBUILD_ROSNODE=$BUILD_ROSNODE -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
+cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
 ```
 
 to
 
 ```
-cmake .. -DBUILD_G2O=$BUILD_G2O -DBUILD_ROSNODE=$BUILD_ROSNODE -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DPYTHON_EXECUTABLE=/usr/bin/python3
+cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DPYTHON_EXECUTABLE=/usr/bin/python3
 ```
 
 <!-- ### Evaluation
