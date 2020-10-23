@@ -413,22 +413,25 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
   Vec3 gyro_new;
   Vec3 accel_new;
 
+  Vec3 grav_s = X_.Rg * g_;
+  Vec3 grav_b = X_.Rsb.inv() * grav_s;
+
   if (clamp_signals_) {
+
+    Vec3 accel_wout_grav = accel + grav_b;
+
     for (int i=0; i < 3; i++) {
       number_t sign_gyro = (gyro(i) > 0) ? 1.0 : -1.0;
-      number_t sign_accel = (accel(i) > 0) ? 1.0 : -1.0;
+      number_t sign_accel = (accel_wout_grav(i) > 0) ? 1.0 : -1.0;
 
       number_t gyro_mag = (abs(gyro(i)) > max_gyro_(i)) ? max_gyro_(i) : abs(gyro(i));
-      number_t accel_mag = (abs(accel(i)) > max_accel_(i)) ? max_accel_(i) : abs(accel(i));
+      number_t accel_mag = (abs(accel_wout_grav(i)) > max_accel_(i)) ? max_accel_(i) : abs(accel_wout_grav(i));
       
       gyro_new(i) = sign_gyro * gyro_mag;
       accel_new(i) = sign_accel * accel_mag;
-
-      /*
-      gyro_new(i) = (abs(gyro(i)) > max_gyro_(i)) ? last_gyro_(i) : gyro(i);
-      accel_new(i) = (abs(accel(i)) > max_accel_(i)) ? last_accel_(i) : accel(i);
-      */
     }
+    accel_new -= grav_b;
+
   } else{
     gyro_new = gyro;
     accel_new = accel;
