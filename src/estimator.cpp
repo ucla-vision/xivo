@@ -279,10 +279,10 @@ Estimator::Estimator(const Json::Value &cfg)
   // /////////////////////////////
   auto Qimu = cfg_["Qimu"];
   Qimu_.setIdentity(12, 12);
-  Qimu_.block<3, 3>(0, 0) *= Qimu["gyro"].asDouble();
-  Qimu_.block<3, 3>(3, 3) *= Qimu["accel"].asDouble();
-  Qimu_.block<3, 3>(6, 6) *= Qimu["gyro_bias"].asDouble();
-  Qimu_.block<3, 3>(9, 9) *= Qimu["accel_bias"].asDouble();
+  Qimu_.block<3, 3>(0, 0) *= GetVectorFromJson<number_t, 3>(Qimu, "gyro").asDiagonal();
+  Qimu_.block<3, 3>(3, 3) *= GetVectorFromJson<number_t, 3>(Qimu, "accel").asDiagonal();
+  Qimu_.block<3, 3>(6, 6) *= GetVectorFromJson<number_t, 3>(Qimu, "gyro_bias").asDiagonal();
+  Qimu_.block<3, 3>(9, 9) *= GetVectorFromJson<number_t, 3>(Qimu, "accel_bias").asDiagonal();
   Qimu_ *= Qimu_;
   LOG(INFO) << "Covariance of IMU measurement noise loaded";
 

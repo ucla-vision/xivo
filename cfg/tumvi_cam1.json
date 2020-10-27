@@ -100,10 +100,10 @@
 
   // inflated by 3 times
   "Qimu": {
-    "gyro": 24.0e-5,
-    "gyro_bias": 6.6e-6,
-    "accel": 4.2e-3,
-    "accel_bias": 25.8e-5
+    "gyro": [24.0e-5, 24.0e-5, 24.0e-5],
+    "gyro_bias": [6.6e-6, 6.0e-6, 6.0e-6],
+    "accel": [4.2e-3, 4.2e-3, 4.2e-3],
+    "accel_bias": [25.8e-5, 25.8e-5, 25.8e-5]
   },
 
 

@@ -147,11 +147,11 @@
   "Qimu": {
     //"gyro": 9.141e-01,
     //"gyro": 0.22,
-    "gyro": 2,
-    "gyro_bias": 3.86083e-05,
+    "gyro": [2, 2, 2],
+    "gyro_bias": [3.86083e-05, 3.86083e-05, 3.86083e-05],
     //"accel": 1.2234,
-    "accel": 4,
-    "accel_bias": 0.0021732
+    "accel": [4, 4, 4],
+    "accel_bias": [0.0021732, 0.0021732, 0.0021732]
   },
 
   // initial std on feature state
