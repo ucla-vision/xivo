@@ -33,6 +33,7 @@ if [ $USE_GPERFTOOLS = true ]; then
   echo "USE GOOGLE PERFORMANCE TOOLS (GPERFTOOLS) FOR PROFILING"
 fi
 
+CPU_COUNT=4
 
 # build dependencies
 PROJECT_DIR=$(pwd)
@@ -42,37 +43,37 @@ cd $PROJECT_DIR/thirdparty/googletest
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
+make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/gflags
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
+make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/glog
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
+make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/eigen-3.3.7
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
+make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/Pangolin
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j
+make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/jsoncpp
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=.. -DBUILD_SHARED_LIBS=TRUE
-make install -j
+make install -j $CPU_COUNT
 
 # to build gperftools, need to install autoconf and libtool first
 if [ $USE_GPERFTOOLS = true ]; then
@@ -88,7 +89,7 @@ if [ $BUILD_G2O = true ]; then
   mkdir build
   cd build
   cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen-3.3.7
-  make install -j
+  make install -j $CPU_COUNT
 fi
 
 
@@ -98,4 +99,4 @@ cd ${PROJECT_DIR}/build
 
 cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
 
-make -j
+make -j $CPU_COUNT
