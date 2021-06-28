@@ -93,6 +93,14 @@ This software is property of the UC Regents, and is provided free of charge for 
 
 
 If you make use of any part of this code or the datasets provided, please acknowledge this repository by citing the following:
+```
+@misc{fei2019xivo,
+title={XIVO: An Open-Source Software for Visual-Inertial Odometry},
+author={Fei, Xiaohan and Soatto, Stefano},
+url={https://github.com/ucla-vision/xivo}
+}
+```
+or
 
 ```
 @article{fei2019geo,
