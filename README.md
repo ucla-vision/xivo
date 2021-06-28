@@ -97,7 +97,8 @@ If you make use of any part of this code or the datasets provided, please acknow
 @misc{fei2019xivo,
 title={XIVO: An Open-Source Software for Visual-Inertial Odometry},
 author={Fei, Xiaohan and Soatto, Stefano},
-url={https://github.com/ucla-vision/xivo}
+year={2019},
+howpublished = "\url{https://github.com/ucla-vision/xivo}"
 }
 ```
 or
