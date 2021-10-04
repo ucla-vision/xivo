@@ -97,6 +97,6 @@ fi
 mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
 
-cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS
+cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DCMAKE_BUILD_TYPE=Debug -DOpenCV_DIR=/home/stsuei/xivo_opencv/share/OpenCV -DCXX_STANDARD=17
 
 make -j $CPU_COUNT

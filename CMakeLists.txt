@@ -55,11 +55,14 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen-3.3.7/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
-
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
         ${JSONCPP_INCLUDE_DIRS}
         /usr/include/suitesparse
         /usr/include
+<<<<<<< Updated upstream
+=======
+        ${OpenCV_INCLUDE_DIRS}
+>>>>>>> Stashed changes
         ${Python3_INCLUDE_DIRS}
 )
 
