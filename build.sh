@@ -66,7 +66,7 @@ make install -j $CPU_COUNT
 cd $PROJECT_DIR/thirdparty/Pangolin
 mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=..
+cmake .. -DCMAKE_INSTALL_PREFIX=.. -DOpenGL_GL_PREFERENCE=GLVND
 make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/jsoncpp
