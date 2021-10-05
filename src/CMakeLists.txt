@@ -103,7 +103,7 @@ target_link_libraries(vio ${libxivo} gflags::gflags)
 add_executable(unitTests_NumericalAlgorithms 
                test/unittest_givens.cpp
                test/unittest_helpers.cpp)
-target_link_libraries(unitTests_NumericalAlgorithms ${libxivo} ${deps} gtest gtest_main)
+target_link_libraries(unitTests_NumericalAlgorithms xest ${deps} gtest gtest_main)
 add_test(NAME NumericalAlgorithms COMMAND unitTests_NumericalAlgorithms)
 
 add_executable(unitTests_Jacobians
@@ -115,27 +115,27 @@ add_test(NAME Jacobians COMMAND unitTests_Jacobians)
 
 add_executable(unitTests_Rodrigues
                test/unittest_rodrigues.cpp)
-target_link_libraries(unitTests_Rodrigues ${libxivo} ${deps} gtest gtest_main)
+target_link_libraries(unitTests_Rodrigues xest ${deps} gtest gtest_main)
 add_test(NAME Rodrigues COMMAND unitTests_Rodrigues)
 
 add_executable(unitTests_pinhole
                test/unittest_camera_pinhole.cpp)
-target_link_libraries(unitTests_pinhole ${libxivo} ${deps} gtest gtest_main)
+target_link_libraries(unitTests_pinhole xest ${deps} gtest gtest_main)
 add_test(NAME CamerasPinhole COMMAND unitTests_pinhole)
 
 add_executable(unitTests_radtan
                test/unittest_camera_radtan.cpp)
-target_link_libraries(unitTests_radtan ${libxivo} ${deps} gtest gtest_main)
+target_link_libraries(unitTests_radtan xest ${deps} gtest gtest_main)
 add_test(NAME CamerasRadtan COMMAND unitTests_radtan)
 
 add_executable(unitTests_equi
                test/unittest_camera_equi.cpp)
-target_link_libraries(unitTests_equi ${libxivo} ${deps} gtest gtest_main)
+target_link_libraries(unitTests_equi xest ${deps} gtest gtest_main)
 add_test(NAME CamerasEqui COMMAND unitTests_equi)
 
 add_executable(unitTests_atan
                test/unittest_camera_atan.cpp)
-target_link_libraries(unitTests_atan ${libxivo} ${deps} gtest gtest_main)
+target_link_libraries(unitTests_atan xest ${deps} gtest gtest_main)
 add_test(NAME CamerasAtan COMMAND unitTests_atan)
 
 if (BUILD_G2O)
