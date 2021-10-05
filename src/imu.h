@@ -16,7 +16,7 @@ public:
   Mat3 Cg; // gyro scaling (diagonal) and misalignment (upper & lower triangle)
 
   using Tangent = Eigen::Matrix<number_t, 15, 1>;
-  IMUState &operator+=(const Tangent &dX);
+  void operator+=(const Tangent &dX);
 
 private:
   // make the constructor prive, so ...

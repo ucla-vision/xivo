@@ -59,10 +59,7 @@ include_directories(
         ${JSONCPP_INCLUDE_DIRS}
         /usr/include/suitesparse
         /usr/include
-<<<<<<< Updated upstream
-=======
         ${OpenCV_INCLUDE_DIRS}
->>>>>>> Stashed changes
         ${Python3_INCLUDE_DIRS}
 )
 

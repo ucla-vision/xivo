@@ -4,7 +4,7 @@
 
 namespace xivo {
 
-IMUState &IMUState::operator+=(const Tangent &dX) {
+void IMUState::operator+=(const Tangent &dX) {
   int idx{0};
   // accel scaling
   for (int i = 0; i < 3; ++i) {

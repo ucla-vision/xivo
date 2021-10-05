@@ -88,7 +88,7 @@ if [ $BUILD_G2O = true ]; then
   cd $PROJECT_DIR/thirdparty/g2o
   mkdir build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen-3.3.7
+  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen-3.3.7 -DOpenGL_GL_PREFERENCE=GLVND
   make install -j $CPU_COUNT
 fi
 
