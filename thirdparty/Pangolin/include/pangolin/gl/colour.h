@@ -31,6 +31,9 @@
 
 #include <stdexcept>
 
+// Modified by stephanietsuei to compile on g++-11
+#include <limits>
+
 namespace pangolin
 {
 
