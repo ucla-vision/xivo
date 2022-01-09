@@ -57,7 +57,7 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j $CPU_COUNT
 
-cd $PROJECT_DIR/thirdparty/eigen-3.3.7
+cd $PROJECT_DIR/thirdparty/eigen
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
@@ -66,7 +66,7 @@ make install -j $CPU_COUNT
 cd $PROJECT_DIR/thirdparty/Pangolin
 mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=.. -DOpenGL_GL_PREFERENCE=GLVND -DCMAKE_CXX_STANDARD=17 -D BUILD_PANGOLIN_FFMPEG=OFF
+cmake .. -DCMAKE_INSTALL_PREFIX=.. -DOpenGL_GL_PREFERENCE=GLVND
 make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/jsoncpp
@@ -88,7 +88,7 @@ if [ $BUILD_G2O = true ]; then
   cd $PROJECT_DIR/thirdparty/g2o
   mkdir build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen-3.3.7 -DOpenGL_GL_PREFERENCE=GLVND
+  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen -DOpenGL_GL_PREFERENCE=GLVND
   make install -j $CPU_COUNT
 fi
 
@@ -97,6 +97,6 @@ fi
 mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
 
-cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DCMAKE_BUILD_TYPE=Debug -DOpenCV_DIR=/home/stsuei/xivo_opencv/share/OpenCV -DCXX_STANDARD=17
+cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DCMAKE_BUILD_TYPE=Debug -DOpenCV_DIR=/media/data3/stsuei/DevelopmentEnvironments/xivo_gcc9/share/OpenCV -DCXX_STANDARD=17
 
 make -j $CPU_COUNT

@@ -53,7 +53,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/glog/include
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/include
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/eigen-3.3.7/include/eigen3
+        ${PROJECT_SOURCE_DIR}/thirdparty/eigen/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
         ${JSONCPP_INCLUDE_DIRS}
