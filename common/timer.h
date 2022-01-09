@@ -5,6 +5,7 @@
 #include <ostream>
 #include <chrono>
 #include <memory>
+#include <unordered_map>
 
 namespace xivo {
 
