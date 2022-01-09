@@ -8,6 +8,7 @@ bin/
 lib/
 src/src/
 src/Makefile
+thirdparty
 back_results/
 
 .vscode/
