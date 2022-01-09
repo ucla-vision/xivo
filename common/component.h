@@ -22,7 +22,7 @@
 namespace xivo {
 
 namespace traits {
-// helper function to check whehter the given "State" type has a "Tangent" type
+// helper function to check whether the given "State" type has a "Tangent" type
 // defined.
 // referene:
 //    https://en.cppreference.com/w/cpp/types/void_t
@@ -33,8 +33,6 @@ template <class T>
 struct has_tangent<T, std::void_t<typename T::Tangent>> : std::true_type {};
 }
 
-template <typename T>
-constexpr bool has_tangent = traits::has_tangent<T>::value;
 
 // CRTP pattern for static polymorphism
 // Derived: Derived class to enforce the implementation of UpdateState
@@ -47,14 +45,18 @@ template <typename Derived, typename State> struct Component {
   // we use the state type itself as the tangent.
   // Since for Euclidean space, the tangent space coincides with 
   // the ambient space, i.e., the Euclidean space.
-  std::enable_if_t<has_tangent<State>, void>
-  UpdateState(const typename State::Tangent &dX) {
+  template <class SwithTangent,
+            std::enable_if_t<traits::has_tangent<SwithTangent>::value,
+                             typename SwithTangent::Tangent>>
+  void UpdateState(const typename SwithTangent::Tangent &dX) {
     static_cast<Derived *>(this)->UpdateState(dX);
   }
 
   // no tangent type defined, use the type of state
-  std::enable_if_t<!has_tangent<State>, void>
-  UpdateState(const State &dX) {
+  template <class SnoTangent,
+            std::enable_if_t<!traits::has_tangent<State>::value,
+                             SnoTangent>>
+  void UpdateState(const State &dX) {
     static_cast<Derived *>(this)->UpdateState(dX);
   }
 };
