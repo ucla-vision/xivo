@@ -1,0 +1,21 @@
+os: Visual Studio 2019
+
+clone_folder: c:\projects\g2o
+
+platform: x64
+configuration: Debug
+
+build:
+  project: c:\projects\g2o\build\g2o.sln
+
+install:
+  - set QTDIR=C:\Qt\5.15.1\msvc2019_64
+  - set PATH=%PATH%;%QTDIR%\bin
+  - ps: wget https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.zip -outfile eigen3.zip
+  - cmd: 7z x eigen3.zip -o"C:\projects" -y > nul
+
+before_build:
+  - cd c:\projects\g2o
+  - mkdir build
+  - cd build
+  - cmake -G "Visual Studio 16 2019" -A x64 -D EIGEN3_INCLUDE_DIR=C:\projects\eigen-3.3.9 ..
