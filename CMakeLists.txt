@@ -33,7 +33,7 @@ add_definitions(-DGOOGLE_STRIP_LOG=1)
 add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 
 find_package(OpenCV REQUIRED)
-find_package(Python3 REQUIRED)
+find_package(Python3 REQUIRED Interpreter Development)
 
 link_directories(
         ${PROJECT_SOURCE_DIR}/lib
