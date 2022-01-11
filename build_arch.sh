@@ -77,7 +77,7 @@ make install -j $CPU_COUNT
 
 # to build gperftools, need to install autoconf and libtool first
 if [ $USE_GPERFTOOLS = true ]; then
-  sudo apt-get install autoconf libtool
+  sudo pacman -S autoconf libtool
   cd $PROJECT_DIR/thirdparty/gperftools
   ./autogen.sh
   ./configure --prefix=$PROJECT_DIR/thirdparty/gperftools
