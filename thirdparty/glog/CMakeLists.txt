@@ -21,7 +21,7 @@ option (BUILD_SHARED_LIBS "Build shared libraries" ON)
 option (PRINT_UNSYMBOLIZED_STACK_TRACES
   "Print file offsets in traces instead of symbolizing" OFF)
 option (WITH_CUSTOM_PREFIX "Enable support for user-generated message prefixes" OFF)
-option (WITH_GFLAGS "Use gflags" ON)
+option (WITH_GFLAGS "Use gflags" OFF)
 option (WITH_GTEST "Use googletest" ON)
 option (WITH_PKGCONFIG "Enable pkg-config support" ON)
 option (WITH_SYMBOLIZE "Enable symbolize module" ON)
