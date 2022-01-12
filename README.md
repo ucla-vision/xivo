@@ -5,7 +5,14 @@
 
 XIVO is an open-source repository for visual-inertial odometry/mapping. It is a simplified version of Corvis \[[Jones *et al.*][jones_ijrr11],[Tsotsos *et al.*][tsotsos_icra15]\], designed for pedagogical purposes, and incorporates odometry (relative motion of the sensor platform), local mapping (pose relative to a reference frame of the oldest visible features), and global mapping (pose relative to a global frame, including loop-closure and global re-localization — this feature, present in Corvis, is not yet incorporated in XIVO).
 
-XIVO runs at 140FPS on stored data (here from a RealSense D435i sensor) or on live streams with latency of around 1-7ms, depending on the hardware. It takes as input video frames from a calibrated camera and inertial measurements from an IMU, and outputs a sparse point cloud with attribute features and 6 DOF pose of the camera. It performs auto-calibration of the relative pose between the camera and the IMU as well as the time-stamp alignment. More demos are available [here](demo.md), the aproach is described in this [paper][tsotsos_icra15]. XIVO does not perform post-mortem refinement (bundle adjustment, pose graph optimization), but that can be easily added as post-processing.
+XIVO runs at 140FPS on stored data (here from a RealSense D435i sensor) or on live streams with latency of around 1-7ms, depending on the hardware. It takes as input video frames from a calibrated camera and inertial measurements from an IMU, and outputs a sparse point cloud with attribute features and 6 DOF pose of the camera. It performs auto-calibration of the relative pose between the camera and the IMU as well as the time-stamp alignment. More demos are available [here](https://github.com/ucla-vision/xivo/wiki/Background-and-History#semantic-mapping-demo-corvis). The aproach is described in this [paper][tsotsos_icra15].
+
+[jones_ijrr11]: http://vision.ucla.edu/papers/jonesS10IJRR.pdf
+[tsotsos_icra15]: http://vision.ucla.edu/papers/tsotsosCS15.pdf
+[dong_cvpr17]: http://openaccess.thecvf.com/content_cvpr_2017/papers/Dong_Visual-Inertial-Semantic_Scene_Representation_CVPR_2017_paper.pdf
+[fei_eccv18]: http://openaccess.thecvf.com/content_ECCV_2018/papers/Xiaohan_Fei_Visual-Inertial_Object_Detection_ECCV_2018_paper.pdf
+[fei_icra19]: https://arxiv.org/abs/1807.11130v3
+[visma_repo]: https://github.com/feixh/VISMA-tracker
 
 
 ## Requirements
