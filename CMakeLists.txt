@@ -42,7 +42,7 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
-        /usr/lib/x86_64-linux-gnu
+        /usr/local/lib
 )
 
 
