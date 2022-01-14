@@ -35,11 +35,10 @@ list(APPEND deps
         opencv_imgcodecs
         opencv_xfeatures2d
         glog
+        GLEW
         pangolin
         pthread
         jsoncpp
-        GL
-        GLEW
         common
         )
 
@@ -75,7 +74,7 @@ add_library(xest STATIC
         mm.cpp
         camera_manager.cpp
         imu.cpp)
-target_link_libraries(xest INTERFACE ${deps} "-Wl,-lstdc++fs")
+target_link_libraries(xest INTERFACE ${deps} "-Wl, -framework OpenGL")
 
 set(libxivo xest xapp)
 
