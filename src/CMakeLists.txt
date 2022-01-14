@@ -41,6 +41,9 @@ list(APPEND deps
         jsoncpp
         common
         )
+if (IS_LINUX)
+  list(APPEND deps GL)
+endif (IS_LINUX)
 
 if (USE_GPERFTOOLS)
   list(APPEND deps profiler)
@@ -74,7 +77,11 @@ add_library(xest STATIC
         mm.cpp
         camera_manager.cpp
         imu.cpp)
-target_link_libraries(xest INTERFACE ${deps} "-Wl, -framework OpenGL")
+if (IS_MAC)
+  target_link_libraries(xest INTERFACE ${deps} "-Wl, -framework OpenGL")
+elseif (IS_LINUX)
+  target_link_libraries(xest INTERFACE ${deps})
+endif()
 
 set(libxivo xest xapp)
 
