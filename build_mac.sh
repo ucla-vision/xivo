@@ -46,8 +46,8 @@ cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/gflags
-mkdir build
-cd build
+mkdir build_dir
+cd build_dir
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j $CPU_COUNT
 
