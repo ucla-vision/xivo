@@ -34,8 +34,8 @@ Canvas::Canvas() {
       ParameterServer::instance()->get("save_folder", "xivo_frames").asString();
     frame_number_ = 0;
 
-    if (!std::experimental::filesystem::exists(save_folder_)) {
-      std::experimental::filesystem::create_directory(save_folder_);
+    if (!std::filesystem::exists(save_folder_)) {
+      std::filesystem::create_directory(save_folder_);
     }
   }
 }
@@ -50,8 +50,8 @@ CanvasPtr Canvas::instance() {
 
 const void Canvas::SaveFrame() {
   if (save_frames_) {
-    std::experimental::filesystem::path folder = save_folder_;
-    std::experimental::filesystem::path filename = folder /=
+    std::filesystem::path folder = save_folder_;
+    std::filesystem::path filename = folder /=
       ("frame_" + std::to_string(frame_number_) + ".png");
     try {
       cv::imwrite(filename.string(), disp_);

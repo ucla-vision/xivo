@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.5)
 project(feh)
 
+# Set operating system variables
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  set(IS_LINUX TRUE)
+endif ()
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set(IS_MAC TRUE)
+endif ()
+message(STATUS "IS_LINUX ${IS_LINUX}")
+message(STATUS "IS_MAC ${IS_MAC}")
+
 option(BUILD_G2O "build with g2o support" OFF)
 option(USE_GPERFTOOLS "use gperf for performance profiling" OFF)
 
@@ -42,8 +52,11 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
-        /usr/lib/x86_64-linux-gnu
+        /usr/local/lib
 )
+if (IS_LINUX)
+  link_directories(/usr/lib/x86_64-linux-gnu)
+endif(IS_LINUX)
 
 
 include_directories(

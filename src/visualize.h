@@ -2,7 +2,7 @@
 // info on input images.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
-#include <experimental/filesystem>
+#include <filesystem>
 #include <list>
 
 #include "opencv2/core/core.hpp"
@@ -36,7 +36,7 @@ private:
 
   // Parameters for saving each file
   bool save_frames_;
-  std::experimental::filesystem::path save_folder_;
+  std::filesystem::path save_folder_;
   int frame_number_;
 };
 }
