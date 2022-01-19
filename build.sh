@@ -34,6 +34,7 @@ if [ $USE_GPERFTOOLS = true ]; then
 fi
 
 CPU_COUNT=4
+OPENCV_INSTALL_DIR=/media/data3/stsuei/DevelopmentEnvironments/xivo_gcc9/share/OpenCV
 
 # build dependencies
 PROJECT_DIR=$(pwd)
@@ -55,6 +56,12 @@ cd $PROJECT_DIR/thirdparty/glog
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
+make install -j $CPU_COUNT
+
+cd $PROJECT_DIR/thirdparty/DBoW2
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=.. -DOpenCV_DIR=$OPENCV_INSTALL_DIR
 make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/eigen
@@ -88,7 +95,10 @@ if [ $BUILD_G2O = true ]; then
   cd $PROJECT_DIR/thirdparty/g2o
   mkdir build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen -DOpenGL_GL_PREFERENCE=GLVND
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=../release \
+    -DEIGEN3_INCLUDE_DIR=../eigen \
+    -DOpenGL_GL_PREFERENCE=GLVND
   make install -j $CPU_COUNT
 fi
 
@@ -97,6 +107,11 @@ fi
 mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
 
-cmake .. -DBUILD_G2O=$BUILD_G2O -DUSE_GPERFTOOLS=$USE_GPERFTOOLS -DCMAKE_BUILD_TYPE=Debug -DOpenCV_DIR=/media/data3/stsuei/DevelopmentEnvironments/xivo_gcc9/share/OpenCV -DCXX_STANDARD=17
+cmake .. \
+  -DBUILD_G2O=$BUILD_G2O \
+  -DUSE_GPERFTOOLS=$USE_GPERFTOOLS \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DOpenCV_DIR=$OPENCV_INSTALL_DIR \
+  -DCXX_STANDARD=17
 
 make -j $CPU_COUNT

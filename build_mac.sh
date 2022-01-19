@@ -34,6 +34,8 @@ if [ $USE_GPERFTOOLS = true ]; then
 fi
 
 CPU_COUNT=4
+OPENCV_INSTALL_DIR=/Users/parth/Downloads/opencv-3.4.14
+PYTHON_BINARY=/usr/local/bin/python3
 
 # build dependencies
 PROJECT_DIR=$(pwd)
@@ -57,6 +59,12 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j $CPU_COUNT
 
+cd $PROJECT_DIR/thirdparty/DBoW2
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=.. -DOpenCV_DIR=$OPENCV_INSTALL_DIR
+make install -j $CPU_COUNT
+
 cd $PROJECT_DIR/thirdparty/eigen
 mkdir build
 cd build
@@ -77,7 +85,6 @@ make install -j $CPU_COUNT
 
 # to build gperftools, need to install autoconf and libtool first
 if [ $USE_GPERFTOOLS = true ]; then
-  #sudo apt-get install autoconf libtool
   cd $PROJECT_DIR/thirdparty/gperftools
   ./autogen.sh
   ./configure --prefix=$PROJECT_DIR/thirdparty/gperftools
@@ -88,7 +95,10 @@ if [ $BUILD_G2O = true ]; then
   cd $PROJECT_DIR/thirdparty/g2o
   mkdir build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen -DOpenGL_GL_PREFERENCE=GLVND
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=../release \
+    -DEIGEN3_INCLUDE_DIR=../eigen \
+    -DOpenGL_GL_PREFERENCE=GLVND
   make install -j $CPU_COUNT
 fi
 
@@ -98,8 +108,8 @@ mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
 
 cmake .. -DBUILD_G2O=$BUILD_G2O \
-  -DOpenCV_DIR=/Users/parth/Downloads/opencv-3.4.14 \
+  -DOpenCV_DIR=$OPENCV_INSTALL_DIR \
   -DCMAKE_CXX_STANDARD=17 \
-  -DPYTHON_EXECUTABLE=/usr/local/bin/python3
+  -DPYTHON_EXECUTABLE=$PYTHON_BINARY
 
 make -j $CPU_COUNT
