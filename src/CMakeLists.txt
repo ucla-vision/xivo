@@ -19,6 +19,15 @@ add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 # WARNING: this feature not work yet.
 # add_definitions(-DAPPROXIMATE_INIT_COVARIANCE)
 
+# Sets the maximum number of features and groups in the EKF. Otherwise
+# use the default values in core.h
+#add_definitions(-DEKF_MAX_FEATURES=30)
+#add_definitions(-DEKF_MAX_GROUPS=15)
+
+# Sets the frequency at which to project rotation matrices to SO(3) to get
+# rid of accumulated numeric error
+#add_definitions(-DENFORCE_SO3_FREQ=50)
+
 include_directories(
   ${PROJECT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/common)

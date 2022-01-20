@@ -91,15 +91,27 @@ constexpr int kFeatureSize = 3;
 
 // By reducing the number of groups and features, we can trade off computational cost
 // and accuracy
+#ifdef EKF_MAX_FEATURES
+constexpr int kMaxFeature = EKF_MAX_FEATURES;
+#else
 constexpr int kMaxFeature = 30;
+#endif
+#ifdef EKF_MAX_GROUPS
+constexpr int kMaxGroup = EKF_MAX_GROUPS;
+#else
 constexpr int kMaxGroup = 15;
+#endif
 
 constexpr int kGroupBegin = kCameraBegin + kMaxCameraIntrinsics;
 constexpr int kFeatureBegin = kGroupBegin + kGroupSize * kMaxGroup;
 constexpr int kFullSize = kFeatureBegin + kFeatureSize * kMaxFeature;
 
 // frequency to project rotation matrices to SO3 to get rid of the accumulated numeric error
-constexpr int kEnforceSO3Freq = 50;  
+#ifdef ENFORCE_SO3_FREQ
+constexpr int kEnforceSO3Freq = ENFORCE_SO3_FREQ;
+#else
+constexpr int kEnforceSO3Freq = 50;
+#endif
 
 ////////////////////////////////////////
 // STATE
