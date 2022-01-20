@@ -276,6 +276,7 @@ std::vector<FeaturePtr> Graph::TransferFeatureOwnership(GroupPtr g,
         Mat3 J;
         J = dxn_dXcn * dXcn_dx;
 
+        // TODO: Make covariance inflation factor a parameter.
         f->P() =
             J * f->P() * J.transpose() * 1.5; // inflate covariance a little bit
 

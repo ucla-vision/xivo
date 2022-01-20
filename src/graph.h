@@ -11,16 +11,23 @@
 
 namespace xivo {
 
+/** Unordered map: group id -> observed pixel coordinates */
 struct FeatureAdj : public std::unordered_map<int, Vec2> {
   void Add(const Observation &obs);
   void Remove(int id);
 };
 
+/** Unordered set of feature ids (int). Feature ids are those that are visible
+ * from a particular group.
+ */
 struct GroupAdj : public std::unordered_set<int> {
   void Add(int id);
   void Remove(int id);
 };
 
+/** Graph of all features and groups that are currently being tracked in the
+ * EKF.
+ */
 class Graph {
 public:
   static Graph* Create();
@@ -32,10 +39,22 @@ public:
   void RemoveGroup(const GroupPtr g);
   void RemoveGroups(const std::vector<GroupPtr> &);
 
+  /** Add a new feature to the graph. Called when `f` is first detected by
+   * the `Tracker`. */
   void AddFeature(FeaturePtr f);
+  /** Add a new group to the graph. Called once every time a new RGB image
+   * was acquired. */
   void AddGroup(GroupPtr g);
 
+  /** Marks that feature `f` was visible at group `g`. Function is called
+   * when a feature is first detected by the tracker, and whenever it continues
+   * to be tracked by the `Tracker`. 
+   */
   void AddGroupToFeature(GroupPtr g, FeaturePtr f);
+  /** Marks that feature `f` was visible at group `g`. Function is called
+   * when a feature is first detected by the tracker, and whenever it continues
+   * to be tracked by the `Tracker`. 
+   */
   void AddFeatureToGroup(FeaturePtr f, GroupPtr g);
 
   bool HasGroup(GroupPtr g) const;
@@ -62,12 +81,39 @@ public:
   // transfer ownership of features owned by g, i.e., with g as reference
   // return those for which a new owner cannot be found
   // gsc is the camera to spatial frame transformation
+  // This function is called when a group `g` is discarded to make room for
+  // more groups in the `MemoryManager`. Features that were first created at
+  // group `g` have their coordinates changed to a new group.
   std::vector<FeaturePtr> TransferFeatureOwnership(GroupPtr g, const SE3 &gbc);
+
+  // Helper function to `TransferFeatureOwnership`. Finds a new reference frame
+  // for a feature when its group is removed from the graph to make room for new
+  // groups.
   GroupPtr FindNewOwner(FeaturePtr f);
 
+  /** Checks that
+   * 1. Every member of `features_` has at least one observation
+   * 2. The group in every `Observation` of all features is a member of `groups_`
+   * 3. The reference group of every feature is not NULL
+   * 4. The reference group of every feature is a member of `groups_`
+   * 5. There is a set of features associated with each group
+   * 6. Every feature associated with a group is a member of `features_`
+   * (Function only used for debugging.)
+  */
   void SanityCheck();
+
+  /** Removes (and deletes) all groups that have no adjacent features. 
+   * (Function not actually used.)
+  */
   void CleanIsolatedGroups();
+  /** Removes (and deletes all features) that have no observations in
+   * `feature_adj_`.
+   * (Function not actualy used.)
+   */ 
   void CleanIsolatedFeatures();
+  /** Calls `CleanIsolatedGroups()` and `CleanIsolatedFeatures()`.
+   * (Function not actually used.)
+   */
   void CleanIsolatedNodes();
 
 private:
@@ -77,10 +123,18 @@ private:
   static std::unique_ptr<Graph> instance_;
 
   // 2 types of nodes: feature and group
+  /** maps feature ids (int) to feature objects. */
   std::unordered_map<int, FeaturePtr> features_;
+  /** maps group ids (int) to group objects. */
   std::unordered_map<int, GroupPtr> groups_;
-  // adjacent list
+
+
+  // adjaceny lists
+  /** Unordered map: feature id (int) -> (group id -> observed pixel coords) */
   std::unordered_map<int, FeatureAdj> feature_adj_;
+
+  /** Maps group id (int) to a unordered set of features visible when the
+   * group was created. */
   std::unordered_map<int, GroupAdj> group_adj_;
 };
 
