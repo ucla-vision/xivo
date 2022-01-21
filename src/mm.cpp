@@ -92,6 +92,7 @@ template<typename T>
 void CircBufWithHash<T>::ReturnItem(T *item) {
   int ind = slots_map_[item];
   slots_active_[ind] = false;
+  num_slots_active_--;
 }
 
 

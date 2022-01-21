@@ -76,6 +76,7 @@ add_library(xest STATIC
         tracker.cpp
         manager.cpp
         update.cpp
+        graphbase.cpp
         graph.cpp
         feature.cpp
         oos.cpp

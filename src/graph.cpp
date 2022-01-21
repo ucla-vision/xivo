@@ -24,44 +24,11 @@ Graph* Graph::instance() {
   return instance_.get();
 }
 
-bool Graph::HasGroup(GroupPtr g) const { return HasGroup(g->id()); }
-
-bool Graph::HasGroup(int gid) const {
-  return groups_.count(gid) && group_adj_.count(gid);
-}
-
-bool Graph::HasFeature(FeaturePtr f) const { return HasFeature(f->id()); }
-
-bool Graph::HasFeature(int fid) const {
-  return features_.count(fid) && feature_adj_.count(fid);
-}
-
-FeaturePtr Graph::GetFeature(int fid) const { return features_.at(fid); }
-
-GroupPtr Graph::GetGroup(int gid) const { return groups_.at(gid); }
-
-const FeatureAdj &Graph::GetFeatureAdj(FeaturePtr f) const {
-  return feature_adj_.at(f->id());
-}
-
-const GroupAdj &Graph::GetGroupAdj(GroupPtr g) const {
-  return group_adj_.at(g->id());
-}
 
 void Graph::RemoveFeature(const FeaturePtr f) {
-  CHECK(HasFeature(f)) << "feature #" << f->id() << " not exists";
-
-  int fid = f->id();
-
-  Mapper::instance()->AddFeature(f, feature_adj_.at(fid));
-
-  features_.erase(fid);
-  for (const auto &obs : feature_adj_.at(fid)) {
-    group_adj_.at(obs.first).Remove(fid);
-  }
-  feature_adj_.erase(fid);
-
-  LOG(INFO) << "feature #" << fid << " removed";
+  Mapper::instance()->AddFeature(f, feature_adj_.at(f->id()));
+  GraphBase::RemoveFeature(f);
+  LOG(INFO) << "feature #" << f->id() << " removed from Graph";
 }
 
 void Graph::RemoveFeatures(const std::vector<FeaturePtr> &features) {
@@ -71,24 +38,9 @@ void Graph::RemoveFeatures(const std::vector<FeaturePtr> &features) {
 }
 
 void Graph::RemoveGroup(const GroupPtr g) {
-  CHECK(HasGroup(g)) << "group #" << g->id() << " not exists";
-
-  int gid = g->id();
-
-  Mapper::instance()->AddGroup(g, group_adj_.at(gid));
-
-  groups_.erase(gid);
-  for (auto fid : group_adj_.at(gid)) {
-    auto f = features_.at(fid);
-    // need to transfer ownership of the feature first
-    if (f->ref() == g) {
-      LOG(FATAL) << "removing group #" << gid << " but feature #" << fid
-                 << " refers to it";
-    }
-    feature_adj_.at(fid).Remove(gid);
-  }
-  group_adj_.erase(gid);
-  LOG(INFO) << "group #" << gid << " removed";
+  Mapper::instance()->AddGroup(g, group_adj_.at(g->id()));
+  GraphBase::RemoveGroup(g);
+  LOG(INFO) << "group #" << g->id() << " removed from Graph";
 }
 
 void Graph::RemoveGroups(const std::vector<GroupPtr> &groups) {
@@ -98,19 +50,13 @@ void Graph::RemoveGroups(const std::vector<GroupPtr> &groups) {
 }
 
 void Graph::AddFeature(FeaturePtr f) {
-  int fid = f->id();
-  CHECK(!features_.count(fid)) << "feature #" << fid << " already exists";
-  features_[fid] = f;
-  feature_adj_[fid] = {};
-  LOG(INFO) << "feature #" << fid << " added to graph";
+  GraphBase::AddFeature(f);
+  LOG(INFO) << "feature #" << f->id() << " added to graph";
 }
 
 void Graph::AddGroup(GroupPtr g) {
-  int gid = g->id();
-  CHECK(!groups_.count(gid)) << "group #" << gid << " already exists";
-  groups_[gid] = g;
-  group_adj_[gid] = {};
-  LOG(INFO) << "group #" << gid << " added to graph";
+  GraphBase::AddGroup(g);
+  LOG(INFO) << "group #" << g->id() << " added to graph";
 }
 
 void Graph::AddGroupToFeature(GroupPtr g, FeaturePtr f) {
@@ -137,69 +83,6 @@ void Graph::AddFeatureToGroup(FeaturePtr f, GroupPtr g) {
   LOG(INFO) << "feature #" << fid << " added to group #" << gid;
 }
 
-std::vector<FeaturePtr>
-Graph::GetFeaturesIf(std::function<bool(FeaturePtr)> pred) const {
-  std::vector<FeaturePtr> out;
-  for (auto p : features_) {
-    if (pred(p.second)) {
-      out.push_back(p.second);
-    }
-  }
-  return out;
-}
-
-std::vector<FeaturePtr> Graph::GetFeatures() const {
-  std::vector<FeaturePtr> out;
-  out.reserve(features_.size());
-  for (auto p : features_) {
-    out.push_back(p.second);
-  }
-  return out;
-}
-
-std::vector<GroupPtr> Graph::GetGroups() const {
-  std::vector<GroupPtr> out;
-  out.reserve(groups_.size());
-  for (auto p : groups_) {
-    out.push_back(p.second);
-  }
-  return out;
-}
-
-std::vector<FeaturePtr> Graph::GetFeaturesOf(GroupPtr g) const {
-  std::vector<FeaturePtr> out;
-  for (int fid : group_adj_.at(g->id())) {
-    out.push_back(features_.at(fid));
-  }
-  return out;
-}
-
-std::vector<GroupPtr>
-Graph::GetGroupsIf(std::function<bool(GroupPtr)> pred) const {
-  std::vector<GroupPtr> out;
-  for (auto p : groups_) {
-    if (pred(p.second)) {
-      out.push_back(p.second);
-    }
-  }
-  return out;
-}
-
-std::vector<GroupPtr> Graph::GetGroupsOf(FeaturePtr f) const {
-  std::vector<GroupPtr> out;
-  for (const auto &obs : feature_adj_.at(f->id())) {
-    out.push_back(groups_.at(obs.first));
-  }
-  return out;
-}
-
-std::vector<Observation> Graph::GetObservationsOf(FeaturePtr f) const {
-  std::vector<Observation> out;
-  for (const auto &obs : feature_adj_.at(f->id())) {
-    out.push_back({groups_.at(obs.first), obs.second});
-  }
-  return out;
-}
 
 void Graph::SanityCheck() {
   for (auto p : features_) {

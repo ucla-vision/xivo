@@ -46,7 +46,7 @@ void Mapper::AddFeature(FeaturePtr f, FeatureAdj& f_obs) {
   feature_adj_[fid] = f_obs;
   features_mtx.unlock();
 
-  LOG(INFO) << "feature #" << fid << " added to mapper-graph";
+  LOG(INFO) << "feature #" << fid << " added to mapper";
 }
 
 
@@ -110,18 +110,6 @@ void Mapper::RemoveGroup(const GroupPtr g) {
   groups_mtx.unlock();
 
   LOG(INFO) << "group #" << gid << " removed from mapper-graph";
-}
-
-bool Mapper::HasGroup(GroupPtr g) const { return HasGroup(g->id()); }
-
-bool Mapper::HasGroup(int gid) const {
-  return groups_.count(gid) && group_adj_.count(gid);
-}
-
-bool Mapper::HasFeature(FeaturePtr f) const { return HasFeature(f->id()); }
-
-bool Mapper::HasFeature(int fid) const {
-  return features_.count(fid) && feature_adj_.count(fid);
 }
 
 
