@@ -2,17 +2,10 @@
 #include "estimator.h"
 #include "feature.h"
 #include "group.h"
+#include "mapper.h"
 
-#ifdef USE_G2O
-#include "optimizer_adapters.h"
-#endif
 
 namespace xivo {
-
-void FeatureAdj::Add(const Observation &obs) { insert({obs.g->id(), obs.xp}); }
-void FeatureAdj::Remove(int id) { erase(id); }
-void GroupAdj::Add(int id) { insert(id); }
-void GroupAdj::Remove(int id) { erase(id); }
 
 std::unique_ptr<Graph> Graph::instance_ = nullptr;
 
@@ -58,11 +51,10 @@ const GroupAdj &Graph::GetGroupAdj(GroupPtr g) const {
 void Graph::RemoveFeature(const FeaturePtr f) {
   CHECK(HasFeature(f)) << "feature #" << f->id() << " not exists";
 
-#ifdef USE_G2O
-  adapter::AddFeature(f);
-#endif
-
   int fid = f->id();
+
+  Mapper::instance()->AddFeature(f, feature_adj_.at(fid));
+
   features_.erase(fid);
   for (const auto &obs : feature_adj_.at(fid)) {
     group_adj_.at(obs.first).Remove(fid);
@@ -81,11 +73,10 @@ void Graph::RemoveFeatures(const std::vector<FeaturePtr> &features) {
 void Graph::RemoveGroup(const GroupPtr g) {
   CHECK(HasGroup(g)) << "group #" << g->id() << " not exists";
 
-#ifdef USE_G2O
-  adapter::AddGroup(g);
-#endif
-
   int gid = g->id();
+
+  Mapper::instance()->AddGroup(g, group_adj_.at(gid));
+
   groups_.erase(gid);
   for (auto fid : group_adj_.at(gid)) {
     auto f = features_.at(fid);
@@ -108,7 +99,7 @@ void Graph::RemoveGroups(const std::vector<GroupPtr> &groups) {
 
 void Graph::AddFeature(FeaturePtr f) {
   int fid = f->id();
-  CHECK(!features_.count(fid)) << "feature #" << fid << " arealdy exists";
+  CHECK(!features_.count(fid)) << "feature #" << fid << " already exists";
   features_[fid] = f;
   feature_adj_[fid] = {};
   LOG(INFO) << "feature #" << fid << " added to graph";

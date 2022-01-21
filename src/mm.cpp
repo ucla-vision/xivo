@@ -1,7 +1,7 @@
 #include "mm.h"
 #include "feature.h"
-#include "feature.h"
 #include "group.h"
+#include "mapper.h"
 
 #include "glog/logging.h"
 
@@ -65,8 +65,12 @@ T* CircBufWithHash<T>::GetItem() {
   else {
     while (!slot_found) {
       if (!slots_active_[slot_search_ind_]) {
-        slots_active_[slot_search_ind_] = true;
         T* ret = slots_[slot_search_ind_];
+
+        // Remove the item from the Mapper before doing anything else
+        RemoveFromMapper(ret);
+
+        slots_active_[slot_search_ind_] = true;
 
         slot_found = true;
         num_slots_active_++;
@@ -90,6 +94,17 @@ void CircBufWithHash<T>::ReturnItem(T *item) {
   slots_active_[ind] = false;
 }
 
+
+template<>
+void CircBufWithHash<Feature>::RemoveFromMapper(FeaturePtr item) {
+  Mapper::instance()->RemoveFeature(item);
+}
+
+
+template<>
+void CircBufWithHash<Group>::RemoveFromMapper(GroupPtr item) {
+  Mapper::instance()->RemoveGroup(item);
+}
 
 
 std::unique_ptr<MemoryManager> MemoryManager::instance_ = nullptr;
@@ -133,7 +148,7 @@ FeaturePtr MemoryManager::GetFeature() {
   return addr;
 }
 
-void MemoryManager::ReturnFeature(FeaturePtr f) { 
+void MemoryManager::ReturnFeature(FeaturePtr f) {
   feature_slots_->ReturnItem(f);
 }
 

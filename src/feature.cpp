@@ -17,6 +17,10 @@ namespace xivo {
 int Feature::counter_ = Feature::counter0;
 JacobianCache Feature::cache_ = {};
 
+// Operations for FeatureAdj
+void FeatureAdj::Add(const Observation &obs) { insert({obs.g->id(), obs.xp}); }
+void FeatureAdj::Remove(int id) { erase(id); }
+
 ////////////////////////////////////////
 // FACTORY METHODS
 ////////////////////////////////////////

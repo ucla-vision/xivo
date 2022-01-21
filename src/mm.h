@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <unordered_map>
+#include <mutex>
 
 #include "core.h"
 #include "jac.h"
@@ -29,6 +30,8 @@ private:
   std::vector<bool> slots_active_;
   std::vector<T*> slots_;
   std::unordered_map<T*, int> slots_map_;
+
+  void RemoveFromMapper(T* item);
 };
 
 

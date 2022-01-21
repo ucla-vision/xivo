@@ -84,6 +84,7 @@ add_library(xest STATIC
         options.cpp
         param.cpp
         mm.cpp
+        mapper.cpp
         camera_manager.cpp
         imu.cpp)
 if (IS_MAC)

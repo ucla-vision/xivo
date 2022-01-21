@@ -215,6 +215,8 @@ using CameraPtr = Camera *;
 using Config = Json::Value;
 class MemoryManager;
 using MemoryManagerPtr = MemoryManager *;
+class Mapper;
+using MapperPtr = Mapper *;
 class Estimator;
 ////////////////////////////////////////
 // CUSTOM EXCEPTION

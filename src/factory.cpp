@@ -6,6 +6,7 @@
 #include "tracker.h"
 #include "graph.h"
 #include "estimator.h"
+#include "mapper.h"
 
 #ifdef USE_G2O
 #include "optimizer.h"
@@ -46,6 +47,10 @@ EstimatorPtr CreateSystem(const Json::Value &cfg) {
   // Initialize the visibility graph
   Graph::Create();
   LOG(INFO) << "Visibility graph created";
+
+  // Initialize the Mapper
+  Mapper::Create();
+  LOG(INFO) << "Mapper created";
 
 #ifdef USE_G2O
   // Initialize the optimizer

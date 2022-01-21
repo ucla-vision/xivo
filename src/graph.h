@@ -4,26 +4,12 @@
 #include <functional>
 #include <list>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "core.h"
 #include "feature.h"
+#include "group.h"
 
 namespace xivo {
-
-/** Unordered map: group id -> observed pixel coordinates */
-struct FeatureAdj : public std::unordered_map<int, Vec2> {
-  void Add(const Observation &obs);
-  void Remove(int id);
-};
-
-/** Unordered set of feature ids (int). Feature ids are those that are visible
- * from a particular group.
- */
-struct GroupAdj : public std::unordered_set<int> {
-  void Add(int id);
-  void Remove(int id);
-};
 
 /** Graph of all features and groups that are currently being tracked in the
  * EKF.

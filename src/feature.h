@@ -5,7 +5,6 @@
 #include <memory>
 #include <ostream>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "component.h"
@@ -15,6 +14,13 @@
 #include "project.h"
 
 namespace xivo {
+
+
+/** Unordered map: group id -> observed pixel coordinates */
+struct FeatureAdj : public std::unordered_map<int, Vec2> {
+  void Add(const Observation &obs);
+  void Remove(int id);
+};
 
 
 /** Track is a C++ <vector> containing all the (x,y) pixel detections found by

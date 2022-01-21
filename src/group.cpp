@@ -6,6 +6,11 @@ namespace xivo {
 
 int Group::counter_ = 0;
 
+// For GroupAdj struct
+void GroupAdj::Add(int id) { insert(id); }
+void GroupAdj::Remove(int id) { erase(id); }
+
+
 ////////////////////////////////////////
 // FACTORY METHODS
 ////////////////////////////////////////

@@ -6,6 +6,7 @@
 #include <memory>
 #include <ostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "component.h"
@@ -27,6 +28,15 @@ struct SO3xR3 {
     return *this;
   }
 };
+
+/** Unordered set of feature ids (int). Feature ids are those that are visible
+ * from a particular group.
+ */
+struct GroupAdj : public std::unordered_set<int> {
+  void Add(int id);
+  void Remove(int id);
+};
+
 
 class Group : public Component<Group, SO3xR3> {
   template<typename Group> friend class CircBufWithHash;
