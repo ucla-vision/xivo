@@ -29,7 +29,7 @@ struct SO3xR3 {
 };
 
 class Group : public Component<Group, SO3xR3> {
-  friend class MemoryManager;
+  template<typename Group> friend class CircBufWithHash;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

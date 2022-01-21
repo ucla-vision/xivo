@@ -62,7 +62,7 @@ protected:
  *  - Functions to compute Jacobians for the `Estimator` class's measurement update.
  */
 class Feature : public Component<Feature, Vec3>, public Track {
-  friend class MemoryManager;
+  template<typename Feature> friend class CircBufWithHash;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

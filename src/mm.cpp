@@ -7,6 +7,91 @@
 
 namespace xivo {
 
+template<typename T>
+CircBufWithHash<T>::CircBufWithHash(int max_items) {
+  max_items_ = max_items;
+  num_slots_initialized_ = 0;
+  num_slots_active_ = 0;
+  slot_search_ind_ = 0;
+
+  for (int i=0; i < max_items_; i++) {
+    T* addr = new T();
+    slots_.push_back(addr);
+    slots_initialized_.push_back(false);
+    slots_active_.push_back(false);
+    slots_map_[addr] = i;
+  }
+}
+
+template<typename T>
+CircBufWithHash<T>::~CircBufWithHash() {
+  for (auto p: slots_map_) {
+    delete p.first;
+  }
+}
+
+template<typename T>
+T* CircBufWithHash<T>::GetItem() {
+  bool slot_found = false;
+
+  // Try to use an slot that has never been used before first
+  if (num_slots_initialized_ < max_items_) {
+    while (!slot_found) {
+      if (!slots_initialized_[slot_search_ind_]) {
+
+#ifndef NDEBUG
+        CHECK(!slots_active_[slot_search_ind_]);
+#endif
+
+        slots_initialized_[slot_search_ind_] = true;
+        slots_active_[slot_search_ind_] = true;
+        T* ret = slots_[slot_search_ind_];
+
+        slot_found = true;
+        num_slots_initialized_++;
+        num_slots_active_++;
+
+        slot_search_ind_ = (slot_search_ind_ + 1) % max_items_;
+
+        return ret;
+      }
+      else {
+        slot_search_ind_ = (slot_search_ind_ + 1) % max_items_;
+      }
+    }
+  }
+
+  // If all slots have been used before, just find one that isn't "active".
+  else {
+    while (!slot_found) {
+      if (!slots_active_[slot_search_ind_]) {
+        slots_active_[slot_search_ind_] = true;
+        T* ret = slots_[slot_search_ind_];
+
+        slot_found = true;
+        num_slots_active_++;
+
+        slot_search_ind_ = (slot_search_ind_ + 1) % max_items_;
+        return ret;
+      }
+      else {
+        slot_search_ind_ = (slot_search_ind_ + 1) % max_items_;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+
+template<typename T>
+void CircBufWithHash<T>::ReturnItem(T *item) {
+  int ind = slots_map_[item];
+  slots_active_[ind] = false;
+}
+
+
+
 std::unique_ptr<MemoryManager> MemoryManager::instance_ = nullptr;
 
 MemoryManagerPtr MemoryManager::Create(int max_features, int max_groups) {
@@ -23,26 +108,13 @@ MemoryManagerPtr MemoryManager::Create(int max_features, int max_groups) {
 }
 
 MemoryManager::MemoryManager(int max_features, int max_groups) {
-  for (int i = 0; i < max_features; ++i) {
-    FeaturePtr addr = new Feature();
-    fslots_[addr] = false;
-  }
-  for (int i = 0; i < max_groups; ++i) {
-    GroupPtr addr = new Group();
-    gslots_[addr] = false;
-  }
+  feature_slots_ = new CircBufWithHash<Feature>(max_features);
+  group_slots_ = new CircBufWithHash<Group>(max_groups);
 }
 
 MemoryManager::~MemoryManager() {
-  for (auto p : fslots_) {
-    delete p.first;
-  }
-  for (auto p : gslots_) {
-    delete p.first;
-  }
-  // for (auto j : oos_jacs_) {
-  //   delete j;
-  // }
+  delete feature_slots_;
+  delete group_slots_;
 }
 
 MemoryManagerPtr MemoryManager::instance() {
@@ -53,27 +125,29 @@ MemoryManagerPtr MemoryManager::instance() {
 }
 
 FeaturePtr MemoryManager::GetFeature() {
-  for (auto &p : fslots_) {
-    if (!p.second) {
-      p.second = true;
-      return p.first;
-    }
+  FeaturePtr addr = feature_slots_->GetItem();
+  if (addr == nullptr) {
+    LOG(FATAL) << "Memory Manager: Could not find an inactive feature slot."
+      << std::endl;
   }
-  return nullptr;
+  return addr;
 }
 
-void MemoryManager::ReturnFeature(FeaturePtr f) { fslots_.at(f) = false; }
+void MemoryManager::ReturnFeature(FeaturePtr f) { 
+  feature_slots_->ReturnItem(f);
+}
 
 GroupPtr MemoryManager::GetGroup() {
-  for (auto &p : gslots_) {
-    if (!p.second) {
-      p.second = true;
-      return p.first;
-    }
+  GroupPtr addr = group_slots_->GetItem();
+  if (addr == nullptr) {
+    LOG(FATAL) << "Memory manager: Could not find an inactive group slot."
+      << std::endl;
   }
-  return nullptr;
+  return addr;
 }
 
-void MemoryManager::ReturnGroup(GroupPtr g) { gslots_.at(g) = false; }
+void MemoryManager::ReturnGroup(GroupPtr g) {
+  group_slots_->ReturnItem(g);
+}
 
 } // namespace xivo
