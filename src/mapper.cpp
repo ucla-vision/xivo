@@ -32,7 +32,7 @@ MapperPtr Mapper::Create() {
 Mapper::~Mapper() {}
 
 
-void Mapper::AddFeature(FeaturePtr f, FeatureAdj& f_obs) {
+void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
 
 #ifdef USE_G2O
   adapter::AddFeature(f);
@@ -50,7 +50,7 @@ void Mapper::AddFeature(FeaturePtr f, FeatureAdj& f_obs) {
 }
 
 
-void Mapper::AddGroup(GroupPtr g, GroupAdj& g_features) {
+void Mapper::AddGroup(GroupPtr g, const GroupAdj& g_features) {
 
 #ifdef USE_G2O
   adapter::AddGroup(g);

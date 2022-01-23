@@ -44,7 +44,8 @@ class Group : public Component<Group, SO3xR3> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   static GroupPtr Create(const SO3 &Rsb, const Vec3 &Tsb);
-  static void Delete(GroupPtr g);
+  static void Deactivate(GroupPtr g);
+  static void Destroy(GroupPtr g);
 
   // id & index related accessors
   int id() const { return id_; }

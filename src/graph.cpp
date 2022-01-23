@@ -2,7 +2,6 @@
 #include "estimator.h"
 #include "feature.h"
 #include "group.h"
-#include "mapper.h"
 
 
 namespace xivo {
@@ -26,7 +25,6 @@ Graph* Graph::instance() {
 
 
 void Graph::RemoveFeature(const FeaturePtr f) {
-  Mapper::instance()->AddFeature(f, feature_adj_.at(f->id()));
   GraphBase::RemoveFeature(f);
   LOG(INFO) << "feature #" << f->id() << " removed from Graph";
 }
@@ -38,7 +36,6 @@ void Graph::RemoveFeatures(const std::vector<FeaturePtr> &features) {
 }
 
 void Graph::RemoveGroup(const GroupPtr g) {
-  Mapper::instance()->AddGroup(g, group_adj_.at(g->id()));
   GraphBase::RemoveGroup(g);
   LOG(INFO) << "group #" << g->id() << " removed from Graph";
 }
@@ -196,7 +193,7 @@ void Graph::CleanIsolatedGroups() {
   LOG(INFO) << "removing " << islands.size() << " isolated groups" << std::endl;
   RemoveGroups(islands);
   for (auto g : islands) {
-    Group::Delete(g);
+    Group::Deactivate(g);
   }
 }
 
@@ -212,7 +209,7 @@ void Graph::CleanIsolatedFeatures() {
             << std::endl;
   RemoveFeatures(islands);
   for (auto f : islands) {
-    Feature::Delete(f);
+    Feature::Deactivate(f);
   }
 }
 

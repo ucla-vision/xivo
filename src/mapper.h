@@ -23,8 +23,8 @@ public:
   static MapperPtr Create();
   static MapperPtr instance();
 
-  void AddFeature(FeaturePtr f, FeatureAdj& feature_adj);
-  void AddGroup(GroupPtr f, GroupAdj& group_adj);
+  void AddFeature(FeaturePtr f, const FeatureAdj& feature_adj);
+  void AddGroup(GroupPtr f, const GroupAdj& group_adj);
   void RemoveFeature(const FeaturePtr f);
   void RemoveGroup(const GroupPtr g);
 

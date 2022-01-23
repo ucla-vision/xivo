@@ -201,6 +201,7 @@ private:
   void AddGroupToState(GroupPtr g);
   std::vector<FeaturePtr> DiscardGroups(const std::vector<GroupPtr> &discards);
   void DiscardFeatures(const std::vector<FeaturePtr> &discards);
+  void DestroyFeatures(const std::vector<FeaturePtr> &destroys);
   void SwitchRefGroup();
 
   // same as above, but the feature list will be untouched

@@ -33,8 +33,12 @@ FeaturePtr Feature::Create(number_t x, number_t y) {
   return f;
 }
 
-void Feature::Delete(FeaturePtr f) {
-  MemoryManager::instance()->ReturnFeature(f);
+void Feature::Deactivate(FeaturePtr f) {
+  MemoryManager::instance()->DeactivateFeature(f);
+}
+
+void Feature::Destroy(FeaturePtr f) {
+  MemoryManager::instance()->DestroyFeature(f);
 }
 
 void Feature::Reset(number_t x, number_t y) {

@@ -16,6 +16,7 @@
 #include "param.h"
 #include "tracker.h"
 #include "helpers.h"
+#include "mapper.h"
 
 #ifdef USE_G2O
 #include "optimizer.h"
@@ -1008,6 +1009,7 @@ std::vector<FeaturePtr>
 Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
   std::vector<FeaturePtr> nullref_features;
   Graph& graph{*Graph::instance()};
+  Mapper& mapper{*Mapper::instance()};
   for (auto g : discards) {
     // transfer ownership of the remaining features whose reference is this one
     auto failed = graph.TransferFeatureOwnership(g, gbc());
@@ -1018,24 +1020,38 @@ Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
       // just lost the gauge group
       gauge_group_ = -1;
     }
-
+    mapper.AddGroup(g, graph.GetGroupAdj(g));
     graph.RemoveGroup(g);
     if (g->instate()) {
       RemoveGroupFromState(g);
     }
-    Group::Delete(g);
+    Group::Deactivate(g);
   }
   MakePtrVectorUnique(nullref_features);
   return nullref_features;
 }
 
 void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
-  Graph::instance()->RemoveFeatures(discards);
+  Graph &graph{*Graph::instance()};
+  Mapper &mapper{*Mapper::instance()};
   for (auto f : discards) {
+    mapper.AddFeature(f, graph.GetFeatureAdj(f));
+    graph.RemoveFeature(f);
     if (f->instate()) {
       RemoveFeatureFromState(f);
     }
-    Feature::Delete(f);
+    Feature::Deactivate(f);
+  }
+}
+
+
+void Estimator::DestroyFeatures(const std::vector<FeaturePtr> &destroys) {
+  Graph::instance()->RemoveFeatures(destroys);
+  for (auto f : destroys) {
+    if (f->instate()) {
+      RemoveFeatureFromState(f);
+    }
+    Feature::Destroy(f);
   }
 }
 

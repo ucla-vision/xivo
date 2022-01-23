@@ -89,10 +89,20 @@ T* CircBufWithHash<T>::GetItem() {
 
 
 template<typename T>
-void CircBufWithHash<T>::ReturnItem(T *item) {
+void CircBufWithHash<T>::DeactivateItem(T *item) {
   int ind = slots_map_[item];
   slots_active_[ind] = false;
   num_slots_active_--;
+}
+
+
+template<typename T>
+void CircBufWithHash<T>::DestroyItem(T *item) {
+  int ind = slots_map_[item];
+  slots_active_[ind] = false;
+  slots_initialized_[ind] = false;
+  num_slots_active_--;
+  num_slots_initialized_--;
 }
 
 
@@ -149,8 +159,12 @@ FeaturePtr MemoryManager::GetFeature() {
   return addr;
 }
 
-void MemoryManager::ReturnFeature(FeaturePtr f) {
-  feature_slots_->ReturnItem(f);
+void MemoryManager::DeactivateFeature(FeaturePtr f) {
+  feature_slots_->DeactivateItem(f);
+}
+
+void MemoryManager::DestroyFeature(FeaturePtr f) {
+  feature_slots_->DestroyItem(f);
 }
 
 GroupPtr MemoryManager::GetGroup() {
@@ -162,8 +176,12 @@ GroupPtr MemoryManager::GetGroup() {
   return addr;
 }
 
-void MemoryManager::ReturnGroup(GroupPtr g) {
-  group_slots_->ReturnItem(g);
+void MemoryManager::DeactivateGroup(GroupPtr g) {
+  group_slots_->DeactivateItem(g);
+}
+
+void MemoryManager::DestroyGroup(GroupPtr g) {
+  group_slots_->DestroyItem(g);
 }
 
 } // namespace xivo

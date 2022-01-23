@@ -73,7 +73,8 @@ class Feature : public Component<Feature, Vec3>, public Track {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   static FeaturePtr Create(number_t x, number_t y);
-  static void Delete(FeaturePtr f);
+  static void Deactivate(FeaturePtr f);
+  static void Destroy(FeaturePtr f);
 
   /** Appends another point to vector of observations.
    *  Recall: (`Feature` << `Track` << `std::vector` */

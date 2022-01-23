@@ -10,6 +10,7 @@
 #include "geometry.h"
 #include "group.h"
 #include "tracker.h"
+#include "mapper.h"
 
 namespace xivo {
 
@@ -26,6 +27,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // retrieve the visibility graph
   Graph& graph{*Graph::instance()};
+  Mapper& mapper{*Mapper::instance()};
 
   // increment lifetime of all features and groups
   for (auto f : graph.GetFeatures()) {
@@ -54,12 +56,13 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       it = tracks.erase(it);
     } else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
                f->track_status() == TrackStatus::REJECTED) {
+      mapper.AddFeature(f, graph.GetFeatureAdj(f));
       graph.RemoveFeature(f);
       if (f->instate()) {
         RemoveFeatureFromState(f);
         affected_groups.insert(f->ref());
       }
-      Feature::Delete(f);
+      Feature::Deactivate(f);
       it = tracks.erase(it);
     } else if (!f->instate() && f->track_status() == TrackStatus::DROPPED) {
       if (use_OOS_) {
@@ -69,7 +72,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       } else {
         // just remove
         graph.RemoveFeature(f);
-        Feature::Delete(f);
+        Feature::Destroy(f);
       }
       it = tracks.erase(it);
     } else {
@@ -96,7 +99,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
         if (f->outlier_counter() > remove_outlier_counter_) {
           graph.RemoveFeature(f);
-          Feature::Delete(f);
+          Feature::Destroy(f);
           it = tracks.erase(it);
         } else {
           ++it;
@@ -168,7 +171,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         --free_slots;
       }
     }
-    DiscardFeatures(bad_features);
+    DestroyFeatures(bad_features);
   }
 
   // Perform depth refinement before using oos features
@@ -185,7 +188,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         it = oos_features_.erase(it);
       }
     }
-    DiscardFeatures(bad_features);
+    DestroyFeatures(bad_features);
   }
 
   // Once we have enough instate features, perform state update
@@ -205,8 +208,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
     CHECK(!f->instate());
 #endif
+    mapper.AddFeature(f, graph.GetFeatureAdj(f));
     graph.RemoveFeature(f);
-    Feature::Delete(f);
+    Feature::Deactivate(f); // TODO: Maybe Feature::Destroy is better here?
   }
 
   // Post-update feature management
@@ -234,7 +238,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   graph.RemoveFeatures(rejected_features);
   for (auto f : rejected_features) {
     RemoveFeatureFromState(f);
-    Feature::Delete(f);
+    Feature::Destroy(f);
   }
 
   // different strategies to discard groups w & w/o OOS update
@@ -368,9 +372,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
           CHECK(!g->instate());
 #endif
-
+          mapper.AddGroup(g, graph.GetGroupAdj(g));
           graph.RemoveGroup(g);
-          Group::Delete(g);
+          Group::Deactivate(g);
         }
       }
     }

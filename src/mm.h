@@ -19,7 +19,8 @@ public:
   CircBufWithHash(int max_items);
   ~CircBufWithHash();
   T* GetItem();
-  void ReturnItem(T* item);
+  void DeactivateItem(T* item);
+  void DestroyItem(T *item);
 
 private:
   int max_items_;
@@ -48,9 +49,11 @@ public:
   static MemoryManagerPtr instance();
 
   FeaturePtr GetFeature();
-  void ReturnFeature(FeaturePtr);
+  void DeactivateFeature(FeaturePtr);
+  void DestroyFeature(FeaturePtr);
   GroupPtr GetGroup();
-  void ReturnGroup(GroupPtr);
+  void DeactivateGroup(GroupPtr);
+  void DestroyGroup(GroupPtr);
 
 private:
   MemoryManager() = delete;
