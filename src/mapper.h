@@ -28,9 +28,11 @@ public:
   void RemoveFeature(const FeaturePtr f);
   void RemoveGroup(const GroupPtr g);
 
+  std::vector<FeaturePtr> GetFeaturesOf(GroupPtr g) const;
+  std::vector<GroupPtr> GetGroupsOf(FeaturePtr f) const;
+
   std::mutex features_mtx;
   std::mutex groups_mtx;
-
 
 private:
   Mapper() = default;

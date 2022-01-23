@@ -113,4 +113,25 @@ void Mapper::RemoveGroup(const GroupPtr g) {
 }
 
 
+std::vector<FeaturePtr> Mapper::GetFeaturesOf(GroupPtr g) const {
+  std::vector<FeaturePtr> out;
+  for (int fid : group_adj_.at(g->id())) {
+    if (HasFeature(fid)) {
+      out.push_back(features_.at(fid));
+    }
+  }
+  return out;
+}
+
+
+std::vector<GroupPtr> Mapper::GetGroupsOf(FeaturePtr f) const {
+  std::vector<GroupPtr> out;
+  for (const auto &obs : feature_adj_.at(f->id())) {
+    if (HasGroup(obs.first)) {
+      out.push_back(groups_.at(obs.first));
+    }
+  }
+  return out;
+}
+
 }

@@ -28,8 +28,11 @@ public:
   GroupPtr GetGroup(int gid) const;
   std::vector<GroupPtr> GetGroups() const;
 
-  std::vector<FeaturePtr> GetFeaturesOf(GroupPtr g) const;
-  std::vector<GroupPtr> GetGroupsOf(FeaturePtr f) const;
+  // These two functions need to be virtual because in GraphWriter::CollectGraph
+  // we want to be able to call Mapper::GetFeaturesOf instead of
+  // GraphBase::GetFeaturesOf
+  virtual std::vector<FeaturePtr> GetFeaturesOf(GroupPtr g) const;
+  virtual std::vector<GroupPtr> GetGroupsOf(FeaturePtr f) const;
 
   const FeatureAdj &GetFeatureAdj(FeaturePtr f) const;
   const GroupAdj &GetGroupAdj(GroupPtr g) const;

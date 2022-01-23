@@ -64,6 +64,7 @@ add_library(xapp STATIC
         geometry.cpp
         metrics.cpp
         publisher.cpp
+        graphwriter.cpp
         viewer.cpp)
 target_link_libraries(xapp ${deps})
 
