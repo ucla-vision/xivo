@@ -1,7 +1,7 @@
 {
   // verbose
   "simulation": false,
-  "print_timing": true,
+  "print_timing": false,
   "use_canvas": true,
   "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
@@ -38,8 +38,8 @@
 
   // memory
   "memory": {
-    "max_features": 256,
-    "max_groups": 256  // max groups should increase as allowed group lifetime increases
+    "max_features": 30000,
+    "max_groups": 5000  // max groups should increase as allowed group lifetime increases
   },
 
   // gravity constant

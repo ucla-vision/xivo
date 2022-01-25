@@ -67,6 +67,9 @@ T* CircBufWithHash<T>::GetItem() {
       if (!slots_active_[slot_search_ind_]) {
         T* ret = slots_[slot_search_ind_];
 
+        LOG(WARNING) << "MemoryManager: Overwriting inactive " << typeid(T).name()
+          << " #" << ret->id();
+
         // Remove the item from the Mapper before doing anything else
         RemoveFromMapper(ret);
 

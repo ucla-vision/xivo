@@ -39,8 +39,8 @@
 
   // memory
   "memory": {
-    "max_features": 256,
-    "max_groups": 256  // max groups should increase as allowed group lifetime increases
+    "max_features": 30000,
+    "max_groups": 5000  // max groups should increase as allowed group lifetime increases
   },
 
   // gravity constant
