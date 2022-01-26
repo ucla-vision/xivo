@@ -254,7 +254,7 @@
     },
 
     "BRIEF": {
-      "bytes": 64,
+      "bytes": 32,
       "use_orientation": false
     },
 
@@ -264,6 +264,10 @@
       "patternScale": 22.0,
       "nOctaves": 4
     }
-  } 
+  },
 
+  "mapper_cfg": {
+    "detectLoopClosures": true,
+    "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz"
+  }
 }

@@ -81,6 +81,13 @@ void Graph::AddFeatureToGroup(FeaturePtr f, GroupPtr g) {
 }
 
 
+std::vector<FeaturePtr> Graph::GetInstateFeatures() {
+  return GetFeaturesIf([](FeaturePtr f) -> bool {
+    return f->status() == FeatureStatus::INSTATE;
+  });
+}
+
+
 void Graph::SanityCheck() {
   for (auto p : features_) {
     int fid = p.first;

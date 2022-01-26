@@ -49,7 +49,10 @@ EstimatorPtr CreateSystem(const Json::Value &cfg) {
   LOG(INFO) << "Visibility graph created";
 
   // Initialize the Mapper
-  Mapper::Create();
+  auto mapper_cfg = cfg["mapper_cfg"].isString()
+                        ? LoadJson(cfg["mapper_cfg"].asString())
+                        : cfg["mapper_cfg"];
+  Mapper::Create(mapper_cfg);
   LOG(INFO) << "Mapper created";
 
 #ifdef USE_G2O
@@ -61,6 +64,13 @@ EstimatorPtr CreateSystem(const Json::Value &cfg) {
   // Initialize the estimator
   Estimator::Create(cfg);
   LOG(INFO) << "Estimator created";
+
+  // Sanity check -- if we are extracting loop closures, then make sure that
+  // the Tracker is extracting descriptors
+  if (Mapper::instance()->UseLoopClosure() &&
+      !Tracker::instance()->IsExtractingDescriptors()) {
+    LOG(FATAL) << "Loop closure requires descriptor extraction. Go edit the .cfg file";
+  }
 
   system_created = true;
 

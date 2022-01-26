@@ -57,6 +57,9 @@ public:
   // groups.
   GroupPtr FindNewOwner(FeaturePtr f);
 
+  /** Shortcut function */
+  std::vector<FeaturePtr> GetInstateFeatures();
+
   /** Checks that
    * 1. Every member of `features_` has at least one observation
    * 2. The group in every `Observation` of all features is a member of `groups_`

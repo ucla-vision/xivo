@@ -48,6 +48,7 @@ list(APPEND deps
         pangolin
         pthread
         jsoncpp
+        DBoW2
         common
         )
 if (IS_LINUX)
@@ -80,6 +81,7 @@ add_library(xest STATIC
         graphbase.cpp
         graph.cpp
         feature.cpp
+        fastbrief.cpp
         oos.cpp
         group.cpp
         helpers.cpp

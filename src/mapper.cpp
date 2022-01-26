@@ -12,18 +12,24 @@ namespace xivo {
 
 std::unique_ptr<Mapper> Mapper::instance_{nullptr};
 
-Mapper* Mapper::instance() {
-  if (instance_ == nullptr) {
-    LOG(WARNING) << "Mapper not created yet! Creating one...";
-    Mapper::Create();
-  }
-  return instance_.get();
+Mapper* Mapper::instance() {  return instance_.get(); }
+
+
+Mapper::Mapper(const Json::Value &cfg) {
+
+  use_loop_closure_ = cfg.get("detectLoopClosures", false).asBool();
+  std::string vocab_file =
+    cfg.get("vocabulary", "cfg/ukbench10K_FASTBRIEF32.yml.gz").asString();
+  int database_levels = cfg.get("database_levels", 6).asInt();
+
+  FastBriefVocabulary voc(vocab_file);
+  db_ = new FastBriefDatabase(voc, true, database_levels);
 }
 
 
-MapperPtr Mapper::Create() {
+MapperPtr Mapper::Create(const Json::Value &cfg) {
   if (instance_ == nullptr) {
-    instance_ = std::unique_ptr<Mapper>(new Mapper);
+    instance_ = std::unique_ptr<Mapper>(new Mapper(cfg));
   }
   return instance_.get();
 }
@@ -133,5 +139,22 @@ std::vector<GroupPtr> Mapper::GetGroupsOf(FeaturePtr f) const {
   }
   return out;
 }
+
+
+void Mapper::DetectLoopClosures(const std::vector<FastBrief::TDescriptor> &descriptors,
+                                const std::vector<cv::KeyPoint>& kps)
+{
+
+  // Check descriptors for matches
+  DBoW2::QueryResults ret;
+  //db_->query(descriptors, ret, -1, -1);
+
+  // If match, check with PnP RANSAC
+
+
+  // add descriptors to database for future matching
+  db_->add(descriptors);
+}
+
 
 }

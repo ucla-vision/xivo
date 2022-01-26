@@ -1,6 +1,7 @@
 // Author: Xiaohan Fei
 #include "unistd.h"
 #include <algorithm>
+#include <vector>
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -30,6 +31,31 @@ DEFINE_string(graphout, "", ".dot file to save output graph to");
 
 using namespace xivo;
 
+
+int GetLoopClosureInputs(std::vector<FastBrief::TDescriptor>& descriptors,
+                         std::vector<cv::KeyPoint>& kps) {
+  Graph& graph{*Graph::instance()};
+  Mapper& mapper{*Mapper::instance()};
+
+  std::vector<FeaturePtr> instate_features = graph.GetInstateFeatures();
+  int num_instate_features = instate_features.size();
+
+  if (num_instate_features > 0) {
+    descriptors.reserve(num_instate_features);
+    kps.reserve(num_instate_features);
+
+    for (int i=0; i<num_instate_features; i++) {
+      FeaturePtr f = instate_features[i];
+      kps.push_back(f->keypoint());
+      descriptors.push_back((FastBrief::TDescriptor)(f->descriptor().data));
+    }
+  }
+
+  return instate_features.size();
+}
+
+
+
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -56,6 +82,9 @@ int main(int argc, char **argv) {
         LoadJson(cfg["viewer_cfg"].asString()), FLAGS_seq);
   }
 
+  // Get mapper
+  MapperPtr mapper = Mapper::instance();
+
   // setup I/O for saving results
   if (std::ofstream ostream{FLAGS_out, std::ios::out}) {
 
@@ -71,6 +100,16 @@ int main(int argc, char **argv) {
       if (auto msg = dynamic_cast<msg::Image *>(raw_msg)) {
         auto image = cv::imread(msg->image_path_);
         est->VisualMeas(msg->ts_, image);
+
+        if (mapper->UseLoopClosure()) {
+          std::vector<FastBrief::TDescriptor> descriptors;
+          std::vector<cv::KeyPoint> kps;
+          int num_feats = GetLoopClosureInputs(descriptors, kps);
+          if (num_feats > 0) {
+            Mapper::instance()->DetectLoopClosures(descriptors, kps);
+          }
+        }
+
         if (viewer) {
           viewer->Update_gsb(est->gsb());
           viewer->Update_gsc(est->gsc());

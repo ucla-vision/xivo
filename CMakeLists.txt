@@ -52,6 +52,7 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
+        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib
         /usr/local/lib
 )
 if (IS_LINUX)
@@ -69,6 +70,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
+        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/include
         ${JSONCPP_INCLUDE_DIRS}
         /usr/include/suitesparse
         /usr/include
