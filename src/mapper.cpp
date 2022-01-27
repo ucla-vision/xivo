@@ -10,6 +10,10 @@
 
 namespace xivo {
 
+FastBrief::TDescriptor GetDBoWDesc(FeaturePtr f) {
+  return (FastBrief::TDescriptor)f->descriptor().data;
+}
+
 std::unique_ptr<Mapper> Mapper::instance_{nullptr};
 
 Mapper* Mapper::instance() {  return instance_.get(); }
@@ -20,10 +24,10 @@ Mapper::Mapper(const Json::Value &cfg) {
   use_loop_closure_ = cfg.get("detectLoopClosures", false).asBool();
   std::string vocab_file =
     cfg.get("vocabulary", "cfg/ukbench10K_FASTBRIEF32.yml.gz").asString();
-  int database_levels = cfg.get("database_levels", 6).asInt();
 
-  FastBriefVocabulary voc(vocab_file);
-  db_ = new FastBriefDatabase(voc, true, database_levels);
+  uplevel_word_search_ = cfg.get("uplevel_word_search", 0).asInt();
+  nn_dist_thresh_ = cfg.get("nn_dist_thresh", 20.0).asDouble();
+  voc_ = new FastBriefVocabulary(vocab_file);
 }
 
 
@@ -51,6 +55,10 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
   features_[fid] = f;
   feature_adj_[fid] = f_obs;
   features_mtx.unlock();
+
+  // Add feature descriptor to invese index
+  DBoW2::WordId wid = voc_->transform(GetDBoWDesc(f));
+  UpdateInverseIndex(wid, f);
 
   LOG(INFO) << "feature #" << fid << " added to mapper";
 }
@@ -141,19 +149,77 @@ std::vector<GroupPtr> Mapper::GetGroupsOf(FeaturePtr f) const {
 }
 
 
-void Mapper::DetectLoopClosures(const std::vector<FastBrief::TDescriptor> &descriptors,
-                                const std::vector<cv::KeyPoint>& kps)
+void Mapper::UpdateInverseIndex(const DBoW2::WordId &word_id, FeaturePtr f) {
+  if (InvIndex_.count(word_id) > 0) {
+    InvIndex_[word_id].insert(f);
+  }
+  else {
+    InvIndex_.insert({word_id, {f}});
+  }
+}
+
+std::unordered_set<FeaturePtr> Mapper::GetLoopClosureCandidates(
+  const DBoW2::WordId& word_id)
+{
+  const DBoW2::NodeId &node_id(voc_->getParentNode(word_id, uplevel_word_search_));
+  std::vector<DBoW2::WordId> words_under_node;
+  voc_->getWordsFromNode(node_id, words_under_node);
+
+  std::unordered_set<FeaturePtr> ret;
+  for (auto w: words_under_node) {
+    std::unordered_set<FeaturePtr> features_in_word = InvIndex_[w];
+    ret.merge(features_in_word);
+  }
+  return ret;
+}
+
+
+std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& instate_features)
 {
 
-  // Check descriptors for matches
-  DBoW2::QueryResults ret;
-  //db_->query(descriptors, ret, -1, -1);
+  std::vector<LCMatch> matches;
 
-  // If match, check with PnP RANSAC
+  for (auto f: instate_features) {
+    FastBrief::TDescriptor desc = GetDBoWDesc(f);
 
+    // Convert descriptor to word and find other features that match to the
+    // same word
+    const DBoW2::WordId& word_id(voc_->transform(desc));
+    std::unordered_set<FeaturePtr> other_matches =
+      GetLoopClosureCandidates(word_id);
 
-  // add descriptors to database for future matching
-  db_->add(descriptors);
+    // Only use the matches that close enough to the descriptor
+    double distance = nn_dist_thresh_;
+    FeaturePtr best_match = nullptr;
+    for (auto f1: other_matches) {
+      FastBrief::TDescriptor desc1 = GetDBoWDesc(f1);
+      double d = FastBrief::distance(desc, desc1);
+      if (d < distance) {
+        distance = d;
+        best_match = f1;
+      }
+    }
+
+    if (best_match != nullptr) {
+//      std::cout << "Mapper: matched feature " << f->id() << " to feature "
+//        << best_match->id() << std::endl;
+      LOG(INFO) << "Mapper: matched feature " << f->id() << " to feature "
+        << best_match->id() << std::endl;
+      matches.push_back(LCMatch(f, best_match));
+    }
+  }
+
+  // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
+  // return anything
+  if (matches.size() > 4) {
+    //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
+    LOG(INFO) << "Mapper: matched " << matches.size() << " features" << std::endl;
+  }
+  else {
+    matches.clear();
+  }
+
+  return matches;
 }
 
 

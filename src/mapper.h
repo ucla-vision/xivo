@@ -3,6 +3,8 @@
 #pragma once
 
 #include <mutex>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "json/json.h"
 #include "DBoW2/DBoW2.h"
@@ -23,8 +25,11 @@ namespace xivo {
 
 using FastBriefVocabulary =
   DBoW2::TemplatedVocabulary<FastBrief::TDescriptor, FastBrief>;
-using FastBriefDatabase =
-  DBoW2::TemplatedDatabase<FastBrief::TDescriptor, FastBrief>;
+
+using LCMatch = std::pair<FeaturePtr, FeaturePtr>;
+
+FastBrief::TDescriptor GetDBoWDesc(FeaturePtr f);
+
 
 class Mapper : public GraphBase {
 
@@ -45,8 +50,8 @@ public:
   std::mutex groups_mtx;
 
   bool UseLoopClosure() const { return use_loop_closure_; }
-  void DetectLoopClosures(const std::vector<FastBrief::TDescriptor>& descriptors,
-                          const std::vector<cv::KeyPoint>& kps);
+  std::vector<LCMatch> DetectLoopClosures(
+    const std::vector<FeaturePtr>& instate_features);
 
 private:
   Mapper() = default;
@@ -58,7 +63,17 @@ private:
 
   // Loop closure variables
   bool use_loop_closure_;
-  FastBriefDatabase* db_;
+  int uplevel_word_search_;
+  double nn_dist_thresh_;
+  FastBriefVocabulary* voc_;
+
+  /** Maps DBoW2 words to a set of features that map to the same word in the
+   *  vocabulary. */
+  std::unordered_map<DBoW2::WordId, std::unordered_set<FeaturePtr>> InvIndex_;
+
+  // Functions related to loop closure
+  std::unordered_set<FeaturePtr> GetLoopClosureCandidates(const DBoW2::WordId& word_id);
+  void UpdateInverseIndex(const DBoW2::WordId &word_id, FeaturePtr f);
 };
 
 

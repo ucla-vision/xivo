@@ -284,6 +284,7 @@
   "mapper_cfg": {
     "detectLoopClosures": true,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
-    "database_levels": 6
+    "uplevel_word_search": 0,
+    "nn_dist_thresh": 20.0
   }
 }

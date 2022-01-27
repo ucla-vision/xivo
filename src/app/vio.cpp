@@ -102,11 +102,11 @@ int main(int argc, char **argv) {
         est->VisualMeas(msg->ts_, image);
 
         if (mapper->UseLoopClosure()) {
-          std::vector<FastBrief::TDescriptor> descriptors;
-          std::vector<cv::KeyPoint> kps;
-          int num_feats = GetLoopClosureInputs(descriptors, kps);
-          if (num_feats > 0) {
-            Mapper::instance()->DetectLoopClosures(descriptors, kps);
+          std::vector<FeaturePtr> instate_features =
+            Graph::instance()->GetInstateFeatures();
+          std::vector<LCMatch> matches;
+          if (instate_features.size() > 0) {
+            matches = Mapper::instance()->DetectLoopClosures(instate_features);
           }
         }
 
