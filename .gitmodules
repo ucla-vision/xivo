@@ -1,0 +1,9 @@
+[submodule "lambdatwist-p3p"]
+	path = lambdatwist-p3p
+	url = git@github.com:midjji/lambdatwist-p3p.git
+[submodule "googletest"]
+	path = googletest
+	url = git@github.com:google/googletest.git
+[submodule "pybind11"]
+	path = pybind11
+	url = https://github.com/pybind/pybind11.git
