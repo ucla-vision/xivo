@@ -68,6 +68,7 @@ void Feature::Reset(number_t x, number_t y) {
   J_.setZero();
   inn_ << 0, 0;
   outlier_counter_ = 0;
+  lc_match_ = -1;
 
   sim_.Xs << -1, -1, -1;
   sim_.xp << -1, -1;

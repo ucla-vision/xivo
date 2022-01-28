@@ -111,6 +111,8 @@ public:
   // get 3D coordinates in spatial frame, cam2body alignment is required
   Vec3 Xs(const SE3 &gbc, Mat3 *dXs_dx = nullptr);
   const Vec3& Xs() const { return Xs_; }
+  const int LoopClosureMatch() { return lc_match_; }
+  void SetLCMatch(int matched_feat_id) { lc_match_ = matched_feat_id; }
 
   // return (2M-3) as the dimension of the measurement
   /** Computes the Jacobian for the in-state (EKF) measurement model. */
@@ -276,6 +278,9 @@ private:
 
   /** Number of measurements in the MSCKF measurement update. */
   int oos_jac_counter_;
+
+  /** id of a past feature this feature was loop-closed to. */
+  int lc_match_;
 
 #ifdef APPROXIMATE_INIT_COVARIANCE
   // correlation block between local feature state (x) and group pose

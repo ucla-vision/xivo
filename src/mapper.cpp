@@ -48,19 +48,47 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
   int fid = f->id();
   CHECK(!features_.count(fid)) << "feature #" << fid << " already in mapper";
 
+  // Merge observations of feature
   features_mtx.lock();
-  features_[fid] = f;
-  feature_adj_[fid] = f_obs;
+  // Case 1: feature not in map. Just add it.
+  int matched_map_feat = f->LoopClosureMatch();
+  if (matched_map_feat == -1) {
+    features_[fid] = f;
+    feature_adj_[fid] = f_obs;
+  }
+  // Case 2: feature has a loop closure. Need to merge observations
+  else {
+    for (auto p: f_obs) {
+      feature_adj_[matched_map_feat].insert({p.first, p.second});
+    }
+  }
   features_mtx.unlock();
 
+  // TODO (stsuei): Change the estimated location of the original feature.
+  // This wasn't done in Corvis, so I'm not going to do it yet either.
+  // I think a weighted sum based on covariance might be the right way to go..?
+
   // Add all feature descriptors to invese index
+  FeaturePtr fptr = (matched_map_feat == -1) ? f : features_[matched_map_feat];
   std::vector<FastBrief::TDescriptor> all_descriptors = f->GetAllDBoWDesc();
   for (auto desc: all_descriptors) {
     DBoW2::WordId wid = voc_->transform(desc);
-    UpdateInverseIndex(wid, f);
+    UpdateInverseIndex(wid, fptr);
   }
 
-  LOG(INFO) << "feature #" << fid << " added to mapper";
+  // If the feature has been merged with a previous feature, then we will
+  // destroy it and its slot in the MemoryManager will become uninitialized.
+  if (matched_map_feat > -1) {
+    Feature::Destroy(f);
+    //std::cout << "feature #" << fid << " merged with feature " <<
+    //  matched_map_feat << std::endl;
+    LOG(INFO) << "feature #" << fid << " merged with feature " <<
+      matched_map_feat;
+  }
+  else {
+    LOG(INFO) << "feature #" << fid << " added to mapper";
+    //std::cout << "feature #" << fid << " added to mapper" << std::endl;
+  }
 }
 
 
@@ -206,13 +234,14 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
       LOG(INFO) << "Mapper: matched feature " << f->id() << " to feature "
         << best_match->id() << std::endl;
       matches.push_back(LCMatch(f, best_match));
+      f->SetLCMatch(best_match->id());
     }
   }
 
   // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
   // return anything
   if (matches.size() > 4) {
-    std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
+    //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
     LOG(INFO) << "Mapper: matched " << matches.size() << " features" << std::endl;
   }
   else {
