@@ -12,6 +12,7 @@
 #include "jac.h"
 #include "options.h"
 #include "project.h"
+#include "fastbrief.h"
 
 namespace xivo {
 
@@ -42,12 +43,15 @@ public:
 
   TrackStatus status() const { return status_; }
   void SetStatus(TrackStatus status) { status_ = status; }
-  void SetDescriptor(const cv::Mat &descriptor) { descriptor_ = descriptor; }
+  void SetDescriptor(const cv::Mat &descriptor) { descriptors_.push_back(descriptor); }
   void SetKeypoint(const cv::KeyPoint &keypoint) { keypoint_ = keypoint; }
   const cv::KeyPoint &keypoint() const { return keypoint_; }
   cv::KeyPoint &keypoint() { return keypoint_; }
-  const cv::Mat &descriptor() const { return descriptor_; }
-  cv::Mat &descriptor() { return descriptor_; }
+  const cv::Mat &descriptor() const { return descriptors_.back(); }
+  cv::Mat &descriptor() { return descriptors_.back(); }
+  const std::vector<cv::Mat>& GetAllDescriptors() { return descriptors_; }
+  FastBrief::TDescriptor GetDBoWDesc();
+  std::vector<FastBrief::TDescriptor> GetAllDBoWDesc();
 
 protected:
   /** CREATED, TRACKED, REJECTED, or DROPPED */
@@ -56,8 +60,8 @@ protected:
   /** OpenCV Keypoint from when this track was first detected in `Tracker::Detect()` */
   cv::KeyPoint keypoint_;
 
-  /** Descriptor of the very last keypoint. */
-  cv::Mat descriptor_;
+  /** Descriptor of all observations. */
+  std::vector<cv::Mat> descriptors_;
 };
 
 

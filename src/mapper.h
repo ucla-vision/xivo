@@ -28,8 +28,6 @@ using FastBriefVocabulary =
 
 using LCMatch = std::pair<FeaturePtr, FeaturePtr>;
 
-FastBrief::TDescriptor GetDBoWDesc(FeaturePtr f);
-
 
 class Mapper : public GraphBase {
 

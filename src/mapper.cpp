@@ -10,9 +10,6 @@
 
 namespace xivo {
 
-FastBrief::TDescriptor GetDBoWDesc(FeaturePtr f) {
-  return (FastBrief::TDescriptor)f->descriptor().data;
-}
 
 std::unique_ptr<Mapper> Mapper::instance_{nullptr};
 
@@ -56,9 +53,12 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
   feature_adj_[fid] = f_obs;
   features_mtx.unlock();
 
-  // Add feature descriptor to invese index
-  DBoW2::WordId wid = voc_->transform(GetDBoWDesc(f));
-  UpdateInverseIndex(wid, f);
+  // Add all feature descriptors to invese index
+  std::vector<FastBrief::TDescriptor> all_descriptors = f->GetAllDBoWDesc();
+  for (auto desc: all_descriptors) {
+    DBoW2::WordId wid = voc_->transform(desc);
+    UpdateInverseIndex(wid, f);
+  }
 
   LOG(INFO) << "feature #" << fid << " added to mapper";
 }
@@ -180,7 +180,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
   std::vector<LCMatch> matches;
 
   for (auto f: instate_features) {
-    FastBrief::TDescriptor desc = GetDBoWDesc(f);
+    FastBrief::TDescriptor desc = f->GetDBoWDesc();
 
     // Convert descriptor to word and find other features that match to the
     // same word
@@ -192,7 +192,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     double distance = nn_dist_thresh_;
     FeaturePtr best_match = nullptr;
     for (auto f1: other_matches) {
-      FastBrief::TDescriptor desc1 = GetDBoWDesc(f1);
+      FastBrief::TDescriptor desc1 = f1->GetDBoWDesc();
       double d = FastBrief::distance(desc, desc1);
       if (d < distance) {
         distance = d;
@@ -212,7 +212,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
   // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
   // return anything
   if (matches.size() > 4) {
-    //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
+    std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
     LOG(INFO) << "Mapper: matched " << matches.size() << " features" << std::endl;
   }
   else {

@@ -21,6 +21,20 @@ JacobianCache Feature::cache_ = {};
 void FeatureAdj::Add(const Observation &obs) { insert({obs.g->id(), obs.xp}); }
 void FeatureAdj::Remove(int id) { erase(id); }
 
+
+FastBrief::TDescriptor Track::GetDBoWDesc() {
+  return (FastBrief::TDescriptor) descriptors_.back().data;
+}
+
+std::vector<FastBrief::TDescriptor> Track::GetAllDBoWDesc() {
+  std::vector<FastBrief::TDescriptor> ret;
+  for (auto d: descriptors_) {
+    ret.push_back((FastBrief::TDescriptor) d.data);
+  }
+  return ret;
+}
+
+
 ////////////////////////////////////////
 // FACTORY METHODS
 ////////////////////////////////////////
