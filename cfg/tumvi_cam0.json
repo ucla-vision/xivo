@@ -264,6 +264,16 @@
     "detectLoopClosures": true,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
-    "nn_dist_thresh": 20.0
+    "nn_dist_thresh": 20.0,
+    
+    "RANSAC": {
+      "max_iter": 1000,
+      "min_iter": 100,
+      "threshold": 0.03, // In units of px/focal_length
+      "probability": 0.95,
+      "early_exit": false,
+      "early_exit_min_iter": 5,
+      "early_exit_inlier_ratio": 0.85
+    }
   }
 }

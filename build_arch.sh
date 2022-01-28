@@ -83,6 +83,12 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=.. -DBUILD_SHARED_LIBS=TRUE
 make install -j $CPU_COUNT
 
+cd $PROJECT_DIR/thirdparty/pnp
+mkdir build
+cd build
+cmake .. -DBUILD_PNP_MAIN=ON -DCMAKE_INSTALL_PREFIX=.. 
+make -j $CPU_COUNT
+
 # to build gperftools, need to install autoconf and libtool first
 if [ $USE_GPERFTOOLS = true ]; then
   sudo pacman -S autoconf libtool

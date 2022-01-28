@@ -8,6 +8,7 @@
 
 #include "json/json.h"
 #include "DBoW2/DBoW2.h"
+#include "pnp_ransac.h"
 
 #include "core.h"
 #include "feature.h"
@@ -27,6 +28,17 @@ using FastBriefVocabulary =
   DBoW2::TemplatedVocabulary<FastBrief::TDescriptor, FastBrief>;
 
 using LCMatch = std::pair<FeaturePtr, FeaturePtr>;
+
+
+// Helper functions for interfacing with Lambdatwist PnP RANSAC
+cvl::PnpParams* GetRANSACParams(const Json::Value &cfg);
+void GetPnPInput(std::vector<LCMatch> &matches,
+                 std::vector<cvl::Vector3D> &xs,
+                 std::vector<cvl::Vector2D> &yns);
+std::vector<LCMatch> GetInlierMatches(std::vector<LCMatch> &matches,
+                                      std::vector<cvl::Vector3D> &xs,
+                                      std::vector<cvl::Vector2D> &yns,
+                                      cvl::PoseD soln);
 
 
 class Mapper : public GraphBase {
@@ -72,6 +84,14 @@ private:
   // Functions related to loop closure
   std::unordered_set<FeaturePtr> GetLoopClosureCandidates(const DBoW2::WordId& word_id);
   void UpdateInverseIndex(const DBoW2::WordId &word_id, FeaturePtr f);
+
+  /** Solves the P3P problem for outlier rejection of loop closure matches.
+   *  Contains an interface to the lambdatwist P3P solver.
+   *  Deletes all matches that aren't within tolerance*/
+  void RANSAC(std::vector<LCMatch> &match_list);
+
+  // RANSAC parameters
+  cvl::PnpParams* ransac_params_;
 };
 
 

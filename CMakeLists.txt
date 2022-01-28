@@ -53,6 +53,7 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib
+        ${PROJECT_SOURCE_DIR}/thirdparty/pnp/build
         /usr/local/lib
 )
 if (IS_LINUX)
@@ -71,6 +72,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/include
+        ${PROJECT_SOURCE_DIR}/thirdparty/pnp
         ${JSONCPP_INCLUDE_DIRS}
         /usr/include/suitesparse
         /usr/include

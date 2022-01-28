@@ -7,6 +7,44 @@
 #endif
 
 
+namespace cvl {
+
+
+/**
+     * @brief apply a fast version of outs =P*ins and then project outs
+     * @param pose
+     * @param ins
+     * @param outs
+     */
+template<class T>
+void apply_and_project(const Pose<T>& pose,
+                       const std::vector<Vector3D>& ins,
+                       std::vector<Vector2D>& outs){
+    outs.resize(ins.size());
+    Vector4<T> xh;
+    Matrix4x4<T> M=pose.get4x4(); // much faster...
+    for(unsigned int i=0;i<ins.size();++i){
+        xh=ins[i].homogeneous();
+        xh=M*xh;
+        outs[i]=Vector2<T>(xh[0]/xh[2], xh[1]/xh[2]);
+    }
+}
+
+}
+
+
+// for debug printing
+template<class T>
+void PrintRotMat(T mat) {
+  for (int i=0; i<3; i++) {
+    std::cout << mat(i,0) << ", " << mat(i,1) << ", " << mat(i,2) << std::endl;
+  }
+}
+
+template<class T>
+void PrintT(T v) {
+  std::cout << v(0,0) << ", " << v(1,0) << ", " << v(2,0) << std::endl;
+}
 
 namespace xivo {
 
@@ -14,6 +52,75 @@ namespace xivo {
 std::unique_ptr<Mapper> Mapper::instance_{nullptr};
 
 Mapper* Mapper::instance() {  return instance_.get(); }
+
+
+cvl::PnpParams* GetRANSACParams(const Json::Value &cfg) {
+  cvl::PnpParams* params = new cvl::PnpParams();
+  params->min_iterations = cfg.get("min_iter", 1).asInt();
+  params->max_iterations = cfg.get("max_iter", 100).asInt();
+  params->threshold = cfg.get("threshold", 0.02).asDouble();
+  params->min_probability = cfg.get("probability", 0.98).asDouble();
+  params->early_exit = cfg.get("early_exit", false).asBool();
+  params->early_exit_inlier_ratio = cfg.get("early_exit_inlier_ratio", 0.85).asDouble();
+  params->early_exit_min_iterations = cfg.get("early_exit_min_iter", 5).asInt();
+
+  // This was a formula in Corvis for translating a threshold in pixels to
+  // a threshold for RANSAC.
+  // TODO (ST): Figure out where this formula came from
+  //double threshold = cfg.get("threshold", 0.02).asDouble();
+  //params->threshold = 1.0 - cos(atan(sqrt( 2.0 )* threshold /300.0));
+  return params;
+}
+
+
+void GetPnPInput(std::vector<LCMatch> &matches,
+                 std::vector<cvl::Vector3D> &xs,
+                 std::vector<cvl::Vector2D> &yns)
+{
+  xs.resize(matches.size());
+  yns.resize(matches.size());
+  for (int i=0; i<matches.size(); i++) {
+    LCMatch m = matches[i];
+    FeaturePtr ekf_feat = m.first;
+    FeaturePtr map_feat = m.second;
+
+    Vec2 y_px = ekf_feat->back();
+    Vec2 y = Camera::instance()->UnProject(y_px);
+    Vec3 X = map_feat->Xs();
+    cvl::Vector2D last_obs(y(0), y(1)); 
+    cvl::Vector3D map_pos(X(0), X(1), X(2));
+
+    xs[i] = map_pos;
+    yns[i]= last_obs;
+  }
+}
+
+
+std::vector<LCMatch> GetInlierMatches(std::vector<LCMatch> &matches,
+                                      std::vector<cvl::Vector3D> &Xs,
+                                      std::vector<cvl::Vector2D> &yns,
+                                      cvl::PoseD ransac_soln,
+                                      double tol)
+{
+  // Transform all Xs to camera frame using ransac solution
+  std::vector<cvl::Vector3D> Xc;
+  cvl::apply(ransac_soln, Xs, Xc);
+
+  // output
+  std::vector<LCMatch> ret;
+
+  // compare points to projected points
+  std::vector<cvl::Vector2D> yns_soln;
+  cvl::apply_and_project(ransac_soln, Xs, yns_soln);
+  for (int i=0; i<Xs.size(); i++) {
+    double dist = (yns_soln[i] - yns[i]).norm();
+    if (dist < tol) {
+      ret.push_back(matches[i]);
+    }
+  }
+
+  return ret;
+}
 
 
 Mapper::Mapper(const Json::Value &cfg) {
@@ -25,6 +132,8 @@ Mapper::Mapper(const Json::Value &cfg) {
   uplevel_word_search_ = cfg.get("uplevel_word_search", 0).asInt();
   nn_dist_thresh_ = cfg.get("nn_dist_thresh", 20.0).asDouble();
   voc_ = new FastBriefVocabulary(vocab_file);
+
+  ransac_params_ = GetRANSACParams(cfg["RANSAC"]);
 }
 
 
@@ -229,8 +338,6 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     }
 
     if (best_match != nullptr) {
-//      std::cout << "Mapper: matched feature " << f->id() << " to feature "
-//        << best_match->id() << std::endl;
       LOG(INFO) << "Mapper: matched feature " << f->id() << " to feature "
         << best_match->id() << std::endl;
       matches.push_back(LCMatch(f, best_match));
@@ -240,9 +347,32 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
 
   // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
   // return anything
-  if (matches.size() > 4) {
-    //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
+  if (matches.size() >= 4) {
+    std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
     LOG(INFO) << "Mapper: matched " << matches.size() << " features" << std::endl;
+
+    // debug printing -- this block is useful for adjusting parameters
+    // `nn_dist_thresh` and `RANSAC.threshold` in configuration files.
+    // If the filter is working as intended, then the position of matches in
+    // the spatial frame should be "pretty close".
+    /*
+    for (int j=0; j< matches.size(); j++) {
+      LCMatch m = matches[j];
+      std::cout << "Match " << j << std::endl;
+      PrintT(m.first->Xs());
+      PrintT(m.second->Xs());
+    }
+    */
+
+    std::vector<cvl::Vector3D> Xs;
+    std::vector<cvl::Vector2D> yns;
+    GetPnPInput(matches, Xs, yns);
+    cvl::PoseD camera_pose = cvl::pnp_ransac(Xs, yns, *ransac_params_);
+    matches = GetInlierMatches(matches, Xs, yns, camera_pose,
+                               ransac_params_->threshold);
+
+    std::cout << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
+    LOG(INFO) << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
   }
   else {
     matches.clear();

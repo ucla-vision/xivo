@@ -49,7 +49,9 @@ list(APPEND deps
         pthread
         jsoncpp
         DBoW2
+        libpnp
         common
+        ceres
         )
 if (IS_LINUX)
   list(APPEND deps GL)
