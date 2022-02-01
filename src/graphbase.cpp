@@ -151,5 +151,19 @@ std::vector<Observation> GraphBase::GetObservationsOf(FeaturePtr f) const {
   return out;
 }
 
+Observation GraphBase::GetObservationOf(FeaturePtr f, GroupPtr g) const {
+  for (const auto &obs : feature_adj_.at(f->id())) {
+    if (obs.first == g->id()) {
+      Observation ret;
+      ret.g = g;
+      ret.xp = obs.second;
+      return ret;
+    }
+  }
+
+  LOG(FATAL) << "GraphBase: could not find observation of feature " <<
+    f->id() << " from group " << g->id();
+}
+
 
 }

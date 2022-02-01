@@ -53,6 +53,7 @@ void Graph::AddFeature(FeaturePtr f) {
 
 void Graph::AddGroup(GroupPtr g) {
   GraphBase::AddGroup(g);
+  last_added_group_ = g;
   LOG(INFO) << "group #" << g->id() << " added to graph";
 }
 

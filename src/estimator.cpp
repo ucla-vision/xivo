@@ -294,7 +294,10 @@ Estimator::Estimator(const Json::Value &cfg)
   Roos_ = cfg["oos_meas_std"].asDouble();
   Roos_ *= Roos_;
 
-  LOG(INFO) << "R=" << R_ << " ;Roos=" << Roos_;
+  Rlc_ = cfg["loop_closure_meas_std"].asDouble();
+  Rlc_ *= Rlc_;
+
+  LOG(INFO) << "R=" << R_ << "; Roos=" << Roos_ << "; Rlc=" << Rlc_;
 
   // /////////////////////////////
   // Load initial std on feature state

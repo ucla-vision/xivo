@@ -163,6 +163,33 @@ void Estimator::Update() {
 #endif
 }
 
+
+void Estimator::CloseLoop(GroupPtr g, std::vector<LCMatch>& matched_features) {
+
+  Graph& graph{*Graph::instance()};
+
+  int num_matches = matched_features.size();
+
+  // H and R matrices
+  int total_size = 2 * matched_features.size();
+  H_.setZero(total_size, err_.size());
+  diagR_.setOnes(total_size);
+  diagR_ *= Rlc_;
+
+  // Compute feature Jacobians (fill in H)
+  for (int i=0; i<num_matches; i++) {
+    FeaturePtr new_feature = matched_features[i].first;
+    FeaturePtr old_feature = matched_features[i].second;
+
+    Observation obs = graph.GetObservationOf(new_feature, g);
+    old_feature->ComputeLCJacobian(obs, X_.Rbc, X_.Tbc, err_, i, H_);
+  }
+
+  // Measurement Update
+  UpdateJosephForm();
+}
+
+
 std::vector<FeaturePtr>
 Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   if (mh_inliers.empty())

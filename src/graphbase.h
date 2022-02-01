@@ -41,7 +41,7 @@ public:
   GetFeaturesIf(std::function<bool(FeaturePtr)> pred) const;
   std::vector<GroupPtr> GetGroupsIf(std::function<bool(GroupPtr)> pred) const;
   std::vector<Observation> GetObservationsOf(FeaturePtr f) const;
-
+  Observation GetObservationOf(FeaturePtr f, GroupPtr g) const;
 
 protected:
   // 2 types of nodes: feature and group

@@ -26,6 +26,7 @@
 #include "imu.h"
 #include "tracker.h"
 #include "visualize.h"
+#include "mapper.h"
 
 namespace xivo {
 
@@ -86,6 +87,9 @@ public:
   void InertialMeas(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel);
   // perform tracking/matching to generate tracks
   void VisualMeas(const timestamp_t &ts, const cv::Mat &img);
+
+  /** Loop Closure Measurement Update - older features, newer group. */
+  void CloseLoop(GroupPtr g, std::vector<LCMatch>& matched_features);
 
   // accessors
   SE3 gbc() const { return SE3{X_.Rbc, X_.Tbc}; }
@@ -344,6 +348,7 @@ private:
    *  in-state tracked features. */
   number_t R_;
   number_t Rtri_;           // UNUSED? measurement covariance, depth sub-filter
+  number_t Rlc_;            // Loop closure measurement covariance
   number_t outlier_thresh_; // outlier threshold -- multipler of the measurement
                          // variance
 

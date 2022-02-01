@@ -60,6 +60,8 @@ public:
   /** Shortcut function */
   std::vector<FeaturePtr> GetInstateFeatures();
 
+  GroupPtr LastAddedGroup() const { return last_added_group_; }
+
   /** Checks that
    * 1. Every member of `features_` has at least one observation
    * 2. The group in every `Observation` of all features is a member of `groups_`
@@ -91,6 +93,7 @@ private:
   Graph& operator=(const Graph&) = delete;
   static std::unique_ptr<Graph> instance_;
 
+  GroupPtr last_added_group_;
 };
 
 } // namespace xivo

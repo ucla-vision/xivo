@@ -108,6 +108,10 @@ int main(int argc, char **argv) {
           if (instate_features.size() > 0) {
             matches = Mapper::instance()->DetectLoopClosures(instate_features);
           }
+
+          if (matches.size() > 0) {
+            est->CloseLoop(Graph::instance()->LastAddedGroup(), matches);
+          }
         }
 
         if (viewer) {

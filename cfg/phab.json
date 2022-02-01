@@ -120,6 +120,8 @@
   "max_depth": 8.0,
   "min_depth": 0.05,
 
+  // Loop closure measurement
+  "loop_closure_meas_std": 4.0,
 
   // depth sub-filter setting
   "subfilter": {

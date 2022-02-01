@@ -348,7 +348,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
   // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
   // return anything
   if (matches.size() >= 4) {
-    std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
+    //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
     LOG(INFO) << "Mapper: matched " << matches.size() << " features" << std::endl;
 
     // debug printing -- this block is useful for adjusting parameters
@@ -371,7 +371,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     matches = GetInlierMatches(matches, Xs, yns, camera_pose,
                                ransac_params_->threshold);
 
-    std::cout << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
+    //std::cout << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
     LOG(INFO) << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
   }
   else {
