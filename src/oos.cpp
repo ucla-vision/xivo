@@ -112,6 +112,7 @@ void Feature::ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc,
   Mat3 Rsb_t = Rsb.transpose();
   Vec3 Tsb = g->Tsb();
   Mat3 Rbc_t = Rbc.transpose();
+  SE3 gbc(SO3(Rbc), Tbc);
   
   // Get error state
   Vec3 Wsb_err = error_state.segment<3>(Index::Wsb);
@@ -119,7 +120,7 @@ void Feature::ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc,
   Vec3 Wbc_err = error_state.segment<3>(Index::Wbc);
   Vec3 Tbc_err = error_state.segment<3>(Index::Tbc);
 
-  cache_.Xcn = Rbc_t * Rsb_t * (Xs() - Tsb) - Rbc_t * Tbc;
+  cache_.Xcn = Rbc_t * Rsb_t * (Xs(gbc) - Tsb) - Rbc_t * Tbc;
   cache_.dXcn_dXs = Rbc_t * Rsb_t;
   cache_.dXcn_dTsb = -cache_.dXcn_dXs;
   cache_.dXcn_dTbc = -Rbc_t;

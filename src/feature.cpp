@@ -172,6 +172,65 @@ void Feature::ResetRef(GroupPtr nref) {
   ref_ = nref;
 }
 
+bool Feature::Merge(FeaturePtr f, const SE3& gbc) {
+
+  // Change coordinates of new feature's estimates
+  bool success = f->ChangeOwner(ref_, gbc);
+  if (success) {
+    Mat3 P_den = (P_ + f->P()).inverse();
+    x_ = P_den*(P_*x_ + f->P()*f->x());
+    P_ = P_den*(P_ + f->P());
+    Xc();
+    Xs(gbc);
+
+    // Merge observations
+    for (auto px: *f) {
+      UpdateTrack(px);
+    }
+    // Merge descriptors
+    for (auto desc: f->GetAllDescriptors()) {
+      descriptors_.push_back(desc);
+    }
+  }
+  return success;
+}
+
+
+bool Feature::ChangeOwner(GroupPtr nref, const SE3 &gbc) {
+  // now transfer
+  SE3 g_cn_s =
+      (nref->gsb() * gbc)
+          .inv(); // spatial (s) to camera of the new reference (cn)
+  Mat3 dXs_dx;
+  Vec3 Xcn = g_cn_s * Xs(gbc, &dXs_dx);
+  // Mat3 dXcn_dXs = gcb.R() * gbs.R();
+  Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
+  Mat3 dxn_dXcn;
+
+  if (Xcn(2) < 0) {
+    return false;
+  }
+
+#ifdef USE_INVDEPTH
+  Vec3 xn = project_invz(Xcn, &dxn_dXcn);
+#else
+  Vec3 xn = project_logz(Xcn, &dxn_dXcn);
+#endif
+
+  x_ = xn;
+  Mat3 J = dxn_dXcn * dXcn_dx;
+
+  P_ = J * P_ * J.transpose();
+
+  // Update other parameters
+  ResetRef(nref);
+  Xc();
+  Xs(gbc);
+
+  return true;
+}
+
+
 void Feature::SubfilterUpdate(const SE3 &gsb, const SE3 &gbc,
                               const SubfilterOptions &options) {
 

@@ -1038,7 +1038,7 @@ void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
   Graph &graph{*Graph::instance()};
   Mapper &mapper{*Mapper::instance()};
   for (auto f : discards) {
-    mapper.AddFeature(f, graph.GetFeatureAdj(f));
+    mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
     graph.RemoveFeature(f);
     if (f->instate()) {
       RemoveFeatureFromState(f);

@@ -129,40 +129,20 @@ std::vector<FeaturePtr> Graph::TransferFeatureOwnership(GroupPtr g,
       // transfer ownership
       auto nref = FindNewOwner(f);
       if (nref) {
-        // now transfer
-        SE3 g_cn_s =
-            (nref->gsb() * gbc)
-                .inv(); // spatial (s) to camera of the new reference (cn)
-        Mat3 dXs_dx;
-        Vec3 Xcn = g_cn_s * f->Xs(gbc, &dXs_dx);
-        // Mat3 dXcn_dXs = gcb.R() * gbs.R();
-        Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
-        Mat3 dxn_dXcn;
-#ifdef USE_INVDEPTH
-        Vec3 xn = project_invz(Xcn, &dxn_dXcn);
-#else
-        if (Xcn(2) < 0) {
+        bool success = f->ChangeOwner(nref, gbc);
+        // TODO: Make covariance inflation factor a parameter.
+        f->inflate_cov(1.5);
+
+        if (success) {
+          LOG(INFO) << "feature #" << fid << " transfered from group #" << gid
+                    << " to group #" << nref->id();
+        }
+        else {
+          LOG(WARNING) << "Graph::TransferFeatureOwnership: " <<
+            "negative depth; mark feature #" << fid << " as failed";
           f->ResetRef(nullptr);
           failed.push_back(f);
-          LOG(WARNING) << "negative depth; mark feature #" << fid
-                       << " as failed";
-          continue;
         }
-        Vec3 xn = project_logz(Xcn, &dxn_dXcn);
-#endif
-        f->x() = xn;
-
-        Mat3 J;
-        J = dxn_dXcn * dXcn_dx;
-
-        // TODO: Make covariance inflation factor a parameter.
-        f->P() =
-            J * f->P() * J.transpose() * 1.5; // inflate covariance a little bit
-
-        f->ResetRef(nref);
-
-        LOG(INFO) << "feature #" << fid << " transfered from group #" << gid
-                  << " to group #" << nref->id();
       } else {
         f->ResetRef(nullptr);
         failed.push_back(f);

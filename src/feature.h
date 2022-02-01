@@ -111,8 +111,22 @@ public:
   // get 3D coordinates in spatial frame, cam2body alignment is required
   Vec3 Xs(const SE3 &gbc, Mat3 *dXs_dx = nullptr);
   const Vec3& Xs() const { return Xs_; }
+  /** Changes the owner of the feature. Returns false if this results in a
+   * negative depth. If change in ownership results in negative depth, no
+   * changes in any members of this feature are made. Used when reference
+   * group meets the maximum group lifetime and is removed from the state and
+   * during loop closure. */
+  bool ChangeOwner(GroupPtr nref, const SE3 &gbc);
   const int LoopClosureMatch() { return lc_match_; }
   void SetLCMatch(int matched_feat_id) { lc_match_ = matched_feat_id; }
+
+  /** Copy observations, descriptors from another feature, and adjust state
+   * and covariance estimates. Used during loop closure. Returns true if
+   * merge was successful. If merge is unsuccessful, then no changes to
+   * are actually made to any private members. (`Successful' means that
+   * coordiante change of other feature `f` doesn't result in a negative
+   * depth estimate.) */
+  bool Merge(FeaturePtr f, const SE3& gbc);
 
   // return (2M-3) as the dimension of the measurement
   /** Computes the Jacobian for the in-state (EKF) measurement model. */
@@ -120,6 +134,8 @@ public:
                        const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
                        const Vec3 &bg, const Vec3 &Vsb, number_t td,
                        const VecX &error_state);
+
+  void inflate_cov(number_t factor) { P_ *= factor; }
 
   int oos_inn_size() const { return oos_jac_counter_; }
 

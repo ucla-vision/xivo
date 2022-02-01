@@ -148,7 +148,7 @@ MapperPtr Mapper::Create(const Json::Value &cfg) {
 Mapper::~Mapper() {}
 
 
-void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
+void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs, const SE3 &gbc) {
 
 #ifdef USE_G2O
   adapter::AddFeature(f);
@@ -158,27 +158,39 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
   CHECK(!features_.count(fid)) << "feature #" << fid << " already in mapper";
 
   // Merge observations of feature
+  bool merge_success = false;
   features_mtx.lock();
   // Case 1: feature not in map. Just add it.
-  int matched_map_feat = f->LoopClosureMatch();
-  if (matched_map_feat == -1) {
+  int matched_map_feat_id = f->LoopClosureMatch();
+  if (matched_map_feat_id == -1) {
     features_[fid] = f;
     feature_adj_[fid] = f_obs;
+    merge_success = true;
   }
-  // Case 2: feature has a loop closure. Need to merge observations
+  // Case 2: feature has a loop closure. Need to merge observations, tracks,
+  // and state estimates
+  // Note (ST): Corvis didn't merge estimates at all, but it was marked as a
+  // todo item
   else {
-    for (auto p: f_obs) {
-      feature_adj_[matched_map_feat].insert({p.first, p.second});
+    FeaturePtr matched_feat = features_[matched_map_feat_id];
+    merge_success = matched_feat->Merge(f, gbc);
+    merge_success = true;
+    if (merge_success) {
+      for (auto p: f_obs) {
+        feature_adj_[matched_map_feat_id].insert({p.first, p.second});
+      }
     }
   }
   features_mtx.unlock();
 
-  // TODO (stsuei): Change the estimated location of the original feature.
-  // This wasn't done in Corvis, so I'm not going to do it yet either.
-  // I think a weighted sum based on covariance might be the right way to go..?
+  if (!merge_success) {
+    LOG(WARNING) << "Mapper: Failed to merge feature #" << fid
+      << " into feature #" << matched_map_feat_id;
+    //return;
+  }
 
   // Add all feature descriptors to invese index
-  FeaturePtr fptr = (matched_map_feat == -1) ? f : features_[matched_map_feat];
+  FeaturePtr fptr = (matched_map_feat_id == -1) ? f : features_[matched_map_feat_id];
   std::vector<FastBrief::TDescriptor> all_descriptors = f->GetAllDBoWDesc();
   for (auto desc: all_descriptors) {
     DBoW2::WordId wid = voc_->transform(desc);
@@ -187,12 +199,12 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs) {
 
   // If the feature has been merged with a previous feature, then we will
   // destroy it and its slot in the MemoryManager will become uninitialized.
-  if (matched_map_feat > -1) {
+  if (matched_map_feat_id > -1) {
     Feature::Destroy(f);
     //std::cout << "feature #" << fid << " merged with feature " <<
     //  matched_map_feat << std::endl;
     LOG(INFO) << "feature #" << fid << " merged with feature " <<
-      matched_map_feat;
+      matched_map_feat_id;
   }
   else {
     LOG(INFO) << "feature #" << fid << " added to mapper";

@@ -56,11 +56,12 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       it = tracks.erase(it);
     } else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
                f->track_status() == TrackStatus::REJECTED) {
-      mapper.AddFeature(f, graph.GetFeatureAdj(f));
+      GroupPtr affected_group = f->ref();
+      mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
       graph.RemoveFeature(f);
       if (f->instate()) {
         RemoveFeatureFromState(f);
-        affected_groups.insert(f->ref());
+        affected_groups.insert(affected_group);
       }
       Feature::Deactivate(f);
       it = tracks.erase(it);
@@ -208,7 +209,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
     CHECK(!f->instate());
 #endif
-    mapper.AddFeature(f, graph.GetFeatureAdj(f));
+    mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
     graph.RemoveFeature(f);
     Feature::Deactivate(f); // TODO: Maybe Feature::Destroy is better here?
   }
