@@ -200,6 +200,7 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
 
   // Measurement Update
   UpdateJosephForm();
+  AbsorbError();
 }
 
 
