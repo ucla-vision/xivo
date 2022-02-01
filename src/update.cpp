@@ -164,7 +164,20 @@ void Estimator::Update() {
 }
 
 
-void Estimator::CloseLoop(GroupPtr g, std::vector<LCMatch>& matched_features) {
+void Estimator::CloseLoop() {
+  std::vector<FeaturePtr> instate_features =
+    Graph::instance()->GetInstateFeatures();
+  std::vector<LCMatch> matches;
+  if (instate_features.size() > 0) {
+    matches = Mapper::instance()->DetectLoopClosures(instate_features);
+  }
+
+  if (matches.size() > 0) {
+    CloseLoopInternal(Graph::instance()->LastAddedGroup(), matches);
+  }
+}
+
+void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_features) {
 
   Graph& graph{*Graph::instance()};
 

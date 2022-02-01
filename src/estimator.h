@@ -89,7 +89,8 @@ public:
   void VisualMeas(const timestamp_t &ts, const cv::Mat &img);
 
   /** Loop Closure Measurement Update - older features, newer group. */
-  void CloseLoop(GroupPtr g, std::vector<LCMatch>& matched_features);
+  void CloseLoop();
+  void CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_features);
 
   // accessors
   SE3 gbc() const { return SE3{X_.Rbc, X_.Tbc}; }
@@ -138,6 +139,7 @@ public:
   MatX7 InstateGroupPoses() const;
   MatX InstateGroupCovs() const;
   VecXi InstateGroupSinds() const;
+  bool UsingLoopClosure() const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 

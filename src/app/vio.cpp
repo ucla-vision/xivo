@@ -15,8 +15,6 @@
 #include "viewer.h"
 #include "visualize.h"
 #include "graphwriter.h"
-#include "graph.h"
-#include "mapper.h"
 
 // flags
 DEFINE_string(cfg, "cfg/vio.json",
@@ -30,30 +28,6 @@ DEFINE_string(out, "out_state", "Output file path.");
 DEFINE_string(graphout, "", ".dot file to save output graph to");
 
 using namespace xivo;
-
-
-int GetLoopClosureInputs(std::vector<FastBrief::TDescriptor>& descriptors,
-                         std::vector<cv::KeyPoint>& kps) {
-  Graph& graph{*Graph::instance()};
-  Mapper& mapper{*Mapper::instance()};
-
-  std::vector<FeaturePtr> instate_features = graph.GetInstateFeatures();
-  int num_instate_features = instate_features.size();
-
-  if (num_instate_features > 0) {
-    descriptors.reserve(num_instate_features);
-    kps.reserve(num_instate_features);
-
-    for (int i=0; i<num_instate_features; i++) {
-      FeaturePtr f = instate_features[i];
-      kps.push_back(f->keypoint());
-      descriptors.push_back((FastBrief::TDescriptor)(f->descriptor().data));
-    }
-  }
-
-  return instate_features.size();
-}
-
 
 
 int main(int argc, char **argv) {
@@ -82,9 +56,6 @@ int main(int argc, char **argv) {
         LoadJson(cfg["viewer_cfg"].asString()), FLAGS_seq);
   }
 
-  // Get mapper
-  MapperPtr mapper = Mapper::instance();
-
   // setup I/O for saving results
   if (std::ofstream ostream{FLAGS_out, std::ios::out}) {
 
@@ -101,17 +72,8 @@ int main(int argc, char **argv) {
         auto image = cv::imread(msg->image_path_);
         est->VisualMeas(msg->ts_, image);
 
-        if (mapper->UseLoopClosure()) {
-          std::vector<FeaturePtr> instate_features =
-            Graph::instance()->GetInstateFeatures();
-          std::vector<LCMatch> matches;
-          if (instate_features.size() > 0) {
-            matches = Mapper::instance()->DetectLoopClosures(instate_features);
-          }
-
-          if (matches.size() > 0) {
-            est->CloseLoop(Graph::instance()->LastAddedGroup(), matches);
-          }
+        if (est->UsingLoopClosure()) {
+          est->CloseLoop();
         }
 
         if (viewer) {

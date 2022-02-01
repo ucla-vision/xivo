@@ -1527,4 +1527,8 @@ MatX Estimator::InstateGroupCovs() const
 }
 
 
+bool Estimator::UsingLoopClosure() const {
+  return Mapper::instance()->UseLoopClosure();
+}
+
 } // xivo
