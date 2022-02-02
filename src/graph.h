@@ -50,7 +50,8 @@ public:
   // This function is called when a group `g` is discarded to make room for
   // more groups in the `MemoryManager`. Features that were first created at
   // group `g` have their coordinates changed to a new group.
-  std::vector<FeaturePtr> TransferFeatureOwnership(GroupPtr g, const SE3 &gbc);
+  std::vector<FeaturePtr> TransferFeatureOwnership(
+    GroupPtr g, const SE3 &gbc, number_t cov_factor);
 
   // Helper function to `TransferFeatureOwnership`. Finds a new reference frame
   // for a feature when its group is removed from the graph to make room for new

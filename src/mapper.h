@@ -73,6 +73,8 @@ private:
 
   // Loop closure variables
   bool use_loop_closure_;
+  bool merge_features_;
+  double feature_merge_cov_factor_;
   int uplevel_word_search_;
   double nn_dist_thresh_;
   FastBriefVocabulary* voc_;

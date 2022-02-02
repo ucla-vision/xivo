@@ -133,6 +133,9 @@ Mapper::Mapper(const Json::Value &cfg) {
   nn_dist_thresh_ = cfg.get("nn_dist_thresh", 20.0).asDouble();
   voc_ = new FastBriefVocabulary(vocab_file);
 
+  merge_features_ = cfg.get("merge_features", true).asBool();
+  feature_merge_cov_factor_ = cfg.get("feature_merge_cov_factor", 1.0).asDouble();
+
   ransac_params_ = GetRANSACParams(cfg["RANSAC"]);
 }
 
@@ -173,12 +176,14 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs, const SE3 &gbc) {
   // todo item
   else {
     FeaturePtr matched_feat = features_[matched_map_feat_id];
-    merge_success = matched_feat->Merge(f, gbc);
-    merge_success = true;
-    if (merge_success) {
-      for (auto p: f_obs) {
-        feature_adj_[matched_map_feat_id].insert({p.first, p.second});
-      }
+    if (merge_features_) {
+      f->inflate_cov(feature_merge_cov_factor_);
+      merge_success = matched_feat->Merge(f, gbc);
+    } else {
+      merge_success = true;
+    }
+    for (auto p: f_obs) {
+      feature_adj_[matched_map_feat_id].insert({p.first, p.second});
     }
   }
   features_mtx.unlock();

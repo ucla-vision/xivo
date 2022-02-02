@@ -323,6 +323,8 @@ Estimator::Estimator(const Json::Value &cfg)
   MH_thresh_multipler_ = cfg_.get("MH_adjust_factor", 1.1).asDouble();
   // FIXME (xfei): used in HuberOnInnovation, but kinda overlaps with MH gating
   outlier_thresh_ = cfg_.get("outlier_thresh", 1.1).asDouble();
+  feature_owner_change_cov_factor_ =
+    cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
 
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
@@ -1015,7 +1017,8 @@ Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
   Mapper& mapper{*Mapper::instance()};
   for (auto g : discards) {
     // transfer ownership of the remaining features whose reference is this one
-    auto failed = graph.TransferFeatureOwnership(g, gbc());
+    auto failed = graph.TransferFeatureOwnership(
+      g, gbc(), feature_owner_change_cov_factor_);
     nullref_features.insert(nullref_features.end(), failed.begin(),
                             failed.end());
 

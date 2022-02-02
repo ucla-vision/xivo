@@ -114,7 +114,8 @@ void Graph::SanityCheck() {
 }
 
 std::vector<FeaturePtr> Graph::TransferFeatureOwnership(GroupPtr g,
-                                                        const SE3 &gbc) {
+                                                        const SE3 &gbc,
+                                                        number_t cov_factor) {
 
   CHECK(HasGroup(g));
 
@@ -130,8 +131,7 @@ std::vector<FeaturePtr> Graph::TransferFeatureOwnership(GroupPtr g,
       auto nref = FindNewOwner(f);
       if (nref) {
         bool success = f->ChangeOwner(nref, gbc);
-        // TODO: Make covariance inflation factor a parameter.
-        f->inflate_cov(1.5);
+        f->inflate_cov(cov_factor);
 
         if (success) {
           LOG(INFO) << "feature #" << fid << " transfered from group #" << gid

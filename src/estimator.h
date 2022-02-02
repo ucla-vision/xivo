@@ -375,6 +375,9 @@ private:
   bool gravity_initialized_, vision_initialized_;
   int imu_counter_, vision_counter_;
 
+  // How much to inflate covariance of features after a group ownership change
+  number_t feature_owner_change_cov_factor_;
+
   // helpers
   int gravity_init_counter_;
   std::vector<Vec3> gravity_init_buf_; // buffer of accel measurements for
