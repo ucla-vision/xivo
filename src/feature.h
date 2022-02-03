@@ -151,7 +151,7 @@ public:
   /** Compute Jacobians for Loop Closure measurement update. */
   void ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc, const Vec3 &Tbc,
                          const VecX &error_state, int match_counter,
-                         MatX &H);
+                         MatX &H, VecX &inn);
 
   // fill-in the corresponding jacobian block
   // H: the big jacobian matrix of all measurements

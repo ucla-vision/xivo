@@ -103,7 +103,7 @@ void Feature::ComputeOOSJacobianInternal(const Observation &obs,
 
 void Feature::ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc,
                                 const Vec3 &Tbc, const VecX &error_state,
-                                int match_counter, MatX &H)
+                                int match_counter, MatX &H, VecX &inn)
 {
   auto g = obs.g;
 
@@ -162,6 +162,8 @@ void Feature::ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc,
   int dim{Camera::instance()->dim()};
   H.block(st, kCameraBegin, 2, dim) = jacc;
 #endif
+
+  inn.segment<2>(st) = obs.xp - cache_.xp;
 }
 
 } // namespace xivo

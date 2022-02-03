@@ -186,8 +186,8 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
   // H and R matrices
   int total_size = 2 * matched_features.size();
   H_.setZero(total_size, err_.size());
-  diagR_.setOnes(total_size);
-  diagR_ *= Rlc_;
+  diagR_.resize(total_size);
+  inn_.setZero(total_size);
 
   // Compute feature Jacobians (fill in H)
   for (int i=0; i<num_matches; i++) {
@@ -195,8 +195,18 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
     FeaturePtr old_feature = matched_features[i].second;
 
     Observation obs = graph.GetObservationOf(new_feature, g);
-    old_feature->ComputeLCJacobian(obs, X_.Rbc, X_.Tbc, err_, i, H_);
+    old_feature->ComputeLCJacobian(obs, X_.Rbc, X_.Tbc, err_, i, H_, inn_);
+
+    // Fill in R
+    diagR_.segment<2>(2*i) << Rlc_, Rlc_;
+
+    // Print out stuffs
+    //std::cout << "Comparing new (#" << new_feature->id() << ") to old (#" << old_feature->id() << ")" << std::endl;
+    //std::cout << "new Xs: " << new_feature->Xs().transpose() << std::endl;
+    //std::cout << "old Xs: " << old_feature->Xs().transpose() << std::endl;
   }
+
+  std::cout << "LC innovation: " << inn_.transpose() << std::endl;
 
   // Measurement Update
   UpdateJosephForm();

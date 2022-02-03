@@ -96,30 +96,33 @@ void GetPnPInput(std::vector<LCMatch> &matches,
 }
 
 
-std::vector<LCMatch> GetInlierMatches(std::vector<LCMatch> &matches,
-                                      std::vector<cvl::Vector3D> &Xs,
-                                      std::vector<cvl::Vector2D> &yns,
-                                      cvl::PoseD ransac_soln,
-                                      double tol)
+void GetInlierMatches(std::vector<LCMatch> &matches,
+                      std::vector<cvl::Vector3D> &Xs,
+                      std::vector<cvl::Vector2D> &yns,
+                      cvl::PoseD ransac_soln,
+                      double tol,
+                      std::vector<LCMatch> &ransac_matches)
 {
   // Transform all Xs to camera frame using ransac solution
   std::vector<cvl::Vector3D> Xc;
   cvl::apply(ransac_soln, Xs, Xc);
 
-  // output
-  std::vector<LCMatch> ret;
-
   // compare points to projected points
   std::vector<cvl::Vector2D> yns_soln;
   cvl::apply_and_project(ransac_soln, Xs, yns_soln);
   for (int i=0; i<Xs.size(); i++) {
-    double dist = (yns_soln[i] - yns[i]).norm();
+    cvl::Vector2D diff = yns_soln[i] - yns[i];
+    double dist = diff.norm();
     if (dist < tol) {
-      ret.push_back(matches[i]);
+      //std::cout << "diff inlier: " << diff[0] << ", " << diff[1] << std::endl;
+      //std::cout << "dist inlier: " << dist << std::endl;
+      ransac_matches.push_back(matches[i]);
     }
+    //else {
+      //std::cout << "diff outlier: " << diff[0] << ", " << diff[1] << std::endl;
+      //std::cout << "dist outlier: " << dist << std::endl;
+    //}
   }
-
-  return ret;
 }
 
 
@@ -179,11 +182,11 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs, const SE3 &gbc) {
     if (merge_features_) {
       f->inflate_cov(feature_merge_cov_factor_);
       merge_success = matched_feat->Merge(f, gbc);
+      for (auto p: f_obs) {
+        feature_adj_[matched_map_feat_id].insert({p.first, p.second});
+      }
     } else {
       merge_success = true;
-    }
-    for (auto p: f_obs) {
-      feature_adj_[matched_map_feat_id].insert({p.first, p.second});
     }
   }
   features_mtx.unlock();
@@ -332,6 +335,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
 {
 
   std::vector<LCMatch> matches;
+  std::vector<LCMatch> ransac_matches;
 
   for (auto f: instate_features) {
     FastBrief::TDescriptor desc = f->GetDBoWDesc();
@@ -364,7 +368,8 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
 
   // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
   // return anything
-  if (matches.size() >= 4) {
+  if (matches.size() >= 5) {
+    //std::cout << std::endl;
     //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;
     LOG(INFO) << "Mapper: matched " << matches.size() << " features" << std::endl;
 
@@ -385,17 +390,29 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     std::vector<cvl::Vector2D> yns;
     GetPnPInput(matches, Xs, yns);
     cvl::PoseD camera_pose = cvl::pnp_ransac(Xs, yns, *ransac_params_);
-    matches = GetInlierMatches(matches, Xs, yns, camera_pose,
-                               ransac_params_->threshold);
+    GetInlierMatches(matches, Xs, yns, camera_pose, ransac_params_->threshold,
+                     ransac_matches);
 
-    //std::cout << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
-    LOG(INFO) << "Mapper: RANSAC kept " << matches.size() << " matches" << std::endl;
-  }
-  else {
-    matches.clear();
+    LOG(INFO) << "Mapper: RANSAC kept " << ransac_matches.size() << " matches" << std::endl;
+    // more debug printing to make sure that RANSAC is working.
+    /*
+    std::cout << "Mapper: RANSAC kept " << ransac_matches.size() << " matches" << std::endl;
+    for (int j=0; j< ransac_matches.size(); j++) {
+      LCMatch m = ransac_matches[j];
+      std::cout << "Match " << j << std::endl;
+      PrintT(m.first->Xs());
+      PrintT(m.second->Xs());
+    }
+    */
   }
 
-  return matches;
+  // If RANSAC only kept 4 matches, it might be by chance, so let's get rid
+  // of them.
+  if (ransac_matches.size() <= 4) {
+    ransac_matches.clear();
+  }
+
+  return ransac_matches;
 }
 
 
