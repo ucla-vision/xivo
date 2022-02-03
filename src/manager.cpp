@@ -209,9 +209,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
     CHECK(!f->instate());
 #endif
-    mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
     graph.RemoveFeature(f);
-    Feature::Deactivate(f); // TODO: Maybe Feature::Destroy is better here?
+    Feature::Destroy(f);
   }
 
   // Post-update feature management
