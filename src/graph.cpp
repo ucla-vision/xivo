@@ -88,6 +88,12 @@ std::vector<FeaturePtr> Graph::GetInstateFeatures() {
   });
 }
 
+std::vector<GroupPtr> Graph::GetInstateGroups() {
+  return GetGroupsIf([](GroupPtr g) -> bool {
+    return g->instate();
+  });
+}
+
 
 void Graph::SanityCheck() {
   for (auto p : features_) {
@@ -140,11 +146,14 @@ std::vector<FeaturePtr> Graph::TransferFeatureOwnership(GroupPtr g,
         else {
           LOG(WARNING) << "Graph::TransferFeatureOwnership: " <<
             "negative depth; mark feature #" << fid << " as failed";
-          f->ResetRef(nullptr);
+          //f->ResetRef(nullptr);
           failed.push_back(f);
         }
       } else {
-        f->ResetRef(nullptr);
+        // Note: back before we were saving old groups and features for loop
+        // closure, reseting the feature group made sense. Now, we can keep the
+        // both feature and the discarded group around in the Mapper.
+        //f->ResetRef(nullptr);
         failed.push_back(f);
         LOG(WARNING) << "failed to find new owner for feature #" << fid;
       }

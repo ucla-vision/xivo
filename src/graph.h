@@ -58,8 +58,9 @@ public:
   // groups.
   GroupPtr FindNewOwner(FeaturePtr f);
 
-  /** Shortcut function */
+  /** Shortcut functions */
   std::vector<FeaturePtr> GetInstateFeatures();
+  std::vector<GroupPtr> GetInstateGroups();
 
   GroupPtr LastAddedGroup() const { return last_added_group_; }
 

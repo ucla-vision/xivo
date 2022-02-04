@@ -205,7 +205,8 @@ private:
   // same as above, but the group list will be untouched
   void RemoveGroupFromState(GroupPtr g);
   void AddGroupToState(GroupPtr g);
-  std::vector<FeaturePtr> DiscardGroups(const std::vector<GroupPtr> &discards);
+  std::vector<FeaturePtr> FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards);
+  void DiscardGroups(const std::vector<GroupPtr> &discards);
   void DiscardFeatures(const std::vector<FeaturePtr> &discards);
   void DestroyFeatures(const std::vector<FeaturePtr> &destroys);
   void SwitchRefGroup();

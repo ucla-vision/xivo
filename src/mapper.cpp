@@ -73,7 +73,8 @@ cvl::PnpParams* GetRANSACParams(const Json::Value &cfg) {
 }
 
 
-void GetPnPInput(std::vector<LCMatch> &matches,
+void GetPnPInput(const std::vector<LCMatch> &matches,
+                 const SE3 &gbc,
                  std::vector<cvl::Vector3D> &xs,
                  std::vector<cvl::Vector2D> &yns)
 {
@@ -210,7 +211,7 @@ void Mapper::AddFeature(FeaturePtr f, const FeatureAdj& f_obs, const SE3 &gbc) {
   if (matched_map_feat_id > -1) {
     Feature::Destroy(f);
     //std::cout << "feature #" << fid << " merged with feature " <<
-    //  matched_map_feat << std::endl;
+    //  matched_map_feat_id << std::endl;
     LOG(INFO) << "feature #" << fid << " merged with feature " <<
       matched_map_feat_id;
   }
@@ -331,7 +332,7 @@ std::unordered_set<FeaturePtr> Mapper::GetLoopClosureCandidates(
 }
 
 
-std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& instate_features)
+std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& instate_features, const SE3 &gbc)
 {
 
   std::vector<LCMatch> matches;
@@ -381,14 +382,14 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     for (int j=0; j< matches.size(); j++) {
       LCMatch m = matches[j];
       std::cout << "Match " << j << std::endl;
-      PrintT(m.first->Xs());
-      PrintT(m.second->Xs());
+      PrintT(m.first->Xs(gbc));
+      PrintT(m.second->Xs(gbc));
     }
     */
 
     std::vector<cvl::Vector3D> Xs;
     std::vector<cvl::Vector2D> yns;
-    GetPnPInput(matches, Xs, yns);
+    GetPnPInput(matches, gbc, Xs, yns);
     cvl::PoseD camera_pose = cvl::pnp_ransac(Xs, yns, *ransac_params_);
     GetInlierMatches(matches, Xs, yns, camera_pose, ransac_params_->threshold,
                      ransac_matches);

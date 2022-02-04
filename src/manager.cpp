@@ -286,9 +286,11 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   }   // use_OOS
 
   // for the to-be-discarded groups, transfer ownership of features owned by
-  // them
-  std::vector<FeaturePtr> nullref_features = DiscardGroups(discards);
+  // them. `nullref_features` contains references to features that couldn't be
+  // assigned to a new group without errors.
+  std::vector<FeaturePtr> nullref_features = FindNewOwnersForFeaturesOf(discards);
   DiscardFeatures(nullref_features);
+  DiscardGroups(discards);
 
   // initialize those newly detected featuers
   // create a new group and associate newly detected features to the new group

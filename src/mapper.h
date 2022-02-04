@@ -61,7 +61,7 @@ public:
 
   bool UseLoopClosure() const { return use_loop_closure_; }
   std::vector<LCMatch> DetectLoopClosures(
-    const std::vector<FeaturePtr>& instate_features);
+    const std::vector<FeaturePtr>& instate_features, const SE3 &gbc);
 
 private:
   Mapper() = default;

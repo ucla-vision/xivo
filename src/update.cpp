@@ -169,7 +169,7 @@ void Estimator::CloseLoop() {
     Graph::instance()->GetInstateFeatures();
   std::vector<LCMatch> matches;
   if (instate_features.size() > 0) {
-    matches = Mapper::instance()->DetectLoopClosures(instate_features);
+    matches = Mapper::instance()->DetectLoopClosures(instate_features, gbc());
   }
 
   if (matches.size() > 0) {
@@ -207,6 +207,10 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
   }
 
   std::cout << "LC innovation: " << inn_.transpose() << std::endl;
+
+  // Update Group list
+  instate_groups_.clear();
+  instate_groups_ = Graph::instance()->GetInstateGroups();
 
   // Measurement Update
   UpdateJosephForm();

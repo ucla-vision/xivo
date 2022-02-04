@@ -1011,7 +1011,7 @@ std::tuple<number_t, bool> Estimator::HuberOnInnovation(const Vec2 &inn,
 }
 
 std::vector<FeaturePtr>
-Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
+Estimator::FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards) {
   std::vector<FeaturePtr> nullref_features;
   Graph& graph{*Graph::instance()};
   Mapper& mapper{*Mapper::instance()};
@@ -1022,6 +1022,16 @@ Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
     nullref_features.insert(nullref_features.end(), failed.begin(),
                             failed.end());
 
+  }
+  MakePtrVectorUnique(nullref_features);
+  return nullref_features;
+}
+
+
+void Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
+  Graph& graph{*Graph::instance()};
+  Mapper& mapper{*Mapper::instance()};
+  for (auto g: discards) {
     if (g->id() == gauge_group_) {
       // just lost the gauge group
       gauge_group_ = -1;
@@ -1033,9 +1043,8 @@ Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
     }
     Group::Deactivate(g);
   }
-  MakePtrVectorUnique(nullref_features);
-  return nullref_features;
 }
+
 
 void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
   Graph &graph{*Graph::instance()};
