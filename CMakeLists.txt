@@ -54,6 +54,7 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/pnp/build
+        ${PROJECT_SOURCE_DIR}/thirdparty/ceres-solver/lib
         /usr/local/lib
 )
 if (IS_LINUX)

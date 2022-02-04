@@ -52,6 +52,10 @@ list(APPEND deps
         libpnp
         common
         ceres
+        cxsparse
+        cholmod
+        lapack
+        blas
         )
 if (IS_LINUX)
   list(APPEND deps GL)

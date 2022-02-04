@@ -206,7 +206,7 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
     //std::cout << "old Xs: " << old_feature->Xs().transpose() << std::endl;
   }
 
-  std::cout << "LC innovation: " << inn_.transpose() << std::endl;
+  //std::cout << "LC innovation: " << inn_.transpose() << std::endl;
 
   // Update Group list
   instate_groups_.clear();

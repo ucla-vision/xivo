@@ -83,10 +83,23 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=.. -DBUILD_SHARED_LIBS=TRUE
 make install -j $CPU_COUNT
 
+cd $PROJECT_DIR/thirdparty/ceres-solver
+mkdir build
+cd build
+cmake .. \
+  -DCMAKE_INSTALL_PREFIX=.. \
+  -Dglog_DIR=$PROJECT_DIR/thirdparty/glog/lib/cmake/glog \
+  -DEigen3_DIR=$PROJECT_DIR/thirdparty/eigen/share/eigen3/cmake
+make install -j $CPU_COUNT
+
 cd $PROJECT_DIR/thirdparty/pnp
 mkdir build
 cd build
-cmake .. -DBUILD_PNP_MAIN=ON -DCMAKE_INSTALL_PREFIX=.. 
+cmake .. \
+  -DBUILD_PNP_MAIN=ON \
+  -DEigen3_DIR=$PROJECT_DIR/thirdparty/eigen/share/eigen3/cmake \
+  -DCeres_DIR=$PROJECT_DIR/thirdparty/ceres-solver/lib/cmake/Ceres \
+  -DCMAKE_INSTALL_PREFIX=..
 make -j $CPU_COUNT
 
 # to build gperftools, need to install autoconf and libtool first
