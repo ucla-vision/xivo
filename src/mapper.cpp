@@ -367,8 +367,9 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     }
   }
 
-  // If number of matches is at least 4, check with P3P RANSAC. Otherwise, don't
-  // return anything
+  // If number of matches is at least 5, check with P3P RANSAC. Otherwise, don't
+  // return anything. Technically, we only need 4, but then the probability that
+  // RANSAC fits an outlier is too high.
   if (matches.size() >= 5) {
     //std::cout << std::endl;
     //std::cout << "Mapper: matched " << matches.size() << " features" << std::endl;

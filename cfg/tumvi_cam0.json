@@ -274,7 +274,7 @@
     "RANSAC": {
       "max_iter": 1000,
       "min_iter": 100,
-      "threshold": 0.03, // In units of px/focal_length
+      "threshold": 0.02, // In units of px/focal_length
       "probability": 0.95,
       "early_exit": false,
       "early_exit_min_iter": 5,
