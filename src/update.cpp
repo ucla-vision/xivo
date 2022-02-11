@@ -271,11 +271,13 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     H_.setZero();
     inn_.resize(2 * max_inliers.size());
     inn_.setZero();
+    diagR_.resize(2 * max_inliers.size());
     selected.resize(mh_inliers.size(), false);
     for (int i = 0; i < max_inliers.size(); ++i) {
       selected[i] = true;
       H_.block(2 * i, 0, 2, err_.size()) = max_inliers[i]->J();
       inn_.segment<2>(2 * i) = max_inliers[i]->inn();
+      diagR_.segment<2>(2 * i) << R_, R_;
     }
     UpdateJosephForm();
     AbsorbError();
