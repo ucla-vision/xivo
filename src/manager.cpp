@@ -224,7 +224,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       Canvas::instance()->Draw(f);
     }
   }
-  // LOG(INFO) << "#rejected features=" << rejected_features.size();
+  LOG(INFO) << "Removed " << rejected_features.size() << " rejected features";
   for (auto f : rejected_features) {
 #ifndef NDEBUG
     CHECK(f->ref() != nullptr);

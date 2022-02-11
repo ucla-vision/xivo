@@ -51,6 +51,7 @@ void Estimator::Update() {
 
   timer_.Tick("MH-gating");
 
+  int num_mh_rejected = 0;
   if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
 
     number_t mh_thresh = MH_thresh_;
@@ -66,6 +67,7 @@ void Estimator::Update() {
         if (dist[i] < mh_thresh) {
           inliers.push_back(f);
         } else {
+          num_mh_rejected++;
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
         }
       }
@@ -78,6 +80,8 @@ void Estimator::Update() {
               inliers.begin());
   }
   timer_.Tock("MH-gating");
+
+  LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
 
   if (use_1pt_RANSAC_) {
     inliers = OnePointRANSAC(inliers);
@@ -197,7 +201,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   MatX K(err_.size(), 2);
   Mat2 S;
 
-  std::vector<FeaturePtr> max_inliers, inliers;
+  std::unordered_set<FeaturePtr> max_inliers, inliers;
   for (int i = 0; i < n_hyp && selected_counter < selected.size(); ++i) {
     int k = distribution(*rng_);
     while (selected[k]) {
@@ -234,7 +238,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
       // std::cout << "res=" << res.transpose() << std::endl;
 
       if (res.norm() < ransac_thresh_) {
-        inliers.push_back(f);
+        inliers.insert(f);
       }
     }
     if (inliers.size() > max_inliers.size()) {
@@ -256,6 +260,16 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
 
   LOG(INFO) << str;
 
+  // Save which features are inliers
+  for (int i=0; i<mh_inliers.size(); i++) {
+    if (max_inliers.count(mh_inliers[i])) {
+      selected[i] = true;
+    }
+    else {
+      selected[i] = false;
+    }
+  }
+
   // back up state and covariance again
   MatX P0 = P_;
   for (auto g : active_groups) {
@@ -266,18 +280,20 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   }
 
   if (!max_inliers.empty()) {
+    int f_cnt = 0;
     // low innovation update
     H_.resize(2 * max_inliers.size(), err_.size());
     H_.setZero();
     inn_.resize(2 * max_inliers.size());
     inn_.setZero();
     diagR_.resize(2 * max_inliers.size());
-    selected.resize(mh_inliers.size(), false);
-    for (int i = 0; i < max_inliers.size(); ++i) {
-      selected[i] = true;
-      H_.block(2 * i, 0, 2, err_.size()) = max_inliers[i]->J();
-      inn_.segment<2>(2 * i) = max_inliers[i]->inn();
-      diagR_.segment<2>(2 * i) << R_, R_;
+    for (int i = 0; i < mh_inliers.size(); ++i) {
+      if (selected[i]) {
+        H_.block(2 * f_cnt, 0, 2, err_.size()) = mh_inliers[i]->J();
+        inn_.segment<2>(2 * f_cnt) = mh_inliers[i]->inn();
+        diagR_.segment<2>(2 * f_cnt) << R_, R_;
+        f_cnt++;
+      }
     }
     UpdateJosephForm();
     AbsorbError();
@@ -320,8 +336,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
       //
       // // instead of using high-innovation inliers directly
       // // return them and perform one update
-      max_inliers.insert(max_inliers.end(), hi_inliers.begin(),
-                         hi_inliers.end());
+      max_inliers.insert(hi_inliers.begin(), hi_inliers.end());
       LOG(INFO) << "rescued " << hi_inliers.size() << " high-innovation inliers"
                 << std::endl;
     }
@@ -342,7 +357,11 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
                        X_.bg, X_.Vsb, X_.td, err_);
   }
-  return max_inliers;
+
+  // create a vector for output
+  std::vector<FeaturePtr> output;
+  output.insert(output.end(), max_inliers.begin(), max_inliers.end());
+  return output;
 }
 
 } // namespace xivo
