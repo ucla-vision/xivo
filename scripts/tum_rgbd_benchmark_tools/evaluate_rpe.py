@@ -62,20 +62,20 @@ def transform44(l):
     q = numpy.array(l[4:8], dtype=numpy.float64, copy=True)
     nq = numpy.dot(q, q)
     if nq < _EPS:
-        return numpy.array((
-        (                1.0,                 0.0,                 0.0, t[0])
-        (                0.0,                 1.0,                 0.0, t[1])
-        (                0.0,                 0.0,                 1.0, t[2])
-        (                0.0,                 0.0,                 0.0, 1.0)
-        ), dtype=numpy.float64)
+        return numpy.array([
+        [                1.0,                 0.0,                 0.0, t[0]],
+        [                0.0,                 1.0,                 0.0, t[1]],
+        [                0.0,                 0.0,                 1.0, t[2]],
+        [                0.0,                 0.0,                 0.0, 1.0]
+        ], dtype=numpy.float64)
     q *= numpy.sqrt(2.0 / nq)
     q = numpy.outer(q, q)
-    return numpy.array((
-        (1.0-q[1, 1]-q[2, 2],     q[0, 1]-q[2, 3],     q[0, 2]+q[1, 3], t[0]),
-        (    q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2],     q[1, 2]-q[0, 3], t[1]),
-        (    q[0, 2]-q[1, 3],     q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1], t[2]),
-        (                0.0,                 0.0,                 0.0, 1.0)
-        ), dtype=numpy.float64)
+    return numpy.array([
+        [1.0-q[1, 1]-q[2, 2],     q[0, 1]-q[2, 3],     q[0, 2]+q[1, 3], t[0]],
+        [    q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2],     q[1, 2]-q[0, 3], t[1]],
+        [    q[0, 2]-q[1, 3],     q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1], t[2]],
+        [                0.0,                 0.0,                 0.0, 1.0]
+        ], dtype=numpy.float64)
 
 def read_trajectory(filename, matrix=True):
     """

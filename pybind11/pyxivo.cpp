@@ -93,6 +93,10 @@ public:
     }
   }
 
+  void CloseLoop() {
+    estimator_->CloseLoop();
+  }
+
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gbc() { return estimator_->gbc().matrix3x4(); }
@@ -177,6 +181,10 @@ public:
 
   int num_instate_groups() { return estimator_->num_instate_groups(); }
 
+  bool UsingLoopClosure() {
+    return estimator_->UsingLoopClosure();
+  }
+
   void Visualize() {
     if (viewer_)
       viewer_->Refresh();
@@ -201,6 +209,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("InertialMeas", &EstimatorWrapper::InertialMeas)
       .def("VisualMeas", py::overload_cast<uint64_t, std::string &>(&EstimatorWrapper::VisualMeas))
       .def("VisualMeas", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeas))
+      .def("CloseLoop", &EstimatorWrapper::CloseLoop)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)
@@ -232,6 +241,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("InstateGroupCovs", &EstimatorWrapper::InstateGroupCovs)
       .def("num_instate_features", &EstimatorWrapper::num_instate_features)
       .def("num_instate_groups", &EstimatorWrapper::num_instate_groups)
+      .def("UsingLoopClosure", &EstimatorWrapper::UsingLoopClosure)
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize)
       .def("gauge_group", &EstimatorWrapper::gauge_group)

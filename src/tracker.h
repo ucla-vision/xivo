@@ -9,6 +9,7 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include "json/json.h"
+#include "mapper.h"
 
 #include "core.h"
 
@@ -25,6 +26,10 @@ public:
    *  \todo Rescue features that would otherwise be dropped from tracker with newly
    *        detected features. */
   void Update(const cv::Mat &img);
+
+  /** Called by function `CreateSystem` to force extraction of descriptors when
+   * we want to use loop closure. */
+  bool IsExtractingDescriptors() { return extract_descriptor_; }
 
 public:
   std::list<FeaturePtr> features_;

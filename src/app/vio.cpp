@@ -1,6 +1,7 @@
 // Author: Xiaohan Fei
 #include "unistd.h"
 #include <algorithm>
+#include <vector>
 
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -13,6 +14,7 @@
 #include "loader.h"
 #include "viewer.h"
 #include "visualize.h"
+#include "graphwriter.h"
 
 // flags
 DEFINE_string(cfg, "cfg/vio.json",
@@ -23,8 +25,10 @@ DEFINE_string(dataset, "tumvi", "xivo | euroc | tumvi");
 DEFINE_string(seq, "room1", "Sequence of TUM VI benchmark to play with.");
 DEFINE_int32(cam_id, 0, "Camera id.");
 DEFINE_string(out, "out_state", "Output file path.");
+DEFINE_string(graphout, "", ".dot file to save output graph to");
 
 using namespace xivo;
+
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
@@ -67,6 +71,11 @@ int main(int argc, char **argv) {
       if (auto msg = dynamic_cast<msg::Image *>(raw_msg)) {
         auto image = cv::imread(msg->image_path_);
         est->VisualMeas(msg->ts_, image);
+
+        if (est->UsingLoopClosure()) {
+          est->CloseLoop();
+        }
+
         if (viewer) {
           viewer->Update_gsb(est->gsb());
           viewer->Update_gsc(est->gsc());
@@ -95,8 +104,16 @@ int main(int argc, char **argv) {
         << est->gsb().rotation().log().transpose() << std::endl;
 
       // std::this_thread::sleep_for(std::chrono::milliseconds(3));
-
     }
+
+    // Dump output graph
+    if (!FLAGS_graphout.empty()) {
+      GraphWriter GW;
+      GW.CollectGraph(Graph::instance());
+      GW.CollectGraph(Mapper::instance());
+      GW.WriteDot(FLAGS_graphout);
+    }
+
   } else {
     LOG(FATAL) << "failed to open output file @ " << FLAGS_out;
   }

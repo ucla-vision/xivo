@@ -19,6 +19,15 @@ add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 # WARNING: this feature not work yet.
 # add_definitions(-DAPPROXIMATE_INIT_COVARIANCE)
 
+# Sets the maximum number of features and groups in the EKF. Otherwise
+# use the default values in core.h
+#add_definitions(-DEKF_MAX_FEATURES=30)
+#add_definitions(-DEKF_MAX_GROUPS=15)
+
+# Sets the frequency at which to project rotation matrices to SO(3) to get
+# rid of accumulated numeric error
+#add_definitions(-DENFORCE_SO3_FREQ=50)
+
 include_directories(
   ${PROJECT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/common)
@@ -39,7 +48,14 @@ list(APPEND deps
         pangolin
         pthread
         jsoncpp
+        DBoW2
+        libpnp
         common
+        ceres
+        cxsparse
+        cholmod
+        lapack
+        blas
         )
 if (IS_LINUX)
   list(APPEND deps GL)
@@ -55,6 +71,7 @@ add_library(xapp STATIC
         geometry.cpp
         metrics.cpp
         publisher.cpp
+        graphwriter.cpp
         viewer.cpp)
 target_link_libraries(xapp ${deps})
 
@@ -67,14 +84,17 @@ add_library(xest STATIC
         tracker.cpp
         manager.cpp
         update.cpp
+        graphbase.cpp
         graph.cpp
         feature.cpp
+        fastbrief.cpp
         oos.cpp
         group.cpp
         helpers.cpp
         options.cpp
         param.cpp
         mm.cpp
+        mapper.cpp
         camera_manager.cpp
         imu.cpp)
 if (IS_MAC)

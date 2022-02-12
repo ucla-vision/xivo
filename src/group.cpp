@@ -6,6 +6,11 @@ namespace xivo {
 
 int Group::counter_ = 0;
 
+// For GroupAdj struct
+void GroupAdj::Add(int id) { insert(id); }
+void GroupAdj::Remove(int id) { erase(id); }
+
+
 ////////////////////////////////////////
 // FACTORY METHODS
 ////////////////////////////////////////
@@ -18,8 +23,12 @@ GroupPtr Group::Create(const SO3 &Rsb, const Vec3 &Tsb) {
   return g;
 }
 
-void Group::Delete(GroupPtr g) { 
-  MemoryManager::instance()->ReturnGroup(g); 
+void Group::Deactivate(GroupPtr g) { 
+  MemoryManager::instance()->DeactivateGroup(g);
+}
+
+void Group::Destroy(GroupPtr g) {
+  MemoryManager::instance()->DestroyGroup(g);
 }
 
 void Group::Reset(const SO3 &Rsb, const Vec3 &Tsb) {

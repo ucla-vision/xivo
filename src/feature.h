@@ -5,7 +5,6 @@
 #include <memory>
 #include <ostream>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "component.h"
@@ -13,8 +12,16 @@
 #include "jac.h"
 #include "options.h"
 #include "project.h"
+#include "fastbrief.h"
 
 namespace xivo {
+
+
+/** Unordered map: group id -> observed pixel coordinates */
+struct FeatureAdj : public std::unordered_map<int, Vec2> {
+  void Add(const Observation &obs);
+  void Remove(int id);
+};
 
 
 /** Track is a C++ <vector> containing all the (x,y) pixel detections found by
@@ -36,12 +43,15 @@ public:
 
   TrackStatus status() const { return status_; }
   void SetStatus(TrackStatus status) { status_ = status; }
-  void SetDescriptor(const cv::Mat &descriptor) { descriptor_ = descriptor; }
+  void SetDescriptor(const cv::Mat &descriptor) { descriptors_.push_back(descriptor); }
   void SetKeypoint(const cv::KeyPoint &keypoint) { keypoint_ = keypoint; }
   const cv::KeyPoint &keypoint() const { return keypoint_; }
   cv::KeyPoint &keypoint() { return keypoint_; }
-  const cv::Mat &descriptor() const { return descriptor_; }
-  cv::Mat &descriptor() { return descriptor_; }
+  const cv::Mat &descriptor() const { return descriptors_.back(); }
+  cv::Mat &descriptor() { return descriptors_.back(); }
+  const std::vector<cv::Mat>& GetAllDescriptors() { return descriptors_; }
+  FastBrief::TDescriptor GetDBoWDesc();
+  std::vector<FastBrief::TDescriptor> GetAllDBoWDesc();
 
 protected:
   /** CREATED, TRACKED, REJECTED, or DROPPED */
@@ -50,8 +60,8 @@ protected:
   /** OpenCV Keypoint from when this track was first detected in `Tracker::Detect()` */
   cv::KeyPoint keypoint_;
 
-  /** Descriptor of the very last keypoint. */
-  cv::Mat descriptor_;
+  /** Descriptor of all observations. */
+  std::vector<cv::Mat> descriptors_;
 };
 
 
@@ -62,12 +72,13 @@ protected:
  *  - Functions to compute Jacobians for the `Estimator` class's measurement update.
  */
 class Feature : public Component<Feature, Vec3>, public Track {
-  friend class MemoryManager;
+  template<typename Feature> friend class CircBufWithHash;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   static FeaturePtr Create(number_t x, number_t y);
-  static void Delete(FeaturePtr f);
+  static void Deactivate(FeaturePtr f);
+  static void Destroy(FeaturePtr f);
 
   /** Appends another point to vector of observations.
    *  Recall: (`Feature` << `Track` << `std::vector` */
@@ -100,6 +111,22 @@ public:
   // get 3D coordinates in spatial frame, cam2body alignment is required
   Vec3 Xs(const SE3 &gbc, Mat3 *dXs_dx = nullptr);
   const Vec3& Xs() const { return Xs_; }
+  /** Changes the owner of the feature. Returns false if this results in a
+   * negative depth. If change in ownership results in negative depth, no
+   * changes in any members of this feature are made. Used when reference
+   * group meets the maximum group lifetime and is removed from the state and
+   * during loop closure. */
+  bool ChangeOwner(GroupPtr nref, const SE3 &gbc);
+  const int LoopClosureMatch() { return lc_match_; }
+  void SetLCMatch(int matched_feat_id) { lc_match_ = matched_feat_id; }
+
+  /** Copy observations, descriptors from another feature, and adjust state
+   * and covariance estimates. Used during loop closure. Returns true if
+   * merge was successful. If merge is unsuccessful, then no changes to
+   * are actually made to any private members. (`Successful' means that
+   * coordiante change of other feature `f` doesn't result in a negative
+   * depth estimate.) */
+  bool Merge(FeaturePtr f, const SE3& gbc);
 
   // return (2M-3) as the dimension of the measurement
   /** Computes the Jacobian for the in-state (EKF) measurement model. */
@@ -107,6 +134,8 @@ public:
                        const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
                        const Vec3 &bg, const Vec3 &Vsb, number_t td,
                        const VecX &error_state);
+
+  void inflate_cov(number_t factor) { P_ *= factor; }
 
   int oos_inn_size() const { return oos_jac_counter_; }
 
@@ -118,6 +147,11 @@ public:
    *  \todo make the following private */
   void ComputeOOSJacobianInternal(const Obs &obs, const Mat3 &Rbc,
                                   const Vec3 &Tbc, const VecX &error_state);
+
+  /** Compute Jacobians for Loop Closure measurement update. */
+  void ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc, const Vec3 &Tbc,
+                         const VecX &error_state, int match_counter,
+                         MatX &H, VecX &inn);
 
   // fill-in the corresponding jacobian block
   // H: the big jacobian matrix of all measurements
@@ -265,6 +299,9 @@ private:
 
   /** Number of measurements in the MSCKF measurement update. */
   int oos_jac_counter_;
+
+  /** id of a past feature this feature was loop-closed to. */
+  int lc_match_;
 
 #ifdef APPROXIMATE_INIT_COVARIANCE
   // correlation block between local feature state (x) and group pose
