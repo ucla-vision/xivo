@@ -35,7 +35,7 @@ fi
 
 CPU_COUNT=4
 OPENCV_INSTALL_DIR=/Users/parth/Downloads/opencv-3.4.14
-PYTHON_BINARY=/usr/local/bin/python3
+PYTHON_BINARY=/opt/anaconda3/bin/python3
 
 # build dependencies
 PROJECT_DIR=$(pwd)
@@ -84,8 +84,8 @@ cmake .. -DCMAKE_INSTALL_PREFIX=.. -DBUILD_SHARED_LIBS=TRUE
 make install -j $CPU_COUNT
 
 cd $PROJECT_DIR/thirdparty/ceres-solver
-mkdir build
-cd build
+mkdir build_dir
+cd build_dir
 cmake .. \
   -DCMAKE_INSTALL_PREFIX=.. \
   -Dglog_DIR=$PROJECT_DIR/thirdparty/glog/lib/cmake/glog \
