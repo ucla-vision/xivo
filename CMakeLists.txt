@@ -30,7 +30,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
 # set(CMAKE_BUILD_TYPE "Debug")
 # set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_BUILD_TYPE "Release")
-add_definitions(-DNDEBUG)
+#add_definitions(-DNDEBUG)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
@@ -52,6 +52,9 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
+        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib
+        ${PROJECT_SOURCE_DIR}/thirdparty/pnp/build
+        ${PROJECT_SOURCE_DIR}/thirdparty/ceres-solver/lib
         /usr/local/lib
 )
 if (IS_LINUX)
@@ -69,6 +72,8 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/eigen/include/eigen3
         ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
+        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/include
+        ${PROJECT_SOURCE_DIR}/thirdparty/pnp
         ${JSONCPP_INCLUDE_DIRS}
         /usr/include/suitesparse
         /usr/include

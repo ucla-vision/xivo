@@ -23,6 +23,7 @@
   "max_group_lifetime": 60,
   "remove_outlier_counter": 10,
   "OOS_update_min_observations": 5,
+  "feature_owner_change_cov_factor": 1.5,
 
   "PrinceDormand": {
     "control_stepsize": false,
@@ -39,8 +40,8 @@
 
   // memory
   "memory": {
-    "max_features": 256,
-    "max_groups": 256  // max groups should increase as allowed group lifetime increases
+    "max_features": 30000,
+    "max_groups": 5000  // max groups should increase as allowed group lifetime increases
   },
 
   // gravity constant
@@ -120,6 +121,8 @@
   "max_depth": 5.0,
   "min_depth": 0.05,
 
+  // Loop closure measurement (in pixels)
+  "loop_closure_meas_std": 4.0,
 
   // depth sub-filter setting
   "subfilter": {
@@ -254,7 +257,7 @@
     },
 
     "BRIEF": {
-      "bytes": 64,
+      "bytes": 32,
       "use_orientation": false
     },
 
@@ -264,6 +267,24 @@
       "patternScale": 22.0,
       "nOctaves": 4
     }
-  } 
+  },
 
+  "mapper_cfg": {
+    "detectLoopClosures": true,
+    "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
+    "uplevel_word_search": 0,
+    "nn_dist_thresh": 20.0,
+    "merge_features": true,
+    "feature_merge_cov_factor": 1.0,
+
+    "RANSAC": {
+      "max_iter": 1000,
+      "min_iter": 100,
+      "threshold": 0.03, // In units of px/focal_length
+      "probability": 0.95,
+      "early_exit": false,
+      "early_exit_min_iter": 5,
+      "early_exit_inlier_ratio": 0.85
+    }
+  }
 }

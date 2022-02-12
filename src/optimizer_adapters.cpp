@@ -24,7 +24,7 @@ void AddFeature(FeaturePtr f) {
     Vec2 xc = Camera::instance()->UnProject(obs.xp);
     adapter_obs.push_back(std::make_tuple(adapter_g, xc, Mat2::Identity()));
   }
-  std::cout << "adding feature #" << adapter_f.id << 
+  LOG(INFO) << "Optimizer: adding feature #" << adapter_f.id <<
     " with " << adapter_obs.size() << " groups" << std::endl;
   Optimizer::instance()->AddFeature(adapter_f, adapter_obs);
 }
@@ -48,7 +48,7 @@ void AddGroup(GroupPtr g) {
     adapter_obs.push_back(std::make_tuple(adapter_f, xc, Mat2::Identity()));
   }
 
-  std::cout << "adding group #" << adapter_g.id << 
+  LOG(INFO) << "Optimizer: adding group #" << adapter_g.id <<
     " with " << adapter_obs.size() << " features" << std::endl;
   Optimizer::instance()->AddGroup(adapter_g, adapter_obs);
 }

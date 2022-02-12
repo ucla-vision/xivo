@@ -26,6 +26,7 @@
 #include "imu.h"
 #include "tracker.h"
 #include "visualize.h"
+#include "mapper.h"
 
 namespace xivo {
 
@@ -87,6 +88,10 @@ public:
   // perform tracking/matching to generate tracks
   void VisualMeas(const timestamp_t &ts, const cv::Mat &img);
 
+  /** Loop Closure Measurement Update - older features, newer group. */
+  void CloseLoop();
+  void CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_features);
+
   // accessors
   SE3 gbc() const { return SE3{X_.Rbc, X_.Tbc}; }
   SE3 gsb() const { return SE3{X_.Rsb, X_.Tsb}; }
@@ -134,6 +139,7 @@ public:
   MatX7 InstateGroupPoses() const;
   MatX InstateGroupCovs() const;
   VecXi InstateGroupSinds() const;
+  bool UsingLoopClosure() const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
@@ -199,8 +205,10 @@ private:
   // same as above, but the group list will be untouched
   void RemoveGroupFromState(GroupPtr g);
   void AddGroupToState(GroupPtr g);
-  std::vector<FeaturePtr> DiscardGroups(const std::vector<GroupPtr> &discards);
+  std::vector<FeaturePtr> FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards);
+  void DiscardGroups(const std::vector<GroupPtr> &discards);
   void DiscardFeatures(const std::vector<FeaturePtr> &discards);
+  void DestroyFeatures(const std::vector<FeaturePtr> &destroys);
   void SwitchRefGroup();
 
   // same as above, but the feature list will be untouched
@@ -343,6 +351,7 @@ private:
    *  in-state tracked features. */
   number_t R_;
   number_t Rtri_;           // UNUSED? measurement covariance, depth sub-filter
+  number_t Rlc_;            // Loop closure measurement covariance
   number_t outlier_thresh_; // outlier threshold -- multipler of the measurement
                          // variance
 
@@ -366,6 +375,9 @@ private:
 
   bool gravity_initialized_, vision_initialized_;
   int imu_counter_, vision_counter_;
+
+  // How much to inflate covariance of features after a group ownership change
+  number_t feature_owner_change_cov_factor_;
 
   // helpers
   int gravity_init_counter_;

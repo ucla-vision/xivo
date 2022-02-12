@@ -163,6 +163,61 @@ void Estimator::Update() {
 #endif
 }
 
+
+void Estimator::CloseLoop() {
+  std::vector<FeaturePtr> instate_features =
+    Graph::instance()->GetInstateFeatures();
+  std::vector<LCMatch> matches;
+  if (instate_features.size() > 0) {
+    matches = Mapper::instance()->DetectLoopClosures(instate_features, gbc());
+  }
+
+  if (matches.size() > 0) {
+    CloseLoopInternal(Graph::instance()->LastAddedGroup(), matches);
+  }
+}
+
+void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_features) {
+
+  Graph& graph{*Graph::instance()};
+
+  int num_matches = matched_features.size();
+
+  // H and R matrices
+  int total_size = 2 * matched_features.size();
+  H_.setZero(total_size, err_.size());
+  diagR_.resize(total_size);
+  inn_.setZero(total_size);
+
+  // Compute feature Jacobians (fill in H)
+  for (int i=0; i<num_matches; i++) {
+    FeaturePtr new_feature = matched_features[i].first;
+    FeaturePtr old_feature = matched_features[i].second;
+
+    Observation obs = graph.GetObservationOf(new_feature, g);
+    old_feature->ComputeLCJacobian(obs, X_.Rbc, X_.Tbc, err_, i, H_, inn_);
+
+    // Fill in R
+    diagR_.segment<2>(2*i) << Rlc_, Rlc_;
+
+    // Print out stuffs
+    //std::cout << "Comparing new (#" << new_feature->id() << ") to old (#" << old_feature->id() << ")" << std::endl;
+    //std::cout << "new Xs: " << new_feature->Xs().transpose() << std::endl;
+    //std::cout << "old Xs: " << old_feature->Xs().transpose() << std::endl;
+  }
+
+  //std::cout << "LC innovation: " << inn_.transpose() << std::endl;
+
+  // Update Group list
+  instate_groups_.clear();
+  instate_groups_ = Graph::instance()->GetInstateGroups();
+
+  // Measurement Update
+  UpdateJosephForm();
+  AbsorbError();
+}
+
+
 std::vector<FeaturePtr>
 Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   if (mh_inliers.empty())

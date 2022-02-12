@@ -34,6 +34,8 @@ if [ $USE_GPERFTOOLS = true ]; then
 fi
 
 CPU_COUNT=4
+OPENCV_INSTALL_DIR=/Users/parth/Downloads/opencv-3.4.14
+PYTHON_BINARY=/opt/anaconda3/bin/python3
 
 # build dependencies
 PROJECT_DIR=$(pwd)
@@ -57,6 +59,12 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j $CPU_COUNT
 
+cd $PROJECT_DIR/thirdparty/DBoW2
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=.. -DOpenCV_DIR=$OPENCV_INSTALL_DIR
+make install -j $CPU_COUNT
+
 cd $PROJECT_DIR/thirdparty/eigen
 mkdir build
 cd build
@@ -75,9 +83,26 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=.. -DBUILD_SHARED_LIBS=TRUE
 make install -j $CPU_COUNT
 
+cd $PROJECT_DIR/thirdparty/ceres-solver
+mkdir build_dir
+cd build_dir
+cmake .. \
+  -DCMAKE_INSTALL_PREFIX=.. \
+  -DEigen3_DIR=$PROJECT_DIR/thirdparty/eigen/share/eigen3/cmake
+make install -j $CPU_COUNT
+
+cd $PROJECT_DIR/thirdparty/pnp
+mkdir build
+cd build
+cmake .. \
+  -DBUILD_PNP_MAIN=ON \
+  -DEigen3_DIR=$PROJECT_DIR/thirdparty/eigen/share/eigen3/cmake \
+  -DCeres_DIR=$PROJECT_DIR/thirdparty/ceres-solver/lib/cmake/Ceres \
+  -DCMAKE_INSTALL_PREFIX=..
+make -j $CPU_COUNT
+
 # to build gperftools, need to install autoconf and libtool first
 if [ $USE_GPERFTOOLS = true ]; then
-  #sudo apt-get install autoconf libtool
   cd $PROJECT_DIR/thirdparty/gperftools
   ./autogen.sh
   ./configure --prefix=$PROJECT_DIR/thirdparty/gperftools
@@ -88,7 +113,10 @@ if [ $BUILD_G2O = true ]; then
   cd $PROJECT_DIR/thirdparty/g2o
   mkdir build
   cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=../release -DEIGEN3_INCLUDE_DIR=../eigen -DOpenGL_GL_PREFERENCE=GLVND
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=../release \
+    -DEIGEN3_INCLUDE_DIR=../eigen \
+    -DOpenGL_GL_PREFERENCE=GLVND
   make install -j $CPU_COUNT
 fi
 
@@ -98,8 +126,8 @@ mkdir ${PROJECT_DIR}/build
 cd ${PROJECT_DIR}/build
 
 cmake .. -DBUILD_G2O=$BUILD_G2O \
-  -DOpenCV_DIR=/Users/parth/Downloads/opencv-3.4.14 \
+  -DOpenCV_DIR=$OPENCV_INSTALL_DIR \
   -DCMAKE_CXX_STANDARD=17 \
-  -DPYTHON_EXECUTABLE=/usr/local/bin/python3
+  -DPYTHON_EXECUTABLE=$PYTHON_BINARY
 
 make -j $CPU_COUNT

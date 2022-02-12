@@ -16,6 +16,7 @@
 #include "param.h"
 #include "tracker.h"
 #include "helpers.h"
+#include "mapper.h"
 
 #ifdef USE_G2O
 #include "optimizer.h"
@@ -293,7 +294,10 @@ Estimator::Estimator(const Json::Value &cfg)
   Roos_ = cfg["oos_meas_std"].asDouble();
   Roos_ *= Roos_;
 
-  LOG(INFO) << "R=" << R_ << " ;Roos=" << Roos_;
+  Rlc_ = cfg["loop_closure_meas_std"].asDouble();
+  Rlc_ *= Rlc_;
+
+  LOG(INFO) << "R=" << R_ << "; Roos=" << Roos_ << "; Rlc=" << Rlc_;
 
   // /////////////////////////////
   // Load initial std on feature state
@@ -319,6 +323,8 @@ Estimator::Estimator(const Json::Value &cfg)
   MH_thresh_multipler_ = cfg_.get("MH_adjust_factor", 1.1).asDouble();
   // FIXME (xfei): used in HuberOnInnovation, but kinda overlaps with MH gating
   outlier_thresh_ = cfg_.get("outlier_thresh", 1.1).asDouble();
+  feature_owner_change_cov_factor_ =
+    cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
 
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
@@ -1005,37 +1011,62 @@ std::tuple<number_t, bool> Estimator::HuberOnInnovation(const Vec2 &inn,
 }
 
 std::vector<FeaturePtr>
-Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
+Estimator::FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards) {
   std::vector<FeaturePtr> nullref_features;
   Graph& graph{*Graph::instance()};
+  Mapper& mapper{*Mapper::instance()};
   for (auto g : discards) {
     // transfer ownership of the remaining features whose reference is this one
-    auto failed = graph.TransferFeatureOwnership(g, gbc());
+    auto failed = graph.TransferFeatureOwnership(
+      g, gbc(), feature_owner_change_cov_factor_);
     nullref_features.insert(nullref_features.end(), failed.begin(),
                             failed.end());
 
-    if (g->id() == gauge_group_) {
-      // just lost the gauge group
-      gauge_group_ = -1;
-    }
-
-    graph.RemoveGroup(g);
-    if (g->instate()) {
-      RemoveGroupFromState(g);
-    }
-    Group::Delete(g);
   }
   MakePtrVectorUnique(nullref_features);
   return nullref_features;
 }
 
+
+void Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
+  Graph& graph{*Graph::instance()};
+  Mapper& mapper{*Mapper::instance()};
+  for (auto g: discards) {
+    if (g->id() == gauge_group_) {
+      // just lost the gauge group
+      gauge_group_ = -1;
+    }
+    mapper.AddGroup(g, graph.GetGroupAdj(g));
+    graph.RemoveGroup(g);
+    if (g->instate()) {
+      RemoveGroupFromState(g);
+    }
+    Group::Deactivate(g);
+  }
+}
+
+
 void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
-  Graph::instance()->RemoveFeatures(discards);
+  Graph &graph{*Graph::instance()};
+  Mapper &mapper{*Mapper::instance()};
   for (auto f : discards) {
+    mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
+    graph.RemoveFeature(f);
     if (f->instate()) {
       RemoveFeatureFromState(f);
     }
-    Feature::Delete(f);
+    Feature::Deactivate(f);
+  }
+}
+
+
+void Estimator::DestroyFeatures(const std::vector<FeaturePtr> &destroys) {
+  Graph::instance()->RemoveFeatures(destroys);
+  for (auto f : destroys) {
+    if (f->instate()) {
+      RemoveFeatureFromState(f);
+    }
+    Feature::Destroy(f);
   }
 }
 
@@ -1507,5 +1538,9 @@ MatX Estimator::InstateGroupCovs() const
 
 }
 
+
+bool Estimator::UsingLoopClosure() const {
+  return Mapper::instance()->UseLoopClosure();
+}
 
 } // xivo

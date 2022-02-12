@@ -98,6 +98,8 @@ def main(args):
                                    accel[1], accel[2])
         else:
             estimator.VisualMeas(ts, content)
+            if estimator.UsingLoopClosure():
+                estimator.CloseLoop()
             estimator.Visualize()
             saver.onVisionUpdate(estimator, datum=(ts, content))
 

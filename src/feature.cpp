@@ -17,6 +17,24 @@ namespace xivo {
 int Feature::counter_ = Feature::counter0;
 JacobianCache Feature::cache_ = {};
 
+// Operations for FeatureAdj
+void FeatureAdj::Add(const Observation &obs) { insert({obs.g->id(), obs.xp}); }
+void FeatureAdj::Remove(int id) { erase(id); }
+
+
+FastBrief::TDescriptor Track::GetDBoWDesc() {
+  return (FastBrief::TDescriptor) descriptors_.back().data;
+}
+
+std::vector<FastBrief::TDescriptor> Track::GetAllDBoWDesc() {
+  std::vector<FastBrief::TDescriptor> ret;
+  for (auto d: descriptors_) {
+    ret.push_back((FastBrief::TDescriptor) d.data);
+  }
+  return ret;
+}
+
+
 ////////////////////////////////////////
 // FACTORY METHODS
 ////////////////////////////////////////
@@ -29,8 +47,12 @@ FeaturePtr Feature::Create(number_t x, number_t y) {
   return f;
 }
 
-void Feature::Delete(FeaturePtr f) {
-  MemoryManager::instance()->ReturnFeature(f);
+void Feature::Deactivate(FeaturePtr f) {
+  MemoryManager::instance()->DeactivateFeature(f);
+}
+
+void Feature::Destroy(FeaturePtr f) {
+  MemoryManager::instance()->DestroyFeature(f);
 }
 
 void Feature::Reset(number_t x, number_t y) {
@@ -46,6 +68,7 @@ void Feature::Reset(number_t x, number_t y) {
   J_.setZero();
   inn_ << 0, 0;
   outlier_counter_ = 0;
+  lc_match_ = -1;
 
   sim_.Xs << -1, -1, -1;
   sim_.xp << -1, -1;
@@ -148,6 +171,65 @@ void Feature::ResetRef(GroupPtr nref) {
 
   ref_ = nref;
 }
+
+bool Feature::Merge(FeaturePtr f, const SE3& gbc) {
+
+  // Change coordinates of new feature's estimates
+  bool success = f->ChangeOwner(ref_, gbc);
+  if (success) {
+    Mat3 P_den = (P_ + f->P()).inverse();
+    x_ = P_den*(P_*x_ + f->P()*f->x());
+    P_ = P_den*(P_ + f->P());
+    Xc();
+    Xs(gbc);
+
+    // Merge observations
+    for (auto px: *f) {
+      UpdateTrack(px);
+    }
+    // Merge descriptors
+    for (auto desc: f->GetAllDescriptors()) {
+      descriptors_.push_back(desc);
+    }
+  }
+  return success;
+}
+
+
+bool Feature::ChangeOwner(GroupPtr nref, const SE3 &gbc) {
+  // now transfer
+  SE3 g_cn_s =
+      (nref->gsb() * gbc)
+          .inv(); // spatial (s) to camera of the new reference (cn)
+  Mat3 dXs_dx;
+  Vec3 Xcn = g_cn_s * Xs(gbc, &dXs_dx);
+  // Mat3 dXcn_dXs = gcb.R() * gbs.R();
+  Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
+  Mat3 dxn_dXcn;
+
+  if (Xcn(2) < 0) {
+    return false;
+  }
+
+#ifdef USE_INVDEPTH
+  Vec3 xn = project_invz(Xcn, &dxn_dXcn);
+#else
+  Vec3 xn = project_logz(Xcn, &dxn_dXcn);
+#endif
+
+  x_ = xn;
+  Mat3 J = dxn_dXcn * dXcn_dx;
+
+  P_ = J * P_ * J.transpose();
+
+  // Update other parameters
+  ResetRef(nref);
+  Xc();
+  Xs(gbc);
+
+  return true;
+}
+
 
 void Feature::SubfilterUpdate(const SE3 &gsb, const SE3 &gbc,
                               const SubfilterOptions &options) {
