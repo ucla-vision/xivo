@@ -88,7 +88,6 @@ mkdir build_dir
 cd build_dir
 cmake .. \
   -DCMAKE_INSTALL_PREFIX=.. \
-  -Dglog_DIR=$PROJECT_DIR/thirdparty/glog/lib/cmake/glog \
   -DEigen3_DIR=$PROJECT_DIR/thirdparty/eigen/share/eigen3/cmake
 make install -j $CPU_COUNT
 
