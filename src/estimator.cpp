@@ -81,7 +81,8 @@ Estimator::~Estimator() {
 }
 
 Estimator::Estimator(const Json::Value &cfg)
-    : cfg_{cfg}, gauge_group_{-1}, worker_{nullptr}, timer_{"estimator"} {
+    : cfg_{cfg}, gauge_group_{-1}, worker_{nullptr}, timer_{"estimator"},
+      gauge_group_ptr_{nullptr} {
 
   // /////////////////////////////
   // Component flags
@@ -1071,29 +1072,18 @@ void Estimator::DestroyFeatures(const std::vector<FeaturePtr> &destroys) {
 }
 
 void Estimator::SwitchRefGroup() {
-  auto candidates =
-      Graph::instance()->GetGroupsIf([](GroupPtr g) -> bool { return g->instate(); });
+  auto candidates = Graph::instance()->GetInstateGroups();
   if (!candidates.empty()) {
     // FIXME: in addition to the variance, also take account of the number of
     // instate features
     // associated with the group -- for an efficient implementation, use a
     // decorator to get the
     // "number of instate features" attribute first
-    auto git =
-        std::min_element(candidates.begin(), candidates.end(),
-                         [this](const GroupPtr g1, const GroupPtr g2) -> bool {
-                           int offset1 = kGroupBegin + 6 * g1->sind();
-                           int offset2 = kGroupBegin + 6 * g2->sind();
-                           number_t cov1{0}, cov2{0};
-                           for (int i = 0; i < 6; ++i) {
-                             cov1 += P_(offset1 + i, offset1 + i);
-                             cov2 += P_(offset2 + i, offset2 + i);
-                           }
-                           return cov1 < cov2;
-                         });
+    GroupPtr g = FindNewRefGroup(candidates);
 
     // reset new gauge group
-    GroupPtr g{*git};
+    //GroupPtr g{*git};
+    gauge_group_ptr_ = g;
     gauge_group_ = g->id();
     g->SetStatus(GroupStatus::GAUGE);
     VLOG(0) << "gauge group #" << gauge_group_ << " selected";
@@ -1105,6 +1095,22 @@ void Estimator::SwitchRefGroup() {
     P_.block(offset, 0, 6, err_.size()).setZero();
     P_.block(0, offset, err_.size(), 6).setZero();
   }
+}
+
+
+GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr> candidates) {
+  auto git = std::min_element(candidates.begin(), candidates.end(),
+                         [this](const GroupPtr g1, const GroupPtr g2) -> bool {
+                           int offset1 = kGroupBegin + 6 * g1->sind();
+                           int offset2 = kGroupBegin + 6 * g2->sind();
+                           number_t cov1{0}, cov2{0};
+                           for (int i = 0; i < 6; ++i) {
+                             cov1 += P_(offset1 + i, offset1 + i);
+                             cov2 += P_(offset2 + i, offset2 + i);
+                           }
+                           return cov1 < cov2;
+                         });
+  return *git;
 }
 
 

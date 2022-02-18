@@ -235,6 +235,8 @@ private:
   /** Index of the current gauge group. It is set to -1 when we lose the current
    *  gauge group while calling `ProcessTracks`. */
   int gauge_group_;
+  GroupPtr gauge_group_ptr_;
+  GroupPtr FindNewRefGroup(std::vector<GroupPtr> candidates);
 
 private:
   Config cfg_;        // this is just a reference of the global parameter server
