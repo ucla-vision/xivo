@@ -1095,10 +1095,12 @@ void Estimator::SwitchRefGroup() {
     // reset new gauge group
     GroupPtr g{*git};
     gauge_group_ = g->id();
+    g->SetStatus(GroupStatus::GAUGE);
     VLOG(0) << "gauge group #" << gauge_group_ << " selected";
     // std::cout << "gauge group #" << gauge_group_ << " selected";
 
-    // now fix covariance of the new gauge group
+    // now fix covariance of the new gauge group. This prevents the group's
+    // state from changing.
     int offset = kGroupBegin + 6 * g->sind();
     P_.block(offset, 0, 6, err_.size()).setZero();
     P_.block(0, offset, err_.size(), 6).setZero();
