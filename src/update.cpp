@@ -243,19 +243,9 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     active_groups.insert(f->ref());
   }
 
-  // backup states
-  State X0 = X_;
-  for (auto g : active_groups) {
-    g->BackupState();
-  }
-  for (auto f : active_features) {
-    f->BackupState();
-  }
-
-  // tmp vars
-  MatX K(err_.size(), 2);
-  Mat2 S;
-
+  /* We've already done the EKF prediction step and measurement prediction.
+  So this step just looks for the maximal set of low-innovation inliers.
+  */
   std::unordered_set<FeaturePtr> max_inliers, inliers;
   for (int i = 0; i < n_hyp && selected_counter < selected.size(); ++i) {
     int k = distribution(*rng_);
@@ -264,50 +254,18 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     }
     selected[k] = true;
     ++selected_counter;
-    // state-only update with the selected measurement k
-    //
-    // std::cout << "H_.rows=" << H_.rows() << ";;; H_.cols=" << H_.cols() <<
-    // std::endl;
-    // std::cout << "index=" << mh_inliers[k].first << std::endl;
-
-    auto J = mh_inliers[k]->J();
-    auto inn = mh_inliers[k]->inn();
-
-    S = J * P_ * J.transpose();
-    S(0, 0) += R_;
-    S(1, 1) += R_;
-
-    K.transpose() = S.llt().solve(J * P_);
-
-    err_ = K * inn;
-    AbsorbError();
-    err_.setZero(); // redudant (done in AbsorbError already) but for
-                    // readibility
 
     inliers.clear();
     for (auto f : mh_inliers) {
-      auto res = f->xp() - f->Predict(gsb(), gbc());
-
-      // std::cout << "xp=" << f->xp().transpose() << std::endl;
-      // std::cout << "pred=" << f->pred().transpose() << std::endl;
-      // std::cout << "res=" << res.transpose() << std::endl;
-
+      auto res = f->xp() - f->pred();
       if (res.norm() < ransac_thresh_) {
         inliers.insert(f);
       }
     }
     if (inliers.size() > max_inliers.size()) {
       max_inliers = inliers;
-      number_t eps = 1 - max_inliers.size() / float(mh_inliers.size());
-      n_hyp = int(log(1 - ransac_prob_) / log(eps + 1e-5)) + 1;
-    }
-
-    X_ = X0;
-    for (auto f : active_features) {
-      f->RestoreState();
-    }
-    for (auto g : active_groups) {
-      g->RestoreState();
+      number_t eps = max_inliers.size() / float(mh_inliers.size());
+      n_hyp = int(log(1 - ransac_prob_) / log(1-eps)) + 1; // eq. 15 in paper with m=1
     }
   }
   auto str = StrFormat("#hyp tested=%d: li_inliers/mh_inliers=%d/%d",
@@ -315,17 +273,19 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
 
   LOG(INFO) << str;
 
-  // Save which features are inliers
+  // Save which features are inliers.
+  std::vector<bool> is_low_innovation_inlier;
   for (int i=0; i<mh_inliers.size(); i++) {
     if (max_inliers.count(mh_inliers[i])) {
-      selected[i] = true;
+      is_low_innovation_inlier.push_back(true);
     }
     else {
-      selected[i] = false;
+      is_low_innovation_inlier.push_back(false);
     }
   }
 
-  // back up state and covariance again
+  // back up state and covariance
+  State X0 = X_;
   MatX P0 = P_;
   for (auto g : active_groups) {
     g->BackupState();
@@ -334,6 +294,9 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     f->BackupState();
   }
 
+  // At the moment, this low innovation update is not quite right, because it
+  // might include groups that have no features. It is also possible that the
+  // gauge group is unobservable.
   if (!max_inliers.empty()) {
     int f_cnt = 0;
     // low innovation update
@@ -343,7 +306,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     inn_.setZero();
     diagR_.resize(2 * max_inliers.size());
     for (int i = 0; i < mh_inliers.size(); ++i) {
-      if (selected[i]) {
+      if (is_low_innovation_inlier[i]) {
         H_.block(2 * f_cnt, 0, 2, err_.size()) = mh_inliers[i]->J();
         inn_.segment<2>(2 * f_cnt) = mh_inliers[i]->inn();
         diagR_.segment<2>(2 * f_cnt) << R_, R_;
@@ -358,7 +321,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     // rescue high-innovation measurements
     std::vector<FeaturePtr> hi_inliers; // high-innovation inlier set
     for (int i = 0; i < mh_inliers.size(); ++i) {
-      if (!selected[i]) {
+      if (!is_low_innovation_inlier[i]) {
         // potentially a high-innovation inlier
         auto f = mh_inliers[i];
 
