@@ -273,30 +273,30 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
 
   LOG(INFO) << str;
 
-  // Save which features are inliers.
-  std::vector<bool> is_low_innovation_inlier;
-  std::unordered_set<GroupPtr> groups_with_low_inn_inlier;
-  for (int i=0; i<mh_inliers.size(); i++) {
-    if (max_inliers.count(mh_inliers[i])) {
-      is_low_innovation_inlier.push_back(true);
-      groups_with_low_inn_inlier.insert(mh_inliers[i]->ref());
+  if (!max_inliers.empty() && (max_inliers.size() < mh_inliers.size())) {
+    // Save which features are inliers.
+    std::vector<bool> is_low_innovation_inlier;
+    std::unordered_set<GroupPtr> groups_with_low_inn_inlier;
+    for (int i=0; i<mh_inliers.size(); i++) {
+      if (max_inliers.count(mh_inliers[i])) {
+        is_low_innovation_inlier.push_back(true);
+        groups_with_low_inn_inlier.insert(mh_inliers[i]->ref());
+      }
+      else {
+        is_low_innovation_inlier.push_back(false);
+      }
     }
-    else {
-      is_low_innovation_inlier.push_back(false);
+
+    // back up state and covariance
+    State X0 = X_;
+    MatX P0 = P_;
+    for (auto g : groups_with_low_inn_inlier) {
+      g->BackupState();
     }
-  }
+    for (auto f : active_features) {
+      f->BackupState();
+    }
 
-  // back up state and covariance
-  State X0 = X_;
-  MatX P0 = P_;
-  for (auto g : groups_with_low_inn_inlier) {
-    g->BackupState();
-  }
-  for (auto f : active_features) {
-    f->BackupState();
-  }
-
-  if (!max_inliers.empty()) {
     int f_cnt = 0;
 
     int size = err_.size();
@@ -345,9 +345,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     }
     UpdateJosephForm();
     AbsorbError();
-  }
 
-  if (max_inliers.size() < mh_inliers.size()) {
     // rescue high-innovation measurements
     std::vector<FeaturePtr> hi_inliers; // high-innovation inlier set
     for (int i = 0; i < mh_inliers.size(); ++i) {
@@ -375,22 +373,23 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
       LOG(INFO) << "rescued " << hi_inliers.size() << " high-innovation inliers"
                 << std::endl;
     }
-  }
 
-  // restore state
-  X_ = X0;
-  P_ = P0;
-  for (auto f : active_features) {
-    f->RestoreState();
-  }
-  for (auto g : groups_with_low_inn_inlier) {
-    g->RestoreState();
-  }
-  err_.setZero();
-  // need to re-compute jacobians at original state
-  for (auto f : max_inliers) {
-    f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
-                       X_.bg, X_.Vsb, X_.td, err_);
+    // restore state
+    X_ = X0;
+    P_ = P0;
+    for (auto f : active_features) {
+      f->RestoreState();
+    }
+    for (auto g : groups_with_low_inn_inlier) {
+      g->RestoreState();
+    }
+    err_.setZero();
+    // need to re-compute jacobians at original state
+    for (auto f : max_inliers) {
+      f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
+                        X_.bg, X_.Vsb, X_.td, err_);
+    }
+
   }
 
   // create a vector for output
