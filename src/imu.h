@@ -32,11 +32,14 @@ public:
   IMU(const Mat3 &Ca, const Mat3 &Cg);
 
   void UpdateState(const IMUState::Tangent &dX) { X_ += dX; }
+  void BackupState() { X_backup_ = X_; }
+  void RestoreState() { X_ = X_backup_; }
   const Mat3 &Ca() const { return X_.Ca; }
   const Mat3 &Cg() const { return X_.Cg; }
 
 private:
   IMUState X_;
+  IMUState X_backup_;
 };
 
 } // namespace xivo

@@ -1098,7 +1098,7 @@ void Estimator::SwitchRefGroup() {
 }
 
 
-GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr> candidates) {
+GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr>&candidates) {
   auto git = std::min_element(candidates.begin(), candidates.end(),
                          [this](const GroupPtr g1, const GroupPtr g2) -> bool {
                            int offset1 = kGroupBegin + 6 * g1->sind();
@@ -1113,6 +1113,47 @@ GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr> candidates) {
   return *git;
 }
 
+
+void Estimator::BackupState(std::unordered_set<FeaturePtr>& features,
+                            std::unordered_set<GroupPtr>& groups)
+{
+  X0_ = X_;
+  P0_ = P_;
+  for (auto g : groups) {
+    g->BackupState();
+  }
+  for (auto f : features) {
+    f->BackupState();
+  }
+#ifdef USE_ONLINE_IMU_CALIB
+  imu_.BackupState();
+#endif
+
+#ifdef USE_ONLINE_CAMERA_CALIB
+  Camera::instance()->BackupState();
+#endif
+}
+
+
+void Estimator::RestoreState(std::unordered_set<FeaturePtr>& features,
+                            std::unordered_set<GroupPtr>& groups)
+{
+  X_ = X0_;
+  P_ = P0_;
+  for (auto f : features) {
+    f->RestoreState();
+  }
+  for (auto g : groups) {
+    g->RestoreState();
+  }
+#ifdef USE_ONLINE_IMU_CALIB
+  imu_.RestoreState();
+#endif
+
+#ifdef USE_ONLINE_CAMERA_CALIB
+  Camera::instance()->RestoreState();
+#endif
+}
 
 VecXi Estimator::InstateFeatureSinds(int n_output) const {
 

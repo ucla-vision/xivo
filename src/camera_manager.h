@@ -145,6 +145,33 @@ public:
     }
   }
 
+  void BackupState() {
+    if (std::holds_alternative<ATAN>(model_)) {
+      std::get<ATAN>(model_).BackupState();
+    } else if (std::holds_alternative<EquiDist>(model_)) {
+      std::get<EquiDist>(model_).BackupState();
+    } else if (std::holds_alternative<RadTan>(model_)) {
+      std::get<RadTan>(model_).BackupState();
+    } else if (std::holds_alternative<Pinhole>(model_)) {
+      std::get<Pinhole>(model_).BackupState();
+    } else {
+      LOG(FATAL) << "unknown camera model";
+    }
+  }
+
+  void RestoreState() {
+    if (std::holds_alternative<ATAN>(model_)) {
+      std::get<ATAN>(model_).RestoreState();
+    } else if (std::holds_alternative<EquiDist>(model_)) {
+      std::get<EquiDist>(model_).RestoreState();
+    } else if (std::holds_alternative<RadTan>(model_)) {
+      std::get<RadTan>(model_).RestoreState();
+    } else if (std::holds_alternative<Pinhole>(model_)) {
+      std::get<Pinhole>(model_).RestoreState();
+    } else {
+      LOG(FATAL) << "unknown camera model";
+    }
+  }
 
 private:
   CameraManager &operator=(const CameraManager &) = delete;

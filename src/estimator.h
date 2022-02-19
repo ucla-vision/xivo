@@ -210,6 +210,7 @@ private:
   void DiscardFeatures(const std::vector<FeaturePtr> &discards);
   void DestroyFeatures(const std::vector<FeaturePtr> &destroys);
   void SwitchRefGroup();
+  GroupPtr FindNewRefGroup(std::vector<GroupPtr>& candidates);
 
   // same as above, but the feature list will be untouched
   void RemoveFeatureFromState(FeaturePtr f);
@@ -221,6 +222,11 @@ private:
   void PrintErrorStateNorm();
   void PrintErrorState();
   void PrintNominalState();
+
+  void BackupState(std::unordered_set<FeaturePtr>& features,
+                   std::unordered_set<GroupPtr>& groups);
+  void RestoreState(std::unordered_set<FeaturePtr>& features,
+                    std::unordered_set<GroupPtr>& groups);
 
 
 private:
@@ -236,7 +242,6 @@ private:
    *  gauge group while calling `ProcessTracks`. */
   int gauge_group_;
   GroupPtr gauge_group_ptr_;
-  GroupPtr FindNewRefGroup(std::vector<GroupPtr> candidates);
 
 private:
   Config cfg_;        // this is just a reference of the global parameter server
@@ -270,6 +275,9 @@ private:
   /** The current state estimate. Contains nominal state and calibrations, but no
    *  feature positions. */
   State X_;
+  /** Backup of the current state estimate. Used with `BackupState` and
+   *  `RestoreState` in 1-pt RANSAC calculations. */
+  State X0_;
   /** Filter's error state: Contains both pose and feature positions. */
   VecX err_;
   /** Whether or not each group is in-state */
@@ -313,6 +321,9 @@ private:
   /** Filter covariance. Size grows and shrinks with the number of tracked
    *  features. */
   MatX P_;
+  /** Backup of filter covariance. Used with `BackupState` and `RestoreState`
+   *  in 1-pt RANSAC */
+  MatX P0_;
   /** Filter motion covariance. Size is `kMotionSize` x `kMotionSize` */
   MatX Qmodel_;
   /** 
