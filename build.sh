@@ -34,7 +34,8 @@ if [ $USE_GPERFTOOLS = true ]; then
 fi
 
 CPU_COUNT=4
-OPENCV_INSTALL_DIR=/media/data3/stsuei/DevelopmentEnvironments/xivo_gcc9/share/OpenCV
+# OPENCV_INSTALL_DIR=/media/data3/stsuei/DevelopmentEnvironments/xivo_gcc9/share/OpenCV
+OPENCV_INSTALL_DIR=$PWD/thirdparty/opencv/install/share/OpenCV
 
 # build dependencies
 PROJECT_DIR=$(pwd)

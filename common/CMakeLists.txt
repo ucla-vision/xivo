@@ -6,7 +6,6 @@ project(common)
 # set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 add_library(common STATIC utils.cpp)
-target_link_libraries(common pthread)
 
 # option(BUILD_COMMON_TESTS True)
 # if (${BUILD_COMMON_TESTS})

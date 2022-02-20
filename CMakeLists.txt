@@ -22,9 +22,10 @@ if (BUILD_G2O)
   add_definitions(-DUSE_G2O)
 endif (BUILD_G2O)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++17 -Wno-narrowing -Wno-register -fPIC -g")
+set(CMAKE_CXX_STANDARD 17)
+# TODO (xiaohfei): We should turn on -Wall and -Werror to eliminate all the warnings.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wno-narrowing -Wno-register -fPIC -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
 
 # set(CMAKE_BUILD_TYPE "Debug")
@@ -42,55 +43,100 @@ add_definitions(-DGOOGLE_STRIP_LOG=1)
 # add_definitions(-DEIGEN_DEFAULT_TO_ROW_MAJOR)
 add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/thirdparty)
+
+# Find and add OpenCV to libraries
 find_package(OpenCV REQUIRED)
 find_package(Python3 REQUIRED Interpreter Development)
+find_package(Pangolin REQUIRED)
+find_package(jsoncpp REQUIRED)
+# Google stuff
+find_package(gflags REQUIRED)
+find_package(GTest REQUIRED NAMES GTest gtest googletest GoogleTest)
+find_package(glog REQUIRED)
+find_package(Ceres REQUIRED)
+# Find and add DBoW2 
+find_package(DBoW2 REQUIRED)
+# Create an interface target for DBoW2 (since DBoW2 does not export headers & libraries as a target)
+add_library(DBoW2 INTERFACE)
+target_include_directories(DBoW2 INTERFACE ${DBoW2_INCLUDE_DIR})
+target_link_libraries(DBoW2 INTERFACE ${DBoW2_LIBS})
 
-link_directories(
-        ${PROJECT_SOURCE_DIR}/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/gflags/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/glog/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/pnp/build
-        ${PROJECT_SOURCE_DIR}/thirdparty/ceres-solver/lib
-        /usr/local/lib
+# TODO (xiaohfei): this is not working since gperftools does not properly generate cmake config files.
+# Need to manually add gperftools if needed.
+if (USE_GPERFTOOLS)
+  find_package(gperftools REQUIRED)
+endif()
+
+# The dependency PNP does have proper installation target, need to manually specify paths.
+add_library(pnp INTERFACE)
+target_include_directories(pnp INTERFACE ${CMAKE_SOURCE_DIR}/thirdparty/pnp)
+target_link_libraries(pnp INTERFACE ${CMAKE_SOURCE_DIR}/thirdparty/pnp/build/liblibpnp.a)
+
+list(APPEND DEPS
+  # opencv
+  opencv_highgui
+  opencv_features2d
+  opencv_core
+  opencv_video
+  opencv_imgproc
+  opencv_imgcodecs
+  opencv_xfeatures2d
+  # google stuff
+  glog::glog
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
+  GTest::gmock_main
+  gflags_static
+  # graphics
+  GLEW
+  pangolin
+  # solver
+  Ceres::ceres
+  pnp
+  cxsparse
+  cholmod
+  lapack
+  blas
+  # utils
+  jsoncpp_lib
+  # Use jsoncpp_static if you are building modules of xivo as static libraryies
+  # jsoncpp_static
+  DBoW2
+  # system
+  pthread
 )
 if (IS_LINUX)
-  link_directories(/usr/lib/x86_64-linux-gnu)
-endif(IS_LINUX)
+  list(APPEND DEPS GL)
+endif (IS_LINUX)
 
+link_libraries(${DEPS})
+
+# Manually add link directories (ideally we dont have to use this)
+link_directories(
+  /usr/local/lib
+  /usr/lib/x86_64-linux-gnu
+)
 
 include_directories(
-        ${PROJECT_SOURCE_DIR}/common
-        ${PROJECT_SOURCE_DIR}/src
-        ${PROJECT_SOURCE_DIR}/thirdparty/gflags/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/glog/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/eigen/include/eigen3
-        ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/pnp
-        ${JSONCPP_INCLUDE_DIRS}
-        /usr/include/suitesparse
-        /usr/include
-        ${OpenCV_INCLUDE_DIRS}
-        ${Python3_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/common
+  ${CMAKE_SOURCE_DIR}/src
+  # Manually add include dirs, ideally we don't need this
+  # ${JSONCPP_INCLUDE_DIRS}
+  # ${OpenCV_INCLUDE_DIRS}
+  # ${Python3_INCLUDE_DIRS}
+  /usr/include/suitesparse
+  /usr/include
 )
 
 
 
 enable_testing()
-add_subdirectory(thirdparty/googletest)
-add_subdirectory(thirdparty/gflags)
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/googletest/include)
 # add_subdirectory(thirdparty/abseil-cpp)
 if (BUILD_G2O)
-  link_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/lib)
-  include_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/include)
+  link_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o/release/lib)
+  include_directories(${CMAKE_SOURCE_DIR}/thirdparty/g2o/release/include)
   list(APPEND deps
     g2o_core
     g2o_solver_dense
