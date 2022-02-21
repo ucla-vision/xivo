@@ -53,9 +53,14 @@ Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 // L1 triangulation
 Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
-// triangulation method3
+// triangulation method4
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L2 triangulation
 Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+
+// triangulation method5
+// Based on Angular Errors - https://arxiv.org/abs/1903.09115
+// L_inf triangulation
+Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
 } // namespace xivo

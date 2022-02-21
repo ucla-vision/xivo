@@ -215,26 +215,26 @@ Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec3 m0{R21 * f0};
   Vec3 m1{f1};
 
-  float a0 = ((m0 / m0.norm()).cross(t21)).norm();
-  float a1 = ((m1 / m1.norm()).cross(t21)).norm();
+  Vec3 m0_hat = m0 / m0.norm();
+  Vec3 m1_hat = m1 / m1.norm();
 
-  Vec3 m0_prime;
-  Vec3 m1_prime;
+  Eigen::Matrix<double, 3, 2> A;
+  A.row(0) << m0_hat(0), m1_hat(0);
+  A.row(1) << m0_hat(1), m1_hat(1);
+  A.row(2) << m0_hat(2), m1_hat(2);
 
-  if(a0 <= a1)
-  {
-    Vec3 n1 = m1.cross(t21);
-    Vec3 n1_hat = n1 / n1.norm();
-    m0_prime = m0 - (m0.dot(n1_hat)) * n1_hat;
-    m1_prime = m1;
-  }
-  else
-  {
-    Vec3 n0 = m0.cross(t21);
-    Vec3 n0_hat = n0 / n0.norm();
-    m0_prime = m0;
-    m1_prime = m1 - (m1.dot(n0_hat)) * n0_hat;
-  }
+  Vec3 t21_hat = t21 / t21.norm();
+  Mat3 I = Eigen::Matrix3d::Identity();
+
+  Eigen::Matrix<double, 2, 3> B;
+  B = A.transpose() * (I - t21_hat * t21_hat.transpose());
+
+  Eigen::JacobiSVD<Eigen::Matrix<double, 2, 3>> svd(B, Eigen::ComputeFullV);
+  Mat3 V = svd.matrixV();
+  Vec3 n_prime_hat = V.col(1);
+
+  Vec3 m0_prime = m0 - m0.dot(n_prime_hat) * n_prime_hat;
+  Vec3 m1_prime = m1 - m1.dot(n_prime_hat) * n_prime_hat;
 
   Vec3 z = m1_prime.cross(m0_prime);
 
