@@ -243,4 +243,39 @@ Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   return x;
 }
 
+Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+
+  // Initalize the Rotation and Translation Matricies
+  Vec3 t12{g12.T()};
+  Mat3 R12{g12.R()};
+  Mat3 R21{R12.transpose()};
+  Vec3 t21{-1 * R12.transpose() * t12};
+
+  // Create homogeneous coordinates
+  Vec3 f0{xc1(0), xc1(1), 1.0};
+  f0.normalize(); // WHY?
+  Vec3 f1{xc2(0), xc2(1), 1.0};
+  f1.normalize();  
+
+  Vec3 m0{R21 * f0};
+  Vec3 m1{f1};
+
+  Vec3 m0_hat = m0 / m0.norm();
+  Vec3 m1_hat = m1 / m1.norm();
+
+  Vec3 n_a = (m0_hat + m1_hat).cross(t21);
+  Vec3 n_b = (m0_hat - m1_hat).cross(t21);
+
+  Vec3 n_prime_hat = n_a.norm() >= n_b.norm() ? n_a : n_b;
+
+  Vec3 m0_prime = m0 - m0.dot(n_prime_hat) * n_prime_hat;
+  Vec3 m1_prime = m1 - m1.dot(n_prime_hat) * n_prime_hat;
+
+  Vec3 z = m1_prime.cross(m0_prime);
+
+  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
+
+  return x;
+}
+
 } // namespace xivo

@@ -723,6 +723,11 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
     Xc1 = Triangulate4(g12, xc1, xc2);
   }
 
+  else if(options.method == 5)
+  {
+    Xc1 = Triangulate5(g12, xc1, xc2);
+  }
+
   else
   {
     std::cout << "[ERROR] Incorrect Method for Triangulation:" << options.method << std::endl;
