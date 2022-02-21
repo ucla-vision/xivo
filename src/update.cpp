@@ -257,7 +257,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
 
     inliers.clear();
     for (auto f : mh_inliers) {
-      auto res = f->xp() - f->pred();
+      auto res = f->xp() - f->Predict(gsb(), gbc());
       if (res.norm() < ransac_thresh_) {
         inliers.insert(f);
       }
@@ -273,6 +273,11 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
 
   LOG(INFO) << str;
 
+  // If everything is a low-innovation inlier, we don't need to do anything more.
+  if (max_inliers.size() == mh_inliers.size()) {
+    return mh_inliers;
+  }
+
   // Save which features are inliers.
   std::vector<bool> is_low_innovation_inlier;
   std::unordered_set<GroupPtr> groups_with_low_inn_inlier;
@@ -286,17 +291,18 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     }
   }
 
-  // back up state and covariance
-  BackupState(active_features, groups_with_low_inn_inlier);
+  // back up state and covariance.
+  BackupState(active_features, active_groups);
 
 
-  // STEP 2: Rescue high-innovation inliers
+  // STEP 2: EKF update using only low-innovation inlier measurements.
   if (!max_inliers.empty()) {
     int size = err_.size();
 
     // Find a new temporary reference group if the gauge group pointer doesn't
     // contain a high-inlier feature
     if (groups_with_low_inn_inlier.count(gauge_group_ptr_) == 0) {
+      LOG(INFO) << "One-Pt RANSAC using temporary new reference group";
       std::vector<GroupPtr> candidates;
       candidates.insert(candidates.end(), groups_with_low_inn_inlier.begin(),
                         groups_with_low_inn_inlier.end());
@@ -371,10 +377,10 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   }
 
   // restore state (need to re-compute jacobians at original state)
-  RestoreState(active_features, groups_with_low_inn_inlier);
-  for (auto f : max_inliers) {
+  RestoreState(active_features, active_groups);
+  for (auto f : active_features) {
     f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
-                      X_.bg, X_.Vsb, X_.td, err_);
+                       X_.bg, X_.Vsb, X_.td, err_);
   }
 
   // create a vector for output
