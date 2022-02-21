@@ -701,9 +701,6 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
   Vec2 xc2 = CameraManager::instance()->UnProject(back());
   SE3 g12 = (ref_->gsb() * gbc).inv() * (gsb * gbc);
 
-  // Vec3 Xc1 = options.method == 3 ? Triangulate1(g12, xc1, xc2)
-  //                                : Triangulate2(g12, xc1, xc2);
-
   Vec3 Xc1;
 
   if(options.method == 1)
@@ -718,7 +715,12 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 
   else if(options.method == 3)
   {
-    Xc1 = Triangulate1(g12, xc1, xc2);
+    Xc1 = Triangulate3(g12, xc1, xc2);
+  }
+
+  else if(options.method == 4)
+  {
+    Xc1 = Triangulate4(g12, xc1, xc2);
   }
 
   else

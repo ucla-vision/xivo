@@ -151,4 +151,96 @@ Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   return x;
 }
 
+
+Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+
+  // Initalize the Rotation and Translation Matricies
+  Vec3 t12{g12.T()};
+  Mat3 R12{g12.R()};
+  Mat3 R21{R12.transpose()};
+  Vec3 t21{-1 * R12.transpose() * t12};
+
+  // Create homogeneous coordinates
+  Vec3 f0{xc1(0), xc1(1), 1.0};
+  f0.normalize(); // WHY?
+  Vec3 f1{xc2(0), xc2(1), 1.0};
+  f1.normalize();  
+
+  Vec3 m0{R21 * f0};
+  Vec3 m1{f1};
+
+  float a0 = ((m0 / m0.norm()).cross(t21)).norm();
+  float a1 = ((m1 / m1.norm()).cross(t21)).norm();
+
+  Vec3 m0_prime;
+  Vec3 m1_prime;
+
+  if(a0 <= a1)
+  {
+    Vec3 n1 = m1.cross(t21);
+    Vec3 n1_hat = n1 / n1.norm();
+    m0_prime = m0 - (m0.dot(n1_hat)) * n1_hat;
+    m1_prime = m1;
+  }
+  else
+  {
+    Vec3 n0 = m0.cross(t21);
+    Vec3 n0_hat = n0 / n0.norm();
+    m0_prime = m0;
+    m1_prime = m1 - (m1.dot(n0_hat)) * n0_hat;
+  }
+
+  Vec3 z = m1_prime.cross(m0_prime);
+
+  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
+
+  return x;
+}
+
+
+Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+
+  // Initalize the Rotation and Translation Matricies
+  Vec3 t12{g12.T()};
+  Mat3 R12{g12.R()};
+  Mat3 R21{R12.transpose()};
+  Vec3 t21{-1 * R12.transpose() * t12};
+
+  // Create homogeneous coordinates
+  Vec3 f0{xc1(0), xc1(1), 1.0};
+  f0.normalize(); // WHY?
+  Vec3 f1{xc2(0), xc2(1), 1.0};
+  f1.normalize();  
+
+  Vec3 m0{R21 * f0};
+  Vec3 m1{f1};
+
+  float a0 = ((m0 / m0.norm()).cross(t21)).norm();
+  float a1 = ((m1 / m1.norm()).cross(t21)).norm();
+
+  Vec3 m0_prime;
+  Vec3 m1_prime;
+
+  if(a0 <= a1)
+  {
+    Vec3 n1 = m1.cross(t21);
+    Vec3 n1_hat = n1 / n1.norm();
+    m0_prime = m0 - (m0.dot(n1_hat)) * n1_hat;
+    m1_prime = m1;
+  }
+  else
+  {
+    Vec3 n0 = m0.cross(t21);
+    Vec3 n0_hat = n0 / n0.norm();
+    m0_prime = m0;
+    m1_prime = m1 - (m1.dot(n0_hat)) * n0_hat;
+  }
+
+  Vec3 z = m1_prime.cross(m0_prime);
+
+  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
+
+  return x;
+}
+
 } // namespace xivo

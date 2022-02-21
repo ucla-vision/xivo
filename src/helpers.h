@@ -48,4 +48,14 @@ Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 // interface same as triangulation method1 above
 Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
+// triangulation method3
+// Based on Angular Errors - https://arxiv.org/abs/1903.09115
+// L1 triangulation
+Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+
+// triangulation method3
+// Based on Angular Errors - https://arxiv.org/abs/1903.09115
+// L2 triangulation
+Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+
 } // namespace xivo
