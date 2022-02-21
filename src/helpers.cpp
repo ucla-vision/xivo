@@ -162,7 +162,7 @@ Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   // Create homogeneous coordinates
   Vec3 f0{xc1(0), xc1(1), 1.0};
-  f0.normalize(); // WHY?
+  f0.normalize();
   Vec3 f1{xc2(0), xc2(1), 1.0};
   f1.normalize();  
 
@@ -208,7 +208,7 @@ Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   // Create homogeneous coordinates
   Vec3 f0{xc1(0), xc1(1), 1.0};
-  f0.normalize(); // WHY?
+  f0.normalize();
   Vec3 f1{xc2(0), xc2(1), 1.0};
   f1.normalize();  
 
@@ -253,7 +253,7 @@ Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   // Create homogeneous coordinates
   Vec3 f0{xc1(0), xc1(1), 1.0};
-  f0.normalize(); // WHY?
+  f0.normalize();
   Vec3 f1{xc2(0), xc2(1), 1.0};
   f1.normalize();  
 
@@ -273,9 +273,60 @@ Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   Vec3 z = m1_prime.cross(m0_prime);
 
-  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
+  // check_cheirality(z, t21, m1_prime, m0_prime);
+  // check_angular_reprojection(m0, m0_prime, m1, m1_prime);
+  // check_parallax(m0_prime, m1_prime);
+
+  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(), 2)) * m1_prime;
 
   return x;
+}
+
+
+void check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime)
+{
+
+  float lambda0 = z.dot(t.cross(f1_prime)) / pow(z.norm(), 2);
+  float lambda1 = z.dot(t.cross(Rf0_prime)) / pow(z.norm(), 2);
+
+  if(lambda0 <= 0 || lambda1 <= 0)
+  {
+    std::cout << "[ERROR] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1 << std::endl;
+    exit(1);
+  }
+
+  return;
+}
+
+
+void check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Vec3 &f1, const Vec3 &f1_prime)
+{
+
+  float theta0 = acos(Rf0.dot(Rf0_prime) / (Rf0.norm() * Rf0_prime.norm()));
+  float theta1 = acos(f1.dot(f1_prime) / (f1.norm() * f1_prime.norm()));
+
+  float max_theta = std::max(theta0, theta1);
+
+  if(max_theta > 0.01)
+  {
+    std::cout << "[ERROR] angular reprojection error in triangulation" << std::endl;
+    exit(1);
+  }
+  return;
+}
+
+void check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime)
+{
+
+  float beta = acos(f1_prime.dot(Rf0_prime) / (f1_prime.norm() * Rf0_prime.norm()));
+
+  if(beta < 1e-8)
+  {
+    std::cout << "[ERROR] parallax error in triangulation " << beta <<  std::endl;
+    exit(1);
+  }
+
+  return;
 }
 
 } // namespace xivo

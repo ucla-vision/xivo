@@ -63,4 +63,13 @@ Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 // L_inf triangulation
 Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
+// Check cheirality error for above methods
+void check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime);
+
+// Check angular reprojection error for above methods
+void check_angular_reprojection(const Vec3 &f0, const Vec3 &f0_prime, const Vec3 &f1, const Vec3 &f1_prime);
+
+// Check parallex error for above methods
+void check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime);
+
 } // namespace xivo
