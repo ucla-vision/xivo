@@ -135,7 +135,7 @@ Estimator::Estimator(const Json::Value &cfg)
 
   triangulate_pre_subfilter_ =
       cfg_.get("triangulate_pre_subfilter", false).asBool();
-  triangulate_options_.method = cfg_["triangulation"].get("method", 1).asInt();
+  triangulate_options_.method = cfg_["triangulation"].get("method", 1).asString();
   triangulate_options_.zmin =
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();

@@ -152,7 +152,7 @@ Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 }
 
 
-Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+Vec3 L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
 
   // Initalize the Rotation and Translation Matricies
   Vec3 t12{g12.T()};
@@ -161,9 +161,9 @@ Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec3 t21{-1 * R12.transpose() * t12};
 
   // Create homogeneous coordinates
-  Vec3 f0{xc1(0), xc1(1), 1.0};
+  Vec3 f0{xc0(0), xc0(1), 1.0};
   f0.normalize();
-  Vec3 f1{xc2(0), xc2(1), 1.0};
+  Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();  
 
   Vec3 m0{R21 * f0};
@@ -198,7 +198,7 @@ Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 }
 
 
-Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+Vec3 L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
 
   // Initalize the Rotation and Translation Matricies
   Vec3 t12{g12.T()};
@@ -207,9 +207,9 @@ Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec3 t21{-1 * R12.transpose() * t12};
 
   // Create homogeneous coordinates
-  Vec3 f0{xc1(0), xc1(1), 1.0};
+  Vec3 f0{xc0(0), xc0(1), 1.0};
   f0.normalize();
-  Vec3 f1{xc2(0), xc2(1), 1.0};
+  Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();  
 
   Vec3 m0{R21 * f0};
@@ -240,10 +240,12 @@ Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
 
+  // Vec3 x1 = R12 * x + t12;
+
   return x;
 }
 
-Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+Vec3 LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
 
   // Initalize the Rotation and Translation Matricies
   Vec3 t12{g12.T()};
@@ -252,9 +254,9 @@ Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec3 t21{-1 * R12.transpose() * t12};
 
   // Create homogeneous coordinates
-  Vec3 f0{xc1(0), xc1(1), 1.0};
+  Vec3 f0{xc0(0), xc0(1), 1.0};
   f0.normalize();
-  Vec3 f1{xc2(0), xc2(1), 1.0};
+  Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();  
 
   Vec3 m0{R21 * f0};
@@ -273,11 +275,13 @@ Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   Vec3 z = m1_prime.cross(m0_prime);
 
-  // check_cheirality(z, t21, m1_prime, m0_prime);
-  // check_angular_reprojection(m0, m0_prime, m1, m1_prime);
-  // check_parallax(m0_prime, m1_prime);
+  check_cheirality(z, t21, m1_prime, m0_prime);
+  check_angular_reprojection(m0, m0_prime, m1, m1_prime);
+  check_parallax(m0_prime, m1_prime);
 
   Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(), 2)) * m1_prime;
+
+  // Vec3 x1 = R12 * x + t12;
 
   return x;
 }
@@ -291,7 +295,7 @@ void check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const 
 
   if(lambda0 <= 0 || lambda1 <= 0)
   {
-    std::cout << "[ERROR] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1 << std::endl;
+    LOG(ERROR) << "[ERROR] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1;
     exit(1);
   }
 
@@ -309,7 +313,7 @@ void check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Ve
 
   if(max_theta > 0.01)
   {
-    std::cout << "[ERROR] angular reprojection error in triangulation" << std::endl;
+    LOG(ERROR) << "[ERROR] angular reprojection error in triangulation";
     exit(1);
   }
   return;
@@ -322,7 +326,7 @@ void check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime)
 
   if(beta < 1e-8)
   {
-    std::cout << "[ERROR] parallax error in triangulation " << beta <<  std::endl;
+    LOG(ERROR) << "[ERROR] parallax error in triangulation " << beta;
     exit(1);
   }
 

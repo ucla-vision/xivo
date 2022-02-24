@@ -51,17 +51,17 @@ Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 // triangulation method3
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L1 triangulation
-Vec3 Triangulate3(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+Vec3 L1Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
 // triangulation method4
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L2 triangulation
-Vec3 Triangulate4(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+Vec3 L2Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
 // triangulation method5
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L_inf triangulation
-Vec3 Triangulate5(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+Vec3 LinfAngular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
 // Check cheirality error for above methods
 void check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime);

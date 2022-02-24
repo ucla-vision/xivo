@@ -133,7 +133,7 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": 5,
+    "method": "linf_angular",
     "zmin": 0.05,
     "zmax": 5.0
   },

@@ -703,34 +703,34 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 
   Vec3 Xc1;
 
-  if(options.method == 1)
+  if(options.method == "l1_reproject")
   {
     Xc1 = Triangulate1(g12, xc1, xc2);
   }
 
-  else if(options.method == 2)
+  else if(options.method == "l2_reproject")
   {
     Xc1 = Triangulate2(g12, xc1, xc2);
   }
 
-  else if(options.method == 3)
+  else if(options.method == "l1_angular")
   {
-    Xc1 = Triangulate3(g12, xc1, xc2);
+    Xc1 = L1Angular(g12, xc1, xc2);
   }
 
-  else if(options.method == 4)
+  else if(options.method == "l2_angular")
   {
-    Xc1 = Triangulate4(g12, xc1, xc2);
+    Xc1 = L2Angular(g12, xc1, xc2);
   }
 
-  else if(options.method == 5)
+  else if(options.method == "linf_angular")
   {
-    Xc1 = Triangulate5(g12, xc1, xc2);
+    Xc1 = LinfAngular(g12, xc1, xc2);
   }
 
   else
   {
-    std::cout << "[ERROR] Incorrect Method for Triangulation:" << options.method << std::endl;
+    LOG(ERROR) << "[ERROR] Incorrect Method for Triangulation: " << options.method;
     exit(1);
   }
 
