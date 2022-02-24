@@ -15,7 +15,8 @@ public:
   RadialTangentialCamera(int rows, int cols, T fx, T fy, T cx, T cy, T p1, T p2,
                          T k1, T k2, T k3, int max_iter = 15)
       : BaseCamera<T, RadialTangentialCamera<T>>{rows, cols, fx, fy, cx, cy},
-        p1_{p1}, p2_{p2}, k1_{k1}, k2_{k2}, k3_{k3}, max_iter_{max_iter} {}
+        p1_{p1}, p2_{p2}, k1_{k1}, k2_{k2}, k3_{k3}, max_iter_{max_iter},
+        p10_{0.0}, p20_{0.0}, k10_{0.0}, k20_{0.0}, k30_{0.0} {}
 
   template <typename Derived>
   Eigen::Matrix<typename Derived::Scalar, 2, 1> Project(
@@ -185,6 +186,25 @@ public:
 
   DistortionType GetDistortionType() { return DistortionType::RADTAN; }
 
+  void BackupState() {
+    MyBase::BackupState();
+    p10_ = p1_;
+    p20_ = p2_;
+    k10_ = k1_;
+    k20_ = k2_;
+    k30_ = k3_;
+  }
+
+  void RestoreState() {
+    MyBase::RestoreState();
+    p1_ = p10_;
+    p2_ = p20_;
+    k1_ = k10_;
+    k2_ = k20_;
+    k3_ = k30_;
+  }
+
+
 protected:
   using MyBase::rows_;
   using MyBase::cols_;
@@ -194,6 +214,9 @@ protected:
   using MyBase::cy_;
   T p1_, p2_, k1_, k2_, k3_;
   int max_iter_;
+
+  // backup states
+  T p10_, p20_, k10_, k20_, k30_;
 };
 
 } // namespace xivo

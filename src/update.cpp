@@ -51,6 +51,7 @@ void Estimator::Update() {
 
   timer_.Tick("MH-gating");
 
+  int num_mh_rejected = 0;
   if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
 
     number_t mh_thresh = MH_thresh_;
@@ -66,6 +67,7 @@ void Estimator::Update() {
         if (dist[i] < mh_thresh) {
           inliers.push_back(f);
         } else {
+          num_mh_rejected++;
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
         }
       }
@@ -78,6 +80,8 @@ void Estimator::Update() {
               inliers.begin());
   }
   timer_.Tock("MH-gating");
+
+  LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
 
   if (use_1pt_RANSAC_) {
     inliers = OnePointRANSAC(inliers);
@@ -239,20 +243,10 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     active_groups.insert(f->ref());
   }
 
-  // backup states
-  State X0 = X_;
-  for (auto g : active_groups) {
-    g->BackupState();
-  }
-  for (auto f : active_features) {
-    f->BackupState();
-  }
-
-  // tmp vars
-  MatX K(err_.size(), 2);
-  Mat2 S;
-
-  std::vector<FeaturePtr> max_inliers, inliers;
+  /* We've already done the EKF prediction step and measurement prediction.
+  So this step just looks for the maximal set of low-innovation inliers.
+  */
+  std::unordered_set<FeaturePtr> max_inliers, inliers;
   for (int i = 0; i < n_hyp && selected_counter < selected.size(); ++i) {
     int k = distribution(*rng_);
     while (selected[k]) {
@@ -260,50 +254,18 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     }
     selected[k] = true;
     ++selected_counter;
-    // state-only update with the selected measurement k
-    //
-    // std::cout << "H_.rows=" << H_.rows() << ";;; H_.cols=" << H_.cols() <<
-    // std::endl;
-    // std::cout << "index=" << mh_inliers[k].first << std::endl;
-
-    auto J = mh_inliers[k]->J();
-    auto inn = mh_inliers[k]->inn();
-
-    S = J * P_ * J.transpose();
-    S(0, 0) += R_;
-    S(1, 1) += R_;
-
-    K.transpose() = S.llt().solve(J * P_);
-
-    err_ = K * inn;
-    AbsorbError();
-    err_.setZero(); // redudant (done in AbsorbError already) but for
-                    // readibility
 
     inliers.clear();
     for (auto f : mh_inliers) {
       auto res = f->xp() - f->Predict(gsb(), gbc());
-
-      // std::cout << "xp=" << f->xp().transpose() << std::endl;
-      // std::cout << "pred=" << f->pred().transpose() << std::endl;
-      // std::cout << "res=" << res.transpose() << std::endl;
-
       if (res.norm() < ransac_thresh_) {
-        inliers.push_back(f);
+        inliers.insert(f);
       }
     }
     if (inliers.size() > max_inliers.size()) {
       max_inliers = inliers;
-      number_t eps = 1 - max_inliers.size() / float(mh_inliers.size());
-      n_hyp = int(log(1 - ransac_prob_) / log(eps + 1e-5)) + 1;
-    }
-
-    X_ = X0;
-    for (auto f : active_features) {
-      f->RestoreState();
-    }
-    for (auto g : active_groups) {
-      g->RestoreState();
+      number_t eps = max_inliers.size() / float(mh_inliers.size());
+      n_hyp = int(log(1 - ransac_prob_) / log(1-eps)) + 1; // RANSAC minimum number of trials
     }
   }
   auto str = StrFormat("#hyp tested=%d: li_inliers/mh_inliers=%d/%d",
@@ -311,26 +273,73 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
 
   LOG(INFO) << str;
 
-  // back up state and covariance again
-  MatX P0 = P_;
-  for (auto g : active_groups) {
-    g->BackupState();
-  }
-  for (auto f : active_features) {
-    f->BackupState();
+  // If everything is a low-innovation inlier, we don't need to do anything more.
+  if (max_inliers.size() == mh_inliers.size()) {
+    return mh_inliers;
   }
 
+  // Save which features are inliers.
+  std::vector<bool> is_low_innovation_inlier;
+  std::unordered_set<GroupPtr> groups_with_low_inn_inlier;
+  for (int i=0; i<mh_inliers.size(); i++) {
+    if (max_inliers.count(mh_inliers[i])) {
+      is_low_innovation_inlier.push_back(true);
+      groups_with_low_inn_inlier.insert(mh_inliers[i]->ref());
+    }
+    else {
+      is_low_innovation_inlier.push_back(false);
+    }
+  }
+
+  // back up state and covariance.
+  BackupState(active_features, active_groups);
+
+
+  // STEP 2: EKF update using only low-innovation inlier measurements.
   if (!max_inliers.empty()) {
+    int size = err_.size();
+
+    // Find a new temporary reference group if the gauge group pointer doesn't
+    // contain a high-inlier feature
+    if (groups_with_low_inn_inlier.count(gauge_group_ptr_) == 0) {
+      LOG(INFO) << "One-Pt RANSAC using temporary new reference group";
+      std::vector<GroupPtr> candidates;
+      candidates.insert(candidates.end(), groups_with_low_inn_inlier.begin(),
+                        groups_with_low_inn_inlier.end());
+      GroupPtr tmpref = FindNewRefGroup(candidates);
+      int offset = kGroupBegin + kGroupSize * tmpref->sind();
+      P_.block(offset, 0, kGroupSize, size).setZero();
+      P_.block(0, offset, size, kGroupSize).setZero();
+    }
+
+    // Zero out features and groups that aren't in the low-inlier set
+    for (int i=0; i<mh_inliers.size(); i++) {
+      if (!is_low_innovation_inlier[i]) {
+        int offset = kFeatureBegin + kFeatureSize * mh_inliers[i]->sind();
+        P_.block(offset, 0, kFeatureSize, size).setZero();
+        P_.block(0, offset, size, kFeatureSize).setZero();
+      }
+    }
+    for (auto g: active_groups) {
+      if (groups_with_low_inn_inlier.count(g) == 0) {
+        int offset = kGroupBegin + kGroupSize * g->sind();
+        P_.block(offset, 0, kGroupSize, size).setZero();
+        P_.block(0, offset, size, kGroupSize).setZero();
+      }
+    }
+
     // low innovation update
-    H_.resize(2 * max_inliers.size(), err_.size());
-    H_.setZero();
-    inn_.resize(2 * max_inliers.size());
-    inn_.setZero();
-    selected.resize(mh_inliers.size(), false);
-    for (int i = 0; i < max_inliers.size(); ++i) {
-      selected[i] = true;
-      H_.block(2 * i, 0, 2, err_.size()) = max_inliers[i]->J();
-      inn_.segment<2>(2 * i) = max_inliers[i]->inn();
+    H_.setZero(2 * max_inliers.size(), size);
+    inn_.setZero(2 * max_inliers.size());
+    diagR_.resize(2 * max_inliers.size());
+    int f_cnt = 0;
+    for (int i = 0; i < mh_inliers.size(); ++i) {
+      if (is_low_innovation_inlier[i]) {
+        H_.block(2 * f_cnt, 0, 2, size) = mh_inliers[i]->J();
+        inn_.segment<2>(2 * f_cnt) = mh_inliers[i]->inn();
+        diagR_.segment<2>(2 * f_cnt) << R_, R_;
+        f_cnt++;
+      }
     }
     UpdateJosephForm();
     AbsorbError();
@@ -340,7 +349,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     // rescue high-innovation measurements
     std::vector<FeaturePtr> hi_inliers; // high-innovation inlier set
     for (int i = 0; i < mh_inliers.size(); ++i) {
-      if (!selected[i]) {
+      if (!is_low_innovation_inlier[i]) {
         // potentially a high-innovation inlier
         auto f = mh_inliers[i];
 
@@ -360,42 +369,24 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
       }
     }
     if (!hi_inliers.empty()) {
-      // H_.resize(2 * hi_inliers.size(), err_.size());
-      // H_.setZero();
-      // inn_.resize(2 * hi_inliers.size());
-      // inn_.setZero();
-      // for (int i = 0; i < hi_inliers.size(); ++i) {
-      //   H_.block(i * 2, 0, 2, err_.size()) = hi_inliers[i]->J();
-      //   inn_.segment<2>(i * 2) = hi_inliers[i]->inn();
-      // }
-      // UpdateJosephForm();
-      // AbsorbError();
-      //
-      // // instead of using high-innovation inliers directly
-      // // return them and perform one update
-      max_inliers.insert(max_inliers.end(), hi_inliers.begin(),
-                         hi_inliers.end());
+      max_inliers.insert(hi_inliers.begin(), hi_inliers.end());
       LOG(INFO) << "rescued " << hi_inliers.size() << " high-innovation inliers"
                 << std::endl;
     }
+
   }
 
-  // restore state
-  X_ = X0;
-  P_ = P0;
+  // restore state (need to re-compute jacobians at original state)
+  RestoreState(active_features, active_groups);
   for (auto f : active_features) {
-    f->RestoreState();
-  }
-  for (auto g : active_groups) {
-    g->RestoreState();
-  }
-  err_.setZero();
-  // need to re-compute jacobians
-  for (auto f : max_inliers) {
     f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
                        X_.bg, X_.Vsb, X_.td, err_);
   }
-  return max_inliers;
+
+  // create a vector for output
+  std::vector<FeaturePtr> output;
+  output.insert(output.end(), max_inliers.begin(), max_inliers.end());
+  return output;
 }
 
 } // namespace xivo

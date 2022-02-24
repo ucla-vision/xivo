@@ -15,7 +15,8 @@ public:
 
   ATANCamera(int rows, int cols, T fx, T fy, T cx, T cy, T w)
       : BaseCamera<T, ATANCamera<T>>{rows, cols, fx, fy, cx, cy}, w_(w),
-        invw_(1.0 / w), w2_(2.0 * std::tan(w * 0.5)) {}
+        invw_(1.0 / w), w2_(2.0 * std::tan(w * 0.5)),
+        w0_{0.0}, invw0_{0.0}, w20_{0.0} {}
 
   template <typename Derived>
   Eigen::Matrix<typename Derived::Scalar, 2, 1> Project(
@@ -141,6 +142,20 @@ public:
 
   DistortionType GetDistortionType() { return DistortionType::ATAN; }
 
+  void BackupState() {
+    MyBase::BackupState();
+    w0_ = w_;
+    invw0_ = invw_;
+    w20_ = w2_;
+  }
+
+  void RestoreState() {
+    MyBase::RestoreState();
+    w_ = w0_;
+    invw_ = invw0_;
+    w2_ = w20_;
+  }
+
 
 protected:
   using MyBase::rows_;
@@ -151,6 +166,9 @@ protected:
   using MyBase::cy_;
 
   T w_, invw_, w2_;
+
+  // backup states
+  T w0_, invw0_, w20_;
 };
 
 } // namespace xivo

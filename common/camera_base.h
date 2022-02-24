@@ -21,7 +21,8 @@ template <typename T, typename D> class BaseCamera {
 public:
   // constructor
   BaseCamera(int rows, int cols, T fx, T fy, T cx, T cy)
-      : rows_{rows}, cols_{cols}, fx_{fx}, fy_{fy}, cx_{cx}, cy_{cy} {}
+      : rows_{rows}, cols_{cols}, fx_{fx}, fy_{fy}, cx_{cx}, cy_{cy},
+        fx0_{0.0}, fy0_{0.0}, cx0_{0.0}, cy0_{0.0} {}
 
   // copy constructor & assignment
   BaseCamera &operator=(const BaseCamera &) = default;
@@ -76,9 +77,26 @@ public:
   T fx() const { return fx_; }
   T fy() const { return fy_; }
 
+  void BackupState() {
+    fx0_ = fx_;
+    fy0_ = fy_;
+    cx0_ = cx_;
+    cy0_ = cy_;
+  }
+
+  void RestoreState() {
+    fx_ = fx0_;
+    fy_ = fy0_;
+    cx_ = cx0_;
+    cy_ = cy0_;
+  }
+
 protected:
   int rows_, cols_;
   T fx_, fy_, cx_, cy_;
+
+  // backup states (for things like 1-pt RANSAC)
+  T fx0_, fy0_, cx0_, cy0_;
 };
 
 // check whether a given point is out of view.

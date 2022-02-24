@@ -81,7 +81,8 @@ Estimator::~Estimator() {
 }
 
 Estimator::Estimator(const Json::Value &cfg)
-    : cfg_{cfg}, gauge_group_{-1}, worker_{nullptr}, timer_{"estimator"} {
+    : cfg_{cfg}, gauge_group_{-1}, worker_{nullptr}, timer_{"estimator"},
+      gauge_group_ptr_{nullptr} {
 
   // /////////////////////////////
   // Component flags
@@ -1071,16 +1072,34 @@ void Estimator::DestroyFeatures(const std::vector<FeaturePtr> &destroys) {
 }
 
 void Estimator::SwitchRefGroup() {
-  auto candidates =
-      Graph::instance()->GetGroupsIf([](GroupPtr g) -> bool { return g->instate(); });
+  auto candidates = Graph::instance()->GetInstateGroups();
   if (!candidates.empty()) {
     // FIXME: in addition to the variance, also take account of the number of
     // instate features
     // associated with the group -- for an efficient implementation, use a
     // decorator to get the
     // "number of instate features" attribute first
-    auto git =
-        std::min_element(candidates.begin(), candidates.end(),
+    GroupPtr g = FindNewRefGroup(candidates);
+
+    // reset new gauge group
+    //GroupPtr g{*git};
+    gauge_group_ptr_ = g;
+    gauge_group_ = g->id();
+    g->SetStatus(GroupStatus::GAUGE);
+    VLOG(0) << "gauge group #" << gauge_group_ << " selected";
+    // std::cout << "gauge group #" << gauge_group_ << " selected";
+
+    // now fix covariance of the new gauge group. This prevents the group's
+    // state from changing.
+    int offset = kGroupBegin + 6 * g->sind();
+    P_.block(offset, 0, 6, err_.size()).setZero();
+    P_.block(0, offset, err_.size(), 6).setZero();
+  }
+}
+
+
+GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr>&candidates) {
+  auto git = std::min_element(candidates.begin(), candidates.end(),
                          [this](const GroupPtr g1, const GroupPtr g2) -> bool {
                            int offset1 = kGroupBegin + 6 * g1->sind();
                            int offset2 = kGroupBegin + 6 * g2->sind();
@@ -1091,20 +1110,50 @@ void Estimator::SwitchRefGroup() {
                            }
                            return cov1 < cov2;
                          });
-
-    // reset new gauge group
-    GroupPtr g{*git};
-    gauge_group_ = g->id();
-    VLOG(0) << "gauge group #" << gauge_group_ << " selected";
-    // std::cout << "gauge group #" << gauge_group_ << " selected";
-
-    // now fix covariance of the new gauge group
-    int offset = kGroupBegin + 6 * g->sind();
-    P_.block(offset, 0, 6, err_.size()).setZero();
-    P_.block(0, offset, err_.size(), 6).setZero();
-  }
+  return *git;
 }
 
+
+void Estimator::BackupState(std::unordered_set<FeaturePtr>& features,
+                            std::unordered_set<GroupPtr>& groups)
+{
+  X0_ = X_;
+  P0_ = P_;
+  for (auto g : groups) {
+    g->BackupState();
+  }
+  for (auto f : features) {
+    f->BackupState();
+  }
+#ifdef USE_ONLINE_IMU_CALIB
+  imu_.BackupState();
+#endif
+
+#ifdef USE_ONLINE_CAMERA_CALIB
+  Camera::instance()->BackupState();
+#endif
+}
+
+
+void Estimator::RestoreState(std::unordered_set<FeaturePtr>& features,
+                            std::unordered_set<GroupPtr>& groups)
+{
+  X_ = X0_;
+  P_ = P0_;
+  for (auto f : features) {
+    f->RestoreState();
+  }
+  for (auto g : groups) {
+    g->RestoreState();
+  }
+#ifdef USE_ONLINE_IMU_CALIB
+  imu_.RestoreState();
+#endif
+
+#ifdef USE_ONLINE_CAMERA_CALIB
+  Camera::instance()->RestoreState();
+#endif
+}
 
 VecXi Estimator::InstateFeatureSinds(int n_output) const {
 

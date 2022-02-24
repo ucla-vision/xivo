@@ -17,7 +17,8 @@ public:
   EquidistantCamera(int rows, int cols, T fx, T fy, T cx, T cy, T k0, T k1,
                     T k2, T k3, int max_iter = 15)
       : BaseCamera<T, EquidistantCamera<T>>{rows, cols, fx, fy, cx, cy},
-        k0_{k0}, k1_{k1}, k2_{k2}, k3_{k3}, max_iter_{max_iter} {}
+        k0_{k0}, k1_{k1}, k2_{k2}, k3_{k3}, max_iter_{max_iter},
+        k00_{0.0}, k10_{0.0}, k20_{0.0}, k30_{0.0} {}
 
   template <typename Derived>
   Eigen::Matrix<typename Derived::Scalar, 2, 1> Project(
@@ -173,6 +174,22 @@ public:
 
   DistortionType GetDistortionType() { return DistortionType::EQUI; }
 
+  void BackupState() {
+    MyBase::BackupState();
+    k00_ = k0_;
+    k10_ = k1_;
+    k20_ = k2_;
+    k30_ = k3_;
+  }
+
+  void RestoreState() {
+    MyBase::RestoreState();
+    k0_ = k00_;
+    k1_ = k10_;
+    k2_ = k20_;
+    k3_ = k30_;
+  }
+
 protected:
   using MyBase::rows_;
   using MyBase::cols_;
@@ -183,6 +200,9 @@ protected:
 
   T k0_, k1_, k2_, k3_;
   int max_iter_;
+
+  // backup states
+  T k00_, k10_, k20_, k30_;
 };
 
 } // namespace xivo
