@@ -190,9 +190,12 @@ Vec3 L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
     m1_prime = m1 - (m1.dot(n0_hat)) * n0_hat;
   }
 
-  Vec3 z = m1_prime.cross(m0_prime);
+  Vec3 Rf0_prime = m0_prime;
+  Vec3 f1_prime = m1_prime;
 
-  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
+  Vec3 z = f1_prime.cross(Rf0_prime);
+
+  Vec3 x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   return x;
 }
@@ -236,11 +239,12 @@ Vec3 L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
   Vec3 m0_prime = m0 - m0.dot(n_prime_hat) * n_prime_hat;
   Vec3 m1_prime = m1 - m1.dot(n_prime_hat) * n_prime_hat;
 
-  Vec3 z = m1_prime.cross(m0_prime);
+  Vec3 Rf0_prime = m0_prime;
+  Vec3 f1_prime = m1_prime;
 
-  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(),2)) * m1_prime;
+  Vec3 z = f1_prime.cross(Rf0_prime);
 
-  // Vec3 x1 = R12 * x + t12;
+  Vec3 x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   return x;
 }
@@ -273,15 +277,16 @@ Vec3 LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
   Vec3 m0_prime = m0 - m0.dot(n_prime_hat) * n_prime_hat;
   Vec3 m1_prime = m1 - m1.dot(n_prime_hat) * n_prime_hat;
 
-  Vec3 z = m1_prime.cross(m0_prime);
+  Vec3 Rf0_prime = m0_prime;
+  Vec3 f1_prime = m1_prime;
 
-  check_cheirality(z, t21, m1_prime, m0_prime);
-  check_angular_reprojection(m0, m0_prime, m1, m1_prime);
-  check_parallax(m0_prime, m1_prime);
+  Vec3 z = f1_prime.cross(Rf0_prime);
 
-  Vec3 x = ((z.dot(t21.cross(m0_prime))) / pow(z.norm(), 2)) * m1_prime;
+  // check_cheirality(z, t21, m1_prime, m0_prime);
+  // check_angular_reprojection(m0, m0_prime, m1, m1_prime);
+  // check_parallax(m0_prime, m1_prime);
 
-  // Vec3 x1 = R12 * x + t12;
+  Vec3 x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   return x;
 }

@@ -703,6 +703,8 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 
   Vec3 Xc1;
 
+  // std::cout << options.max_theta_thresh << " " << options.beta_thesh << std::endl;
+
   if(options.method == "l1_reproject")
   {
     Xc1 = Triangulate1(g12, xc1, xc2);

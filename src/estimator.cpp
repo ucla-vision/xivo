@@ -139,6 +139,8 @@ Estimator::Estimator(const Json::Value &cfg)
   triangulate_options_.zmin =
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();
+  triangulate_options_.max_theta_thresh = cfg_["triangulation"].get("max_theta_thresh", 0.01).asDouble();
+  triangulate_options_.beta_thesh = cfg_["triangulation"].get("beta_thesh", 1e-8).asDouble();
 
   remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
 
