@@ -11,11 +11,11 @@ bool Criteria::Candidate(FeaturePtr f) {
   ParameterServer& P{*ParameterServer::instance()};
   number_t zmin = P.get("min_depth", 0.05).asDouble();
   number_t zmax = P.get("max_depth", 5.0).asDouble();
+  number_t max_subfilter_outlier = P.get("max_subfilter_outlier", 0.01).asDouble();
 
-  number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
   bool good = (f->status() == FeatureStatus::READY ||
           f->status() == FeatureStatus::INITIALIZING) &&
-         (f->outlier_counter() < max_outlier_counter);
+         (f->outlier_counter() < max_subfilter_outlier);
   good = good && (f->z() > zmin && f->z() < zmax);
   return good;
 }
@@ -24,10 +24,10 @@ bool Criteria::CandidateStrict(FeaturePtr f) {
   ParameterServer& P{*ParameterServer::instance()};
   number_t zmin = P.get("min_depth", 0.05).asDouble();
   number_t zmax = P.get("max_depth", 5.0).asDouble();
+  number_t max_subfilter_outlier = P.get("max_subfilter_outlier", 0.01).asDouble();
 
-  number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
   bool good = f->status() == FeatureStatus::READY &&
-         (f->outlier_counter() < max_outlier_counter);
+         (f->outlier_counter() < max_subfilter_outlier);
   good = good && (f->z() > zmin && f->z() < zmax);
   return good;
 }
