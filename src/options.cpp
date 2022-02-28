@@ -3,25 +3,32 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include "options.h"
 #include "feature.h"
+#include "param.h"
 
 namespace xivo {
 
 bool Criteria::Candidate(FeaturePtr f) {
+  ParameterServer& P{*ParameterServer::instance()};
+  number_t zmin = P.get("min_depth", 0.05).asDouble();
+  number_t zmax = P.get("max_depth", 5.0).asDouble();
+
   number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
   bool good = (f->status() == FeatureStatus::READY ||
           f->status() == FeatureStatus::INITIALIZING) &&
          (f->outlier_counter() < max_outlier_counter);
-  // FIXME: use zmin, zmax parameters
-  good = good && (f->z() > 0.05 && f->z() < 5.0);
+  good = good && (f->z() > zmin && f->z() < zmax);
   return good;
 }
 
 bool Criteria::CandidateStrict(FeaturePtr f) {
+  ParameterServer& P{*ParameterServer::instance()};
+  number_t zmin = P.get("min_depth", 0.05).asDouble();
+  number_t zmax = P.get("max_depth", 5.0).asDouble();
+
   number_t max_outlier_counter{0.01}; // FIXME (xfei): make a parameter
   bool good = f->status() == FeatureStatus::READY &&
          (f->outlier_counter() < max_outlier_counter);
-  // FIXME: use zmin, zmax parameters
-  good = good && (f->z() > 0.05 && f->z() < 5.0);
+  good = good && (f->z() > zmin && f->z() < zmax);
   return good;
 }
 
