@@ -130,26 +130,22 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     std::vector<FeaturePtr> bad_features;
 
     for (auto it = candidates.begin();
-        it != candidates.end() && instate_features_.size() < kMaxFeature;) {
+         it != candidates.end() && instate_features_.size() < kMaxFeature;
+         ++it) {
 
       auto f = *it;
 
       if (use_depth_opt_) {
         auto obs = graph.GetObservationsOf(f);
         if (obs.size() > 1) {
-          if (f->RefineDepth(gbc(), obs, refinement_options_)) {
-            ++it;
-          } else {
+          if (!f->RefineDepth(gbc(), obs, refinement_options_)) {
             bad_features.push_back(f);
-            it = candidates.erase(it);
             continue;
           }
-        } else {
-          // FIXME: if not observation, should also skip
-          ++it;
         }
-      } else {
-        ++it;
+        else if (obs.size() == 0) {
+          LOG(ERROR) << "A feature with no observations should not be a candidate";
+        }
       }
 
       if (!f->ref()->instate() && free_slots <= 0) {
