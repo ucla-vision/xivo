@@ -42,7 +42,10 @@ struct Criteria {
   // how good is the feature to be an instate candidate
   static bool Candidate(FeaturePtr f);
   static bool CandidateStrict(FeaturePtr f);
-  // return true if f1 is considered a better candidate than f2
+
+  // Feature Comparison function: used to sort features
+  // when selecting to move into the main state. Returns True when `f1` has
+  // a higher (better) score than `f2`.
   static bool CandidateComparison(FeaturePtr f1, FeaturePtr f2);
 };
 

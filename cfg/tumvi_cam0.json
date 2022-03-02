@@ -113,6 +113,10 @@
   "initial_std_z": 1.0,  // initial std on subfilter state (meter)
   "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
+  "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
+                                  // looser criteria for admitting features to
+                                  // the state
+  "comparison_score_type": "CovarianceDiagNormPlusOutlierCount",
  
   "visual_meas_std":  1.5, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,

@@ -120,7 +120,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     // choose the instate-candidate criterion
     auto criterion =
-      vision_counter_ < 5 ? Criteria::Candidate : Criteria::CandidateStrict;
+      vision_counter_ < strict_criteria_timesteps_ ? Criteria::Candidate
+                                                   : Criteria::CandidateStrict;
     auto candidates = graph.GetFeaturesIf(criterion);
 
     MakePtrVectorUnique(candidates);

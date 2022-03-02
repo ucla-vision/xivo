@@ -326,6 +326,7 @@ Estimator::Estimator(const Json::Value &cfg)
   outlier_thresh_ = cfg_.get("outlier_thresh", 1.1).asDouble();
   feature_owner_change_cov_factor_ =
     cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
+  strict_criteria_timesteps_ = cfg_.get("strict_criteria_timesteps", 5).asInt();
 
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();

@@ -388,6 +388,7 @@ private:
 
   bool gravity_initialized_, vision_initialized_;
   int imu_counter_, vision_counter_;
+  int strict_criteria_timesteps_;
 
   // How much to inflate covariance of features after a group ownership change
   number_t feature_owner_change_cov_factor_;
