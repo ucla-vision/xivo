@@ -233,6 +233,10 @@ private:
   Estimator(const Json::Value &cfg);
   static std::unique_ptr<Estimator> instance_;
 
+  Mat3 InstateFeatureCov(FeaturePtr f) const;
+  Mat6 InstateGroupCov(GroupPtr g) const;
+  bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
+
 private:
   std::vector<FeaturePtr> instate_features_; ///< in-state features
   std::vector<FeaturePtr> oos_features_;     ///< out-of-state features
