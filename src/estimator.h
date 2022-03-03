@@ -233,6 +233,10 @@ private:
   Estimator(const Json::Value &cfg);
   static std::unique_ptr<Estimator> instance_;
 
+  Mat3 InstateFeatureCov(FeaturePtr f) const;
+  Mat6 InstateGroupCov(GroupPtr g) const;
+  bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
+
 private:
   std::vector<FeaturePtr> instate_features_; ///< in-state features
   std::vector<FeaturePtr> oos_features_;     ///< out-of-state features
@@ -268,6 +272,7 @@ private:
   SubfilterOptions subfilter_options_;   // depth-subfilter options
   bool triangulate_pre_subfilter_; // depth triangulation before depth subfilter
   TriangulateOptions triangulate_options_;
+  AdaptiveInitialDepthOptions adaptive_initial_depth_options_;
 
   /** Minimum number of steps a feature is an outlier before it is removed */
   int remove_outlier_counter_;
@@ -388,6 +393,7 @@ private:
 
   bool gravity_initialized_, vision_initialized_;
   int imu_counter_, vision_counter_;
+  int strict_criteria_timesteps_;
 
   // How much to inflate covariance of features after a group ownership change
   number_t feature_owner_change_cov_factor_;

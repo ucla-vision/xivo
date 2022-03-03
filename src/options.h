@@ -38,11 +38,21 @@ struct TriangulateOptions {
   number_t zmin, zmax;
 };
 
+// Options for adaptive initial depth estimation
+struct AdaptiveInitialDepthOptions {
+  AdaptiveInitialDepthOptions() : median_weight{0.99}, min_feature_lifetime{5} {}
+  number_t median_weight;
+  int min_feature_lifetime;
+};
+
 struct Criteria {
   // how good is the feature to be an instate candidate
   static bool Candidate(FeaturePtr f);
   static bool CandidateStrict(FeaturePtr f);
-  // return true if f1 is considered a better candidate than f2
+
+  // Feature Comparison function: used to sort features
+  // when selecting to move into the main state. Returns True when `f1` has
+  // a higher (better) score than `f2`.
   static bool CandidateComparison(FeaturePtr f1, FeaturePtr f2);
 };
 

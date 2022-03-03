@@ -141,6 +141,11 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();
 
+  adaptive_initial_depth_options_.median_weight =
+    cfg_["adaptive_initial_depth"].get("median_weight", 0.99).asDouble();
+  adaptive_initial_depth_options_.min_feature_lifetime =
+    cfg_["adaptive_initial_depth"].get("minimum_feature_lifetime", 5).asInt();
+
   remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
 
   // load imu calibration
@@ -326,6 +331,7 @@ Estimator::Estimator(const Json::Value &cfg)
   outlier_thresh_ = cfg_.get("outlier_thresh", 1.1).asDouble();
   feature_owner_change_cov_factor_ =
     cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
+  strict_criteria_timesteps_ = cfg_.get("strict_criteria_timesteps", 5).asInt();
 
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
@@ -1161,16 +1167,15 @@ VecXi Estimator::InstateFeatureSinds(int n_output) const {
   Graph& graph{*Graph::instance()};
 
   // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by subfilter depth uncertainty. (anything else takes
-  // computation and more time)
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
-            Criteria::CandidateComparison);
+            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
+              return FeatureCovComparison(f1, f2);
+            });
 
   //std::vector<int> FeatureIDs;
   VecXi FeatureSinds(npts);
@@ -1193,16 +1198,15 @@ VecXi Estimator::InstateFeatureIDs(int n_output) const {
   Graph& graph{*Graph::instance()};
 
   // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by subfilter depth uncertainty. (anything else takes
-  // computation and more time)
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
-            Criteria::CandidateComparison);
+            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
+              return FeatureCovComparison(f1, f2);
+            });
 
   //std::vector<int> FeatureIDs;
   VecXi FeatureIDs(npts);
@@ -1226,16 +1230,15 @@ MatX3 Estimator::InstateFeaturePositions(int n_output) const {
   Graph& graph{*Graph::instance()};
 
   // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by subfilter depth uncertainty. (anything else takes
-  // computation and more time)
+  // Sort features by uncertainty 
   std::sort(instate_features.begin(), instate_features.end(),
-            Criteria::CandidateComparison);
+            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
+              return FeatureCovComparison(f1, f2);
+            });
 
   MatX3 feature_positions(npts,3);
 
@@ -1261,16 +1264,15 @@ MatX3 Estimator::InstateFeatureXc(int n_output) const {
   Graph& graph{*Graph::instance()};
 
   // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by subfilter depth uncertainty. (anything else takes
-  // computation and more time)
+  // Sort features by uncertainty 
   std::sort(instate_features.begin(), instate_features.end(),
-            Criteria::CandidateComparison);
+            [this](FeaturePtr f1, FeaturePtr f2) {
+              return FeatureCovComparison(f1, f2);
+            });
 
   MatX3 feature_positions(npts,3);
 
@@ -1295,16 +1297,15 @@ MatX6 Estimator::InstateFeatureCovs(int n_output) const {
   Graph& graph{*Graph::instance()};
 
   // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by subfilter depth uncertainty. (anything else takes
-  // computation and more time)
+  // Sort features by uncertainty 
   std::sort(instate_features.begin(), instate_features.end(),
-            Criteria::CandidateComparison);
+            [this](FeaturePtr f1, FeaturePtr f2) {
+              return FeatureCovComparison(f1, f2);
+            });
 
   MatX6 feature_covs(npts,6);
 
@@ -1335,16 +1336,15 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
   Graph& graph{*Graph::instance()};
 
   // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetFeaturesIf(
-    [](FeaturePtr f) -> bool { return f->status() == FeatureStatus::INSTATE;}
-  );
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
   MakePtrVectorUnique(instate_features);
   npts = std::min((int) instate_features.size(), max_output);
 
-  // Sort features by subfilter depth uncertainty. (anything else takes
-  // computation and more time)
+  // Sort features by uncertainty so we grab the "best" features 
   std::sort(instate_features.begin(), instate_features.end(),
-            Criteria::CandidateComparison);
+            [this](FeaturePtr f1, FeaturePtr f2) {
+              return FeatureCovComparison(f1, f2);
+            });
 
   feature_positions.resize(npts,3);
   feature_covs.resize(npts,6);
@@ -1567,8 +1567,7 @@ MatX Estimator::InstateGroupCovs() const
        it != instate_groups_.end() && i < num_groups;
        ) {
     GroupPtr g = *it;
-    int goff = kGroupBegin + 6*g->sind();
-    Mat6 cov = P_.block<6,6>(goff, goff);
+    Mat6 cov = InstateGroupCov(g);
 
     int cnt;
     for (int ii = 0; ii<6; ii++) {
@@ -1585,6 +1584,31 @@ MatX Estimator::InstateGroupCovs() const
 
   return group_covs;
 
+}
+
+
+
+Mat3 Estimator::InstateFeatureCov(FeaturePtr f) const {
+#ifndef NDEBUG
+  CHECK(f->instate());
+#endif
+  int foff = kFeatureBegin + 3*f->sind();
+  return P_.block<3,3>(foff, foff);
+}
+
+Mat6 Estimator::InstateGroupCov(GroupPtr g) const {
+#ifndef NDEBUG
+  CHECK(g->instate());
+#endif
+  int goff = kGroupBegin + 6*g->sind();
+  return P_.block<6,6>(goff, goff);
+}
+
+
+bool Estimator::FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const {
+  number_t score1 = InstateFeatureCov(f1).norm();
+  number_t score2 = InstateFeatureCov(f2).norm();
+  return (score1 <= score2);
 }
 
 

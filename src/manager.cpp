@@ -120,7 +120,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     // choose the instate-candidate criterion
     auto criterion =
-      vision_counter_ < 5 ? Criteria::Candidate : Criteria::CandidateStrict;
+      vision_counter_ < strict_criteria_timesteps_ ? Criteria::Candidate
+                                                   : Criteria::CandidateStrict;
     auto candidates = graph.GetFeaturesIf(criterion);
 
     MakePtrVectorUnique(candidates);
@@ -130,26 +131,22 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     std::vector<FeaturePtr> bad_features;
 
     for (auto it = candidates.begin();
-        it != candidates.end() && instate_features_.size() < kMaxFeature;) {
+         it != candidates.end() && instate_features_.size() < kMaxFeature;
+         ++it) {
 
       auto f = *it;
 
       if (use_depth_opt_) {
         auto obs = graph.GetObservationsOf(f);
         if (obs.size() > 1) {
-          if (f->RefineDepth(gbc(), obs, refinement_options_)) {
-            ++it;
-          } else {
+          if (!f->RefineDepth(gbc(), obs, refinement_options_)) {
             bad_features.push_back(f);
-            it = candidates.erase(it);
             continue;
           }
-        } else {
-          // FIXME: if not observation, should also skip
-          ++it;
         }
-      } else {
-        ++it;
+        else if (obs.size() == 0) {
+          LOG(ERROR) << "A feature with no observations should not be a candidate";
+        }
       }
 
       if (!f->ref()->instate() && free_slots <= 0) {
@@ -341,7 +338,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // adapt initial depth to average depth of features currently visible
   auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
     return f->status() == FeatureStatus::INSTATE ||
-           (f->status() == FeatureStatus::READY && f->lifetime() > 5);
+           (f->status() == FeatureStatus::READY &&
+            f->lifetime() > adaptive_initial_depth_options_.min_feature_lifetime);
   });
   if (!depth_features.empty()) {
     std::vector<number_t> depth(depth_features.size());
@@ -353,8 +351,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       VLOG(0) << "Median depth out of bounds: " << median_depth;
       VLOG(0) << "Reuse the old one: " << init_z_;
     } else {
-      // init_z_ = median_depth;
-      init_z_ = 0.01 * init_z_ + 0.99 * median_depth;
+      number_t beta = adaptive_initial_depth_options_.median_weight;
+      init_z_ = (1.0-beta) * init_z_ + beta * median_depth;
       VLOG(0) << "Update aptive initial depth: " << init_z_;
     }
   }

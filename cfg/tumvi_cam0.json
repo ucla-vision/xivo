@@ -106,18 +106,29 @@
   },
 
 
-  // initial std on feature state
-  "initial_z": 2.5, // meter
-  "initial_std_x": 1.0, // pixel
-  "initial_std_y": 1.0, // pixel
-  "initial_std_z": 1.0,  // meter
-
-  // std of visuale measurement, in pixels
-  "visual_meas_std":  1.5,
+  // Feature initialization parameters
+  "initial_z": 2.5, // initial subfilter depth value (meter)
+  "initial_std_x": 1.0, // initial std on subfilter state (pixel)
+  "initial_std_y": 1.0, // initial std on subfilter state (pixel)
+  "initial_std_z": 1.0,  // initial std on subfilter state (meter)
+  "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
+                                 // for feature to be in main filter
+  "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
+                                  // looser criteria for admitting features to
+                                  // the state
+  "comparison_score_type": "DepthUncertainty",
+ 
+  "visual_meas_std":  1.5, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 5.0,
   "min_depth": 0.05,
+
+  // Adaptive initial depth
+  "adaptive_initial_depth": {
+    "median_weight": 0.99,
+    "minimum_feature_lifetime": 5
+  },
 
   // Loop closure measurement, in pixels
   "loop_closure_meas_std": 4.0,
@@ -264,7 +275,7 @@
   },
 
   "mapper_cfg": {
-    "detectLoopClosures": true,
+    "detectLoopClosures": false,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
     "nn_dist_thresh": 20.0,
