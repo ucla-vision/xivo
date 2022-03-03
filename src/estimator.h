@@ -272,6 +272,7 @@ private:
   SubfilterOptions subfilter_options_;   // depth-subfilter options
   bool triangulate_pre_subfilter_; // depth triangulation before depth subfilter
   TriangulateOptions triangulate_options_;
+  AdaptiveInitialDepthOptions adaptive_initial_depth_options_;
 
   /** Minimum number of steps a feature is an outlier before it is removed */
   int remove_outlier_counter_;

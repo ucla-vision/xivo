@@ -338,7 +338,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // adapt initial depth to average depth of features currently visible
   auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
     return f->status() == FeatureStatus::INSTATE ||
-           (f->status() == FeatureStatus::READY && f->lifetime() > 5);
+           (f->status() == FeatureStatus::READY &&
+            f->lifetime() > adaptive_initial_depth_options_.min_feature_lifetime);
   });
   if (!depth_features.empty()) {
     std::vector<number_t> depth(depth_features.size());
@@ -350,8 +351,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       VLOG(0) << "Median depth out of bounds: " << median_depth;
       VLOG(0) << "Reuse the old one: " << init_z_;
     } else {
-      // init_z_ = median_depth;
-      init_z_ = 0.01 * init_z_ + 0.99 * median_depth;
+      number_t beta = adaptive_initial_depth_options_.median_weight;
+      init_z_ = (1.0-beta) * init_z_ + beta * median_depth;
       VLOG(0) << "Update aptive initial depth: " << init_z_;
     }
   }

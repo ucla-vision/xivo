@@ -126,6 +126,12 @@
   "max_depth": 8.0,
   "min_depth": 0.05,
 
+  // Adaptive initial depth
+  "adaptive_initial_depth": {
+    "median_weight": 0.99,
+    "minimum_feature_lifetime": 5
+  },
+
   // Loop closure measurement
   "loop_closure_meas_std": 4.0,
 

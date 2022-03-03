@@ -141,6 +141,11 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();
 
+  adaptive_initial_depth_options_.median_weight =
+    cfg_["adaptive_initial_depth"].get("median_weight", 0.99).asDouble();
+  adaptive_initial_depth_options_.min_feature_lifetime =
+    cfg_["adaptive_initial_depth"].get("minimum_feature_lifetime", 5).asInt();
+
   remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
 
   // load imu calibration

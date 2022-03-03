@@ -38,6 +38,13 @@ struct TriangulateOptions {
   number_t zmin, zmax;
 };
 
+// Options for adaptive initial depth estimation
+struct AdaptiveInitialDepthOptions {
+  AdaptiveInitialDepthOptions() : median_weight{0.99}, min_feature_lifetime{5} {}
+  number_t median_weight;
+  int min_feature_lifetime;
+};
+
 struct Criteria {
   // how good is the feature to be an instate candidate
   static bool Candidate(FeaturePtr f);
