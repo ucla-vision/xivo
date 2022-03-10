@@ -200,7 +200,7 @@
     "num_features_max": 60,
     "max_pixel_displacement": 64,
     "normalize": false,
-    "match_dropped_tracks": false,
+    "match_dropped_tracks": true,
 
     "KLT": {
       "win_size": 15,

@@ -90,13 +90,13 @@ private:
   // Matching newly detected tracks to tracks that were just dropped
   bool match_dropped_tracks_;
   std::vector<FeaturePtr> newly_dropped_tracks_;
+  std::unordered_set<FeaturePtr> newly_dropped_tracks_hlpr_;
   cv::Ptr<cv::BFMatcher> matcher_;
 
 private:
   void Detect(const cv::Mat &img, int num_to_add);
 
-  bool FindMatchInDroppedTracks(cv::Mat new_feature_descriptor,
-    FeaturePtr *output_match);
+  number_t MedianFeatureMovement();
 };
 
 // helpers

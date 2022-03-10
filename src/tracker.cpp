@@ -2,6 +2,7 @@
 // Multi-scale Lucas-Kanade tracker from OpenCV.
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #include <fstream>
+#include <algorithm>
 
 #include "glog/logging.h"
 #include "opencv2/video/video.hpp"
@@ -134,10 +135,46 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
     throw std::invalid_argument("must extract descriptors in order to match dropped tracks");
   }
   if (match_dropped_tracks_) {
-    matcher_ = cv::BFMatcher::create(cv::DescriptorMatcher::BRUTEFORCE_HAMMING, true);
+    // The number of dropped tracks to match should not be that large, so
+    // using Brute-Force matcher instead of FLANN-based matcher.
+    matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
   }
 }
 
+
+number_t Tracker::MedianFeatureMovement() {
+  std::vector<number_t> distances;
+  number_t median_dist;
+
+  for (auto f: features_) {
+    if (newly_dropped_tracks_hlpr_.count(f) == 0) {
+      Vec2 pos1 = f->back();
+      Vec2 pos0 = f->at(f->size() - 2);
+      distances.push_back((pos0 - pos1).norm());
+    }
+  }
+
+  if (distances.size() == 0) {
+    median_dist = 1000;
+  }
+  else if ((distances.size() % 2) == 0) {
+    int idx1 = int(distances.size()/2);
+    int idx2 = int(distances.size()/2) + 1;
+    auto m1 = distances.begin() + idx1;
+    auto m2 = distances.begin() + idx2;
+    std::nth_element(distances.begin(), m1, distances.end());
+    std::nth_element(distances.begin(), m2, distances.end());
+    median_dist = 0.5 * (distances[idx1] + distances[idx2]);
+  }
+  else {
+    int idx = int(distances.size()/2);
+    auto m = distances.begin() + idx;
+    std::nth_element(distances.begin(), m, distances.end());
+    median_dist = distances[idx];
+  }
+
+  return median_dist;
+}
 
 
 void Tracker::Detect(const cv::Mat &img, int num_to_add) {
@@ -170,26 +207,33 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   if (match_dropped_tracks_ && (newly_dropped_tracks_.size() > 0)) {
 
     // Get matrix of old descriptors
-    cv::Mat newly_dropped_descriptors(newly_dropped_tracks_.size(), 64, CV_8UC1);
+    cv::Mat newly_dropped_descriptors(newly_dropped_tracks_.size(),
+                                      extractor_->descriptorSize(),
+                                      extractor_->descriptorType());
     int i = 0;
     for (auto f: newly_dropped_tracks_) {
       newly_dropped_descriptors.row(i) = f->descriptor();
       i++;
     }
 
-    // k-nearest neighbor match
+    // Radius match - furthest allowed distance is twice the max distance
+    // between matches that weren't rejected.
     // query = newly-dropped descriptors
     // train = just-found descriptors
-    std::vector<std::vector<cv::DMatch>> knn_matches;
-    matcher_->knnMatch(newly_dropped_descriptors, descriptors, knn_matches, 1);
-
-    for (int i=0; i<knn_matches.size(); i++) {
-      if (knn_matches[i].size() > 0) {
-        matched[knn_matches[i][0].trainIdx] = true;
-        matchIdx[knn_matches[i][0].trainIdx] = knn_matches[i][0].queryIdx;
+    number_t max_distance = MedianFeatureMovement();
+    std::cout << "median movement:" << max_distance << std::endl;
+    std::vector<std::vector<cv::DMatch>> matches;
+    if (max_distance > 0.01) {
+      matcher_->radiusMatch(newly_dropped_descriptors, descriptors, matches,
+                            2*max_distance);
+      for (int i=0; i<matches.size(); i++) {
+        if (matches[i].size() > 0) {
+          cv::DMatch D = matches[i][0];
+          matched[D.trainIdx] = true;
+          matchIdx[D.trainIdx] = D.queryIdx;
+        }
       }
     }
-
   }
 
   // collect keypoints
@@ -339,6 +383,7 @@ void Tracker::Update(const cv::Mat &image) {
 
   // Clear list of newly dropped tracks from last time
   newly_dropped_tracks_.clear();
+  newly_dropped_tracks_hlpr_.clear();
 
   for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
     FeaturePtr f(*it);
@@ -351,18 +396,17 @@ void Tracker::Update(const cv::Mat &image) {
         // update track status
         f->SetTrackStatus(TrackStatus::TRACKED);
         f->UpdateTrack(pts1[i].x, pts1[i].y);
-        // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
         MaskOut(mask_, pts1[i].x, pts1[i].y, mask_size_);
         ++num_valid_features;
       } else {
         // failed to extract descriptors or invalid mask
         newly_dropped_tracks_.push_back(f);
-        // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
+        newly_dropped_tracks_hlpr_.insert(f);
       }
     } else {
       // failed to track, reject
       newly_dropped_tracks_.push_back(f);
-      // MaskOut(mask_, last_pos(0), last_pos(1), mask_size_);
+      newly_dropped_tracks_hlpr_.insert(f);
     }
   }
 
