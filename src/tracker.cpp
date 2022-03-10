@@ -72,6 +72,20 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
         detector_cfg.get("blockSize", 3).asInt(),
         detector_cfg.get("useHarrisDetector", false).asBool(),
         detector_cfg.get("k", 0.04).asDouble());
+  } else if (detector_type == "SIFT") {
+    detector_ = cv::SIFT::create(
+      detector_cfg.get("nfeatures", 0).asInt(),
+      detector_cfg.get("nOctaveLayers", 3).asInt(),
+      detector_cfg.get("contrastThreshold", 0.04).asDouble(),
+      detector_cfg.get("edgeThreshold", 10.0).asDouble(),
+      detector_cfg.get("sigma", 1.6).asDouble());
+  } else if (detector_type == "SURF") {
+    detector_ = cv::xfeatures2d::SURF::create(
+      detector_cfg.get("hessianThreshold", 100).asDouble(),
+      detector_cfg.get("nOctaves", 4).asInt(),
+      detector_cfg.get("nOctaveLayers", 3).asInt(),
+      detector_cfg.get("extended", false).asBool(),
+      detector_cfg.get("upright", false).asBool());
   } else {
     throw std::invalid_argument("unrecognized detector type");
   }
@@ -137,7 +151,7 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
 
   cv::Mat descriptors;
   if (extract_descriptor_) {
-    descriptors.reserveBuffer(kps.size() * 256);
+    descriptors.reserveBuffer(kps.size() * extractor_->descriptorSize());
     extractor_->compute(img, kps, descriptors);
   }
 
@@ -291,7 +305,7 @@ void Tracker::Update(const cv::Mat &image) {
   if (extract_descriptor_) {
     std::vector<FeaturePtr> vf{features_.begin(), features_.end()};
     kps.reserve(vf.size());
-    descriptors.reserveBuffer(vf.size() * 256);
+    descriptors.reserveBuffer(vf.size() * extractor_->descriptorSize());
     for (int i = 0; i < vf.size(); ++i) {
       auto f = vf[i];
       cv::KeyPoint kp =

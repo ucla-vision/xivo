@@ -261,6 +261,26 @@
       "k": 0.04
     },
 
+    "SIFT": {
+      // SIFT
+      // https://docs.opencv.org/3.4/d7/d60/classcv_1_1SIFT.html
+      "nfeatures": 0,
+      "nOctaveLayers": 2,
+      "contrastThreshold": 0.000,
+      "edgeThreshold": 500.0,
+      "sigma": 1.6
+    },
+
+    "SURF": {
+      // SURF
+      // https://docs.opencv.org/3.4/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html 
+      "hessianThreshold": 100,
+      "nOctaves": 1,
+      "nOctaveLayers": 2,
+      "extended": false,
+      "upright": false
+    },
+
     "BRIEF": {
       "bytes": 32,
       "use_orientation": false
