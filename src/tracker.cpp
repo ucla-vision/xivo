@@ -310,12 +310,12 @@ void Tracker::Update(const cv::Mat &image) {
             cv::norm(f->descriptor(), descriptors.row(i), cv::NORM_HAMMING);
         if (dist > descriptor_distance_thresh_) {
           status[i] = 0; // enforce to be dropped
+        } else {
+          f->SetDescriptor(descriptors.row(i));
         }
+      } else {
+        f->SetDescriptor(descriptors.row(i));
       }
-      // FIXME: so if the distance test fails, we probably do not want to update
-      // the descriptor
-      // set new descriptor
-      f->SetDescriptor(descriptors.row(i));
     }
   }
 
@@ -334,7 +334,6 @@ void Tracker::Update(const cv::Mat &image) {
       if (MaskValid(mask_, pts1[i].x, pts1[i].y) &&
           (last_pos - Vec2{pts1[i].x, pts1[i].y}).norm() <
               max_pixel_displacement_) {
-        // FIXME: SUPER HACK drop features to enforce update
         // update track status
         f->SetTrackStatus(TrackStatus::TRACKED);
         f->UpdateTrack(pts1[i].x, pts1[i].y);
