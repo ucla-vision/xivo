@@ -96,7 +96,6 @@ private:
 private:
   void Detect(const cv::Mat &img, int num_to_add);
 
-  number_t MedianFeatureMovement();
 };
 
 // helpers

@@ -69,6 +69,7 @@ void Estimator::Update() {
         } else {
           num_mh_rejected++;
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+          LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
         }
       }
       // relax the threshold
@@ -365,6 +366,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
           hi_inliers.push_back(f);
         } else {
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+          LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";
         }
       }
     }

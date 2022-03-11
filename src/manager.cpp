@@ -60,6 +60,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
       graph.RemoveFeature(f);
       if (f->instate()) {
+        LOG(INFO) << "Tracker rejected feature #" << f->id();
         RemoveFeatureFromState(f);
         affected_groups.insert(affected_group);
       }
@@ -288,6 +289,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   std::vector<FeaturePtr> nullref_features = FindNewOwnersForFeaturesOf(discards);
   DiscardFeatures(nullref_features);
   DiscardGroups(discards);
+  for (auto nf: nullref_features) {
+    LOG(INFO) << "Removed nullref feature " << nf->id();
+  }
 
   // initialize those newly detected featuers
   // create a new group and associate newly detected features to the new group

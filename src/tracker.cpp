@@ -142,41 +142,6 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
 }
 
 
-number_t Tracker::MedianFeatureMovement() {
-  std::vector<number_t> distances;
-  number_t median_dist;
-
-  for (auto f: features_) {
-    if (newly_dropped_tracks_hlpr_.count(f) == 0) {
-      Vec2 pos1 = f->back();
-      Vec2 pos0 = f->at(f->size() - 2);
-      distances.push_back((pos0 - pos1).norm());
-    }
-  }
-
-  if (distances.size() == 0) {
-    median_dist = 1000;
-  }
-  else if ((distances.size() % 2) == 0) {
-    int idx1 = int(distances.size()/2);
-    int idx2 = int(distances.size()/2) + 1;
-    auto m1 = distances.begin() + idx1;
-    auto m2 = distances.begin() + idx2;
-    std::nth_element(distances.begin(), m1, distances.end());
-    std::nth_element(distances.begin(), m2, distances.end());
-    median_dist = 0.5 * (distances[idx1] + distances[idx2]);
-  }
-  else {
-    int idx = int(distances.size()/2);
-    auto m = distances.begin() + idx;
-    std::nth_element(distances.begin(), m, distances.end());
-    median_dist = distances[idx];
-  }
-
-  return median_dist;
-}
-
-
 void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   std::vector<cv::KeyPoint> kps;
   detector_->detect(img, kps, mask_);
@@ -216,19 +181,22 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
       i++;
     }
 
-    // Radius match - furthest allowed distance is twice the max distance
-    // between matches that weren't rejected.
+    // radius match - this really just checks for inaccurate optical flows
     // query = newly-dropped descriptors
     // train = just-found descriptors
-    number_t max_distance = MedianFeatureMovement();
-    std::cout << "median movement:" << max_distance << std::endl;
     std::vector<std::vector<cv::DMatch>> matches;
-    if (max_distance > 0.01) {
-      matcher_->radiusMatch(newly_dropped_descriptors, descriptors, matches,
-                            2*max_distance);
-      for (int i=0; i<matches.size(); i++) {
-        if (matches[i].size() > 0) {
-          cv::DMatch D = matches[i][0];
+    matcher_->radiusMatch(newly_dropped_descriptors, descriptors, matches,
+                          max_pixel_displacement_);
+    for (int i=0; i<matches.size(); i++) {
+      if (matches[i].size() > 0) {
+        cv::DMatch D = matches[i][0];
+
+        // Check descriptor accuracy
+        number_t descriptor_distance =
+          cv::norm(newly_dropped_descriptors.row(D.queryIdx),
+                   descriptors.row(D.trainIdx),
+                   extractor_->defaultNorm());
+        if (descriptor_distance < descriptor_distance_thresh_) {
           matched[D.trainIdx] = true;
           matchIdx[D.trainIdx] = D.queryIdx;
         }
@@ -292,7 +260,6 @@ void Tracker::Update(const cv::Mat &image) {
     // detect an initial set of features
     Detect(img_, num_features_max_);
     initialized_ = true;
-    // std::cout << "tracker initialized";
     return;
   }
   // reset mask
@@ -334,12 +301,7 @@ void Tracker::Update(const cv::Mat &image) {
     initialized_ = false;
     return;
   }
-  // cv::calcOpticalFlowPyrLK(pyramid_, pyramid, pts0, pts1, status, err,
-  //                          cv::Size(win_size_, win_size_), max_level_,
-  //                          criteria,
-  //                          cv::OPTFLOW_USE_INITIAL_FLOW |
-  //                          cv::OPTFLOW_LK_GET_MIN_EIGENVALS,
-  //                          1e-4);
+
   cv::calcOpticalFlowPyrLK(pyramid_, pyramid, pts0, pts1, status, err,
                            cv::Size(win_size_, win_size_), max_level_, criteria,
                            cv::OPTFLOW_USE_INITIAL_FLOW);
@@ -365,7 +327,7 @@ void Tracker::Update(const cv::Mat &image) {
       auto f = vf[kps[i].class_id];
       if (descriptor_distance_thresh_ != -1) {
         int dist =
-            cv::norm(f->descriptor(), descriptors.row(i), cv::NORM_HAMMING);
+            cv::norm(f->descriptor(), descriptors.row(i), extractor_->defaultNorm());
         if (dist > descriptor_distance_thresh_) {
           status[i] = 0; // enforce to be dropped
         } else {
