@@ -48,7 +48,7 @@ if __name__ == '__main__':
 -cfg {cfg:} \
 -seq {seq:} \
 -cam_id {cam_id:} \
--out_dir {out_dir:} \
+-dump {out_dir:} \
 {use_viewer:}'.format(
             root=args.root, cfg=cfg, seq=args.seq, cam_id=cam_id, out_dir=args.out_dir,
             use_viewer='-use_viewer' if args.use_viewer else '')
