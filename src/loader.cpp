@@ -113,14 +113,14 @@ GetDirs(const std::string dataset, const std::string root,
     std::string mocap_dir =
         StrFormat("%s/%s/mav0/state_groundtruth_estimate0/", root, seq);
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
-  } else if ((dataset_type == "xivo") || (dataset_type=="alphred")) {
+  } else if (dataset_type == "xivo") {
     std::string image_dir =
         StrFormat("%s/%s/%s/cam0/", root, dataset, seq);
     std::string imu_dir = StrFormat("%s/%s/%s/imu0/", root, dataset, seq);
     std::string mocap_dir = "";
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else {
-    LOG(FATAL) << "Unrecognized dataset type, expecting [euroc|tumvi|xivo|alphred]";
+    LOG(FATAL) << "Unrecognized dataset type, expecting [euroc|tumvi|xivo]";
   }
 }
 
