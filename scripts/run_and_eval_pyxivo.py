@@ -9,7 +9,13 @@ double_fusion = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '-root', default=KIF_ROOT, help='root directory of the tumvi dataset')
+    '-root', default=KIF_ROOT, help='root directory of the dataset')
+parser.add_argument('-dataset', default='tumvi')
+parser.add_argument(
+    '-cam_id', default=0, type=int,
+    help='camera from stereo camera pair, if dataset is stereo')
+parser.add_argument('-cfg', default='cfg/tumvi_cam0.json',
+    help='path to the estimator configuration')
 parser.add_argument(
     '-seq', default='room6', help='short tag for the seuqence name')
 parser.add_argument(
@@ -36,7 +42,7 @@ if __name__ == '__main__':
     cam_ids = [0, 1] if double_fusion else [0]
 
     for cam_id in cam_ids:
-        cfg = 'cfg/tumvi_cam{}.json'.format(cam_id)
+        cfg = args.cfg
 
         copyfile(cfg, os.path.join(args.out_dir, os.path.basename(cfg)))
 
@@ -45,23 +51,26 @@ if __name__ == '__main__':
         ########################################
         cmd = 'python3 scripts/pyxivo.py \
 -root {root:} \
+-dataset {dataset:} \
 -cfg {cfg:} \
 -seq {seq:} \
 -cam_id {cam_id:} \
 -dump {out_dir:} \
+-mode eval \
 {use_viewer:}'.format(
-            root=args.root, cfg=cfg, seq=args.seq, cam_id=cam_id, out_dir=args.out_dir,
+            root=args.root, cfg=cfg, seq=args.seq, cam_id=cam_id,
+            out_dir=args.out_dir, dataset=args.dataset,
             use_viewer='-use_viewer' if args.use_viewer else '')
         print('*** COMMAND TO BE EXECUTED ***')
         print(cmd)
         os.system(cmd)
 
-        result_file = os.path.join(args.out_dir, 'tumvi_{}_cam{}'.format(args.seq, cam_id))
-        groundtruth_file = os.path.join(args.out_dir, 'tumvi_{}_gt'.format(args.seq))
-        benchmark_file = os.path.join(args.out_dir, 'tumvi_{}_bench'.format(args.seq))
+        result_file = os.path.join(args.out_dir, '{}_{}_cam{}'.format(args.dataset, args.seq, cam_id))
+        groundtruth_file = os.path.join(args.out_dir, '{}_{}_gt'.format(args.dataset, args.seq))
+        benchmark_file = os.path.join(args.out_dir, '{}_{}_bench'.format(args.dataset, args.seq))
 
         if cam_id == 0:
-            os.system('echo tumvi sequence {} >> {}'.format(args.seq, benchmark_file))
+            os.system('echo {} sequence {} >> {}'.format(args.dataset, args.seq, benchmark_file))
 
         os.system('echo camera {} >> {}'.format(cam_id, benchmark_file))
 
@@ -108,7 +117,7 @@ if __name__ == '__main__':
         os.system('echo double-fusion >> {}'.format(benchmark_file))
 
         # evaluate the fused trajectory
-        result_file = os.path.join(args.out_dir, 'tumvi_{}_fused'.format(args.seq))
+        result_file = os.path.join(args.out_dir, '{}_{}_fused'.format(args.dataset, args.seq))
         cmd = 'python3 scripts/tum_rgbd_benchmark_tools/evaluate_ate.py \
 --max_difference 0.001 \
 {groundtruth_file:} \
