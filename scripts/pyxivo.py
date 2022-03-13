@@ -82,11 +82,11 @@ def main(args):
     elif args.dataset == 'cosyvio':
         img_dir = os.path.join(args.root, 'data', args.sen, args.seq, 'frames')
         imu_path = os.path.join(args.root, 'data', args.sen, args.seq, 'data.csv')
-    elif args.dataset in ['xivo', 'carla', 'alphred', 'sabr']:
+    elif args.dataset in ['xivo', 'carla']:
         img_dir = os.path.join(args.root, args.seq, 'cam0', 'data')
         imu_path = os.path.join(args.root, args.seq, 'imu0', 'data.csv')
     else:
-        raise ValueError('unknown dataset argument; choose from tumvi, xivo, cosyvio, carla, alphred, sabr')
+        raise ValueError('unknown dataset argument; choose from tumvi, xivo, cosyvio, carla')
 
     data = []
 
@@ -122,7 +122,7 @@ def main(args):
     if args.use_viewer:
         if args.dataset == 'tumvi':
             viewer_cfg = os.path.join('cfg', 'viewer.json')
-        elif args.dataset in ['xivo', 'alphred']:
+        elif args.dataset == 'xivo':
             viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
         elif args.dataset == 'cosyvio':
             if args.sen == 'tango_top':
@@ -131,8 +131,6 @@ def main(args):
                 viewer_cfg = os.path.join('cfg', 'cosyvio_tango_bottom_viewer.json')
         elif args.dataset == 'carla':
             viewer_cfg = os.path.join('cfg', 'carla_viewer.json')
-        elif args.dataset == 'sabr':
-            viewer_cfg = os.path.join('cfg', 'sabr_xivo_viewer.json')
 
     #########################################
     # RUN ESTIMATOR AND SAVE DATA
@@ -142,7 +140,7 @@ def main(args):
     try:
         estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq)
         for i, (ts, content) in enumerate(data):
-            if i > 0 and i % 500 == 0:
+            if i > 0 and i % 1000 == 0:
                 print('{:6}/{:6}'.format(i, len(data)))
             if isinstance(content, tuple):
                 gyro, accel = content
