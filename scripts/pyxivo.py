@@ -18,7 +18,7 @@ parser.add_argument("-dataset", default="tumvi",
 parser.add_argument("-seq", default="room1",
     help="short tag for sequence name")
 parser.add_argument("-cam_id", default=0, type=int,
-    help="camera from stereo camera pair (only used for tumvi dataset)")
+    help="camera from stereo camera pair, if dataset is stereo")
 parser.add_argument('-cfg', default='cfg/tumvi_cam0.json',
     help='path to the estimator configuration')
 parser.add_argument('-use_viewer', default=False, action='store_true',
@@ -47,6 +47,8 @@ def main(args):
             saver = savers.XIVOEvalModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaEvalModeSaver(args)
+        elif args.dataset == 'euroc':
+            saver = savers.EuRoCEvalModeSaver(args)
     elif args.mode == 'dump':
         if args.dataset == 'tumvi':
             saver = savers.TUMVIDumpModeSaver(args)
@@ -56,6 +58,8 @@ def main(args):
             saver = savers.XIVODumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaDumpModeSaver(args)
+        elif args.dataset == 'euroc':
+            saver = savers.EuRoCDumpModeSaver(args)
     elif args.mode == 'dumpCov':
         if args.dataset == 'tumvi':
             saver = savers.TUMVICovDumpModeSaver(args)
@@ -65,6 +69,8 @@ def main(args):
             saver = savers.XIVOCovDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaCovDumpModeSaver(args)
+        elif args.dataset == 'euroc':
+            saver = savers.EuRoCCovDumpModeSaver(args)
     elif args.mode == 'runOnly':
         pass
     else:
@@ -79,6 +85,10 @@ def main(args):
 
         imu_path = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
                                 'mav0', 'imu0', 'data.csv')
+    elif args.dataset == 'euroc':
+        img_dir = os.path.join(args.root, args.seq, 'mav0',
+                               'cam{}'.format(args.cam_id), 'data')
+        imu_path = os.path.join(args.root, args.seq, 'mav0', 'imu0', 'data.csv')
     elif args.dataset == 'cosyvio':
         img_dir = os.path.join(args.root, 'data', args.sen, args.seq, 'frames')
         imu_path = os.path.join(args.root, 'data', args.sen, args.seq, 'data.csv')
@@ -90,7 +100,7 @@ def main(args):
 
     data = []
 
-    if args.dataset in ['tumvi', 'xivo', 'carla']:
+    if args.dataset in ['tumvi', 'xivo', 'carla', 'euroc']:
         for p in glob.glob(os.path.join(img_dir, '*.png')):
             ts = int(os.path.basename(p)[:-4])
             data.append((ts, p))
@@ -122,6 +132,8 @@ def main(args):
     if args.use_viewer:
         if args.dataset == 'tumvi':
             viewer_cfg = os.path.join('cfg', 'viewer.json')
+        elif args.dataset == 'euroc':
+            viewer_cfg = os.path.join('cfg', 'euroc_viewer.json')
         elif args.dataset == 'xivo':
             viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
         elif args.dataset == 'cosyvio':

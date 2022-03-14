@@ -59,6 +59,12 @@ class CarlaSaver(TUMVISaver):
         self.saveMocapAs(mocapPath, groundtruthPath)
 
 
+class EuRoCSaver(TUMVISaver):
+    def __init__(self, args):
+        mocapPath = os.path.join(args.root, args.seq, "mav0",
+                                 "state_groundtruth_estimate0", "data.csv")
+        groundtruthPath = get_xivo_gt_filename(args.dump, args.dataset, args.seq)
+        self.saveMocapAs(mocapPath, groundtruthPath)
 
 
 class EvalModeSaver(BaseSaver):
@@ -298,3 +304,21 @@ class XIVOCovDumpModeSaver(CovDumpModeSaver, BaseSaver):
     def __init__(self, args):
         CovDumpModeSaver.__init__(self, args)
         BaseSaver.__init__(self, args)
+
+
+class EuRoCEvalModeSaver(EvalModeSaver, EuRoCSaver):
+    def __init__(self, args):
+        EvalModeSaver.__init__(self, args)
+        EuRoCSaver.__init__(self, args)
+
+
+class EuRoCDumpModeSaver(DumpModeSaver, EuRoCSaver):
+    def __init__(self, args):
+        DumpModeSaver.__init__(self, args)
+        EuRoCSaver.__init__(self, args)
+
+
+class EuRoCCovDumpModeSaver(CovDumpModeSaver, EuRoCSaver):
+    def __init__(self, args):
+        CovDumpModeSaver.__init__(self, args)
+        EuRoCSaver.__init__(self, args)
