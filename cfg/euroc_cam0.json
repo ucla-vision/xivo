@@ -13,9 +13,9 @@
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
-  "use_depth_opt": true,  // depth optimization
-  "use_MH_gating": true,
-  "use_1pt_RANSAC": false,   
+  "use_depth_opt": false,  // depth optimization
+  "use_MH_gating": false,
+  "use_1pt_RANSAC": false,
   "use_compression": false,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
@@ -65,24 +65,24 @@
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 1e-4,
-    "ba"  : 1e-3,
+    "bg"  : 1e-3,
+    "ba"  : 1e-2,
     "Wbc" : 0.0001,
     "Tbc" : 0.001,
     "Wg"  : 3.01,
-    "td"  : 1e-5, // 1ms
-    "Cg"  : 1e-5,
-    "Ca"  : 1e-5,
-    "FC"  : [5, 0.5],
+    "td"  : 1e-4, // 1ms
+    "Cg"  : 1e-4,
+    "Ca"  : 1e-4,
+    "FC"  : [9, 0.9],
     "distortion": 0.01
   },
 
   "Qmodel" : {
-    "W"   : 0,
-    "T"   : 0.0,
-    "V"   : 0.0,
-    "wb"  : 0.0000,
-    "ab"  : 0.000,
+    "W"   : 1.0,
+    "T"   : 0.5,
+    "V"   : 0.5,
+    "wb"  : 0.00001,
+    "ab"  : 0.0001,
     "Wbc" : 0,
     "Tbc" : 0.0,
     "Wg"  : 0
@@ -110,7 +110,7 @@
   "initial_std_x": 1.0, // initial std on subfilter state (pixel)
   "initial_std_y": 1.0, // initial std on subfilter state (pixel)
   "initial_std_z": 1.0,  // initial std on subfilter state (meter)
-  "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
+  "max_subfilter_outlier": 1.01, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
                                   // looser criteria for admitting features to
@@ -121,7 +121,7 @@
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 15.0,
-  "min_depth": 0.05,
+  "min_depth": 0.01,
 
   // Adaptive initial depth
   "adaptive_initial_depth": {
@@ -142,8 +142,8 @@
   // pre-subfilter triangulation options
   "triangulation": {
     "method": 2,
-    "zmin": 0.05,
-    "zmax": 5.0
+    "zmin": 0.01,
+    "zmax": 15.0
   },
 
   "depth_opt": {
@@ -185,8 +185,8 @@
 
   "min_inliers": 5, // minimum number of inlier measurements
 
-  "MH_thresh": 5.991, // 8.991
-  "MH_adjust_factor": 1.15,
+  "MH_thresh": 8.991, // 8.991
+  "MH_adjust_factor": 2.0,
 
   "1pt_RANSAC_thresh": 1.5,
   "1pt_RANSAC_prob": 0.95,
@@ -196,8 +196,8 @@
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 60,
+    "num_features_min": 60,
+    "num_features_max": 120,
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": true,
@@ -295,7 +295,7 @@
   },
 
   "mapper_cfg": {
-    "detectLoopClosures": false,
+    "detectLoopClosures": true,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
     "nn_dist_thresh": 20.0,

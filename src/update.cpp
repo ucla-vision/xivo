@@ -83,6 +83,8 @@ void Estimator::Update() {
   timer_.Tock("MH-gating");
 
   LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
+  if (num_mh_rejected > 0)
+    std::cout << "MH rejected " << num_mh_rejected << " features" << std::endl;;
 
   if (use_1pt_RANSAC_) {
     inliers = OnePointRANSAC(inliers);
@@ -347,6 +349,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   }
 
   if (max_inliers.size() < mh_inliers.size()) {
+    int num_rejected = 0;
     // rescue high-innovation measurements
     std::vector<FeaturePtr> hi_inliers; // high-innovation inlier set
     for (int i = 0; i < mh_inliers.size(); ++i) {
@@ -367,9 +370,14 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
         } else {
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
           LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";
+          num_rejected++;
         }
       }
     }
+
+    if (num_rejected > 0)
+      std::cout << "One-Pt RANSAC rejected " << num_rejected <<  " features" << std::endl;
+
     if (!hi_inliers.empty()) {
       max_inliers.insert(hi_inliers.begin(), hi_inliers.end());
       LOG(INFO) << "rescued " << hi_inliers.size() << " high-innovation inliers"

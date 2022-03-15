@@ -43,6 +43,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // process instate but failed-to-be-tracked features
   std::vector<FeaturePtr> new_features;
   ;
+  int num_tracker_rejects = 0;
+  int num_subfilter_outliers = 0;
+
   for (auto it = tracks.begin(); it != tracks.end();) {
     auto f = *it;
 
@@ -63,6 +66,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         LOG(INFO) << "Tracker rejected feature #" << f->id();
         RemoveFeatureFromState(f);
         affected_groups.insert(affected_group);
+        num_tracker_rejects++;
       }
       Feature::Deactivate(f);
       it = tracks.erase(it);
@@ -103,12 +107,18 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
           graph.RemoveFeature(f);
           Feature::Destroy(f);
           it = tracks.erase(it);
+          num_subfilter_outliers++;
         } else {
           ++it;
         }
       }
     }
+
   }
+  if (num_tracker_rejects > 0)
+    std::cout << "tracker rejected " << num_tracker_rejects << " features" << std::endl;
+  if (num_subfilter_outliers > 0)
+    std::cout << "removed " << num_subfilter_outliers << " subfilter outliers" << std::endl;
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)
@@ -292,6 +302,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   for (auto nf: nullref_features) {
     LOG(INFO) << "Removed nullref feature " << nf->id();
   }
+  if (nullref_features.size() > 0)
+    std::cout << "removed " << nullref_features.size() << " nullref features" << std::endl;
 
   // initialize those newly detected featuers
   // create a new group and associate newly detected features to the new group
