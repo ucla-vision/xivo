@@ -15,6 +15,14 @@
     "zfar": 20
   },
 
+  // Position of the camera observing the agent in world space
+  "ModelViewMatrix": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": -3.0,
+    "upVector": [ 1.0, 0.0, 0.0 ]
+  },
+
   "bg_color": {
     "r": 0.0,
     "g": 0.0,

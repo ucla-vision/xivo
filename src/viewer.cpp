@@ -53,8 +53,14 @@ Viewer::Viewer(const Json::Value &cfg, const std::string &name)
   camera_state_->SetProjectionMatrix(pangolin::ProjectionMatrixRDF_TopLeft(
       width_, height_, fx_, fy_, cx_, cy_, znear_, zfar_));
 
-  camera_state_->SetModelViewMatrix(pangolin::ModelViewLookAtRDF(
-      0.5f, 0.2f, 0.0f, 0.0f, 0.0f, 0.0f, 0.f, 0.0f, 1.0f));
+  auto modelView = cfg_["ModelViewMatrix"];
+  Vec3 upVec = GetVectorFromJson<double, 3>(modelView, "upVector");
+  camera_state_->SetModelViewMatrix(
+    pangolin::ModelViewLookAtRDF(modelView["x"].asDouble(),
+                                 modelView["y"].asDouble(),
+                                 modelView["z"].asDouble(),
+                                 0.0f, 0.0f, 0.0f,
+                                 upVec(0), upVec(1), upVec(2)));
 
   float aspect = width_ / (float)height_;
   pangolin::View &camera_view = pangolin::Display("cam").SetAspect(aspect);
