@@ -15,6 +15,13 @@
     "zfar": 10
   },
 
+  "ModelViewMatrix": {
+    "x": 0.5,
+    "y": 0.2,
+    "z": 0.0,
+    "upVector": [ 0, 0, 1 ]
+  },
+
   "bg_color": {
     "r": 0.0,
     "g": 0.0,
