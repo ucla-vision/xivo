@@ -373,29 +373,6 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     }
   }
 
-  if (!use_OOS_) {
-    // remove non-reference groups
-    auto all_groups = graph.GetGroups();
-    int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
-    for (auto g : all_groups) {
-      if (g->lifetime() > max_group_lifetime) {
-        const auto &adj = graph.GetGroupAdj(g);
-        if (std::none_of(adj.begin(), adj.end(), [&graph, g](int fid) {
-              return graph.GetFeature(fid)->ref() == g;
-            })) {
-          // for groups which have no reference features, they cannot be instate
-          // anyway
-#ifndef NDEBUG
-          CHECK(!g->instate());
-#endif
-          mapper.AddGroup(g, graph.GetGroupAdj(g));
-          graph.RemoveGroup(g);
-          Group::Deactivate(g);
-        }
-      }
-    }
-  }
-
   // std::cout << "#groups=" << graph.GetGroups().size() << std::endl;
   // check & clean graph
   // graph.SanityCheck();
