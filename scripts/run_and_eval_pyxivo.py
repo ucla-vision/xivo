@@ -22,6 +22,9 @@ parser.add_argument(
     '-out_dir', default='.', help='output directory to save results')
 parser.add_argument(
     '-use_viewer', default=False, action='store_true', help='visualize if set')
+parser.add_argument(
+    '-plot', default=False, action="store_true", help="plot if set")
+
 
 # parser.add_argument(
 #     '-double-fusion', default=False, action='store_true', help='if ture, take average of two trajectories in the same coordinate system')
@@ -84,6 +87,8 @@ if __name__ == '__main__':
             groundtruth_file=groundtruth_file,
             result_file=result_file,
             write_to='>> {}'.format(benchmark_file) if not args.stdout else '')
+        if args.plot:
+            cmd += " --plot {}_ate_plot.png".format(result_file)
         print('*** COMMAND TO BE EXECUTED ***')
         print(cmd)
         os.system(cmd)
@@ -101,6 +106,8 @@ if __name__ == '__main__':
             result_file=result_file,
             write_to='>> {}'.format(benchmark_file) if not args.stdout else '')
         print('*** COMMAND TO BE EXECUTED ***')
+        if args.plot:
+            cmd += " --plot {}_rpe_plot.png".format(result_file)
         print(cmd)
         os.system(cmd)
 
