@@ -134,7 +134,8 @@ void Canvas::Draw(const FeaturePtr f) {
   }
 }
 
-void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
+void Canvas::OverlayStateInfo(const State &X, const IMUState &IMU,
+                              const Vec9 &Cam, int vspace, int hspace,
                               int thickness, double font_scale) {
   if (disp_.empty()) {
     return;
@@ -193,6 +194,45 @@ void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
       kColorLakeBlue, thickness);
 
+  cv::putText(disp_, StrFormat("Ca=[[%0.4f, %0.4f, %0.4f]", IMU.Ca(0,0),
+                               IMU.Ca(0,1), IMU.Ca(0,2)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("    [%0.4f, %0.4f, %0.4f]", IMU.Ca(1,0),
+                               IMU.Ca(1,1), IMU.Ca(1,2)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("    [%0.4f, %0.4f, %0.4f]]", IMU.Ca(2,0),
+                               IMU.Ca(2,1), IMU.Ca(2,2)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("Cg=[[%0.4f, %0.4f, %0.4f]", IMU.Cg(0,0),
+                               IMU.Cg(0,1), IMU.Cg(0,2)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("    [%0.4f, %0.4f, %0.4f]", IMU.Cg(1,0),
+                               IMU.Cg(1,1), IMU.Cg(1,2)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("    [%0.4f, %0.4f, %0.4f]]", IMU.Cg(2,0),
+                               IMU.Cg(2,1), IMU.Cg(2,2)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("Cam=[[%0.4f, %0.4f, %0.4f, %0.4f]",
+                               Cam(0), Cam(1), Cam(2), Cam(3)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
+
+  cv::putText(disp_, StrFormat("Cam=[[%0.4f, %0.4f, %0.4f, %0.4f, %0.4f]",
+                               Cam(4), Cam(5), Cam(6), Cam(7), Cam(8)),
+      cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+      kColorLakeBlue, thickness);
 
 }
 

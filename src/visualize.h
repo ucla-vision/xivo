@@ -8,6 +8,7 @@
 #include "opencv2/core/core.hpp"
 
 #include "core.h"
+#include "imu.h"
 
 namespace xivo {
 
@@ -21,7 +22,8 @@ public:
   static void Delete();
   void Update(const cv::Mat &img);
   void Draw(const FeaturePtr f);
-  void OverlayStateInfo(const State &X, int vspace = 12, int hspace = 12,
+  void OverlayStateInfo(const State &X, const IMUState &IMU, const Vec9 &Cam,
+                        int vspace = 12, int hspace = 12,
                         int thickness = 1, double font_scale = 0.9);
   const cv::Mat &display() const { return disp_; }
   const void SaveFrame();

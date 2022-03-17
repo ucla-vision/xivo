@@ -3,6 +3,7 @@
 #include "pybind11/pybind11.h"
 
 #include "estimator.h"
+#include "camera_manager.h"
 #include "opencv2/core/eigen.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "utils.h"
@@ -29,6 +30,7 @@ public:
     auto cfg = LoadJson(cfg_path);
     // estimator_ = std::unique_ptr<Estimator>(new Estimator{cfg});
     estimator_ = CreateSystem(cfg);
+    camera_ = CameraManager::instance();
 
     if (!viewer_cfg_path.empty()) {
       auto viewer_cfg = LoadJson(viewer_cfg_path);
@@ -177,6 +179,14 @@ public:
     return estimator_->InstateGroupSinds();
   }
 
+  Vec9 CameraIntrinsics() {
+    return camera_->GetIntrinsics();
+  }
+
+  int CameraDistortionType() {
+    return int(camera_->GetDistortionType());
+  }
+
   int num_instate_features() { return estimator_->num_instate_features(); }
 
   int num_instate_groups() { return estimator_->num_instate_groups(); }
@@ -193,6 +203,7 @@ public:
 private:
   // std::unique_ptr<Estimator> estimator_;
   EstimatorPtr estimator_;
+  CameraPtr camera_;
   std::unique_ptr<Viewer> viewer_;
   static bool glog_init_;
   std::string name_;
@@ -245,5 +256,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize)
       .def("gauge_group", &EstimatorWrapper::gauge_group)
+      .def("CameraIntrinsics", &EstimatorWrapper::CameraIntrinsics)
+      .def("CameraDistortionType", &EstimatorWrapper::CameraDistortionType)
       .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized);
 }
