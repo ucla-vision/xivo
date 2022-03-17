@@ -36,6 +36,7 @@ public:
   void RestoreState() { X_ = X_backup_; }
   const Mat3 &Ca() const { return X_.Ca; }
   const Mat3 &Cg() const { return X_.Cg; }
+  const IMUState& State() { return X_; }
 
 private:
   IMUState X_;

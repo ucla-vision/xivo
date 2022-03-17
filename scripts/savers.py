@@ -155,6 +155,8 @@ class CovDumpModeSaver(BaseSaver):
         td = estimator.td()
         Ca = estimator.Ca()
         Cg = estimator.Cg()
+        Cam = estimator.CameraIntrinsics()
+        CamType = estimator.CameraDistortionType()
 
         # Get filter covariance
         if self.save_full_cov:
@@ -230,6 +232,8 @@ class CovDumpModeSaver(BaseSaver):
         entry['td'] = td
         entry['Ca'] = Ca
         entry['Cg'] = Cg
+        entry['camera_intrinsics'] = Cam
+        entry['camera_type'] = CamType
 
         entry['num_instate_features'] = num_instate_features
         entry['feature_positions'] = feature_positions

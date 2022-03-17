@@ -62,6 +62,8 @@ class EstimatorData:
     self.td = np.zeros(self.nposes)
     self.Ca = np.zeros((3,3,self.nposes))
     self.Cg = np.zeros((3,3,self.nposes))
+    self.camera = np.zeros((9,self.nposes))
+    self.camera_type = 0
 
     # sample covariance data
     self.has_sample_cov = []
@@ -79,7 +81,7 @@ class EstimatorData:
   def collect_data(self):
     for i in range(self.nposes):
       timestamp, R_sb, T_sb, V_sb, P, inn_Wsb, inn_Tsb, inn_Vsb, gauge_group, \
-        W_bc, T_bc, ba, bg, Wg, td, Ca, Cg = \
+        W_bc, T_bc, ba, bg, Wg, td, Ca, Cg, Cam, CamType = \
           self.get_estimator_point(self.start_ind+i)
       self.Rsb.append(R_sb)
       self.Tsb[:,i] = T_sb
@@ -109,11 +111,13 @@ class EstimatorData:
       self.ba[:,i] = ba
       self.bg[:,i] = bg
       self.Wg[:,i] = Wg
+      self.td[i] = td
       self.Ca[:,:,i] = Ca
       self.Cg[:,:,i] = Cg
+      self.camera[:,i] = Cam
+      if i==1:
+        self.camera_type = CamType
 
-      if td is not None:
-        self.td[i] = td
 
       # read sample covariance
       cov = self.get_sample_cov(self.start_ind+i)
@@ -167,9 +171,11 @@ class EstimatorData:
     td = float(data["td"])
     Ca = from_upper_triangular_list(3, data["Ca"])
     Cg = from_upper_triangular_list(3, data["Cg"])
+    Cam = np.array(data["camera_intrinsics"])
+    CamType = int(data["camera_type"])
 
     return (timestamp, R_sb, T_sb, V_sb, P, inn_Wsb, inn_Tsb, inn_Vsb, group,
-            W_bc, T_bc, ba, bg, W_g, td, Ca, Cg)
+            W_bc, T_bc, ba, bg, W_g, td, Ca, Cg, Cam, CamType)
 
 
   def collect_feature_data(self, ind):

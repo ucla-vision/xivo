@@ -45,6 +45,27 @@ def matrix_frodiff_plot(time_axis, matrix_signal, title):
   plt.ylabel("Frobenius Norm from Initial Value")
 
 
+def time_n_plots(time_axis, signals, suptitle, titles=None, xlabel=None,
+                 ylabels=None):
+
+  n = signals.shape[0] if len(signals.shape) > 1 else 1
+
+  if titles is None:
+    titles = [None] * n
+  if ylabels is None:
+    ylabels = [None] * n
+
+  plt.figure()
+  plt.suptitle(suptitle)
+  for i in range(n):
+    plt.subplot(n,1,i+1)
+    if i < n-1:
+      _time_plot(time_axis, signals[i,:], title=titles[i], ylabel=ylabels[i])
+    else:
+      _time_plot(time_axis, signals[i,:], title=titles[i], ylabel=ylabels[i],
+                 xlabel=xlabel)
+
+
 def error_three_plots(time_axis, error_signals, seq, error_type, error_unit):
   means = np.mean(error_signals, axis=1)
   var = np.var(error_signals, axis=1)

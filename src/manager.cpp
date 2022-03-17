@@ -11,6 +11,7 @@
 #include "group.h"
 #include "tracker.h"
 #include "mapper.h"
+#include "camera_manager.h"
 
 namespace xivo {
 
@@ -390,7 +391,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     for (auto f : tracks) 
       Canvas::instance()->Draw(f);
 
-    Canvas::instance()->OverlayStateInfo(X_);
+    Canvas::instance()->OverlayStateInfo(X_, imu_.State(),
+      CameraManager::instance()->GetIntrinsics());
   }
 
   static int print_counter{0};

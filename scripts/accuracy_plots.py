@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from estimator_data import EstimatorData
 from interpolate_gt import groundtruth_interpolator
 from pltutils import error_three_plots, plot_3D_error_cloud, time_plot, \
-  plot_3d_trajectories, time_three_plots, matrix_frodiff_plot
+  plot_3d_trajectories, time_three_plots, matrix_frodiff_plot, time_n_plots
 from utils import rigid_transform_3d, get_xivo_gt_filename, \
   get_xivo_output_filename
 
@@ -25,6 +25,16 @@ parser.add_argument("-cam_id", default=0, type=int,
 parser.add_argument("-sen", default="tango_top",
   help="sensor from which images were captured (only used for cosyvio dataset)")
 
+
+def camera_type_to_labels(camtype):
+  if camtype == 0:  # pinhole
+    return [ "fx", "fy", "cx", "cy" ]
+  elif camtype == 1: # atan
+    return [ "fx", "fy", "cx", "cy", "w" ]
+  elif camtype == 2: # radtan
+    return [ "fx", "fy", "cx", "cy", "p1", "p2", "k1", "k2", "k3" ]
+  elif camtype == 3:
+    return [ "fx", "fy", "cx", "cy", "k0", "k1", "k2", "k3" ]
 
 
 class PlotHelper:
@@ -128,6 +138,10 @@ class PlotHelper:
     time_plot(self.time_axis_orig, self.est.td, "Online td Calibration")
     matrix_frodiff_plot(self.time_axis_orig, self.est.Ca, "Online Ca Calibration")
     matrix_frodiff_plot(self.time_axis_orig, self.est.Cg, "Online Cg Calibration")
+
+    camera_labels = camera_type_to_labels(self.est.camera_type)
+    time_n_plots(self.time_axis_orig, self.est.camera[:len(camera_labels),:],
+                 "Online Camera Calibration", ylabels=camera_labels)
 
 
 if __name__ == "__main__":
