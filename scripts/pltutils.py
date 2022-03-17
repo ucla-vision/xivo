@@ -32,6 +32,19 @@ def time_three_plots(time_axis, signals, suptitle, titles=None, xlabel=None):
     xlabel=xlabel)
 
 
+def matrix_frodiff_plot(time_axis, matrix_signal, title):
+  first_mat = matrix_signal[:,:,0]
+  diff_signal = np.zeros(len(time_axis))
+  for i in range(len(time_axis)):
+    diff_signal[i] = np.linalg.norm(matrix_signal[:,:,i] - first_mat)
+
+  plt.figure()
+  plt.title(title)
+  plt.plot(time_axis, diff_signal)
+  plt.xlabel("Time (s)")
+  plt.ylabel("Frobenius Norm from Initial Value")
+
+
 def error_three_plots(time_axis, error_signals, seq, error_type, error_unit):
   means = np.mean(error_signals, axis=1)
   var = np.var(error_signals, axis=1)

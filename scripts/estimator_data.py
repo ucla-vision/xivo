@@ -8,6 +8,13 @@ from utils import (from_upper_triangular_list, scale_covariance_matrix,
 from to_json import to_json
 
 
+def Q_wxyz_to_Rotation(json_item):
+  Q_wxyz = np.array(json_item)
+  Q_xyzw = np.array([Q_wxyz[1], Q_wxyz[2], Q_wxyz[3], Q_wxyz[0]])
+  R = Rotation.from_quat(Q_xyzw)
+  return R
+
+
 class EstimatorData:
   def __init__(self, results_file, start_ind=0, end_ind=None):
 
@@ -46,6 +53,16 @@ class EstimatorData:
 
     self.gauge_group = []
 
+    # calibration states
+    self.Wbc = np.zeros((3,self.nposes))
+    self.Tbc = np.zeros((3,self.nposes))
+    self.ba = np.zeros((3,self.nposes))
+    self.bg = np.zeros((3,self.nposes))
+    self.Wg = np.zeros((3,self.nposes))
+    self.td = np.zeros(self.nposes)
+    self.Ca = np.zeros((3,3,self.nposes))
+    self.Cg = np.zeros((3,3,self.nposes))
+
     # sample covariance data
     self.has_sample_cov = []
     self.sample_covWTV = np.zeros((9,9,self.nposes))
@@ -61,7 +78,8 @@ class EstimatorData:
 
   def collect_data(self):
     for i in range(self.nposes):
-      timestamp, R_sb, T_sb, V_sb, P, inn_Wsb, inn_Tsb, inn_Vsb, gauge_group = \
+      timestamp, R_sb, T_sb, V_sb, P, inn_Wsb, inn_Tsb, inn_Vsb, gauge_group, \
+        W_bc, T_bc, ba, bg, Wg, td, Ca, Cg = \
           self.get_estimator_point(self.start_ind+i)
       self.Rsb.append(R_sb)
       self.Tsb[:,i] = T_sb
@@ -85,6 +103,17 @@ class EstimatorData:
       self.group_Rsb.append(group_Rsb)
       self.group_Tsb.append(group_Tsb)
       self.group_covariances.append(group_covs)
+
+      self.Wbc[:,i] = W_bc
+      self.Tbc[:,i] = T_bc
+      self.ba[:,i] = ba
+      self.bg[:,i] = bg
+      self.Wg[:,i] = Wg
+      self.Ca[:,:,i] = Ca
+      self.Cg[:,:,i] = Cg
+
+      if td is not None:
+        self.td[i] = td
 
       # read sample covariance
       cov = self.get_sample_cov(self.start_ind+i)
@@ -113,10 +142,7 @@ class EstimatorData:
     # Rotation, translation, velocity
     T_sb = np.array(data["Tsb_XYZ"])
     V_sb = np.array(data["Vsb_XYZ"])
-    Q_sb_wxyz = np.array(data["qsb_WXYZ"])
-    Q_sb_xyzw = np.array([Q_sb_wxyz[1], Q_sb_wxyz[2], Q_sb_wxyz[3],
-      Q_sb_wxyz[0]])
-    R_sb = Rotation.from_quat(Q_sb_xyzw)
+    R_sb = Q_wxyz_to_Rotation(data["qsb_WXYZ"])
 
     # Covariance
     (Pdim, Plist) = data["Pstate"]
@@ -130,7 +156,20 @@ class EstimatorData:
     # gauge group
     group = data["group"]
 
-    return (timestamp, R_sb, T_sb, V_sb, P, inn_Wsb, inn_Tsb, inn_Vsb, group)
+    # Calibration states
+    W_bc = Q_wxyz_to_Rotation(data["qbc_WXYZ"]).as_rotvec()
+    T_bc = np.array(data["Tbc_XYZ"])
+    W_g = Q_wxyz_to_Rotation(data["qg_WXYZ"]).as_rotvec()
+    bg = np.array(data["bg"])
+    ba = np.array(data["ba"])
+
+    # optional calibration states
+    td = float(data["td"])
+    Ca = from_upper_triangular_list(3, data["Ca"])
+    Cg = from_upper_triangular_list(3, data["Cg"])
+
+    return (timestamp, R_sb, T_sb, V_sb, P, inn_Wsb, inn_Tsb, inn_Vsb, group,
+            W_bc, T_bc, ba, bg, W_g, td, Ca, Cg)
 
 
   def collect_feature_data(self, ind):

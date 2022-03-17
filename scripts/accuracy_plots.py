@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from estimator_data import EstimatorData
 from interpolate_gt import groundtruth_interpolator
 from pltutils import error_three_plots, plot_3D_error_cloud, time_plot, \
-  plot_3d_trajectories
+  plot_3d_trajectories, time_three_plots, matrix_frodiff_plot
 from utils import rigid_transform_3d, get_xivo_gt_filename, \
   get_xivo_output_filename
 
@@ -57,6 +57,7 @@ class PlotHelper:
     self.Tsb_error = np.zeros((3,self.est.nposes))
     self.Vsb_error = np.zeros((3,self.est.nposes))
 
+
   def align_gt_to_est(self):
     for i in range(self.est.nposes):
       timestamp = self.est.time_axis[i]
@@ -83,12 +84,14 @@ class PlotHelper:
       self.Tsb_gt[:,i] = rot.dot(self.Tsb_gt[:,i]) + trans
       self.Vsb_gt[:,i] = rot.dot(self.Vsb_gt[:,i])
 
+
   def compute_errors(self):
     for ind in range(self.est.nposes):
       self.Tsb_error[:,ind] = self.est.Tsb[:,ind] - self.Tsb_gt[:,ind]
       self.Vsb_error[:,ind] = self.est.Vsb[:,ind] - self.Vsb_gt[:,ind]
       self.Rsb_error.append(self.est.Rsb[ind] * self.Rsb_gt[ind].inv())
       self.Wsb_error[:,ind] = self.Rsb_error[-1].as_rotvec().flatten()
+
 
   def show_state_errors(self):
     print("\nState Errors Display:")
@@ -106,12 +109,25 @@ class PlotHelper:
     plot_3D_error_cloud(Tsb_error, "Translation Error Cloud (m)")
     plot_3D_error_cloud(vel_error, "Velocity Error Cloud (m/s)")
 
+
   def plot_gauge_group(self):
     time_plot(self.time_axis_orig, self.est.gauge_group,
       title="Reference Group ID", xlabel=self.time_axis_label)
 
+
   def plot_trajectories(self, npts=-1):
     plot_3d_trajectories(self.est.Tsb, self.Tsb_gt)
+
+
+  def plot_calib_states(self):
+    time_three_plots(self.time_axis_orig, self.est.Wbc, "Online Wbc Calibration")
+    time_three_plots(self.time_axis_orig, self.est.Tbc, "Online Tbc Calibration")
+    time_three_plots(self.time_axis_orig, self.est.ba, "Online ba Calibration")
+    time_three_plots(self.time_axis_orig, self.est.bg, "Online bg Calibration")
+    time_three_plots(self.time_axis_orig, self.est.Wg, "Online Wg Calibration")
+    time_plot(self.time_axis_orig, self.est.td, "Online td Calibration")
+    matrix_frodiff_plot(self.time_axis_orig, self.est.Ca, "Online Ca Calibration")
+    matrix_frodiff_plot(self.time_axis_orig, self.est.Cg, "Online Cg Calibration")
 
 
 if __name__ == "__main__":
@@ -135,5 +151,6 @@ if __name__ == "__main__":
   ph.show_state_errors()
   ph.plot_trajectories()
   ph.plot_gauge_group()
+  ph.plot_calib_states()
 
   plt.show()
