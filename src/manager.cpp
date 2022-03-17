@@ -116,10 +116,10 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     }
 
   }
-  if (num_tracker_rejects > 0)
-    std::cout << "tracker rejected " << num_tracker_rejects << " features" << std::endl;
-  if (num_subfilter_outliers > 0)
-    std::cout << "removed " << num_subfilter_outliers << " subfilter outliers" << std::endl;
+  //if (num_tracker_rejects > 0)
+  //  std::cout << "tracker rejected " << num_tracker_rejects << " features" << std::endl;
+  //if (num_subfilter_outliers > 0)
+  //  std::cout << "removed " << num_subfilter_outliers << " subfilter outliers" << std::endl;
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)

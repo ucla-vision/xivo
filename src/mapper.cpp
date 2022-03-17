@@ -361,7 +361,7 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
 
     if (best_match != nullptr) {
       LOG(INFO) << "Mapper: matched feature " << f->id() << " to feature "
-        << best_match->id() << std::endl;
+        << best_match->id();
       matches.push_back(LCMatch(f, best_match));
       f->SetLCMatch(best_match->id());
     }
@@ -395,7 +395,8 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
     GetInlierMatches(matches, Xs, yns, camera_pose, ransac_params_->threshold,
                      ransac_matches);
 
-    LOG(INFO) << "Mapper: RANSAC kept " << ransac_matches.size() << " matches" << std::endl;
+    LOG(INFO) << "Mapper: RANSAC kept " << ransac_matches.size() << " matches";
+    //std::cout << "Mapper: RANSAC kept " << ransac_matches.size() << " matches" << std::endl;
     // more debug printing to make sure that RANSAC is working.
     /*
     std::cout << "Mapper: RANSAC kept " << ransac_matches.size() << " matches" << std::endl;
@@ -412,6 +413,10 @@ std::vector<LCMatch> Mapper::DetectLoopClosures(const std::vector<FeaturePtr>& i
   // of them.
   if (ransac_matches.size() <= 4) {
     ransac_matches.clear();
+  }
+
+  if (ransac_matches.size() > 0) {
+    std::cout << "Mapper: loop closed with " << ransac_matches.size() << " matches" << std::endl;
   }
 
   return ransac_matches;
