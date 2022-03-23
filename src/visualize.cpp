@@ -171,6 +171,11 @@ void Canvas::OverlayStateInfo(const State &X, int vspace, int hspace,
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
+  auto Wg{X.Rg.log()};
+  cv::putText(disp_, StrFormat("Wg=[%0.4f, %0.4f, %0.4f]", Wg(0),
+                                     Wg(1), Wg(2)),
+              cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
+              kColorLakeBlue, thickness);
 
   if (print_bias_info) {
     cv::putText(disp_, StrFormat("bg=[%0.4f, %0.4f, %0.4f]", X.bg(0),
