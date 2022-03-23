@@ -1,7 +1,9 @@
 project(imu_tk)
 
-cmake_minimum_required (VERSION 2.8) 
+cmake_minimum_required (VERSION 3.10)
 cmake_policy(SET CMP0015 NEW)
+
+add_compile_options(-g -ggdb -O0 -Wall -fstack-protector-all -march=native -fnon-call-exceptions)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release")
@@ -18,7 +20,7 @@ find_package(Ceres REQUIRED)
 include_directories(./include
                     /usr/include
                     ${Boost_INCLUDE_DIRS}
-                    ${EIGEN_INCLUDE_DIR}
+                    ${EIGEN3_INCLUDE_DIRS}
                     ${CERES_INCLUDE_DIRS})
 
 #Vis3D
