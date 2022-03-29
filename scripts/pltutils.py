@@ -32,7 +32,7 @@ def time_three_plots(time_axis, signals, suptitle, titles=None, xlabel=None):
     xlabel=xlabel)
 
 
-def matrix_frodiff_plot(time_axis, matrix_signal, title):
+def matrix_frodiff_plot(time_axis, matrix_signal, title, xlabel=None):
   first_mat = matrix_signal[:,:,0]
   diff_signal = np.zeros(len(time_axis))
   for i in range(len(time_axis)):
@@ -41,7 +41,7 @@ def matrix_frodiff_plot(time_axis, matrix_signal, title):
   plt.figure()
   plt.title(title)
   plt.plot(time_axis, diff_signal)
-  plt.xlabel("Time (s)")
+  plt.xlabel(xlabel)
   plt.ylabel("Frobenius Norm from Initial Value")
 
 
