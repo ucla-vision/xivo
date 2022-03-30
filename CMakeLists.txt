@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
-project(feh)
+
+# vision lab visual-inertial navigation system
+project(vl_vins)
 
 # Set operating system variables
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -22,9 +24,10 @@ if (BUILD_G2O)
   add_definitions(-DUSE_G2O)
 endif (BUILD_G2O)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++17 -Wno-narrowing -Wno-register -fPIC -g")
+set(CMAKE_CXX_STANDARD 17)
+# TODO (xiaohfei): We should turn on -Wall and -Werror to eliminate all the warnings.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wno-narrowing -Wno-register -fPIC -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native -march=native")
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops")
 
 # set(CMAKE_BUILD_TYPE "Debug")
@@ -42,56 +45,91 @@ add_definitions(-DGOOGLE_STRIP_LOG=1)
 # add_definitions(-DEIGEN_DEFAULT_TO_ROW_MAJOR)
 add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_ZERO)
 
-find_package(OpenCV REQUIRED)
-find_package(Python3 REQUIRED Interpreter Development)
+set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/thirdparty")
+list(APPEND CMAKE_PREFIX_PATH ${THIRD_PARTY_DIR})
 
-link_directories(
-        ${PROJECT_SOURCE_DIR}/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/gflags/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/glog/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/lib
-        ${PROJECT_SOURCE_DIR}/thirdparty/pnp/build
-        ${PROJECT_SOURCE_DIR}/thirdparty/ceres-solver/lib
-        /usr/local/lib
+find_package(OpenCV REQUIRED PATHS ${THIRD_PARTY_DIR}/opencv/install)
+find_package(Python3 REQUIRED Interpreter Development)
+find_package(Pangolin REQUIRED)
+find_package(jsoncpp REQUIRED)
+
+# Google stuff
+find_package(gflags REQUIRED)
+find_package(GTest REQUIRED NAMES GTest gtest googletest GoogleTest)
+find_package(glog REQUIRED)
+find_package(Ceres REQUIRED)
+
+# DBoW2 
+find_package(DBoW2 REQUIRED)
+# Create an interface target for DBoW2 (since DBoW2 does not export headers & libraries as a target).
+# We will add the DBoW2 target to our dependency list in a bit.
+add_library(DBoW2 INTERFACE)
+target_include_directories(DBoW2 INTERFACE ${DBoW2_INCLUDE_DIR})
+target_link_libraries(DBoW2 INTERFACE ${DBoW2_LIBS})
+
+# The dependency PNP does not properly export a target for easy integration,
+# so we create an interface target here, and will add the interface target to 
+# the dependency list in a bit.
+add_library(pnp INTERFACE)
+target_include_directories(pnp INTERFACE ${THIRD_PARTY_DIR}/pnp)
+target_link_libraries(pnp INTERFACE ${THIRD_PARTY_DIR}/pnp/build/liblibpnp.a)
+
+# TODO (xiaohfei): this is not working since gperftools does not properly generate cmake config files.
+# Need to manually add gperftools if needed.
+if (USE_GPERFTOOLS)
+  find_package(gperftools REQUIRED)
+endif()
+
+
+list(APPEND DEPS
+  # OpenCV
+  opencv_highgui
+  opencv_features2d
+  opencv_core
+  opencv_video
+  opencv_imgproc
+  opencv_imgcodecs
+  opencv_xfeatures2d
+
+  # Google stuff
+  glog::glog
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
+  GTest::gmock_main
+  gflags_static
+
+  # Ceres::ceres should carry over all its own dependencies, so we don't need 
+  # to add the following dependencies: cxsparse, cholmod, lapack, and blas. 
+  # But if needed, you can add them back.
+  Ceres::ceres
+
+  # Use jsoncpp_static if you are building modules of xivo as static libraryies
+  # jsoncpp_static
+  jsoncpp_lib
+
+  # Target "pangolin" exported by Pangolin should carry over its own dependencies, i.e., 
+  # GLEW and GL (in Linux). If needed, you can manually add them.
+  pangolin
+
+  # Loop closure dependencies. 
+  pnp
+  DBoW2
 )
-if (IS_LINUX)
-  link_directories(/usr/lib/x86_64-linux-gnu)
-endif(IS_LINUX)
+
+link_libraries(${DEPS})
 
 
 include_directories(
-        ${PROJECT_SOURCE_DIR}/common
-        ${PROJECT_SOURCE_DIR}/src
-        ${PROJECT_SOURCE_DIR}/thirdparty/gflags/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/glog/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/Pangolin/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/eigen/include/eigen3
-        ${PROJECT_SOURCE_DIR}/thirdparty/gperftools/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/include
-        ${PROJECT_SOURCE_DIR}/thirdparty/pnp
-        ${JSONCPP_INCLUDE_DIRS}
-        /usr/include/suitesparse
-        /usr/include
-        ${OpenCV_INCLUDE_DIRS}
-        ${Python3_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/common
+  ${CMAKE_SOURCE_DIR}/src
 )
 
-
-
 enable_testing()
-add_subdirectory(thirdparty/googletest)
-add_subdirectory(thirdparty/gflags)
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/googletest/include)
-# add_subdirectory(thirdparty/abseil-cpp)
 if (BUILD_G2O)
-  link_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/lib)
-  include_directories(${PROJECT_SOURCE_DIR}/thirdparty/g2o/release/include)
-  list(APPEND deps
+  link_directories(${THIRD_PARTY_DIR}/g2o/release/lib)
+  include_directories(${THIRD_PARTY_DIR}/g2o/release/include)
+  link_libraries(
     g2o_core
     g2o_solver_dense
     g2o_solver_cholmod
@@ -100,12 +138,9 @@ if (BUILD_G2O)
     g2o_types_slam3d
     g2o_types_sba
     g2o_stuff
-    cholmod
-    cxsparse
-    )
+)
 endif(BUILD_G2O)
 
-# feh
 add_subdirectory(common)
 add_subdirectory(src)
 
@@ -120,10 +155,10 @@ add_subdirectory(src)
 # If you see an error saying "Python.h: No such file or directory", you probably
 # need to "sudo apt-get install python3-dev" assuming you are binding to python3.
 set(PYBIND11_CPP_STANDARD -std=c++17)
-add_subdirectory(thirdparty/pybind11)
+add_subdirectory(${THIRD_PARTY_DIR}/pybind11)
 pybind11_add_module(pyxivo MODULE pybind11/pyxivo.cpp)
-set(libxivo common xest xapp)
+set(pybind_deps common xest xapp)
 if (BUILD_G2O)
-  list(APPEND libxivo xopt)
+  list(APPEND pybind_deps xopt)
 endif(BUILD_G2O)
-target_link_libraries(pyxivo PRIVATE ${libxivo})
+target_link_libraries(pyxivo PRIVATE ${pybind_deps})
