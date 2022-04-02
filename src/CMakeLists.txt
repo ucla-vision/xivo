@@ -164,6 +164,11 @@ add_executable(unitTests_atan
 target_link_libraries(unitTests_atan xest ${deps} gtest gtest_main)
 add_test(NAME CamerasAtan COMMAND unitTests_atan)
 
+add_executable(unitTests_triangulation
+               test/unittest_triangulation.cpp)
+target_link_libraries(unitTests_triangulation xest ${deps} gtest gtest_main)
+add_test(NAME Triangulation COMMAND unitTests_triangulation)
+
 if (BUILD_G2O)
   message(INFO ${libxivo})
   add_executable(test_optimizer test/test_optimizer.cpp)

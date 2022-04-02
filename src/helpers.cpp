@@ -100,7 +100,7 @@ int QR(VecX &x, MatX &Hx, int effective_rows) {
   return rows;
 }
 
-Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+Vec3 DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec3 t12{g12.T()};
   Mat3 R12{g12.R()};
   Mat34 P1;
@@ -127,7 +127,7 @@ Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   return x;
 }
 
-Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+Vec3 DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec3 t12{g12.T()};
   Mat3 R12{g12.R()};
 
@@ -195,10 +195,14 @@ Vec3 L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
+  check_cheirality(z, t21, f1_prime, Rf0_prime);
+  check_angular_reprojection(m0, Rf0_prime, m1, f1_prime);
+  check_parallax(Rf0_prime, f1_prime);
+
   Vec3 x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   return x;
-}
+} 
 
 
 Vec3 L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
@@ -244,6 +248,10 @@ Vec3 L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
+  check_cheirality(z, t21, f1_prime, Rf0_prime);
+  check_angular_reprojection(m0, Rf0_prime, m1, f1_prime);
+  check_parallax(Rf0_prime, f1_prime);
+
   Vec3 x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   return x;
@@ -282,9 +290,9 @@ Vec3 LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1) {
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  // check_cheirality(z, t21, m1_prime, m0_prime);
-  // check_angular_reprojection(m0, m0_prime, m1, m1_prime);
-  // check_parallax(m0_prime, m1_prime);
+  check_cheirality(z, t21, f1_prime, Rf0_prime);
+  check_angular_reprojection(m0, Rf0_prime, m1, f1_prime);
+  check_parallax(Rf0_prime, f1_prime);
 
   Vec3 x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
@@ -301,7 +309,6 @@ void check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const 
   if(lambda0 <= 0 || lambda1 <= 0)
   {
     LOG(ERROR) << "[ERROR] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1;
-    exit(1);
   }
 
   return;
@@ -315,11 +322,10 @@ void check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Ve
   float theta1 = acos(f1.dot(f1_prime) / (f1.norm() * f1_prime.norm()));
 
   float max_theta = std::max(theta0, theta1);
-
+ 
   if(max_theta > 0.01)
   {
     LOG(ERROR) << "[ERROR] angular reprojection error in triangulation";
-    exit(1);
   }
   return;
 }
@@ -329,10 +335,9 @@ void check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime)
 
   float beta = acos(f1_prime.dot(Rf0_prime) / (f1_prime.norm() * Rf0_prime.norm()));
 
-  if(beta < 1e-8)
+  if(beta < 0.1)
   {
     LOG(ERROR) << "[ERROR] parallax error in triangulation " << beta;
-    exit(1);
   }
 
   return;

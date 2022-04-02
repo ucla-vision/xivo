@@ -42,11 +42,11 @@ template <typename T> void MakePtrVectorUnique(std::vector<T *> &v) {
 // g12: 2->1
 // xc1: camera coordinates in frame 1
 // xc2: camera coordiantes in frame 2
-Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+Vec3 DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
 // triangulation method2
 // interface same as triangulation method1 above
-Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+Vec3 DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
 
 // triangulation method3
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115

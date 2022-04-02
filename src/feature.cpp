@@ -703,16 +703,14 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 
   Vec3 Xc1;
 
-  // std::cout << options.max_theta_thresh << " " << options.beta_thesh << std::endl;
-
-  if(options.method == "l1_reproject")
+  if(options.method == "direct_linear_transform_svd")
   {
-    Xc1 = Triangulate1(g12, xc1, xc2);
+    Xc1 = DirectLinearTransformSVD(g12, xc1, xc2);
   }
 
-  else if(options.method == "l2_reproject")
+  else if(options.method == "direct_linear_transform_avg")
   {
-    Xc1 = Triangulate2(g12, xc1, xc2);
+    Xc1 = DirectLinearTransformAvg(g12, xc1, xc2);
   }
 
   else if(options.method == "l1_angular")
