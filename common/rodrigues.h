@@ -211,7 +211,8 @@ dAB_dB(const Eigen::MatrixBase<Derived> &A) {
   constexpr int N = Derived::RowsAtCompileTime;
   constexpr int M = Derived::ColsAtCompileTime;
   constexpr int P = ColB;
-  static_assert(M == Derived::RowsAtCompileTime,
+  
+  static_assert(M == RowB,
                 "Columns of A should match rows of B.");
 
   Eigen::Matrix<T, N * P, M * P> D;
