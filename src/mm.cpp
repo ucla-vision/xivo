@@ -71,8 +71,9 @@ T* CircBufWithHash<T>::GetItem() {
           << " #" << ret->id();
 
         // Remove the item from the Mapper before doing anything else
+#ifdef USE_MAPPER
         RemoveFromMapper(ret);
-
+#endif
         slots_active_[slot_search_ind_] = true;
 
         slot_found = true;
@@ -111,13 +112,17 @@ void CircBufWithHash<T>::DestroyItem(T *item) {
 
 template<>
 void CircBufWithHash<Feature>::RemoveFromMapper(FeaturePtr item) {
+#ifdef USE_MAPPER
   Mapper::instance()->RemoveFeature(item);
+#endif
 }
 
 
 template<>
 void CircBufWithHash<Group>::RemoveFromMapper(GroupPtr item) {
+#ifdef USE_MAPPER
   Mapper::instance()->RemoveGroup(item);
+#endif
 }
 
 

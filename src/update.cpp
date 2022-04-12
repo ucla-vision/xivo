@@ -170,6 +170,7 @@ void Estimator::Update() {
 
 
 void Estimator::CloseLoop() {
+#ifdef USE_MAPPER
   std::vector<FeaturePtr> instate_features =
     Graph::instance()->GetInstateFeatures();
   std::vector<LCMatch> matches;
@@ -180,10 +181,11 @@ void Estimator::CloseLoop() {
   if (matches.size() > 0) {
     CloseLoopInternal(Graph::instance()->LastAddedGroup(), matches);
   }
+#endif
 }
 
 void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_features) {
-
+#ifdef USE_MAPPER
   Graph& graph{*Graph::instance()};
 
   int num_matches = matched_features.size();
@@ -220,6 +222,7 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
   // Measurement Update
   UpdateJosephForm();
   AbsorbError();
+#endif
 }
 
 

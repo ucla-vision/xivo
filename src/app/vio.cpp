@@ -110,7 +110,9 @@ int main(int argc, char **argv) {
     if (!FLAGS_graphout.empty()) {
       GraphWriter GW;
       GW.CollectGraph(Graph::instance());
+#ifdef USE_MAPPER
       GW.CollectGraph(Mapper::instance());
+#endif
       GW.WriteDot(FLAGS_graphout);
     }
 

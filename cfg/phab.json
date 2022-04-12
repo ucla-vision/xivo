@@ -41,8 +41,12 @@
 
   // memory
   "memory": {
-    "max_features": 20000,
-    "max_groups": 3500  // max groups should increase as allowed group lifetime increases
+    // Values if mapper is not enabled
+    "max_features": 200,
+    "max_groups": 100
+    // Values if mapper is enabled
+    //"max_features": 20000,
+    //"max_groups": 3500
   },
 
   // gravity constant
