@@ -1021,7 +1021,6 @@ std::vector<FeaturePtr>
 Estimator::FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards) {
   std::vector<FeaturePtr> nullref_features;
   Graph& graph{*Graph::instance()};
-  Mapper& mapper{*Mapper::instance()};
   for (auto g : discards) {
     // transfer ownership of the remaining features whose reference is this one
     auto failed = graph.TransferFeatureOwnership(
@@ -1037,13 +1036,14 @@ Estimator::FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards) {
 
 void Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
   Graph& graph{*Graph::instance()};
-  Mapper& mapper{*Mapper::instance()};
   for (auto g: discards) {
     if (g->id() == gauge_group_) {
       // just lost the gauge group
       gauge_group_ = -1;
     }
-    mapper.AddGroup(g, graph.GetGroupAdj(g));
+#ifdef USE_MAPPER
+    Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
+#endif
     graph.RemoveGroup(g);
     if (g->instate()) {
       RemoveGroupFromState(g);
@@ -1055,9 +1055,10 @@ void Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
 
 void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
   Graph &graph{*Graph::instance()};
-  Mapper &mapper{*Mapper::instance()};
   for (auto f : discards) {
-    mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
+#ifdef USE_MAPPER
+    Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
+#endif
     graph.RemoveFeature(f);
     if (f->instate()) {
       RemoveFeatureFromState(f);
@@ -1613,7 +1614,11 @@ bool Estimator::FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const {
 
 
 bool Estimator::UsingLoopClosure() const {
+#ifdef USE_MAPPER
   return Mapper::instance()->UseLoopClosure();
+#else
+  return false;
+#endif
 }
 
 } // xivo

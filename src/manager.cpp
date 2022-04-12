@@ -27,7 +27,6 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // retrieve the visibility graph
   Graph& graph{*Graph::instance()};
-  Mapper& mapper{*Mapper::instance()};
 
   // increment lifetime of all features and groups
   for (auto f : graph.GetFeatures()) {
@@ -57,7 +56,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     } else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
                f->track_status() == TrackStatus::REJECTED) {
       GroupPtr affected_group = f->ref();
-      mapper.AddFeature(f, graph.GetFeatureAdj(f), gbc());
+#ifdef USE_MAPPER
+      Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
+#endif
       graph.RemoveFeature(f);
       if (f->instate()) {
         LOG(INFO) << "Tracker rejected feature #" << f->id();
@@ -376,7 +377,10 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
           CHECK(!g->instate());
 #endif
-          mapper.AddGroup(g, graph.GetGroupAdj(g));
+
+#ifdef USE_MAPPER
+          Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
+#endif
           graph.RemoveGroup(g);
           Group::Deactivate(g);
         }
