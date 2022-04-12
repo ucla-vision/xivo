@@ -100,7 +100,7 @@ int QR(VecX &x, MatX &Hx, int effective_rows) {
   return rows;
 }
 
-bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x) {
+bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X) {
   Vec3 t12{g12.T()};
   Mat3 R12{g12.R()};
   Mat34 P1;
@@ -121,12 +121,12 @@ bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
 
   Eigen::JacobiSVD<Mat4> svd(A, Eigen::ComputeFullV);
   auto V = svd.matrixV();
-  x << V(0, 3), V(1, 3), V(2, 3);
-  x /= V(3, 3);
+  X << V(0, 3), V(1, 3), V(2, 3);
+  X /= V(3, 3);
   return true;
 }
 
-bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x) {
+bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X) {
   Vec3 t12{g12.T()};
   Mat3 R12{g12.R()};
 
@@ -146,12 +146,12 @@ bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
   Vec2 lambda = A.inverse() * b;
   Vec3 xm = lambda(0) * f1;
   Vec3 xn = t12 + lambda(1) * f2_unrotated;
-  x = (xm + xn) / 2.0; // in frame 1
+  X = (xm + xn) / 2.0; // in frame 1
   return true;
 }
 
 
-bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
+bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
   Vec3 t12{g12.T()};
@@ -194,11 +194,12 @@ bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+  X = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
+  // Check the conditions
   if(!check_cheirality(z, t21, f1_prime, Rf0_prime) ||
-    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime) ||
-    !check_parallax(Rf0_prime, f1_prime))
+    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
+    !check_parallax(Rf0_prime, f1_prime, beta_thresh))
   {
     return false;
   }
@@ -207,7 +208,7 @@ bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
 }
 
 
-bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
+bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
   Vec3 t12{g12.T()};
@@ -250,11 +251,12 @@ bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+  X = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
+  // Check the conditions
   if(!check_cheirality(z, t21, f1_prime, Rf0_prime) ||
-    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime) ||
-    !check_parallax(Rf0_prime, f1_prime))
+    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
+    !check_parallax(Rf0_prime, f1_prime, beta_thresh))
   {
     return false;
   }
@@ -262,7 +264,7 @@ bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
   return true;
 }
 
-bool LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
+bool LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
   Vec3 t12{g12.T()};
@@ -295,11 +297,12 @@ bool LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &x) {
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  x = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+  X = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
+  // Check the conditions
   if(!check_cheirality(z, t21, f1_prime, Rf0_prime) ||
-    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime) ||
-    !check_parallax(Rf0_prime, f1_prime))
+    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
+    !check_parallax(Rf0_prime, f1_prime, beta_thresh))
   {
     return false;
   }
@@ -316,7 +319,7 @@ bool check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const 
 
   if(lambda0 <= 0 || lambda1 <= 0)
   {
-    LOG(ERROR) << "[ERROR] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1;
+    LOG(WARNING) << "[WARNING] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1;
     return false;
   }
 
@@ -324,7 +327,7 @@ bool check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const 
 }
 
 
-bool check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Vec3 &f1, const Vec3 &f1_prime)
+bool check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Vec3 &f1, const Vec3 &f1_prime, float max_theta_thresh)
 {
 
   float theta0 = acos(Rf0.dot(Rf0_prime) / (Rf0.norm() * Rf0_prime.norm()));
@@ -332,22 +335,22 @@ bool check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Ve
 
   float max_theta = std::max(theta0, theta1);
 
-  if(max_theta > 0.01)
+  if(max_theta > max_theta_thresh)
   {
-    LOG(ERROR) << "[ERROR] angular reprojection error in triangulation";
+    LOG(WARNING) << "[WARNING] angular reprojection error in triangulation";
     return false;
   }
   return true;
 }
 
-bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime)
+bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thesh)
 {
 
   float beta = acos(f1_prime.dot(Rf0_prime) / (f1_prime.norm() * Rf0_prime.norm()));
 
-  if(beta < 0.1)
+  if(beta < beta_thesh)
   {
-    LOG(ERROR) << "[ERROR] parallax error in triangulation " << beta;
+    LOG(WARNING) << "[WARNING] parallax error in triangulation " << beta;
     return false;
   }
 

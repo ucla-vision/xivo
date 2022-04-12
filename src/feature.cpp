@@ -716,17 +716,17 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 
   else if(options.method == "l1_angular")
   {
-    return_output = L1Angular(g12, xc1, xc2, Xc1);
+    return_output = L1Angular(g12, xc1, xc2, Xc1, options.max_theta_thresh, options.beta_thesh);
   }
 
   else if(options.method == "l2_angular")
   {
-    return_output = L2Angular(g12, xc1, xc2, Xc1);
+    return_output = L2Angular(g12, xc1, xc2, Xc1, options.max_theta_thresh, options.beta_thesh);
   }
 
   else if(options.method == "linf_angular")
   {
-    return_output = LinfAngular(g12, xc1, xc2, Xc1);
+    return_output = LinfAngular(g12, xc1, xc2, Xc1, options.max_theta_thresh, options.beta_thesh);
   }
 
   else
@@ -740,18 +740,16 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
     return;
   }
 
-  // Xc1 = {0,0,0};
-
   if (auto z = Xc1(2); z < options.zmin || z > options.zmax) {
     // triangulated depth is not great
     // stick to the constant depth
   } else {
     x_.head<2>() = Xc1.head<2>() / z;
-#ifdef USE_INVDEPTH
-    x_(2) = 1.0 / z;
-#else
-    x_(2) = log(z);
-#endif
+    #ifdef USE_INVDEPTH
+      x_(2) = 1.0 / z;
+    #else
+      x_(2) = log(z);
+    #endif
   }
 
   return;
