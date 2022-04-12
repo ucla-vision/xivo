@@ -33,7 +33,7 @@ static Mat2 givens(number_t a, number_t b);
 // Returns: size of the upper triangular matrix Th
 int QR(VecX &r, MatX &Hx, int effective_rows = -1);
 
-template <typename T> bool MakePtrVectorUnique(std::vector<T *> &v) {
+template <typename T> void MakePtrVectorUnique(std::vector<T *> &v) {
   std::sort(v.begin(), v.end());
   v.erase(std::unique(v.begin(), v.end()), v.end());
 }
