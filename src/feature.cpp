@@ -353,7 +353,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
       break;
     }
 
-    VLOG_IF(0, iter > 0) << StrFormat("iter=%d; |res|:%0.4f->%0.4f", 
+    VLOG_IF(0, iter > 0) << StrFormat("iter=%d; |res|:%0.4f->%0.4f",
         iter, res_norm0 / (views.size() - 1), res_norm / (views.size() - 1) );
 
     // auto ldlt = H.ldlt();
@@ -392,7 +392,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
     VLOG(0) << StrFormat("feature #%d; status=%d; |res|=%f\n", id_,
                                as_integer(status_), res_norm0);
     return false;
-  } 
+  }
     // std::cout << "H=\n" << H << std::endl;
     // std::cout << "H.inv=\n" << H.inverse() << std::endl;
     // std::cout << "P=\n" << P_ << std::endl;
@@ -457,12 +457,12 @@ bool Feature::RefineDepth(const SE3 &gbc,
       SO3 Rsb{g->gsb().R()};
       Vec3 Tsb{g->gsb().T()};
       // compute the total transformation from spatial frame to new camera frame
-      Mat3 dWi_dWsb, dWi_dWbc; 
+      Mat3 dWi_dWsb, dWi_dWbc;
       Mat3 dTi_dWsb, dTi_dTsb, dTi_dTbc;
       // [Ri, Ti] = spatial to camera transformation
       auto [Ri, Ti] = InverseOfCompose(Rsb, Tsb,
           Rbc, Tbc,
-          &dWi_dWsb, &dWi_dWbc, 
+          &dWi_dWsb, &dWi_dWbc,
           &dTi_dWsb, &dTi_dTsb, &dTi_dTbc);
 
       // transfrom from spatial frame to new camera frame
@@ -489,7 +489,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
       // fill-in Jacobian w.r.t. the group
       Mat23 dxp_dXcn{dxp_dxcn * dxcn_dXcn};
-      Hg.block<2, 3>(0, 0) = dxp_dXcn * dXcn_dWsb; 
+      Hg.block<2, 3>(0, 0) = dxp_dXcn * dXcn_dWsb;
       Hg.block<2, 3>(0, 3) = dxp_dXcn * dXcn_dTsb;
 
       // update Jacobian w.r.t. the pose of the reference group
@@ -702,30 +702,31 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
   SE3 g12 = (ref_->gsb() * gbc).inv() * (gsb * gbc);
 
   Vec3 Xc1;
+  bool return_output;
 
   if(options.method == "direct_linear_transform_svd")
   {
-    Xc1 = DirectLinearTransformSVD(g12, xc1, xc2);
+    return_output = DirectLinearTransformSVD(g12, xc1, xc2, Xc1);
   }
 
   else if(options.method == "direct_linear_transform_avg")
   {
-    Xc1 = DirectLinearTransformAvg(g12, xc1, xc2);
+    return_output = DirectLinearTransformAvg(g12, xc1, xc2, Xc1);
   }
 
   else if(options.method == "l1_angular")
   {
-    Xc1 = L1Angular(g12, xc1, xc2);
+    return_output = L1Angular(g12, xc1, xc2, Xc1);
   }
 
   else if(options.method == "l2_angular")
   {
-    Xc1 = L2Angular(g12, xc1, xc2);
+    return_output = L2Angular(g12, xc1, xc2, Xc1);
   }
 
   else if(options.method == "linf_angular")
   {
-    Xc1 = LinfAngular(g12, xc1, xc2);
+    return_output = LinfAngular(g12, xc1, xc2, Xc1);
   }
 
   else
@@ -733,6 +734,13 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
     LOG(ERROR) << "[ERROR] Incorrect Method for Triangulation: " << options.method;
     exit(1);
   }
+
+  if(!return_output)
+  {
+    return;
+  }
+
+  // Xc1 = {0,0,0};
 
   if (auto z = Xc1(2); z < options.zmin || z > options.zmax) {
     // triangulated depth is not great
@@ -745,6 +753,8 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
     x_(2) = log(z);
 #endif
   }
+
+  return;
 }
 
 void Feature::FillCovarianceBlock(MatX &P) {

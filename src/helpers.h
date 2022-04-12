@@ -33,7 +33,7 @@ static Mat2 givens(number_t a, number_t b);
 // Returns: size of the upper triangular matrix Th
 int QR(VecX &r, MatX &Hx, int effective_rows = -1);
 
-template <typename T> void MakePtrVectorUnique(std::vector<T *> &v) {
+template <typename T> bool MakePtrVectorUnique(std::vector<T *> &v) {
   std::sort(v.begin(), v.end());
   v.erase(std::unique(v.begin(), v.end()), v.end());
 }
@@ -42,34 +42,34 @@ template <typename T> void MakePtrVectorUnique(std::vector<T *> &v) {
 // g12: 2->1
 // xc1: camera coordinates in frame 1
 // xc2: camera coordiantes in frame 2
-Vec3 DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x);
 
 // triangulation method2
 // interface same as triangulation method1 above
-Vec3 DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x);
 
 // triangulation method3
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L1 triangulation
-Vec3 L1Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+bool L1Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x);
 
 // triangulation method4
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L2 triangulation
-Vec3 L2Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+bool L2Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x);
 
 // triangulation method5
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L_inf triangulation
-Vec3 LinfAngular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2);
+bool LinfAngular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &x);
 
 // Check cheirality error for above methods
-void check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime);
+bool check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime);
 
 // Check angular reprojection error for above methods
-void check_angular_reprojection(const Vec3 &f0, const Vec3 &f0_prime, const Vec3 &f1, const Vec3 &f1_prime);
+bool check_angular_reprojection(const Vec3 &f0, const Vec3 &f0_prime, const Vec3 &f1, const Vec3 &f1_prime);
 
 // Check parallex error for above methods
-void check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime);
+bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime);
 
 } // namespace xivo
