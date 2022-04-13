@@ -107,7 +107,8 @@ def plot_3d_trajectories(Tsb_est, Tsb_gt, units='m'):
   ax.legend(('estimated', 'ground truth'))
 
 
-def error_three_plots(time_axis, error_signals, seq, error_type, error_unit):
+def error_three_plots(time_axis, error_signals, seq, error_type, error_unit,
+                      xlabel=None):
   means = np.mean(error_signals, axis=1)
   var = np.var(error_signals, axis=1)
   print("{} {} error means: {} {}".format(seq, error_type, means, error_unit))
@@ -123,7 +124,8 @@ def error_three_plots(time_axis, error_signals, seq, error_type, error_unit):
     "y-axis error mean/var: {0:10.3g}, {1:10.3g}".format(means[1], var[1]))
   plt.subplot(3,1,3)
   _time_plot(time_axis, error_signals[2,:],
-    "z-axis error mean/var: {0:10.3g}, {1:10.3g}".format(means[2], var[2]))
+    "z-axis error mean/var: {0:10.3g}, {1:10.3g}".format(means[2], var[2]),
+    xlabel=xlabel)
 
 
 def plot_3D_error_cloud(error_signal, title):

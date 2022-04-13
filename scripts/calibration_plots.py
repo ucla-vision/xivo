@@ -41,7 +41,7 @@ class CalibPlotHelper:
     self.seq = seq
 
     # Text for x-axis time plots
-    self.time_axis_label = 'Timesteps'
+    self.time_axis_label = '# Timesteps'
 
     # load estimator data
     self.est = EstimatorData(estimator_results, start_ind=start_ind,

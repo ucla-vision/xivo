@@ -33,7 +33,7 @@ class PlotHelper:
     self.seq = seq
 
     # Text for x-axis time plots
-    self.time_axis_label = 'Time (s)'
+    self.time_axis_label = '# Timesteps'
 
     # Load ground truth data
     self.gt_interpolator = groundtruth_interpolator(gt_file)
@@ -67,8 +67,6 @@ class PlotHelper:
       self.Vsb_gt[:,i] = V_sb_gt
       self.Wsb_gt[:,i] = R_sb_gt.as_rotvec()
 
-      self.time_axis[i] = timestamp
-
     self.time_axis = np.linspace(0,self.est.nposes-1,self.est.nposes)
 
     # copy time axis before we mess with it
@@ -101,9 +99,12 @@ class PlotHelper:
       R_sb_diff = self.est.Rsb[ind] * self.Rsb_gt[ind].inv()
       rot_error[:,ind] = R_sb_diff.as_rotvec().flatten()
 
-    error_three_plots(self.time_axis, rot_error, self.seq, "rotation", "rad?")
-    error_three_plots(self.time_axis, Tsb_error, self.seq, "translation", "m")
-    error_three_plots(self.time_axis, vel_error, self.seq, "velocity", "m/s")
+    error_three_plots(self.time_axis, rot_error, self.seq, "rotation", "rad?",
+                      xlabel=self.time_axis_label)
+    error_three_plots(self.time_axis, Tsb_error, self.seq, "translation", "m",
+                      xlabel=self.time_axis_label)
+    error_three_plots(self.time_axis, vel_error, self.seq, "velocity", "m/s",
+                      xlabel=self.time_axis_label)
     plot_3D_error_cloud(rot_error, "Rotation Error Cloud (rad?)")
     plot_3D_error_cloud(Tsb_error, "Translation Error Cloud (m)")
     plot_3D_error_cloud(vel_error, "Velocity Error Cloud (m/s)")
