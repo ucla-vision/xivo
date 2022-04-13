@@ -68,7 +68,7 @@ To build IMU-TK on Ubuntu, type in a terminal the following command sequence.
 cd imu_tk
 mkdir build
 cd build
-cmake  ..
+cmake .. -DOpenGL_GL_PREFERENCE=GLVND
 make
 
 ```
