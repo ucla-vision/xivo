@@ -121,15 +121,10 @@ bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
 
   Eigen::JacobiSVD<Mat4> svd(A, Eigen::ComputeFullV);
   auto V = svd.matrixV();
-  Vec3 X1;
-  X1 << V(0, 3), V(1, 3), V(2, 3);
-  X1 /= V(3, 3);
 
-  Mat3 R21{R12.transpose()};
-  Vec3 t21{-1 * R12.transpose() * t12};
+  X << V(0, 3), V(1, 3), V(2, 3);
+  X /= V(3, 3);
 
-  // Returns point from 2nd frame of reference
-  X = R21 * X1 + t21;
   return true;
 }
 
@@ -153,13 +148,8 @@ bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
   Vec2 lambda = A.inverse() * b;
   Vec3 xm = lambda(0) * f1;
   Vec3 xn = t12 + lambda(1) * f2_unrotated;
-  Vec3 X1 = (xm + xn) / 2.0; // in frame 1
+  X = (xm + xn) / 2.0; // in frame 1
 
-  Mat3 R21{R12.transpose()};
-  Vec3 t21{-1 * R12.transpose() * t12};
-
-  // Returns point from 2nd frame of reference
-  X = R21 * X1 + t21;
   return true;
 }
 

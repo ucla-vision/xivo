@@ -56,9 +56,17 @@ TEST_F(Triangulation, Normal_Inputs) {
   Vec3 Xc1;
 
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
-
   EXPECT_TRUE(return_output);
   EXPECT_LE((Xc1[2] - z2), 1);
+
+  return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_TRUE(return_output);
+  EXPECT_LE((Xc1[2] - z2), 1);
+
+  return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_TRUE(return_output);
+  EXPECT_LE((Xc1[2] - z2), 1);
+
 
 }
 
@@ -96,7 +104,12 @@ TEST_F(Triangulation, Parallax) {
 
   Vec3 Xc1;
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
 
+  return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
+
+  return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_FALSE(return_output);
 
 }
@@ -135,7 +148,12 @@ TEST_F(Triangulation, Cheirality) {
   Vec3 Xc1;
 
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
 
+  return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
+
+  return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_FALSE(return_output);
 
 }
@@ -175,7 +193,12 @@ TEST_F(Triangulation, Angular_Reprojection_Error) {
   Vec3 Xc1;
 
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
 
+  return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
+
+  return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_FALSE(return_output);
 
 }
@@ -217,7 +240,12 @@ TEST_F(Triangulation, Vanishing_Point) {
   Vec3 Xc1;
 
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
 
+  return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
+
+  return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_FALSE(return_output);
 
 }
