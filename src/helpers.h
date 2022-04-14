@@ -51,17 +51,17 @@ bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
 // triangulation method3
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L1 triangulation
-bool L1Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X, float max_theta_thresh, float beta_thresh);
+bool L1Angular(const SE3 &g01, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X, float max_theta_thresh, float beta_thresh);
 
 // triangulation method4
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L2 triangulation
-bool L2Angular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X, float max_theta_thresh, float beta_thresh);
+bool L2Angular(const SE3 &g01, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X, float max_theta_thresh, float beta_thresh);
 
 // triangulation method5
 // Based on Angular Errors - https://arxiv.org/abs/1903.09115
 // L_inf triangulation
-bool LinfAngular(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X, float max_theta_thresh, float beta_thresh);
+bool LinfAngular(const SE3 &g01, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X, float max_theta_thresh, float beta_thresh);
 
 // Check cheirality error for above methods
 bool check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime);

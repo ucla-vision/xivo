@@ -121,8 +121,15 @@ bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
 
   Eigen::JacobiSVD<Mat4> svd(A, Eigen::ComputeFullV);
   auto V = svd.matrixV();
-  X << V(0, 3), V(1, 3), V(2, 3);
-  X /= V(3, 3);
+  Vec3 X1;
+  X1 << V(0, 3), V(1, 3), V(2, 3);
+  X1 /= V(3, 3);
+
+  Mat3 R21{R12.transpose()};
+  Vec3 t21{-1 * R12.transpose() * t12};
+
+  // Returns point from 2nd frame of reference
+  X = R21 * X1 + t21;
   return true;
 }
 
@@ -146,18 +153,24 @@ bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
   Vec2 lambda = A.inverse() * b;
   Vec3 xm = lambda(0) * f1;
   Vec3 xn = t12 + lambda(1) * f2_unrotated;
-  X = (xm + xn) / 2.0; // in frame 1
+  Vec3 X1 = (xm + xn) / 2.0; // in frame 1
+
+  Mat3 R21{R12.transpose()};
+  Vec3 t21{-1 * R12.transpose() * t12};
+
+  // Returns point from 2nd frame of reference
+  X = R21 * X1 + t21;
   return true;
 }
 
 
-bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
+bool L1Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
-  Vec3 t12{g12.T()};
-  Mat3 R12{g12.R()};
-  Mat3 R21{R12.transpose()};
-  Vec3 t21{-1 * R12.transpose() * t12};
+  Vec3 t01{g01.T()};
+  Mat3 R01{g01.R()};
+  Mat3 R10{R01.transpose()};
+  Vec3 t10{-1 * R01.transpose() * t01};
 
   // Create homogeneous coordinates
   Vec3 f0{xc0(0), xc0(1), 1.0};
@@ -165,25 +178,25 @@ bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
   Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();
 
-  Vec3 m0{R21 * f0};
+  Vec3 m0{R10 * f0};
   Vec3 m1{f1};
 
-  float a0 = ((m0 / m0.norm()).cross(t21)).norm();
-  float a1 = ((m1 / m1.norm()).cross(t21)).norm();
+  float a0 = ((m0 / m0.norm()).cross(t10)).norm();
+  float a1 = ((m1 / m1.norm()).cross(t10)).norm();
 
   Vec3 m0_prime;
   Vec3 m1_prime;
 
   if(a0 <= a1)
   {
-    Vec3 n1 = m1.cross(t21);
+    Vec3 n1 = m1.cross(t10);
     Vec3 n1_hat = n1 / n1.norm();
     m0_prime = m0 - (m0.dot(n1_hat)) * n1_hat;
     m1_prime = m1;
   }
   else
   {
-    Vec3 n0 = m0.cross(t21);
+    Vec3 n0 = m0.cross(t10);
     Vec3 n0_hat = n0 / n0.norm();
     m0_prime = m0;
     m1_prime = m1 - (m1.dot(n0_hat)) * n0_hat;
@@ -194,10 +207,11 @@ bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  X = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+  // Returns point from 2nd frame of reference
+  X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   // Check the conditions
-  if(!check_cheirality(z, t21, f1_prime, Rf0_prime) ||
+  if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
     !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
     !check_parallax(Rf0_prime, f1_prime, beta_thresh))
   {
@@ -208,13 +222,13 @@ bool L1Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 }
 
 
-bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
+bool L2Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
-  Vec3 t12{g12.T()};
-  Mat3 R12{g12.R()};
-  Mat3 R21{R12.transpose()};
-  Vec3 t21{-1 * R12.transpose() * t12};
+  Vec3 t01{g01.T()};
+  Mat3 R01{g01.R()};
+  Mat3 R10{R01.transpose()};
+  Vec3 t10{-1 * R01.transpose() * t01};
 
   // Create homogeneous coordinates
   Vec3 f0{xc0(0), xc0(1), 1.0};
@@ -222,7 +236,7 @@ bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
   Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();
 
-  Vec3 m0{R21 * f0};
+  Vec3 m0{R10 * f0};
   Vec3 m1{f1};
 
   Vec3 m0_hat = m0 / m0.norm();
@@ -233,11 +247,11 @@ bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
   A.row(1) << m0_hat(1), m1_hat(1);
   A.row(2) << m0_hat(2), m1_hat(2);
 
-  Vec3 t21_hat = t21 / t21.norm();
+  Vec3 t10_hat = t10 / t10.norm();
   Mat3 I = Eigen::Matrix3d::Identity();
 
   Eigen::Matrix<double, 2, 3> B;
-  B = A.transpose() * (I - t21_hat * t21_hat.transpose());
+  B = A.transpose() * (I - t10_hat * t10_hat.transpose());
 
   Eigen::JacobiSVD<Eigen::Matrix<double, 2, 3>> svd(B, Eigen::ComputeFullV);
   Mat3 V = svd.matrixV();
@@ -251,10 +265,11 @@ bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  X = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+  // Returns point from 2nd frame of reference
+  X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   // Check the conditions
-  if(!check_cheirality(z, t21, f1_prime, Rf0_prime) ||
+  if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
     !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
     !check_parallax(Rf0_prime, f1_prime, beta_thresh))
   {
@@ -264,13 +279,13 @@ bool L2Angular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
   return true;
 }
 
-bool LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
+bool LinfAngular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
-  Vec3 t12{g12.T()};
-  Mat3 R12{g12.R()};
-  Mat3 R21{R12.transpose()};
-  Vec3 t21{-1 * R12.transpose() * t12};
+  Vec3 t01{g01.T()};
+  Mat3 R01{g01.R()};
+  Mat3 R10{R01.transpose()};
+  Vec3 t10{-1 * R01.transpose() * t01};
 
   // Create homogeneous coordinates
   Vec3 f0{xc0(0), xc0(1), 1.0};
@@ -278,14 +293,14 @@ bool LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, floa
   Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();
 
-  Vec3 m0{R21 * f0};
+  Vec3 m0{R10 * f0};
   Vec3 m1{f1};
 
   Vec3 m0_hat = m0 / m0.norm();
   Vec3 m1_hat = m1 / m1.norm();
 
-  Vec3 n_a = (m0_hat + m1_hat).cross(t21);
-  Vec3 n_b = (m0_hat - m1_hat).cross(t21);
+  Vec3 n_a = (m0_hat + m1_hat).cross(t10);
+  Vec3 n_b = (m0_hat - m1_hat).cross(t10);
 
   Vec3 n_prime_hat = n_a.norm() >= n_b.norm() ? n_a : n_b;
 
@@ -297,10 +312,11 @@ bool LinfAngular(const SE3 &g12, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, floa
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  X = ((z.dot(t21.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+  // Returns point from 2nd frame of reference
+  X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
 
   // Check the conditions
-  if(!check_cheirality(z, t21, f1_prime, Rf0_prime) ||
+  if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
     !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
     !check_parallax(Rf0_prime, f1_prime, beta_thresh))
   {
@@ -343,12 +359,12 @@ bool check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Ve
   return true;
 }
 
-bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thesh)
+bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thresh)
 {
 
   float beta = acos(f1_prime.dot(Rf0_prime) / (f1_prime.norm() * Rf0_prime.norm()));
 
-  if(beta < beta_thesh)
+  if(beta < beta_thresh)
   {
     LOG(WARNING) << "[WARNING] parallax error in triangulation " << beta;
     return false;

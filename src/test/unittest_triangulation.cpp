@@ -73,9 +73,9 @@ TEST_F(Triangulation, Parallax) {
 
   Mat4 g21;
 
-  g21 << 0.999444,0,-0.03399,-0.99944,
+  g21 << 0.9998,0,0.01745,-0.01,
         0,1,0,0,
-        	0.033991,0,0.999444,	-0.033991,
+        -0.01745,0,0.9998,0,
         0,0,0,1;
 
   Vec4 Xc2_homo = g21 * Xc1_homo;
@@ -184,13 +184,33 @@ TEST_F(Triangulation, Angular_Reprojection_Error) {
 
 TEST_F(Triangulation, Vanishing_Point) {
 
-  Vec2 xc1{2,3};
-  Vec2 xc2{2,3};
+  Vec2 xc1{0.2, 0.3};
+  float z1 = 6000;
+
+  Vec4 Xc1_homo{xc1[0] * z1, xc1[1] * z1, z1, 1};
+
+  Mat4 g21;
+
+  g21 << 1,0,0,-0.1,
+        0,1,0,0,
+        0,0,1,0,
+        0,0,0,1;
+
+  Vec4 Xc2_homo = g21 * Xc1_homo;
+
+  float z2 = Xc2_homo[2];
+
+  Vec2 xc2{Xc2_homo[0]/Xc2_homo[2], Xc2_homo[1]/Xc2_homo[2]};
+
+  Mat4 pose_homo;
+
+  pose_homo = g21.inverse();
 
   Mat34 pose;
-  pose << 1,0,0,-3,
-          0,1,0,0,
-          0,0,1,0;
+
+  pose << pose_homo.coeff(0,0),pose_homo.coeff(0,1),pose_homo.coeff(0,2),pose_homo.coeff(0,3),
+          pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
+          pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
 
   SE3 g12{pose};
 
@@ -199,6 +219,5 @@ TEST_F(Triangulation, Vanishing_Point) {
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
 
   EXPECT_FALSE(return_output);
-  EXPECT_TRUE(isnan(Xc1[2]));
 
 }
