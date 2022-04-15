@@ -58,7 +58,10 @@ void Estimator::Update() {
     while (inliers.size() < min_required_inliers_) {
       // reset states
       for (auto f : instate_features_) {
-        f->SetStatus(FeatureStatus::INSTATE);
+        if ((f->status() != FeatureStatus::GAUGE_XY) &&
+            (f->status() != FeatureStatus::GAUGE_Z)) {
+          f->SetStatus(FeatureStatus::INSTATE);
+        }
       }
       inliers.clear();
       // mark inliers
