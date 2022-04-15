@@ -338,6 +338,20 @@ Estimator::Estimator(const Json::Value &cfg)
     cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
   strict_criteria_timesteps_ = cfg_.get("strict_criteria_timesteps", 5).asInt();
 
+  // Feature Gauge Options
+  num_gauge_xy_features_ = cfg_.get("num_gauge_xy_features", 3).asInt();
+  num_gauge_z_features_ = cfg_.get("num_gauge_z_features", 1).asInt();
+  collinear_cross_prod_thresh_ =
+    cfg_.get("collinear_cross_prod_thresh", 1e-3).asDouble();
+
+  // initialize gauge feature list
+  for (int i=0; i<num_gauge_xy_features_; i++) {
+    gauge_xy_feature_ids_.push_back(-1);
+    gauge_xy_features_.push_back(nullptr);
+  }
+  gauge_z_feature_ = nullptr;
+  gauge_z_feature_id_ = -1;
+
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
   gravity_initialized_ = false;
@@ -737,6 +751,18 @@ void Estimator::RemoveFeatureFromState(FeaturePtr f) {
   err_.segment<3>(offset).setZero();
   P_.block(offset, 0, 3, size).setZero();
   P_.block(0, offset, size, 3).setZero();
+
+  if (f->id() == gauge_z_feature_id_) {
+    gauge_z_feature_id_ = -1;
+  } else {
+    auto gauge_it = std::find(gauge_xy_feature_ids_.begin(),
+                              gauge_xy_feature_ids_.end(),
+                              f->id());
+    if (gauge_it != gauge_xy_feature_ids_.end()) {
+      int iii = gauge_it - gauge_xy_feature_ids_.begin();
+      gauge_xy_feature_ids_[iii] = -1;
+    }
+  }
 }
 
 void Estimator::AddGroupToState(GroupPtr g) {
@@ -960,6 +986,12 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     if (gauge_group_ == -1) {
       SwitchRefGroup();
     }
+    if (gauge_z_feature_id_ == -1) {
+      SwitchGaugeZFeature();
+    }
+    if (std::count(gauge_xy_feature_ids_.begin(), gauge_xy_feature_ids_.end(), -1) > 0) {
+      SwitchGaugeXYFeatures();
+    }
 
   }
   timer_.Tock("visual-meas");
@@ -1123,6 +1155,125 @@ GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr>&candidates) {
                            return cov1 < cov2;
                          });
   return *git;
+}
+
+
+void Estimator::SwitchGaugeXYFeatures() {
+  std::vector<FeaturePtr> candidates =
+    Graph::instance()->GetGaugeFeatureCandidates(gauge_group_ptr_);
+  std::sort(candidates.begin(), candidates.end(), 
+            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
+              return FeatureCovXYComparison(f1, f2);
+            });
+
+  int num_to_find = std::count(gauge_xy_feature_ids_.begin(),
+                               gauge_xy_feature_ids_.end(),
+                               -1);
+
+  if (candidates.size() < num_to_find) {
+    LOG(WARNING) << "[Estimator::SwitchGaugeXYFeatures]: not enough instate features in reference group";
+  }
+
+  if (candidates.size() == 0) {
+    return;
+  }
+
+  // Lambda function that fills the slots in gauge_xy_features_ and
+  // gauge_xy_feature_ids_
+  auto fill_slots = [this](std::vector<FeaturePtr> C)
+  {
+    int candidate_idx = 0;
+    for (int i=0; i<gauge_xy_feature_ids_.size(); i++) {
+      int fid = gauge_xy_feature_ids_[i];
+      if (fid == -1) {
+        FeaturePtr new_fptr = C[candidate_idx];
+        gauge_xy_features_[i] = new_fptr;
+        gauge_xy_feature_ids_[i] = new_fptr->id();
+        candidate_idx++;
+      }
+      if (candidate_idx >= C.size()) {
+        break;
+      }
+    }
+  };
+
+  // Another lambda function that checks whether or not the features in
+  // gauge_xy_features_ are collinear
+  auto collinear_check = [this]() {
+    std::vector<Vec3> gauge_xy_features_Xc;
+    for (auto f: gauge_xy_features_) {
+      gauge_xy_features_Xc.push_back(f->Xc());
+    }
+    return PointsAreCollinear(gauge_xy_features_Xc,
+                              collinear_cross_prod_thresh_);
+  };
+
+  if (candidates.size() <= num_to_find) {
+    fill_slots(candidates);
+  } else {
+    // Try up to 10 times to find a set of features that are not collinear.
+    std::vector<int> gauge_xy_feature_ids_backup = gauge_xy_feature_ids_;
+    std::vector<FeaturePtr> gauge_xy_features_backup = gauge_xy_features_;
+
+    for (int NT = 0; NT<10; NT++) {
+      gauge_xy_feature_ids_ = gauge_xy_feature_ids_backup;
+      gauge_xy_features_ = gauge_xy_features_backup;
+
+      fill_slots(candidates);
+      if (collinear_check()) {
+        std::random_shuffle(candidates.begin(), candidates.end());
+      } else {
+        break;
+      }
+    }
+  }
+
+  // If we didn't manage to find a set of features that aren't collinear, then
+  // log a warning. (As far as I can tell, Corvis didn't do this at all.))
+  if (collinear_check()) {
+    LOG(WARNING) << "Did not find a set of non collinear features";
+  }
+
+  // Set covariance to 0
+  for (auto f: gauge_xy_features_) {
+    f->SetStatus(FeatureStatus::GAUGE_XY);
+    int offset = kFeatureBegin + 3*f->sind();
+    P_.block(offset, 0, 2, err_.size()).setZero();
+    P_.block(0, offset, err_.size(), 2).setZero();
+    LOG(INFO) << "Feature " << f->id() << " is a XY Gauge";
+  }  
+}
+
+
+
+void Estimator::SwitchGaugeZFeature() {
+  std::vector<FeaturePtr> candidates =
+    Graph::instance()->GetGaugeFeatureCandidates(gauge_group_ptr_);
+
+  if (candidates.size()==0) {
+    LOG(WARNING) << "No candidates for Z-Gauge Feature";
+    return;
+  }
+
+  // Look for the candidate with the lowest depth covariance
+  auto fit = std::min_element(candidates.begin(), candidates.end(),
+    [this](const FeaturePtr f1, const FeaturePtr f2) -> bool {
+      int offset_z1 = kFeatureBegin + 3*f1->sind() + 2;
+      int offset_z2 = kFeatureBegin + 3*f2->sind() + 2;
+      number_t cov1 = P_(offset_z1, offset_z1);
+      number_t cov2 = P_(offset_z2, offset_z2);
+      return cov1 < cov2;
+    });
+
+  gauge_z_feature_ = *fit;
+  gauge_z_feature_id_ = gauge_z_feature_->id();
+  gauge_z_feature_->SetStatus(FeatureStatus::GAUGE_Z);
+  LOG(INFO) << "Selected feature " << gauge_z_feature_id_ << " as Z-Gauge";
+
+  // Set covariance to 0
+  int offset = kFeatureBegin + 3*gauge_z_feature_->sind() + 2;
+  P_.block(offset, 0, 1, err_.size()).setZero();
+  P_.block(0, offset, err_.size(), 1).setZero();
 }
 
 
@@ -1614,6 +1765,13 @@ Mat6 Estimator::InstateGroupCov(GroupPtr g) const {
 bool Estimator::FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const {
   number_t score1 = InstateFeatureCov(f1).norm();
   number_t score2 = InstateFeatureCov(f2).norm();
+  return (score1 <= score2);
+}
+
+
+bool Estimator::FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const {
+  number_t score1 = InstateFeatureCov(f1).block<2,2>(0,0).norm();
+  number_t score2 = InstateFeatureCov(f2).block<2,2>(0,0).norm();
   return (score1 <= score2);
 }
 

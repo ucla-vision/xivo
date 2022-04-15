@@ -84,13 +84,20 @@ void Graph::AddFeatureToGroup(FeaturePtr f, GroupPtr g) {
 
 std::vector<FeaturePtr> Graph::GetInstateFeatures() {
   return GetFeaturesIf([](FeaturePtr f) -> bool {
-    return f->status() == FeatureStatus::INSTATE;
+    return f->instate();
   });
 }
 
 std::vector<GroupPtr> Graph::GetInstateGroups() {
   return GetGroupsIf([](GroupPtr g) -> bool {
     return g->instate();
+  });
+}
+
+std::vector<FeaturePtr> Graph::GetGaugeFeatureCandidates(GroupPtr owner) {
+  return GetFeaturesIf([owner](FeaturePtr f) -> bool {
+    return ((f->status() == FeatureStatus::INSTATE) &&
+            (f->ref() == owner));
   });
 }
 

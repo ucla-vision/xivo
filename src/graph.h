@@ -61,6 +61,7 @@ public:
   /** Shortcut functions */
   std::vector<FeaturePtr> GetInstateFeatures();
   std::vector<GroupPtr> GetInstateGroups();
+  std::vector<FeaturePtr> GetGaugeFeatureCandidates(GroupPtr owner);
 
   GroupPtr LastAddedGroup() const { return last_added_group_; }
 

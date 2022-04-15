@@ -157,4 +157,18 @@ SE3 TrajectoryAlignment(const std::vector<Vec3> &Y,
   return g;
 }
 
+
+bool PointsAreCollinear(const std::vector<Vec3>& pts, number_t thresh) {
+  Vec3 v1 = pts[1] - pts[0];
+  for (int i=2; i<pts.size(); i++) {
+    Vec3 vi = pts[i] - pts[0];
+    number_t r = v1.cross(vi).norm();
+    if (r > thresh) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 } // namespace xivo

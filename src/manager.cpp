@@ -114,9 +114,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)
-  instate_features_ = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
-    return f->status() == FeatureStatus::INSTATE;
-  });
+  instate_features_ = graph.GetInstateFeatures();
 
   if (instate_features_.size() < kMaxFeature) {
     int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
@@ -343,7 +341,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // adapt initial depth to average depth of features currently visible
   auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
-    return f->status() == FeatureStatus::INSTATE ||
+    return f->instate() ||
            (f->status() == FeatureStatus::READY &&
             f->lifetime() > adaptive_initial_depth_options_.min_feature_lifetime);
   });

@@ -20,4 +20,12 @@ SE3 HandEyeCalibration(const std::vector<SE3> &A, const std::vector<SE3> &B);
 //  G \in SE3 such that Y = G X
 SE3 TrajectoryAlignment(const std::vector<Vec3> &Y, const std::vector<Vec3> &X);
 
+/** Checks whether or not a vector of points is unique. We assume that the
+ *  points in the vector are all different. (This function is used to find
+ *  new gauge features. Since features are constrained to be sufficiently far
+ *  apart in the tracker by the mask, they are always going to be different.)
+ */
+bool PointsAreCollinear(const std::vector<Vec3> &pts, number_t thresh);
+
+
 } // namespace xivo

@@ -194,7 +194,8 @@ enum class FeatureStatus : int {
   REJECTED_BY_FILTER = 4,
   REJECTED_BY_TRACKER = 5,
   DROPPED = 6,
-  // GAUGE = 7 // chosen to fix gauge freedom
+  GAUGE_XY = 7, // chosen to fix gauge freedom
+  GAUGE_Z = 8
 };
 
 enum class GroupStatus : int {
