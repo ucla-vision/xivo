@@ -2,9 +2,11 @@
   // verbose
   "simulation": false,
   "print_timing": false,
+  "print_calibration": true,
   "use_canvas": true,
-  "use_debug_view": false,  // draw rejected & dropped features on canvas
+  "use_debug_view": true,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
+  "imu_tk_convention": true,
 
   // visualization (tracker view) option
   "print_bias_info": true,
@@ -15,11 +17,10 @@
   "use_OOS": false, // update with Out-Of-State features
   "use_depth_opt": true,  // depth optimization
   "use_MH_gating": true,
-  "use_1pt_RANSAC": false,   
-  "use_compression": false,  // measurement compression
+  "use_1pt_RANSAC": false,
+  "use_compression": true,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
-  "max_group_lifetime": 60,
   "remove_outlier_counter": 10,
   "OOS_update_min_observations": 5,
   "feature_owner_change_cov_factor": 1.5,
@@ -39,46 +40,42 @@
 
   // memory
   "memory": {
-    // Values if mapper is not enabled
     "max_features": 200,
-    "max_groups": 100
-    // Values if mapper is enabled
-    //"max_features": 30000,
-    //"max_groups": 5000
+    "max_groups": 3500  // max groups should increase as allowed group lifetime increases
   },
 
   // gravity constant
-  "gravity": [0, 0, -9.8],
+  "gravity": [0, 0, -9.796],
   // Initial State
   "X" : {
     "W"   : [0, 0, 0],
     "T"   : [0, 0, 0],
     "V"   : [0, 0, 0],
-    "bg"  : [0, 0, 0],
-    "ba"  : [0, 0, 0],
-    "Wbc" : [[-0.99952504,  0.00750192, -0.02989013],
-             [0.02961534, -0.03439736, -0.99896935],
-             [-0.00852233, -0.99938008,  0.03415885]],
-    // Wbc in tangent space: [-0.0418, -2.172, 2.248]
-    "Tbc": [0.04557484, -0.0711618, -0.04468125],
+
+    "bg"  : [8.93594e-05, -0.000113499, -4.95253e-05],
+    "ba"  : [0.106957, 0.0822465, -0.092585],
+
+    "Wbc" : [1.87, 1.98, -0.0048],
+    "Tbc": [-0.025, 0.025, -0.040],
+
     "Wg"  : [0, 0, 0],
-    "td"  : 0
+    "td"  : 0.0
   },
 
   "P" : {
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 1e-4,
-    "ba"  : 1e-3,
-    "Wbc" : 0.0001,
-    "Tbc" : 0.001,
-    "Wg"  : 3.01,
-    "td"  : 1e-5, // 1ms
-    "Cg"  : 1e-5,
-    "Ca"  : 1e-5,
-    "FC"  : [9, 0.9],
-    "distortion": 0.01
+    "bg"  : 0.00,
+    "ba"  : 0.00,
+    "Wbc" : 1.1,
+    "Tbc" : [0.001, 0.001, 0.005],
+    "Wg"  : 3.1,
+    "td"  : 5e-4, // 1ms
+    "Cg"  : 1e-3,
+    "Ca"  : 1e-3,
+    "FC"  : [1, 0.5], // calibration accuracy of focal length and principal point can vary
+    "distortion": 1e-3
   },
 
   "Qmodel" : {
@@ -92,40 +89,40 @@
     "Wg"  : 0
   },
 
-  // // Exact densities provided by TUM-VI dataset
-  // // https://vision.in.tum.de/data/datasets/visual-inertial-dataset
+  // This is for tango yellowstone, not the phab phone.
+  // But close enough to work well. One should put the device still,
+  // and use allan variance to get the noise densities PROPERLY.
   // "Qimu": {
-  //   "gyro": 8.0e-5,
-  //   "gyro_bias": 2.2e-6,
-  //   "accel":1.4e-3,
-  //   "accel_bias": 8.6e-5
+  //   "gyro": 0.00015,
+  //   "gyro_bias": 0.0004,
+  //   "accel":0.003,
+  //   "accel_bias": 0.000005
   // },
 
-  // inflated by 3 times
   "Qimu": {
-    "gyro": [24.0e-5, 24.0e-5, 24.0e-5],
-    "gyro_bias": [6.6e-6, 6.0e-6, 6.0e-6],
-    "accel": [4.2e-3, 4.2e-3, 4.2e-3],
-    "accel_bias": [25.8e-5, 25.8e-5, 25.8e-5]
+    "gyro": [0.01, 0.01, 0.01],
+    "gyro_bias": [0.00001, 0.00001, 0.00001],
+    "accel": [0.10, 0.10, 0.10],
+    "accel_bias": [0.001, 0.001, 0.001]
   },
 
 
   // Feature initialization parameters
   "initial_z": 2.5, // initial subfilter depth value (meter)
-  "initial_std_x": 1.0, // initial std on subfilter state (pixel)
-  "initial_std_y": 1.0, // initial std on subfilter state (pixel)
-  "initial_std_z": 1.0,  // initial std on subfilter state (meter)
+  "initial_std_x": 1.5, // initial std on subfilter state (pixel)
+  "initial_std_y": 1.5, // initial std on subfilter state (pixel)
+  "initial_std_z": 2.0,  // initial std on subfilter state (meter)
   "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
                                   // looser criteria for admitting features to
                                   // the state
   "comparison_score_type": "DepthUncertainty",
- 
+
   "visual_meas_std":  1.5, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
-  "max_depth": 5.0,
+  "max_depth": 8.0,
   "min_depth": 0.05,
 
   // Adaptive initial depth
@@ -134,7 +131,7 @@
     "minimum_feature_lifetime": 5
   },
 
-  // Loop closure measurement, in pixels
+  // Loop closure measurement
   "loop_closure_meas_std": 4.0,
 
   // depth sub-filter setting
@@ -146,45 +143,63 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": 2,
+    "method": 1,
     "zmin": 0.05,
     "zmax": 5.0
   },
 
   "depth_opt": {
-    "two_view": false,
+    "two_view": true,
     "use_hessian": true,
     "max_iters": 5,
     "eps": 1e-3,
     "damping": 1e-3,
-    "max_res_norm": 2.5 // maximal norm of per observation residuals
+    "max_res_norm": 1.5 // maximal norm of per observation residuals
   },
 
   // "feature_P0_damping": 1.0, // 10.0 seems most appropriate
 
   "imu_calib": {
-    "Cas": [1, 1, 1],
-    "Car": [[1, 0, 0], 
-            [0, 1, 0], 
-            [0, 0, 1]],
-    "Cgs": [1, 1, 1],
-    "Cgr": [[1, 0, 0], 
-            [0, 1, 0], 
-            [0, 0, 1]]
+    "Cas": [0.997708, 0.997608, 0.987496],
+
+    "Car": [[1, 0.00533542, 0.00268388],
+            [0,          1, -0.0107169],
+            [-0,          0,          1]],
+
+    "Cgs": [1.03991, 1.04305, 1.05785],
+
+
+    "Cgr": [[1,   -0.0115696, -0.000669818],
+            [-0.00974687,            1,  -0.00995586],
+            [0.00887142,    0.0119916,            1]]
   },
   "gravity_init_counter": 20,
 
+
   "camera_cfg": {
     "model": "equidistant",
-    "rows": 512, 
-    "cols": 512,
-    "fx": 190.97847715128717, 
-    "fy": 190.9733070521226, 
-    "cx": 254.93170605935475, 
-    "cy": 256.8974428996504,
-    "k0123": [0.0034823894022493434, 0.0007150348452162257, -0.0020532361418706202, 0.00020293673591811182],
-    "max_iter": 15,
-    "comment": "512-cam0"
+    "max_iter": 25,
+
+    "rows": 480, 
+    "cols": 640,
+
+    "fx": 274.00289785,
+    "fy": 275.2699115,
+    "cx": 319.72871392,
+    "cy": 234.57458689,
+    "k0123":[0.02259339, -0.03359065,  0.04207969, -0.01753983],
+
+
+    // "fx": 278.58280916,
+    // "fy": 280.22060362,
+    // "cx": 319.44633807,
+    // "cy": 234.52617002,
+    // "k0123": [0.03270076, -0.10166512,  0.13026008, -0.05382413],
+	 // distortion: [ 0.03270076 -0.10166512  0.13026008 -0.05382413] +- [0.01319749 0.03219052 0.03762898 0.01511334]
+	 // projection: [278.58280916 280.22060362 319.44633807 234.52617002] +- [3.02010026 3.07492519 0.33669887 0.25876254]
+	 // reprojection error: [0.000001, -0.000001] +- [0.182146, 0.186258]
+
+    "comment": "calibrated with kalibr"
   },
 
   "min_inliers": 5, // minimum number of inlier measurements
@@ -196,21 +211,16 @@
   "1pt_RANSAC_prob": 0.95,
   "1pt_RANSAC_Chi2": 5.89,
 
-  // "Correct" means 3 XY gauge features and 1 Z gauge feature. But sometimes
-  // localization error might work better if both are set to 0.
-  "num_gauge_xy_features": 3,
-  "num_gauge_z_features": 1,
-  "collinear_cross_prod_thresh": 0.001,
-
   "tracker_cfg": {
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 60,
+    "num_features_min": 90,
+    "num_features_max": 120,
     "max_pixel_displacement": 64,
     "normalize": false,
-    "match_dropped_tracks": true,
+    "match_dropped_tracks": false,
+    "match_dropped_tracks_tol": 50,
 
     "KLT": {
       "win_size": 15,
@@ -275,10 +285,10 @@
       // SIFT
       // https://docs.opencv.org/3.4/d7/d60/classcv_1_1SIFT.html
       "nfeatures": 0,
-      "nOctaveLayers": 2,
+      "nOctaveLayers": 3,
       "contrastThreshold": 0.000,
-      "edgeThreshold": 500.0,
-      "sigma": 1.6
+      "edgeThreshold": 50.0,
+      "sigma": 1.0
     },
 
     "SURF": {
@@ -308,10 +318,10 @@
     "detectLoopClosures": false,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
-    "nn_dist_thresh": 20.0,
+    "nn_dist_thresh": 30.0,
     "merge_features": true,
     "feature_merge_cov_factor": 1.0,
-    
+
     "RANSAC": {
       "max_iter": 1000,
       "min_iter": 100,

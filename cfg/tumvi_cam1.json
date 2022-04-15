@@ -201,6 +201,12 @@
   "1pt_RANSAC_prob": 0.95,
   "1pt_RANSAC_Chi2": 5.89,
 
+  // "Correct" means 3 XY gauge features and 1 Z gauge feature. But sometimes
+  // localization error might work better if both are set to 0.
+  "num_gauge_xy_features": 3,
+  "num_gauge_z_features": 1,
+  "collinear_cross_prod_thresh": 0.001,
+
   "tracker_cfg": {
     "use_prediction": false,
     "mask_size": 15,

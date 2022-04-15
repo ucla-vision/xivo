@@ -344,6 +344,13 @@ Estimator::Estimator(const Json::Value &cfg)
   collinear_cross_prod_thresh_ =
     cfg_.get("collinear_cross_prod_thresh", 1e-3).asDouble();
 
+  if ((num_gauge_xy_features_ < 0) || (num_gauge_xy_features_ > 3)) {
+    LOG(FATAL) << "Number of XY Gauge Features must be between 0 and 3";
+  }
+  if ((num_gauge_z_features_ < 0) || (num_gauge_z_features_ > 1)) {
+    LOG(FATAL) << "Number of Z Gauge Features must be 0 or 1.";
+  }
+
   // initialize gauge feature list
   for (int i=0; i<num_gauge_xy_features_; i++) {
     gauge_xy_feature_ids_.push_back(-1);
@@ -986,13 +993,14 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     if (gauge_group_ == -1) {
       SwitchRefGroup();
     }
-    if (gauge_z_feature_id_ == -1) {
+    if ((gauge_z_feature_id_ == -1) && (num_gauge_z_features_ > 0)) {
       SwitchGaugeZFeature();
     }
-    if (std::count(gauge_xy_feature_ids_.begin(), gauge_xy_feature_ids_.end(), -1) > 0) {
-      SwitchGaugeXYFeatures();
+    if (num_gauge_xy_features_ > 0) {
+      if (std::count(gauge_xy_feature_ids_.begin(), gauge_xy_feature_ids_.end(), -1) > 0) {
+        SwitchGaugeXYFeatures();
+      }
     }
-
   }
   timer_.Tock("visual-meas");
 }
