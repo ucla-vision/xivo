@@ -148,7 +148,7 @@ bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
   Vec2 lambda = A.inverse() * b;
   Vec3 xm = lambda(0) * f1;
   Vec3 xn = t12 + lambda(1) * f2_unrotated;
-  X = (xm + xn) / 2.0; // in frame 1
+  X = (xm + xn) / 2.0;
 
   return true;
 }
@@ -197,8 +197,11 @@ bool L1Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  // Returns point from 2nd frame of reference
+
   X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+
+  // Returns point from 1st frame of reference
+  X = R01 * X + t01;
 
   // Check the conditions
   if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
@@ -255,8 +258,10 @@ bool L2Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  // Returns point from 2nd frame of reference
   X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+
+  // Returns point from 1st frame of reference
+  X = R01 * X + t01;
 
   // Check the conditions
   if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
@@ -302,8 +307,10 @@ bool LinfAngular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, floa
 
   Vec3 z = f1_prime.cross(Rf0_prime);
 
-  // Returns point from 2nd frame of reference
   X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+
+  // Returns point from 1st frame of reference
+  X = R01 * X + t01;
 
   // Check the conditions
   if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||

@@ -12,6 +12,7 @@ class Triangulation : public :: testing :: Test
   protected:
     float max_theta_thresh = 0.1 * M_PI / 180;
     float beta_thresh = 0.25 * M_PI / 180;
+    float eps = 0.5;
 };
 
 TEST_F(Triangulation, Normal_Inputs) {
@@ -37,8 +38,6 @@ TEST_F(Triangulation, Normal_Inputs) {
 
   Vec4 Xc2_homo = g21 * Xc1_homo;
 
-  float z2 = Xc2_homo[2];
-
   Vec2 xc2{Xc2_homo[0]/Xc2_homo[2], Xc2_homo[1]/Xc2_homo[2]};
 
   Mat4 pose_homo;
@@ -57,17 +56,16 @@ TEST_F(Triangulation, Normal_Inputs) {
 
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_TRUE(return_output);
-  EXPECT_LE((Xc1[2] - z2), 1);
+  EXPECT_LE(abs(Xc1[2] - z1), eps);
+
 
   return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_TRUE(return_output);
-  EXPECT_LE((Xc1[2] - z2), 1);
+  EXPECT_LE(abs(Xc1[2] - z1), eps);
 
   return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_TRUE(return_output);
-  EXPECT_LE((Xc1[2] - z2), 1);
-
-
+  EXPECT_LE(abs(Xc1[2] - z1), eps);
 }
 
 
@@ -192,12 +190,16 @@ TEST_F(Triangulation, Angular_Reprojection_Error) {
 
   Vec3 Xc1;
 
-  bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
-  EXPECT_FALSE(return_output);
-
   // NOTE (April 2022): On Arch Linux (gcc11) and Ubuntu 20.04 (gcc9), this test
   // (for L1Angular) fails when compiled in RELEASE mode but passes when
   // compiled in DEBUG mode.
+  bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
+
+  return_output = L2Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
+  EXPECT_FALSE(return_output);
+
+  return_output = LinfAngular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
   EXPECT_FALSE(return_output);
 
 }
