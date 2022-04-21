@@ -14,6 +14,71 @@
 
 namespace xivo {
 
+
+cv::Ptr<cv::FeatureDetector> GetOpenCVDetectorDescriptor(
+  std::string feature_type, Json::Value feature_cfg)
+{
+  if (feature_type == "FAST") {
+    return cv::FastFeatureDetector::create(
+      feature_cfg.get("threshold", 5).asInt(),
+      feature_cfg.get("nonmaxSuppression", true).asBool());
+  } else if (feature_type == "BRISK") {
+    return cv::BRISK::create(
+      feature_cfg.get("thresh", 5).asInt(),
+      feature_cfg.get("octaves", 3).asInt(),
+      feature_cfg.get("patternScale", 1.0).asFloat());
+  } else if (feature_type == "ORB") {
+    return cv::ORB::create(
+      feature_cfg.get("nfeatures", 500).asInt(),
+      feature_cfg.get("scaleFactor", 1.2).asFloat(),
+      feature_cfg.get("nlevels", 4).asInt(),
+      feature_cfg.get("edgeThreshold", 31).asInt(),
+      feature_cfg.get("firstLevel", 0).asInt(),
+      feature_cfg.get("WTA_K", 2).asInt(),
+      feature_cfg.get("patchSize", 31).asInt(),
+      feature_cfg.get("fastThreshold", 20).asInt());
+  } else if (feature_type == "AGAST") {
+    return cv::AgastFeatureDetector::create(
+      feature_cfg.get("threshold", 10).asInt(),
+      feature_cfg.get("nonmaxSuppression", true).asBool());
+  } else if (feature_type == "GFTT") {
+    return cv::GFTTDetector::create(
+      feature_cfg.get("maxCorners", 1000).asInt(),
+      feature_cfg.get("qualityLevel", true).asDouble(),
+      feature_cfg.get("minDistance", 1.0).asDouble(),
+      feature_cfg.get("blockSize", 3).asInt(),
+      feature_cfg.get("useHarrisDetector", false).asBool(),
+      feature_cfg.get("k", 0.04).asDouble());
+  } else if (feature_type == "SIFT") {
+    return cv::SIFT::create(
+      feature_cfg.get("nfeatures", 0).asInt(),
+      feature_cfg.get("nOctaveLayers", 3).asInt(),
+      feature_cfg.get("contrastThreshold", 0.04).asDouble(),
+      feature_cfg.get("edgeThreshold", 10.0).asDouble(),
+      feature_cfg.get("sigma", 1.6).asDouble());
+  } else if (feature_type == "SURF") {
+    return cv::xfeatures2d::SURF::create(
+      feature_cfg.get("hessianThreshold", 100).asDouble(),
+      feature_cfg.get("nOctaves", 4).asInt(),
+      feature_cfg.get("nOctaveLayers", 3).asInt(),
+      feature_cfg.get("extended", false).asBool(),
+      feature_cfg.get("upright", false).asBool());
+  } else if (feature_type == "BRIEF") {
+    return cv::xfeatures2d::BriefDescriptorExtractor::create(
+      feature_cfg.get("bytes", 64).asInt(),
+      feature_cfg.get("use_orientation", false).asBool());
+  } else if (feature_type == "FREAK") {
+    return cv::xfeatures2d::FREAK::create(
+      feature_cfg.get("orientationNormalized", true).asBool(),
+      feature_cfg.get("scaleNormalized", true).asBool(),
+      feature_cfg.get("patternScale", 22.0).asDouble(),
+      feature_cfg.get("nOctaves", 4).asInt());
+  } else {
+    throw std::invalid_argument("unrecognized detector or descriptor type");
+  }
+}
+
+
 std::unique_ptr<Tracker> Tracker::instance_ = nullptr;
 
 TrackerPtr Tracker::Create(const Json::Value &cfg) {
@@ -41,56 +106,19 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
 
   std::string detector_type = cfg_.get("detector", "FAST").asString();
   LOG(INFO) << "detector type=" << detector_type;
-  auto detector_cfg = cfg_[detector_type];
-
-  if (detector_type == "FAST") {
-    detector_ = cv::FastFeatureDetector::create(
-        detector_cfg.get("threshold", 5).asInt(),
-        detector_cfg.get("nonmaxSuppression", true).asBool());
-  } else if (detector_type == "BRISK") {
-    detector_ =
-        cv::BRISK::create(detector_cfg.get("thresh", 5).asInt(),
-                          detector_cfg.get("octaves", 3).asInt(),
-                          detector_cfg.get("patternScale", 1.0).asFloat());
-  } else if (detector_type == "ORB") {
-    detector_ = cv::ORB::create(detector_cfg.get("nfeatures", 500).asInt(),
-                                detector_cfg.get("scaleFactor", 1.2).asFloat(),
-                                detector_cfg.get("nlevels", 4).asInt(),
-                                detector_cfg.get("edgeThreshold", 31).asInt(),
-                                detector_cfg.get("firstLevel", 0).asInt(),
-                                detector_cfg.get("WTA_K", 2).asInt(),
-                                detector_cfg.get("patchSize", 31).asInt(),
-                                detector_cfg.get("fastThreshold", 20).asInt());
-  } else if (detector_type == "AGAST") {
-    detector_ = cv::AgastFeatureDetector::create(
-        detector_cfg.get("threshold", 10).asInt(),
-        detector_cfg.get("nonmaxSuppression", true).asBool());
-  } else if (detector_type == "GFTT") {
-    detector_ = cv::GFTTDetector::create(
-        detector_cfg.get("maxCorners", 1000).asInt(),
-        detector_cfg.get("qualityLevel", true).asDouble(),
-        detector_cfg.get("minDistance", 1.0).asDouble(),
-        detector_cfg.get("blockSize", 3).asInt(),
-        detector_cfg.get("useHarrisDetector", false).asBool(),
-        detector_cfg.get("k", 0.04).asDouble());
-  } else if (detector_type == "SIFT") {
-    detector_ = cv::SIFT::create(
-      detector_cfg.get("nfeatures", 0).asInt(),
-      detector_cfg.get("nOctaveLayers", 3).asInt(),
-      detector_cfg.get("contrastThreshold", 0.04).asDouble(),
-      detector_cfg.get("edgeThreshold", 10.0).asDouble(),
-      detector_cfg.get("sigma", 1.6).asDouble());
-  } else if (detector_type == "SURF") {
-    detector_ = cv::xfeatures2d::SURF::create(
-      detector_cfg.get("hessianThreshold", 100).asDouble(),
-      detector_cfg.get("nOctaves", 4).asInt(),
-      detector_cfg.get("nOctaveLayers", 3).asInt(),
-      detector_cfg.get("extended", false).asBool(),
-      detector_cfg.get("upright", false).asBool());
+  if ((detector_type == "FAST") ||
+      (detector_type == "BRISK") ||
+      (detector_type == "ORB") ||
+      (detector_type == "AGAST") ||
+      (detector_type == "GFFT") ||
+      (detector_type == "SIFT") ||
+      (detector_type == "SURF")) {
+    detector_ = GetOpenCVDetectorDescriptor(detector_type,
+                                            cfg_[detector_type]);
+    LOG(INFO) << "detector created";
   } else {
-    throw std::invalid_argument("unrecognized detector type");
+    LOG(FATAL) << "Invalid Feature Detector: " << detector_type;
   }
-  LOG(INFO) << "detector created";
 
   descriptor_distance_thresh_ =
       cfg_.get("descriptor_distance_thresh", -1).asInt();
@@ -100,32 +128,18 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
                                                                : "DISABLED";
 
   if (extract_descriptor_) {
-    if (detector_type == "FAST" || detector_type == "AGAST" ||
-        detector_type == "GFTT") {
-      LOG(WARNING)
-          << "detectors NOT able to extract descriptors; default to BRIEF";
-
-      auto default_descriptor =
-          cfg_.get("default_descriptor", "BRIEF").asString();
-      auto desc_cfg = cfg_[default_descriptor];
-
-      if (default_descriptor == "BRIEF") {
-        extractor_ = cv::xfeatures2d::BriefDescriptorExtractor::create(
-            desc_cfg.get("bytes", 64).asInt(),
-            desc_cfg.get("use_orientation", false).asBool());
-      } else if (default_descriptor == "FREAK") {
-        extractor_ = cv::xfeatures2d::FREAK::create(
-            desc_cfg.get("orientationNormalized", true).asBool(),
-            desc_cfg.get("scaleNormalized", true).asBool(),
-            desc_cfg.get("patternScale", 22.0).asDouble(),
-            desc_cfg.get("nOctaves", 4).asInt());
-      } else {
-        throw std::invalid_argument("unrecognized descriptor type");
-      }
-
+    std::string descriptor_type = cfg_.get("descriptor", "BRIEF").asString();
+    LOG(INFO) << "descriptor type=" << descriptor_type;
+    if ((descriptor_type == "BRIEF") ||
+        (descriptor_type == "BRISK") ||
+        (descriptor_type == "ORB") ||
+        (descriptor_type == "FREAK") ||
+        (descriptor_type == "SIFT") ||
+        (descriptor_type == "SURF")) {
+      extractor_ = GetOpenCVDetectorDescriptor(descriptor_type,
+                                               cfg_[descriptor_type]);
     } else {
-      // detector is also the extractor
-      extractor_ = detector_;
+      LOG(FATAL) << "Invalid feature descriptor: " << descriptor_type;
     }
   }
 

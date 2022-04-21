@@ -221,7 +221,7 @@
 
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
-    "default_descriptor": "BRIEF",
+    "descriptor": "BRIEF",
 
     // "detector": "BRISK",
     "detector": "FAST",
