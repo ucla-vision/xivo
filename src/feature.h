@@ -223,7 +223,7 @@ public:
    *  overlap.
    *  \todo Completely separate feature and group IDs so that we don't have
    *        problems if this SLAM code is ever run for a long, long time.  */
-  static constexpr int counter0 = 10000;  
+  static constexpr int counter0 = 10000;
 
 private:
   Feature(const Feature &) = delete;
