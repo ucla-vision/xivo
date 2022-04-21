@@ -141,10 +141,12 @@ Estimator::Estimator(const Json::Value &cfg)
 
   triangulate_pre_subfilter_ =
       cfg_.get("triangulate_pre_subfilter", false).asBool();
-  triangulate_options_.method = cfg_["triangulation"].get("method", 1).asInt();
+  triangulate_options_.method = cfg_["triangulation"].get("method", "l1_angular").asString();
   triangulate_options_.zmin =
       cfg_["triangulation"].get("zmin", 0.05).asDouble();
   triangulate_options_.zmax = cfg_["triangulation"].get("zmax", 5.0).asDouble();
+  triangulate_options_.max_theta_thresh = cfg_["triangulation"].get("max_theta_thresh", 0.1).asDouble() * M_PI / 180;
+  triangulate_options_.beta_thesh = cfg_["triangulation"].get("beta_thesh", 0.25).asDouble() * M_PI / 180;
 
   adaptive_initial_depth_options_.median_weight =
     cfg_["adaptive_initial_depth"].get("median_weight", 0.99).asDouble();
@@ -193,7 +195,7 @@ Estimator::Estimator(const Json::Value &cfg)
     // For biases obtained by IMU-TK library,
     // the calibrated meaurement is a_calib = K(a_raw + a_bias)
     // whereas in our model a_calib=K * a_raw - a_bias
-    // thus we need convert that. 
+    // thus we need convert that.
     X_.bg = -imu_.Cg() * X_.bg;
     X_.ba = -imu_.Ca() * X_.ba;
   }
@@ -444,7 +446,7 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
 
       number_t gyro_mag = (abs(gyro(i)) > max_gyro_(i)) ? max_gyro_(i) : abs(gyro(i));
       number_t accel_mag = (abs(accel_wout_grav(i)) > max_accel_(i)) ? max_accel_(i) : abs(accel_wout_grav(i));
-      
+
       gyro_new(i) = sign_gyro * gyro_mag;
       accel_new(i) = sign_accel * accel_mag;
     }
@@ -987,7 +989,7 @@ void Estimator::UpdateJosephForm() {
   // for (int i = 0; i < err_.size(); ++i) {
   //   I_KH_(i, i) += 1;
   // }
-  
+
   // Here, I_KH is actually KH - I, but since
   // update of P is quadratic in I_KH, so it does not matter.
   I_KH_ = K_ * H_;
@@ -1248,7 +1250,7 @@ MatX3 Estimator::InstateFeaturePositions(int n_output) const {
 
   MatX3 feature_positions(npts,3);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features.begin();
        it != instate_features.end() && i < n_output;
        ) {
@@ -1282,7 +1284,7 @@ MatX3 Estimator::InstateFeatureXc(int n_output) const {
 
   MatX3 feature_positions(npts,3);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features.begin();
        it != instate_features.end() && i < n_output;
        ) {
@@ -1315,7 +1317,7 @@ MatX6 Estimator::InstateFeatureCovs(int n_output) const {
 
   MatX6 feature_covs(npts,6);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features.begin();
        it != instate_features.end() && i < n_output;
        ) {
@@ -1357,7 +1359,7 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
   feature_last_px.resize(npts,2);
   feature_ids.resize(npts);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features.begin();
        it != instate_features.end() && i < npts;
        ) {
@@ -1432,7 +1434,7 @@ MatX3 Estimator::InstateFeaturePositions() const
 
   MatX3 feature_positions(num_features,3);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features_.begin();
        it != instate_features_.end() && i < num_features;
        ) {
@@ -1454,7 +1456,7 @@ MatX3 Estimator::InstateFeatureXc() const
 
   MatX3 feature_positions(num_features,3);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features_.begin();
        it != instate_features_.end() && i < num_features;
        ) {
@@ -1476,7 +1478,7 @@ MatX6 Estimator::InstateFeatureCovs() const {
 
   MatX6 feature_covs(num_features,6);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_features_.begin();
        it != instate_features_.end() && i < num_features;
        ) {
@@ -1568,7 +1570,7 @@ MatX Estimator::InstateGroupCovs() const
 
   MatX group_covs(num_groups, 21);
 
-  int i = 0; 
+  int i = 0;
   for (auto it = instate_groups_.begin();
        it != instate_groups_.end() && i < num_groups;
        ) {

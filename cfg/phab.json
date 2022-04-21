@@ -17,7 +17,7 @@
   "use_OOS": false, // update with Out-Of-State features
   "use_depth_opt": true,  // depth optimization
   "use_MH_gating": true,
-  "use_1pt_RANSAC": false,   
+  "use_1pt_RANSAC": false,
   "use_compression": true,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
@@ -148,9 +148,11 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": 1,
+    "method": "l1_angular",
     "zmin": 0.05,
-    "zmax": 5.0
+    "zmax": 5.0,
+    "max_theta_thresh": 0.1, // in degrees
+    "beta_thesh": 0.25 // in degrees
   },
 
   "depth_opt": {
@@ -185,7 +187,7 @@
     "model": "equidistant",
     "max_iter": 25,
 
-    "rows": 480, 
+    "rows": 480,
     "cols": 640,
 
     "fx": 274.00289785,
@@ -276,7 +278,7 @@
     },
 
     "GFTT": {
-      // Good Feature To Track 
+      // Good Feature To Track
       // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
       "maxCorners": 1000,
       "qualityLevel": 0.01,

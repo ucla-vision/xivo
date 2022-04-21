@@ -100,7 +100,7 @@ int QR(VecX &x, MatX &Hx, int effective_rows) {
   return rows;
 }
 
-Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X) {
   Vec3 t12{g12.T()};
   Mat3 R12{g12.R()};
   Mat34 P1;
@@ -121,13 +121,14 @@ Vec3 Triangulate1(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
 
   Eigen::JacobiSVD<Mat4> svd(A, Eigen::ComputeFullV);
   auto V = svd.matrixV();
-  Vec3 x;
-  x << V(0, 3), V(1, 3), V(2, 3);
-  x /= V(3, 3);
-  return x;
+
+  X << V(0, 3), V(1, 3), V(2, 3);
+  X /= V(3, 3);
+
+  return true;
 }
 
-Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
+bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X) {
   Vec3 t12{g12.T()};
   Mat3 R12{g12.R()};
 
@@ -147,8 +148,226 @@ Vec3 Triangulate2(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2) {
   Vec2 lambda = A.inverse() * b;
   Vec3 xm = lambda(0) * f1;
   Vec3 xn = t12 + lambda(1) * f2_unrotated;
-  Vec3 x = (xm + xn) / 2.0; // in frame 1
-  return x;
+  X = (xm + xn) / 2.0;
+
+  return true;
+}
+
+
+bool L1Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
+
+  // Initalize the Rotation and Translation Matricies
+  Vec3 t01{g01.T()};
+  Mat3 R01{g01.R()};
+  Mat3 R10{R01.transpose()};
+  Vec3 t10{-1 * R01.transpose() * t01};
+
+  // Create homogeneous coordinates
+  Vec3 f0{xc0(0), xc0(1), 1.0};
+  f0.normalize();
+  Vec3 f1{xc1(0), xc1(1), 1.0};
+  f1.normalize();
+
+  Vec3 m0{R10 * f0};
+  Vec3 m1{f1};
+
+  float a0 = ((m0 / m0.norm()).cross(t10)).norm();
+  float a1 = ((m1 / m1.norm()).cross(t10)).norm();
+
+  Vec3 m0_prime;
+  Vec3 m1_prime;
+
+  if(a0 <= a1)
+  {
+    Vec3 n1 = m1.cross(t10);
+    Vec3 n1_hat = n1 / n1.norm();
+    m0_prime = m0 - (m0.dot(n1_hat)) * n1_hat;
+    m1_prime = m1;
+  }
+  else
+  {
+    Vec3 n0 = m0.cross(t10);
+    Vec3 n0_hat = n0 / n0.norm();
+    m0_prime = m0;
+    m1_prime = m1 - (m1.dot(n0_hat)) * n0_hat;
+  }
+
+  Vec3 Rf0_prime = m0_prime;
+  Vec3 f1_prime = m1_prime;
+
+  Vec3 z = f1_prime.cross(Rf0_prime);
+
+
+  X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+
+  // Returns point from 1st frame of reference
+  X = R01 * X + t01;
+
+  // Check the conditions
+  if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
+    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
+    !check_parallax(Rf0_prime, f1_prime, beta_thresh))
+  {
+    return false;
+  }
+
+  return true;
+}
+
+
+bool L2Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
+
+  // Initalize the Rotation and Translation Matricies
+  Vec3 t01{g01.T()};
+  Mat3 R01{g01.R()};
+  Mat3 R10{R01.transpose()};
+  Vec3 t10{-1 * R01.transpose() * t01};
+
+  // Create homogeneous coordinates
+  Vec3 f0{xc0(0), xc0(1), 1.0};
+  f0.normalize();
+  Vec3 f1{xc1(0), xc1(1), 1.0};
+  f1.normalize();
+
+  Vec3 m0{R10 * f0};
+  Vec3 m1{f1};
+
+  Vec3 m0_hat = m0 / m0.norm();
+  Vec3 m1_hat = m1 / m1.norm();
+
+  Eigen::Matrix<double, 3, 2> A;
+  A.row(0) << m0_hat(0), m1_hat(0);
+  A.row(1) << m0_hat(1), m1_hat(1);
+  A.row(2) << m0_hat(2), m1_hat(2);
+
+  Vec3 t10_hat = t10 / t10.norm();
+  Mat3 I = Eigen::Matrix3d::Identity();
+
+  Eigen::Matrix<double, 2, 3> B;
+  B = A.transpose() * (I - t10_hat * t10_hat.transpose());
+
+  Eigen::JacobiSVD<Eigen::Matrix<double, 2, 3>> svd(B, Eigen::ComputeFullV);
+  Mat3 V = svd.matrixV();
+  Vec3 n_prime_hat = V.col(1);
+
+  Vec3 m0_prime = m0 - m0.dot(n_prime_hat) * n_prime_hat;
+  Vec3 m1_prime = m1 - m1.dot(n_prime_hat) * n_prime_hat;
+
+  Vec3 Rf0_prime = m0_prime;
+  Vec3 f1_prime = m1_prime;
+
+  Vec3 z = f1_prime.cross(Rf0_prime);
+
+  X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+
+  // Returns point from 1st frame of reference
+  X = R01 * X + t01;
+
+  // Check the conditions
+  if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
+    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
+    !check_parallax(Rf0_prime, f1_prime, beta_thresh))
+  {
+    return false;
+  }
+
+  return true;
+}
+
+bool LinfAngular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
+
+  // Initalize the Rotation and Translation Matricies
+  Vec3 t01{g01.T()};
+  Mat3 R01{g01.R()};
+  Mat3 R10{R01.transpose()};
+  Vec3 t10{-1 * R01.transpose() * t01};
+
+  // Create homogeneous coordinates
+  Vec3 f0{xc0(0), xc0(1), 1.0};
+  f0.normalize();
+  Vec3 f1{xc1(0), xc1(1), 1.0};
+  f1.normalize();
+
+  Vec3 m0{R10 * f0};
+  Vec3 m1{f1};
+
+  Vec3 m0_hat = m0 / m0.norm();
+  Vec3 m1_hat = m1 / m1.norm();
+
+  Vec3 n_a = (m0_hat + m1_hat).cross(t10);
+  Vec3 n_b = (m0_hat - m1_hat).cross(t10);
+
+  Vec3 n_prime_hat = n_a.norm() >= n_b.norm() ? n_a : n_b;
+
+  Vec3 m0_prime = m0 - m0.dot(n_prime_hat) * n_prime_hat;
+  Vec3 m1_prime = m1 - m1.dot(n_prime_hat) * n_prime_hat;
+
+  Vec3 Rf0_prime = m0_prime;
+  Vec3 f1_prime = m1_prime;
+
+  Vec3 z = f1_prime.cross(Rf0_prime);
+
+  X = ((z.dot(t10.cross(Rf0_prime))) / pow(z.norm(),2)) * f1_prime;
+
+  // Returns point from 1st frame of reference
+  X = R01 * X + t01;
+
+  // Check the conditions
+  if(!check_cheirality(z, t10, f1_prime, Rf0_prime) ||
+    !check_angular_reprojection(m0, Rf0_prime, m1, f1_prime, max_theta_thresh) ||
+    !check_parallax(Rf0_prime, f1_prime, beta_thresh))
+  {
+    return false;
+  }
+
+  return true;
+}
+
+
+bool check_cheirality(const Vec3 &z, const Vec3 &t, const Vec3 &f1_prime, const Vec3 &Rf0_prime)
+{
+
+  float lambda0 = z.dot(t.cross(f1_prime)) / pow(z.norm(), 2);
+  float lambda1 = z.dot(t.cross(Rf0_prime)) / pow(z.norm(), 2);
+
+  if(lambda0 <= 0 || lambda1 <= 0)
+  {
+    LOG(WARNING) << "[WARNING] cheirality error in triangulation. lambda0=" << lambda0 << ", lamba1=" << lambda1;
+    return false;
+  }
+
+  return true;
+}
+
+
+bool check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Vec3 &f1, const Vec3 &f1_prime, float max_theta_thresh)
+{
+
+  float theta0 = acos(Rf0.dot(Rf0_prime) / (Rf0.norm() * Rf0_prime.norm()));
+  float theta1 = acos(f1.dot(f1_prime) / (f1.norm() * f1_prime.norm()));
+
+  float max_theta = std::max(theta0, theta1);
+
+  if(max_theta > max_theta_thresh)
+  {
+    LOG(WARNING) << "[WARNING] angular reprojection error in triangulation";
+    return false;
+  }
+  return true;
+}
+
+bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thresh)
+{
+
+  float beta = acos(f1_prime.dot(Rf0_prime) / (f1_prime.norm() * Rf0_prime.norm()));
+
+  if(beta < beta_thresh)
+  {
+    LOG(WARNING) << "[WARNING] parallax error in triangulation " << beta;
+    return false;
+  }
+
+  return true;
 }
 
 } // namespace xivo

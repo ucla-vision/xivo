@@ -3,6 +3,7 @@
 // Author: Xiaohan Fei (feixh@cs.ucla.edu)
 #pragma once
 #include "core.h"
+#include <string>
 
 namespace xivo {
 // depth refinement options
@@ -32,10 +33,11 @@ struct SubfilterOptions {
 
 // options for depth triangulation
 struct TriangulateOptions {
-  TriangulateOptions() : method{1}, zmin{0.05}, zmax{5.0} {}
+  TriangulateOptions() : method{"linf_angular"}, zmin{0.05}, zmax{5.0}, max_theta_thresh{0.01}, beta_thesh{1e-8} {}
 
-  int method;
+  std::string method;
   number_t zmin, zmax;
+  number_t max_theta_thresh, beta_thesh; // thresholds for angular reprojection error and parallax error 
 };
 
 // Options for adaptive initial depth estimation

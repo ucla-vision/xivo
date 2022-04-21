@@ -16,7 +16,7 @@
   "use_OOS": false, // update with Out-Of-State features
   "use_depth_opt": true,  // depth optimization
   "use_MH_gating": true,
-  "use_1pt_RANSAC": false,   
+  "use_1pt_RANSAC": false,
   "use_compression": true,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
@@ -148,9 +148,11 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": 1,
+    "method": "l1_angular",
     "zmin": 0.05,
-    "zmax": 5.0
+    "zmax": 5.0,
+    "max_theta_thresh": 0.1, // in degrees
+    "beta_thesh": 0.25 // in degrees
   },
 
   "depth_opt": {
@@ -166,24 +168,24 @@
 
   "imu_calib": {
     "Cas": [1, 1, 1],
-    "Car": [[1, 0, 0], 
-            [0, 1, 0], 
+    "Car": [[1, 0, 0],
+            [0, 1, 0],
             [0, 0, 1]],
     "Cgs": [1, 1, 1],
-    "Cgr": [[1, 0, 0], 
-            [0, 1, 0], 
+    "Cgr": [[1, 0, 0],
+            [0, 1, 0],
             [0, 0, 1]]
   },
   "gravity_init_counter": 20,
 
   "camera_cfg": {
     "model": "equidistant",
-    "rows": 512, 
+    "rows": 512,
     "cols": 512,
 
-    "fx": 190.44236969414825, 
-    "fy": 190.4344384721956, 
-    "cx": 252.59949716835982, 
+    "fx": 190.44236969414825,
+    "fy": 190.4344384721956,
+    "cx": 252.59949716835982,
     "cy": 254.91723064636983,
 
     "k0123": [0.0034003170790442797, 0.001766278153469831, -0.00266312569781606, 0.0003299517423931039],
@@ -261,7 +263,7 @@
     },
 
     "GFTT": {
-      // Good Feature To Track 
+      // Good Feature To Track
       // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
       "maxCorners": 1000,
       "qualityLevel": 0.01,
