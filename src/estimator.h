@@ -254,10 +254,6 @@ private:
   std::vector<int> gauge_xy_feature_ids_;
   std::vector<FeaturePtr> gauge_xy_features_;
 
-  /** Pointer to the current feature with z fixed. */
-  int gauge_z_feature_id_;
-  FeaturePtr gauge_z_feature_;
-
 private:
   Config cfg_;        // this is just a reference of the global parameter server
   bool simulation_;   // estimator used in simulation or not

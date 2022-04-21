@@ -118,8 +118,7 @@ number_t Feature::z() const {
 
 bool Feature::instate() const {
   return (status_ == FeatureStatus::INSTATE) ||
-         (status_ == FeatureStatus::GAUGE_XY) ||
-         (status_ == FeatureStatus::GAUGE_Z);
+         (status_ == FeatureStatus::GAUGE);
 }
 
 number_t Feature::score() const {

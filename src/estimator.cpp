@@ -340,15 +340,11 @@ Estimator::Estimator(const Json::Value &cfg)
 
   // Feature Gauge Options
   num_gauge_xy_features_ = cfg_.get("num_gauge_xy_features", 3).asInt();
-  num_gauge_z_features_ = cfg_.get("num_gauge_z_features", 1).asInt();
   collinear_cross_prod_thresh_ =
     cfg_.get("collinear_cross_prod_thresh", 1e-3).asDouble();
 
   if ((num_gauge_xy_features_ < 0) || (num_gauge_xy_features_ > 3)) {
     LOG(FATAL) << "Number of XY Gauge Features must be between 0 and 3";
-  }
-  if ((num_gauge_z_features_ < 0) || (num_gauge_z_features_ > 1)) {
-    LOG(FATAL) << "Number of Z Gauge Features must be 0 or 1.";
   }
 
   // initialize gauge feature list
@@ -356,8 +352,6 @@ Estimator::Estimator(const Json::Value &cfg)
     gauge_xy_feature_ids_.push_back(-1);
     gauge_xy_features_.push_back(nullptr);
   }
-  gauge_z_feature_ = nullptr;
-  gauge_z_feature_id_ = -1;
 
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
@@ -759,16 +753,12 @@ void Estimator::RemoveFeatureFromState(FeaturePtr f) {
   P_.block(offset, 0, 3, size).setZero();
   P_.block(0, offset, size, 3).setZero();
 
-  if (f->id() == gauge_z_feature_id_) {
-    gauge_z_feature_id_ = -1;
-  } else {
-    auto gauge_it = std::find(gauge_xy_feature_ids_.begin(),
-                              gauge_xy_feature_ids_.end(),
-                              f->id());
-    if (gauge_it != gauge_xy_feature_ids_.end()) {
-      int iii = gauge_it - gauge_xy_feature_ids_.begin();
-      gauge_xy_feature_ids_[iii] = -1;
-    }
+  auto gauge_it = std::find(gauge_xy_feature_ids_.begin(),
+                            gauge_xy_feature_ids_.end(),
+                            f->id());
+  if (gauge_it != gauge_xy_feature_ids_.end()) {
+    int iii = gauge_it - gauge_xy_feature_ids_.begin();
+    gauge_xy_feature_ids_[iii] = -1;
   }
 }
 
@@ -992,9 +982,6 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
 
     if (gauge_group_ == -1) {
       SwitchRefGroup();
-    }
-    if ((gauge_z_feature_id_ == -1) && (num_gauge_z_features_ > 0)) {
-      SwitchGaugeZFeature();
     }
     if (num_gauge_xy_features_ > 0) {
       if (std::count(gauge_xy_feature_ids_.begin(), gauge_xy_feature_ids_.end(), -1) > 0) {
@@ -1244,44 +1231,12 @@ void Estimator::SwitchGaugeXYFeatures() {
 
   // Set covariance to 0
   for (auto f: gauge_xy_features_) {
-    f->SetStatus(FeatureStatus::GAUGE_XY);
+    f->SetStatus(FeatureStatus::GAUGE);
     int offset = kFeatureBegin + 3*f->sind();
     P_.block(offset, 0, 2, err_.size()).setZero();
     P_.block(0, offset, err_.size(), 2).setZero();
     LOG(INFO) << "Feature " << f->id() << " is a XY Gauge";
   }  
-}
-
-
-
-void Estimator::SwitchGaugeZFeature() {
-  std::vector<FeaturePtr> candidates =
-    Graph::instance()->GetGaugeFeatureCandidates(gauge_group_ptr_);
-
-  if (candidates.size()==0) {
-    LOG(WARNING) << "No candidates for Z-Gauge Feature";
-    return;
-  }
-
-  // Look for the candidate with the lowest depth covariance
-  auto fit = std::min_element(candidates.begin(), candidates.end(),
-    [this](const FeaturePtr f1, const FeaturePtr f2) -> bool {
-      int offset_z1 = kFeatureBegin + 3*f1->sind() + 2;
-      int offset_z2 = kFeatureBegin + 3*f2->sind() + 2;
-      number_t cov1 = P_(offset_z1, offset_z1);
-      number_t cov2 = P_(offset_z2, offset_z2);
-      return cov1 < cov2;
-    });
-
-  gauge_z_feature_ = *fit;
-  gauge_z_feature_id_ = gauge_z_feature_->id();
-  gauge_z_feature_->SetStatus(FeatureStatus::GAUGE_Z);
-  LOG(INFO) << "Selected feature " << gauge_z_feature_id_ << " as Z-Gauge";
-
-  // Set covariance to 0
-  int offset = kFeatureBegin + 3*gauge_z_feature_->sind() + 2;
-  P_.block(offset, 0, 1, err_.size()).setZero();
-  P_.block(0, offset, err_.size(), 1).setZero();
 }
 
 
