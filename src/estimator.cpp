@@ -9,7 +9,6 @@
 
 #include "estimator.h"
 #include "feature.h"
-#include "geometry.h"
 #include "group.h"
 #include "jac.h"
 #include "mm.h"
@@ -340,19 +339,12 @@ Estimator::Estimator(const Json::Value &cfg)
     cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
   strict_criteria_timesteps_ = cfg_.get("strict_criteria_timesteps", 5).asInt();
 
-  // Feature Gauge Options
-  num_gauge_xy_features_ = cfg_.get("num_gauge_xy_features", 3).asInt();
-  collinear_cross_prod_thresh_ =
+  // Feature Gauge Options (just checks)
+  int num_gauge_xy_features = cfg_.get("num_gauge_xy_features", 3).asInt();
+  number_t collinear_cross_prod_thresh =
     cfg_.get("collinear_cross_prod_thresh", 1e-3).asDouble();
-
-  if ((num_gauge_xy_features_ < 0) || (num_gauge_xy_features_ > 3)) {
+  if ((num_gauge_xy_features < 0) || (num_gauge_xy_features > 3)) {
     LOG(FATAL) << "Number of XY Gauge Features must be between 0 and 3";
-  }
-
-  // initialize gauge feature list
-  for (int i=0; i<num_gauge_xy_features_; i++) {
-    gauge_xy_feature_ids_.push_back(-1);
-    gauge_xy_features_.push_back(nullptr);
   }
 
   // reset initialization status
@@ -754,14 +746,6 @@ void Estimator::RemoveFeatureFromState(FeaturePtr f) {
   err_.segment<3>(offset).setZero();
   P_.block(offset, 0, 3, size).setZero();
   P_.block(0, offset, size, 3).setZero();
-
-  auto gauge_it = std::find(gauge_xy_feature_ids_.begin(),
-                            gauge_xy_feature_ids_.end(),
-                            f->id());
-  if (gauge_it != gauge_xy_feature_ids_.end()) {
-    int iii = gauge_it - gauge_xy_feature_ids_.begin();
-    gauge_xy_feature_ids_[iii] = -1;
-  }
 }
 
 void Estimator::AddGroupToState(GroupPtr g) {
@@ -985,11 +969,6 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     if (gauge_group_ == -1) {
       SwitchRefGroup();
     }
-    if (num_gauge_xy_features_ > 0) {
-      if (std::count(gauge_xy_feature_ids_.begin(), gauge_xy_feature_ids_.end(), -1) > 0) {
-        SwitchGaugeXYFeatures();
-      }
-    }
   }
   timer_.Tock("visual-meas");
 }
@@ -1155,6 +1134,7 @@ GroupPtr Estimator::FindNewRefGroup(std::vector<GroupPtr>&candidates) {
 }
 
 
+/*
 void Estimator::SwitchGaugeXYFeatures() {
   std::vector<FeaturePtr> candidates =
     Graph::instance()->GetGaugeFeatureCandidates(gauge_group_ptr_);
@@ -1240,7 +1220,7 @@ void Estimator::SwitchGaugeXYFeatures() {
     LOG(INFO) << "Feature " << f->id() << " is a XY Gauge";
   }  
 }
-
+*/
 
 void Estimator::BackupState(std::unordered_set<FeaturePtr>& features,
                             std::unordered_set<GroupPtr>& groups)
@@ -1748,5 +1728,13 @@ bool Estimator::UsingLoopClosure() const {
   return false;
 #endif
 }
+
+
+void Estimator::FixFeatureXY(FeaturePtr f) {
+  int foff = kFeatureBegin + 3*f->sind();
+  P_.block(foff, 0, 2, err_.size()).setZero();
+  P_.block(0, foff, err_.size(), 2).setZero();
+}
+
 
 } // xivo

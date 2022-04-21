@@ -16,10 +16,11 @@
 #include "geometry.h"
 #include "group.h"
 #include "tracker.h"
+#include "graph.h"
 
 namespace xivo {
 
-void Estimator::Update() {
+void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
 
 #ifdef USE_GPERFTOOLS
   ProfilerStart(__PRETTY_FUNCTION__);
@@ -70,6 +71,9 @@ void Estimator::Update() {
           inliers.push_back(f);
         } else {
           num_mh_rejected++;
+          if (f->status() == FeatureStatus::GAUGE) {
+            needs_new_gauge_features.push_back(f->ref());
+          }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
           LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
         }
@@ -87,7 +91,17 @@ void Estimator::Update() {
   LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
 
   if (use_1pt_RANSAC_) {
-    inliers = OnePointRANSAC(inliers);
+    inliers = OnePointRANSAC(inliers, needs_new_gauge_features);
+  }
+
+  // find new gauge features (includes newly added groups and groups that lost
+  // an existing gauge feature)
+  for (auto g: needs_new_gauge_features) {
+    std::vector<FeaturePtr> new_gauge_feats =
+      Graph::instance()->FindNewGaugeFeatures(g);
+    for (auto f: new_gauge_feats) {
+      FixFeatureXY(f);
+    }
   }
 
   std::vector<FeaturePtr> active_oos_features;
@@ -229,7 +243,8 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
 
 
 std::vector<FeaturePtr>
-Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
+Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers,
+                          std::vector<GroupPtr> &needs_new_gauge_features) {
   if (mh_inliers.empty())
     return mh_inliers;
   // Reference:
@@ -370,6 +385,9 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
         if (res.dot(S.llt().solve(res)) < ransac_Chi2_) {
           hi_inliers.push_back(f);
         } else {
+          if (f->status() == FeatureStatus::GAUGE) {
+            needs_new_gauge_features.push_back(f->ref());
+          }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
           LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";
         }

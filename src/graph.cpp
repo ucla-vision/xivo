@@ -2,6 +2,8 @@
 #include "estimator.h"
 #include "feature.h"
 #include "group.h"
+#include "param.h"
+#include "geometry.h"
 
 
 namespace xivo {
@@ -26,6 +28,10 @@ Graph* Graph::instance() {
 
 void Graph::RemoveFeature(const FeaturePtr f) {
   GraphBase::RemoveFeature(f);
+
+  // Removes feature from `gauge_features_` if it is a gauge feature.
+  gauge_features_[f->ref()].erase(f);
+
   LOG(INFO) << "feature #" << f->id() << " removed from Graph";
 }
 
@@ -53,6 +59,7 @@ void Graph::AddFeature(FeaturePtr f) {
 
 void Graph::AddGroup(GroupPtr g) {
   GraphBase::AddGroup(g);
+  gauge_features_[g] = {};
   last_added_group_ = g;
   LOG(INFO) << "group #" << g->id() << " added to graph";
 }
@@ -221,5 +228,84 @@ void Graph::CleanIsolatedNodes() {
   CleanIsolatedFeatures();
   CleanIsolatedGroups();
 }
+
+
+std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
+  // Get parameters
+  ParameterServer& P{*ParameterServer::instance()};
+  int directions_to_fix = P.get("num_gauge_xy_features", 3).asInt();
+  number_t collinear_cross_prod_thresh =
+    P.get("collinear_cross_prod_thresh", 1e-3).asDouble();
+
+  // Estimator Pointer
+  EstimatorPtr est = Estimator::instance();
+
+  int num_gauge_features = gauge_features_[g].size();
+  int num_to_find = directions_to_fix - num_gauge_features;
+
+  // Candidates that could be gauge features
+  std::vector<FeaturePtr> candidates = GetGaugeFeatureCandidates(g);
+  std::sort(candidates.begin(), candidates.end(),
+            [est](FeaturePtr f1, FeaturePtr f2) -> bool {
+              return est->FeatureCovXYComparison(f1, f2);
+            });
+
+  // Lambda function that checks whether or not features are collinear
+  auto collinear_check = [](std::unordered_set<FeaturePtr> U,
+                            number_t collinear_thresh) {
+    std::vector<Vec3> gauge_xy_features_Xc;
+    for (auto f: U) {
+      gauge_xy_features_Xc.push_back(f->Xc());
+    }
+    return PointsAreCollinear(gauge_xy_features_Xc, collinear_thresh);
+  };
+
+  // Lambda function that adds features to guage list
+  auto fill_slots = [this, num_to_find](GroupPtr g, std::vector<FeaturePtr> C)
+  {
+    int Cidx;
+    std::vector<FeaturePtr> new_gauge_feats;
+    for (int i=0; i<num_to_find; i++) {
+      gauge_features_[g].insert(C[Cidx]);
+      new_gauge_feats.push_back(C[Cidx]);
+    }
+    return new_gauge_feats;
+  };
+
+  if (candidates.size() < num_to_find) {
+    LOG(WARNING) << "[Graph::SwitchGaugeXYFeatures]: not enough instate features owned by group " << g->id();
+  }
+
+
+  std::vector<FeaturePtr> new_gauge_features_for_g;
+  if (candidates.size() == 0) {
+    // do nothing
+  } else if (candidates.size() <= num_to_find) {
+    new_gauge_features_for_g = fill_slots(g, candidates);
+  } else {
+    // Try up to 10 times to find a set of features that are not collinear.
+    std::unordered_set<FeaturePtr> gauge_features_backup = gauge_features_[g];
+    for (int NT = 0; NT<10; NT++) {
+      gauge_features_[g] = gauge_features_backup;
+      new_gauge_features_for_g = fill_slots(g, candidates);
+      if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
+        std::random_shuffle(candidates.begin(), candidates.end());
+      } else {
+        break;
+      }
+    }
+  }
+
+  // If we didn't manage to find a set of features that aren't collinear, then
+  // log a warning. (As far as I can tell, Corvis didn't do this at all.))
+  if (candidates.size() > 0) {
+    if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
+      LOG(WARNING) << "Did not find a set of non collinear features";
+    }
+  }
+
+  return new_gauge_features_for_g;
+}
+
 
 } // namespace xivo

@@ -139,7 +139,11 @@ public:
   MatX7 InstateGroupPoses() const;
   MatX InstateGroupCovs() const;
   VecXi InstateGroupSinds() const;
+  Mat3 InstateFeatureCov(FeaturePtr f) const;
+  Mat6 InstateGroupCov(GroupPtr g) const;
   bool UsingLoopClosure() const;
+  bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
+  bool FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
@@ -189,11 +193,12 @@ private:
   /** Function that contains logic for outlier rejection, filter EKF update, and
    *  filter MSCKF update. It will mark features for removal from the state, but
    *  does not do the actual removing and does not update the graph. */
-  void Update();
+  void Update(std::vector<GroupPtr>& needs_new_gauge_features);
 
   /** Outlier rejection on `Tracker` matches. Always occurs after MH-gating. */
   std::vector<FeaturePtr>
-  OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches);
+  OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches,
+                 std::vector<GroupPtr> &needs_new_gauge_features);
   std::tuple<number_t, bool> HuberOnInnovation(const Vec2 &inn, number_t Rviz);
 
   void UpdateSystemClock(const timestamp_t &now);
@@ -211,8 +216,6 @@ private:
   void DestroyFeatures(const std::vector<FeaturePtr> &destroys);
   void SwitchRefGroup();
   GroupPtr FindNewRefGroup(std::vector<GroupPtr>& candidates);
-  void SwitchGaugeXYFeatures();
-  void SwitchGaugeZFeature();
 
   // same as above, but the feature list will be untouched
   void RemoveFeatureFromState(FeaturePtr f);
@@ -230,15 +233,11 @@ private:
   void RestoreState(std::unordered_set<FeaturePtr>& features,
                     std::unordered_set<GroupPtr>& groups);
 
+  void FixFeatureXY(FeaturePtr f);
 
 private:
   Estimator(const Json::Value &cfg);
   static std::unique_ptr<Estimator> instance_;
-
-  Mat3 InstateFeatureCov(FeaturePtr f) const;
-  Mat6 InstateGroupCov(GroupPtr g) const;
-  bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
-  bool FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const;
 
 private:
   std::vector<FeaturePtr> instate_features_; ///< in-state features
@@ -249,10 +248,6 @@ private:
    *  gauge group while calling `ProcessTracks`. */
   int gauge_group_;
   GroupPtr gauge_group_ptr_;
-
-  /** Pointers to three features whose (X,Y) coordianates are held constant. */
-  std::vector<int> gauge_xy_feature_ids_;
-  std::vector<FeaturePtr> gauge_xy_features_;
 
 private:
   Config cfg_;        // this is just a reference of the global parameter server
@@ -386,11 +381,6 @@ private:
   int min_required_inliers_;  // minimal inliers needed to perform update
   number_t MH_thresh_multipler_; // if not enough inliers, repeatedly multiple the
                               // MH_thresh by this amount
-
-  // Gauge Feature Parameters
-  int num_gauge_xy_features_;
-  int num_gauge_z_features_;
-  number_t collinear_cross_prod_thresh_;
 
   // time
   timestamp_t last_imu_time_, curr_imu_time_; // time when the imu meas arrives

@@ -90,6 +90,8 @@ public:
    */
   void CleanIsolatedNodes();
 
+  std::vector<FeaturePtr> FindNewGaugeFeatures(GroupPtr g);
+
 private:
   Graph() = default;
   Graph(const Graph&) = delete;
@@ -97,6 +99,10 @@ private:
   static std::unique_ptr<Graph> instance_;
 
   GroupPtr last_added_group_;
+
+  /** Maps group id (int) to a unordered set of features whose (x,y) coordinates
+   *  of `Feature::x_` is held constant. */
+  std::unordered_map<GroupPtr, std::unordered_set<FeaturePtr>> gauge_features_;
 };
 
 } // namespace xivo

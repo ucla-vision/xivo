@@ -40,6 +40,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // which lost at least one feature and might be a floating group
   std::unordered_set<GroupPtr> affected_groups;
 
+  // which lost a guage feature and will need new gauge features this update
+  std::vector<GroupPtr> needs_new_gauge_features;
+
   // process instate but failed-to-be-tracked features
   std::vector<FeaturePtr> new_features;
   ;
@@ -63,6 +66,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       graph.RemoveFeature(f);
       if (f->instate()) {
         LOG(INFO) << "Tracker rejected feature #" << f->id();
+        if (f->status() == FeatureStatus::GAUGE) {
+          needs_new_gauge_features.push_back(affected_group);
+        }
         RemoveFeatureFromState(f);
         affected_groups.insert(affected_group);
       }
@@ -166,6 +172,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #endif
         // need to add reference group to state if it's not yet instate
         AddGroupToState(f->ref());
+        needs_new_gauge_features.push_back(f->ref());
         // use up one more free slot
         --free_slots;
       }
@@ -197,7 +204,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     instate_groups_ =
         graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
-    Update();
+    Update(needs_new_gauge_features);
 
     MeasurementUpdateInitialized_ = true;
   }
