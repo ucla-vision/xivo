@@ -297,15 +297,17 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
     for (int NT = 0; NT<10; NT++) {
       gauge_features_[g] = gauge_features_backup;
       new_gauge_features_for_g = fill_slots(g, candidates);
-      if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
-        std::random_shuffle(candidates.begin(), candidates.end());
-        if (NT==9) {
-          LOG(WARNING) << "Did not find a set of non-collinear features. defaulting to using those with smallest covariance";
-          gauge_features_[g] = gauge_features_backup;
-          fill_slots(g, candidates_backup);
+      if (gauge_features_[g].size() >= 3) {
+        if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
+          std::random_shuffle(candidates.begin(), candidates.end());
+          if (NT==9) {
+            LOG(WARNING) << "Did not find a set of non-collinear features. defaulting to using those with smallest covariance";
+            gauge_features_[g] = gauge_features_backup;
+            fill_slots(g, candidates_backup);
+          }
+        } else {
+          break;
         }
-      } else {
-        break;
       }
     }
   }
