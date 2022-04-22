@@ -154,6 +154,11 @@ Estimator::Estimator(const Json::Value &cfg)
 
   remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
 
+  group_degrees_fixed_ = cfg_.get("group_degrees_fixed", 4).asInt();
+  if ((group_degrees_fixed_ != 4) && (group_degrees_fixed_ != 6)) {
+    LOG(FATAL) << "group_degrees_fixed must be 4 or 6";
+  }
+
   // load imu calibration
   auto imu_calib = cfg_["imu_calib"];
   // load accel axis misalignment first as a 3x3 matrix
@@ -1112,8 +1117,13 @@ void Estimator::SwitchRefGroup() {
     // now fix covariance of the new gauge group. This prevents the group's
     // state from changing.
     int offset = kGroupBegin + 6 * g->sind();
-    P_.block(offset, 0, 6, err_.size()).setZero();
-    P_.block(0, offset, err_.size(), 6).setZero();
+    if (group_degrees_fixed_ == 4) {
+      P_.block(offset+2, 0, 4, err_.size()).setZero();
+      P_.block(0, offset+2, err_.size(), 4).setZero();
+    } else {
+      P_.block(offset, 0, 6, err_.size()).setZero();
+      P_.block(0, offset, err_.size(), 6).setZero();
+    }
   }
 }
 

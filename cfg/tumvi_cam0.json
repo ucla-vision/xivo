@@ -23,6 +23,7 @@
   "remove_outlier_counter": 10,
   "OOS_update_min_observations": 5,
   "feature_owner_change_cov_factor": 1.5,
+  "group_degrees_fixed": 6,
 
   "PrinceDormand": {
     "control_stepsize": false,

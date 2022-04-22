@@ -249,6 +249,13 @@ private:
   int gauge_group_;
   GroupPtr gauge_group_ptr_;
 
+  /** Number of degrees of freedom fixed. 6 = "correct" if we we are estimating
+   *  the direction of gravity. 4 = "correct" if we are pretty sure that we can
+   *  get an accurate direction of gravity at initialization and just need a
+   *  bit of wiggle room. (Corvis always fixes 4 no matter what.)
+  */
+  int group_degrees_fixed_;
+
 private:
   Config cfg_;        // this is just a reference of the global parameter server
   bool simulation_;   // estimator used in simulation or not
