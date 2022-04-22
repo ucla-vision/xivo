@@ -73,6 +73,7 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
           num_mh_rejected++;
           if (f->status() == FeatureStatus::GAUGE) {
             needs_new_gauge_features.push_back(f->ref());
+            LOG(INFO) << "Group # " << f->ref()->id() << " just lost a gauge feature rejected by MH-gating";
           }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
           LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
@@ -387,6 +388,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers,
         } else {
           if (f->status() == FeatureStatus::GAUGE) {
             needs_new_gauge_features.push_back(f->ref());
+            LOG(INFO) << "Group # " << f->ref()->id() << " just lost a guage feature rejected by one-pt ransac";
           }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
           LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";

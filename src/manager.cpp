@@ -68,6 +68,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
         LOG(INFO) << "Tracker rejected feature #" << f->id();
         if (f->status() == FeatureStatus::GAUGE) {
           needs_new_gauge_features.push_back(affected_group);
+          LOG(INFO) << "Group # " << affected_group->id() << " just lost a gauge feature rejected by tracker.";
         }
         RemoveFeatureFromState(f);
         affected_groups.insert(affected_group);

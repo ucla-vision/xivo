@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "graph.h"
 #include "estimator.h"
 #include "feature.h"
@@ -43,6 +45,7 @@ void Graph::RemoveFeatures(const std::vector<FeaturePtr> &features) {
 
 void Graph::RemoveGroup(const GroupPtr g) {
   GraphBase::RemoveGroup(g);
+  gauge_features_.erase(g);
   LOG(INFO) << "group #" << g->id() << " removed from Graph";
 }
 
@@ -243,12 +246,19 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
   int num_gauge_features = gauge_features_[g].size();
   int num_to_find = directions_to_fix - num_gauge_features;
 
+#ifndef NDEBUG
+  CHECK(num_to_find >= 0);
+  CHECK(num_to_find <= directions_to_fix);
+  CHECK(directions_to_fix <= 3);
+#endif
+
   // Candidates that could be gauge features
   std::vector<FeaturePtr> candidates = GetGaugeFeatureCandidates(g);
   std::sort(candidates.begin(), candidates.end(),
             [est](FeaturePtr f1, FeaturePtr f2) -> bool {
               return est->FeatureCovXYComparison(f1, f2);
             });
+  std::vector<FeaturePtr> candidates_backup = candidates;
 
   // Lambda function that checks whether or not features are collinear
   auto collinear_check = [](std::unordered_set<FeaturePtr> U,
@@ -263,11 +273,10 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
   // Lambda function that adds features to guage list
   auto fill_slots = [this, num_to_find](GroupPtr g, std::vector<FeaturePtr> C)
   {
-    int Cidx;
     std::vector<FeaturePtr> new_gauge_feats;
-    for (int i=0; i<num_to_find; i++) {
-      gauge_features_[g].insert(C[Cidx]);
-      new_gauge_feats.push_back(C[Cidx]);
+    for (int i=0; i<std::min(num_to_find, int(C.size())); i++) {
+      gauge_features_[g].insert(C[i]);
+      new_gauge_feats.push_back(C[i]);
     }
     return new_gauge_feats;
   };
@@ -290,19 +299,25 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
       new_gauge_features_for_g = fill_slots(g, candidates);
       if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
         std::random_shuffle(candidates.begin(), candidates.end());
+        if (NT==9) {
+          LOG(WARNING) << "Did not find a set of non-collinear features. defaulting to using those with smallest covariance";
+          gauge_features_[g] = gauge_features_backup;
+          fill_slots(g, candidates_backup);
+        }
       } else {
         break;
       }
     }
   }
 
-  // If we didn't manage to find a set of features that aren't collinear, then
-  // log a warning. (As far as I can tell, Corvis didn't do this at all.))
-  if (candidates.size() > 0) {
-    if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
-      LOG(WARNING) << "Did not find a set of non collinear features";
-    }
+  for (auto f: new_gauge_features_for_g) {
+    f->SetStatus(FeatureStatus::GAUGE);
+    LOG(INFO) << "Feature " << f->id() << " is now a gauge feature for Group " << g->id();
   }
+
+#ifndef NDEBUG
+  CHECK(new_gauge_features_for_g.size() <= num_to_find);
+#endif
 
   return new_gauge_features_for_g;
 }
