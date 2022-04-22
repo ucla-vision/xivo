@@ -40,6 +40,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // which lost at least one feature and might be a floating group
   std::unordered_set<GroupPtr> affected_groups;
 
+  // which lost a guage feature and will need new gauge features this update
+  std::vector<GroupPtr> needs_new_gauge_features;
+
   // process instate but failed-to-be-tracked features
   std::vector<FeaturePtr> new_features;
   ;
@@ -63,6 +66,10 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       graph.RemoveFeature(f);
       if (f->instate()) {
         LOG(INFO) << "Tracker rejected feature #" << f->id();
+        if (f->status() == FeatureStatus::GAUGE) {
+          needs_new_gauge_features.push_back(affected_group);
+          LOG(INFO) << "Group # " << affected_group->id() << " just lost a gauge feature rejected by tracker.";
+        }
         RemoveFeatureFromState(f);
         affected_groups.insert(affected_group);
       }
@@ -114,9 +121,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)
-  instate_features_ = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
-    return f->status() == FeatureStatus::INSTATE;
-  });
+  instate_features_ = graph.GetInstateFeatures();
 
   if (instate_features_.size() < kMaxFeature) {
     int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
@@ -168,6 +173,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #endif
         // need to add reference group to state if it's not yet instate
         AddGroupToState(f->ref());
+        needs_new_gauge_features.push_back(f->ref());
         // use up one more free slot
         --free_slots;
       }
@@ -199,7 +205,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     instate_groups_ =
         graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
-    Update();
+    Update(needs_new_gauge_features);
 
     MeasurementUpdateInitialized_ = true;
   }
@@ -343,7 +349,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
   // adapt initial depth to average depth of features currently visible
   auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
-    return f->status() == FeatureStatus::INSTATE ||
+    return f->instate() ||
            (f->status() == FeatureStatus::READY &&
             f->lifetime() > adaptive_initial_depth_options_.min_feature_lifetime);
   });

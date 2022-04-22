@@ -139,7 +139,11 @@ public:
   MatX7 InstateGroupPoses() const;
   MatX InstateGroupCovs() const;
   VecXi InstateGroupSinds() const;
+  Mat3 InstateFeatureCov(FeaturePtr f) const;
+  Mat6 InstateGroupCov(GroupPtr g) const;
   bool UsingLoopClosure() const;
+  bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
+  bool FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
@@ -189,11 +193,12 @@ private:
   /** Function that contains logic for outlier rejection, filter EKF update, and
    *  filter MSCKF update. It will mark features for removal from the state, but
    *  does not do the actual removing and does not update the graph. */
-  void Update();
+  void Update(std::vector<GroupPtr>& needs_new_gauge_features);
 
   /** Outlier rejection on `Tracker` matches. Always occurs after MH-gating. */
   std::vector<FeaturePtr>
-  OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches);
+  OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches,
+                 std::vector<GroupPtr> &needs_new_gauge_features);
   std::tuple<number_t, bool> HuberOnInnovation(const Vec2 &inn, number_t Rviz);
 
   void UpdateSystemClock(const timestamp_t &now);
@@ -228,14 +233,11 @@ private:
   void RestoreState(std::unordered_set<FeaturePtr>& features,
                     std::unordered_set<GroupPtr>& groups);
 
+  void FixFeatureXY(FeaturePtr f);
 
 private:
   Estimator(const Json::Value &cfg);
   static std::unique_ptr<Estimator> instance_;
-
-  Mat3 InstateFeatureCov(FeaturePtr f) const;
-  Mat6 InstateGroupCov(GroupPtr g) const;
-  bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
 
 private:
   std::vector<FeaturePtr> instate_features_; ///< in-state features
@@ -246,6 +248,13 @@ private:
    *  gauge group while calling `ProcessTracks`. */
   int gauge_group_;
   GroupPtr gauge_group_ptr_;
+
+  /** Number of degrees of freedom fixed. 6 = "correct" if we we are estimating
+   *  the direction of gravity. 4 = "correct" if we are pretty sure that we can
+   *  get an accurate direction of gravity at initialization and just need a
+   *  bit of wiggle room. (Corvis always fixes 4 no matter what.)
+  */
+  int group_degrees_fixed_;
 
 private:
   Config cfg_;        // this is just a reference of the global parameter server

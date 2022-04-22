@@ -116,7 +116,10 @@ number_t Feature::z() const {
 #endif
 }
 
-bool Feature::instate() const { return status_ == FeatureStatus::INSTATE; }
+bool Feature::instate() const {
+  return (status_ == FeatureStatus::INSTATE) ||
+         (status_ == FeatureStatus::GAUGE);
+}
 
 number_t Feature::score() const {
 #ifndef NDEBUG

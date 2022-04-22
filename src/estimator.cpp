@@ -9,7 +9,6 @@
 
 #include "estimator.h"
 #include "feature.h"
-#include "geometry.h"
 #include "group.h"
 #include "jac.h"
 #include "mm.h"
@@ -154,6 +153,11 @@ Estimator::Estimator(const Json::Value &cfg)
     cfg_["adaptive_initial_depth"].get("minimum_feature_lifetime", 5).asInt();
 
   remove_outlier_counter_ = cfg_.get("remove_outlier_counter", 10).asInt();
+
+  group_degrees_fixed_ = cfg_.get("group_degrees_fixed", 4).asInt();
+  if ((group_degrees_fixed_ != 4) && (group_degrees_fixed_ != 6)) {
+    LOG(FATAL) << "group_degrees_fixed must be 4 or 6";
+  }
 
   // load imu calibration
   auto imu_calib = cfg_["imu_calib"];
@@ -339,6 +343,14 @@ Estimator::Estimator(const Json::Value &cfg)
   feature_owner_change_cov_factor_ =
     cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
   strict_criteria_timesteps_ = cfg_.get("strict_criteria_timesteps", 5).asInt();
+
+  // Feature Gauge Options (just checks)
+  int num_gauge_xy_features = cfg_.get("num_gauge_xy_features", 3).asInt();
+  number_t collinear_cross_prod_thresh =
+    cfg_.get("collinear_cross_prod_thresh", 1e-3).asDouble();
+  if ((num_gauge_xy_features < 0) || (num_gauge_xy_features > 3)) {
+    LOG(FATAL) << "Number of XY Gauge Features must be between 0 and 3";
+  }
 
   // reset initialization status
   gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
@@ -962,7 +974,6 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     if (gauge_group_ == -1) {
       SwitchRefGroup();
     }
-
   }
   timer_.Tock("visual-meas");
 }
@@ -1106,8 +1117,13 @@ void Estimator::SwitchRefGroup() {
     // now fix covariance of the new gauge group. This prevents the group's
     // state from changing.
     int offset = kGroupBegin + 6 * g->sind();
-    P_.block(offset, 0, 6, err_.size()).setZero();
-    P_.block(0, offset, err_.size(), 6).setZero();
+    if (group_degrees_fixed_ == 4) {
+      P_.block(offset+2, 0, 4, err_.size()).setZero();
+      P_.block(0, offset+2, err_.size(), 4).setZero();
+    } else {
+      P_.block(offset, 0, 6, err_.size()).setZero();
+      P_.block(0, offset, err_.size(), 6).setZero();
+    }
   }
 }
 
@@ -1620,6 +1636,13 @@ bool Estimator::FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const {
 }
 
 
+bool Estimator::FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const {
+  number_t score1 = InstateFeatureCov(f1).block<2,2>(0,0).norm();
+  number_t score2 = InstateFeatureCov(f2).block<2,2>(0,0).norm();
+  return (score1 <= score2);
+}
+
+
 bool Estimator::UsingLoopClosure() const {
 #ifdef USE_MAPPER
   return Mapper::instance()->UseLoopClosure();
@@ -1627,5 +1650,13 @@ bool Estimator::UsingLoopClosure() const {
   return false;
 #endif
 }
+
+
+void Estimator::FixFeatureXY(FeaturePtr f) {
+  int foff = kFeatureBegin + 3*f->sind();
+  P_.block(foff, 0, 2, err_.size()).setZero();
+  P_.block(0, foff, err_.size(), 2).setZero();
+}
+
 
 } // xivo

@@ -21,11 +21,9 @@
   "use_compression": true,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
-  "max_group_lifetime": 60,
   "remove_outlier_counter": 10,
   "OOS_update_min_observations": 5,
   "feature_owner_change_cov_factor": 1.5,
-  "group_degrees_fixed": 6,
 
   "PrinceDormand": {
     "control_stepsize": false,
@@ -42,12 +40,8 @@
 
   // memory
   "memory": {
-    // Values if mapper is not enabled
     "max_features": 200,
-    "max_groups": 100
-    // Values if mapper is enabled
-    //"max_features": 20000,
-    //"max_groups": 3500
+    "max_groups": 3500  // max groups should increase as allowed group lifetime increases
   },
 
   // gravity constant
@@ -72,8 +66,8 @@
     "W"   : 0.0001,
     "T"   : 0.001,
     "V"   : 0.5,
-    "bg"  : 3e-4,
-    "ba"  : 3e-3,
+    "bg"  : 0.00,
+    "ba"  : 0.00,
     "Wbc" : 1.1,
     "Tbc" : [0.001, 0.001, 0.005],
     "Wg"  : 3.1,
@@ -149,11 +143,9 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": "l1_angular",
+    "method": 1,
     "zmin": 0.05,
-    "zmax": 5.0,
-    "max_theta_thresh": 0.1, // in degrees
-    "beta_thesh": 0.25 // in degrees
+    "zmax": 5.0
   },
 
   "depth_opt": {
@@ -188,7 +180,7 @@
     "model": "equidistant",
     "max_iter": 25,
 
-    "rows": 480,
+    "rows": 480, 
     "cols": 640,
 
     "fx": 274.00289785,
@@ -219,17 +211,12 @@
   "1pt_RANSAC_prob": 0.95,
   "1pt_RANSAC_Chi2": 5.89,
 
-  // "Correct" means 3 XY gauge features. But sometimes the filter works better
-  // with fewer fixed degrees of freedom.
-  "num_gauge_xy_features": 3,
-  "collinear_cross_prod_thresh": 0.001,
-
   "tracker_cfg": {
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 60,
+    "num_features_min": 90,
+    "num_features_max": 120,
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": false,
@@ -244,7 +231,7 @@
 
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
-    "descriptor": "BRIEF",
+    "default_descriptor": "BRIEF",
 
     // "detector": "BRISK",
     "detector": "FAST",
@@ -284,7 +271,7 @@
     },
 
     "GFTT": {
-      // Good Feature To Track
+      // Good Feature To Track 
       // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
       "maxCorners": 1000,
       "qualityLevel": 0.01,
@@ -328,7 +315,7 @@
   },
 
   "mapper_cfg": {
-    "detectLoopClosures": true,
+    "detectLoopClosures": false,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
     "nn_dist_thresh": 30.0,
