@@ -287,7 +287,7 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
 
 
   std::vector<FeaturePtr> new_gauge_features_for_g;
-  if (candidates.size() == 0) {
+  if ((candidates.size() == 0) || (num_to_find == 0)) {
     // do nothing
   } else if (candidates.size() <= num_to_find) {
     new_gauge_features_for_g = fill_slots(g, candidates);
