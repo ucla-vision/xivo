@@ -100,7 +100,6 @@ TEST_F(MatrixDifferentialTest, dhat) {
     auto a = Eigen::Map<Eigen::Matrix<number_t, 3, 3>>(product.data());
     // c=a.T=-a
 
-    // TODO: Confirm if this is a data() bug or dhat bug
     a.transposeInPlace();
 
     auto c = a.transpose();
@@ -132,20 +131,16 @@ TEST_F(MatrixDifferentialTest, rodrigues) {
     auto R = rodrigues(w, &dR_dw);
     auto RRt = R * R.transpose();
     ASSERT_LE((Eigen::Matrix<number_t, 3, 3>::Identity() - RRt).norm(), 1e-5);
-    // std::cout << R << std::endl;
-    // std::cout << "~~~~~~~~~~" << std::endl;
 
     Eigen::Matrix<number_t, 9, 3> num_dR_dw;
     num_dR_dw.setZero();
     for (int i = 0; i < 3; ++i) {
         Eigen::Matrix<number_t, 3, 1> wp = w;
         wp(i) += eps;
-        num_dR_dw.col(i) = Eigen::Map<Eigen::Matrix<number_t, 9, 1>>(
-            Eigen::Matrix<number_t, 3, 3>{(rodrigues(wp) - R) / eps}.data());
+        Eigen::Matrix<number_t, 3, 3> dR_dw_i = ((rodrigues(wp) - R) / eps).transpose();
+        num_dR_dw.col(i) = Eigen::Map<Eigen::Matrix<number_t, 9, 1>>(dR_dw_i.data());
     }
-    // std::cout << dR_dw << std::endl;
-    // std::cout << "==========" << std::endl;
-    // std::cout << num_dR_dw << std::endl;
+
     ASSERT_LE((num_dR_dw - dR_dw).norm(), 1e-5);
 }
 
@@ -166,20 +161,16 @@ TEST_F(MatrixDifferentialTest, rodrigues_small_angle) {
     auto R = rodrigues(w, &dR_dw);
     auto RRt = R * R.transpose();
     ASSERT_LE((Eigen::Matrix<number_t, 3, 3>::Identity() - RRt).norm(), 1e-5);
-    // std::cout << R << std::endl;
-    // std::cout << "~~~~~~~~~~" << std::endl;
 
     Eigen::Matrix<number_t, 9, 3> num_dR_dw;
     num_dR_dw.setZero();
     for (int i = 0; i < 3; ++i) {
         Eigen::Matrix<number_t, 3, 1> wp = w;
         wp(i) += eps;
-        num_dR_dw.col(i) = Eigen::Map<Eigen::Matrix<number_t, 9, 1>>(
-            Eigen::Matrix<number_t, 3, 3>{(rodrigues(wp) - R) / eps}.data());
+        Eigen::Matrix<number_t, 3, 3> dR_dw_i = ((rodrigues(wp) - R) / eps).transpose();
+        num_dR_dw.col(i) = Eigen::Map<Eigen::Matrix<number_t, 9, 1>>(dR_dw_i.data());
     }
-    // std::cout << dR_dw << std::endl;
-    // std::cout << "==========" << std::endl;
-    // std::cout << num_dR_dw << std::endl;
+
     ASSERT_LE((num_dR_dw - dR_dw).norm(), 1e-5);
 }
 
@@ -202,9 +193,7 @@ TEST_F(MatrixDifferentialTest, invrodrigues) {
             num_dw_dR.col(i*3+j) = (wp - w) / eps;
         }
     }
-    // std::cout << dw_dR << std::endl;
-    // std::cout << "==========" << std::endl;
-    // std::cout << num_dw_dR << std::endl;
+
     ASSERT_LE((dw_dR - num_dw_dR).norm(), 1e-5);
 }
 
@@ -223,8 +212,6 @@ TEST_F(MatrixDifferentialTest, invrodrigues_small_angle) {
     w.setIdentity();
     w *= eps;
     Eigen::Matrix<number_t, 3, 3> R = rodrigues(w);
-    // std::cout << R << std::endl;
-    // std::cout << "~~~~~~~~~~" << std::endl;
 
     Eigen::Matrix<number_t, 3, 9> dw_dR;
     w = invrodrigues(R, &dw_dR);
@@ -239,9 +226,7 @@ TEST_F(MatrixDifferentialTest, invrodrigues_small_angle) {
             num_dw_dR.col(i*3+j) = (wp - w) / eps;
         }
     }
-    // std::cout << dw_dR << std::endl;
-    // std::cout << "==========" << std::endl;
-    // std::cout << num_dw_dR << std::endl;
+
     ASSERT_LE((dw_dR - num_dw_dR).norm(), 1e-5);
 }
 
