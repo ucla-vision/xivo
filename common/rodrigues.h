@@ -63,7 +63,7 @@ hat(const Eigen::MatrixBase<Derived> &u) {
       .finished();
 }
 
-/** 
+/**
  * Derivative of a skew-symmetric matrix (constructed with `hat`) with respect to
  * the original 3x1 vector \f$[v_1, v_2, v_3]^T\f$. Let \f$u_{ij}\f$ be
  * the element at the ith row and jth column of the skew symmetric matrix. Then, the
@@ -155,7 +155,7 @@ dAB_dA(const Eigen::MatrixBase<Derived> &B) {
   for (int n = 0; n < N; ++n) {
     for (int p = 0; p < P; ++p) {
       for (int m = 0; m < M; ++m) {
-        D(n * P + p, n * M + m) += B(m, p);
+        D(p * N + n, n * M + m) += B(m, p);
       }
     }
   }
@@ -211,7 +211,7 @@ dAB_dB(const Eigen::MatrixBase<Derived> &A) {
   constexpr int N = Derived::RowsAtCompileTime;
   constexpr int M = Derived::ColsAtCompileTime;
   constexpr int P = ColB;
-  
+
   static_assert(M == RowB,
                 "Columns of A should match rows of B.");
 
@@ -220,7 +220,7 @@ dAB_dB(const Eigen::MatrixBase<Derived> &A) {
   for (int n = 0; n < N; ++n) {
     for (int p = 0; p < P; ++p) {
       for (int m = 0; m < M; ++m) {
-        D(n * P + p, m * P + p) += A(n, m);
+        D(p * N + n, m * P + p) = A(n, m);
       }
     }
   }
