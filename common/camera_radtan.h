@@ -169,11 +169,11 @@ public:
   }
 
   void Print(std::ostream &out) const {
-    out << "RadialTangential Camera" << std::endl
+    out << "Radial-Tangential Camera" << std::endl
         << "[rows, cols]=" << rows_ << "," << cols_ << "]" << std::endl
         << "[fx, fy, cx, cy]=[" << fx_ << "," << fy_ << "," << cx_ << "," << cy_
-        << "]"
-        << "[p1, p2]=[" << p1_ << "," << p2_ << "]"
+        << "]" << std::endl
+        << "[p1, p2]=[" << p1_ << "," << p2_ << "]" << std::endl
         << "[k0, k1, k2]=[" << k1_ << "," << k2_ << "," << k3_ << "]"
         << std::endl;
   }

@@ -43,7 +43,7 @@ def main(args):
             saver = savers.TUMVIEvalModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIOEvalModeSaver(args)
-        elif args.dataset == 'xivo':
+        elif args.dataset in ['xivo', 'void']:
             saver = savers.XIVOEvalModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaEvalModeSaver(args)
@@ -52,7 +52,7 @@ def main(args):
             saver = savers.TUMVIDumpModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIODumpModeSaver(args)
-        elif args.dataset == 'xivo':
+        elif args.dataset in ['xivo', 'void']:
             saver = savers.XIVODumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaDumpModeSaver(args)
@@ -61,7 +61,7 @@ def main(args):
             saver = savers.TUMVICovDumpModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIOCovDumpModeSaver(args)
-        elif args.dataset == 'xivo':
+        elif args.dataset in ['xivo', 'void']:
             saver = savers.XIVOCovDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaCovDumpModeSaver(args)
@@ -82,7 +82,7 @@ def main(args):
     elif args.dataset == 'cosyvio':
         img_dir = os.path.join(args.root, 'data', args.sen, args.seq, 'frames')
         imu_path = os.path.join(args.root, 'data', args.sen, args.seq, 'data.csv')
-    elif args.dataset in ['xivo', 'carla']:
+    elif args.dataset in ['xivo', 'carla', 'void']:
         img_dir = os.path.join(args.root, args.seq, 'cam0', 'data')
         imu_path = os.path.join(args.root, args.seq, 'imu0', 'data.csv')
     else:
@@ -90,7 +90,7 @@ def main(args):
 
     data = []
 
-    if args.dataset in ['tumvi', 'xivo', 'carla']:
+    if args.dataset in ['tumvi', 'xivo', 'carla', 'void']:
         for p in glob.glob(os.path.join(img_dir, '*.png')):
             ts = int(os.path.basename(p)[:-4])
             data.append((ts, p))
@@ -122,7 +122,7 @@ def main(args):
     if args.use_viewer:
         if args.dataset == 'tumvi':
             viewer_cfg = os.path.join('cfg', 'viewer.json')
-        elif args.dataset == 'xivo':
+        elif args.dataset in ['xivo', 'void']:
             viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
         elif args.dataset == 'cosyvio':
             if args.sen == 'tango_top':

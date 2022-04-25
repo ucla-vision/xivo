@@ -1,0 +1,327 @@
+{
+
+  // COMPILE-TIME OPTIONS (see src/CMakeLists.txt)
+  // no mapper
+  // use online temporal calibration
+  // no online camera intrinsics calibration
+  // no online imu calibration
+  // 30 max features in EKF
+
+
+  // verbose
+  "simulation": false,
+  "print_timing": false,
+  "print_calibration": true,
+  "use_canvas": true,
+  "use_debug_view": false,  // draw rejected & dropped features on canvas
+  "async_run": false, // turn this off in benchmarking
+  "imu_tk_convention": true,
+
+  // visualization (tracker view) option
+  "print_bias_info": true,
+  "draw_OOS": true,
+
+  // algorithmic-level knobs
+  "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
+  "use_OOS": false, // update with Out-Of-State features
+  "use_depth_opt": true,  // depth optimization
+  "use_MH_gating": true,
+  "use_1pt_RANSAC": false,
+  "use_compression": false,  // measurement compression
+  "triangulate_pre_subfilter": true,
+  "compression_trigger_ratio": 1.5,
+  "max_group_lifetime": 60,
+  "remove_outlier_counter": 10,
+  "OOS_update_min_observations": 5,
+  "feature_owner_change_cov_factor": 1.5,
+  "group_degrees_fixed": 4,
+
+  "PrinceDormand": {
+    "control_stepsize": false,
+    "tolerance": 1e-15,
+    "attempts": 12,
+    "min_scale_factor": 0.125,
+    "max_scale_factor": 4.0,
+    "stepsize": 0.002
+  },
+
+  "RK4": {
+    "stepsize": 0.002
+  },
+
+  // memory
+  "memory": {
+    // Values if mapper is not enabled
+    "max_features": 200,
+    "max_groups": 100
+    // Values if mapper is enabled
+    //"max_features": 30000,
+    //"max_groups": 5000
+  },
+
+  // gravity constant
+  "gravity": [0, 0, -9.79607],
+  // Initial State
+  "X" : {
+    "W"   : [0, 0, 0],
+    "T"   : [0, 0, 0],
+    "V"   : [0, 0, 0],
+    "bg"  : [-0.000395, 0.00206, 0.00191],
+    "ba"  : [0.463228, 0.221564, 0.0320127],
+    "Wbc" : [-1.246, 1.178, -1.237],
+    "Tbc" : [0.056, 0.048, -0.0130],
+    "Wg"  : [0, 0, 0],
+    "td"  : 0
+  },
+
+  "P" : {
+    "W"   : 3.0,
+    "T"   : 0.001,
+    "V"   : 0.5,
+    "bg"  : 1e-05,
+    "ba"  : 0.0001,
+    "Wbc" : 0.01,
+    "Tbc" : 0.0001,
+    "Wg"  : 3.00,
+    "td"  : 1e-5, // 1ms
+    "Cg"  : 5e-06, // not used
+    "Ca"  : 5e-06, // not used
+    "FC"  : [50, 50.0], // not used
+    "distortion": 5e-06
+  },
+
+  "Qmodel" : {
+    "W"   : 0,
+    "T"   : 0.0,
+    "V"   : 0.0,
+    "wb"  : 0.0000,
+    "ab"  : 0.000,
+    "Wbc" : 0,
+    "Tbc" : 0.0,
+    "Wg"  : 0
+  },
+
+  "Qimu": {
+    "gyro": [1e-5, 1e-5, 1e-5],
+    "gyro_bias": [0.0, 0.0, 0.0],
+    "accel": [0.004, 0.004, 0.004],
+    "accel_bias": [0.0, 0.0, 0.0]
+  },
+
+
+  // Feature initialization parameters
+  "initial_z": 2.5, // initial subfilter depth value (meter)
+  "initial_std_x": 32.434, // initial std on subfilter state (pixel)
+  "initial_std_y": 32.434, // initial std on subfilter state (pixel)
+  "initial_std_z": 1.414,  // initial std on subfilter state (meter)
+  "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
+                                 // for feature to be in main filter
+  "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
+                                  // looser criteria for admitting features to
+                                  // the state
+  "comparison_score_type": "DepthUncertainty",
+ 
+  "visual_meas_std":  3.4, // std of visual measurement for x and y (pixel)
+  "outlier_thresh": 1.1,
+  "oos_meas_std": 3.5,
+  "max_depth": 5.0,
+  "min_depth": 0.05,
+
+  // Adaptive initial depth
+  "adaptive_initial_depth": {
+    "median_weight": 0.99,
+    "minimum_feature_lifetime": 5
+  },
+
+  // Loop closure measurement, in pixels
+  "loop_closure_meas_std": 4.0,
+
+  // depth sub-filter setting
+  "subfilter": {
+    "visual_meas_std":  3.5,
+    "ready_steps": 2,
+    "MH_thresh": 8.991
+  },
+
+  // pre-subfilter triangulation options
+  "triangulation": {
+    "method": "l1_angular",
+    "zmin": 0.05,
+    "zmax": 5.0,
+    "max_theta_thresh": 0.1, // in degrees
+    "beta_thesh": 0.25 // in degrees
+  },
+
+  "depth_opt": {
+    "two_view": false,
+    "use_hessian": true,
+    "max_iters": 5,
+    "eps": 1e-3,
+    "damping": 1e-3,
+    "max_res_norm": 2.5 // maximal norm of per observation residuals
+  },
+
+  // "feature_P0_damping": 1.0, // 10.0 seems most appropriate
+
+  "imu_calib": {
+    "Cas": [0.999503, 0.999323, 0.998218],
+    "Car": [[1, -0.0342516, -8.6716e-5],
+            [0,          1,  0.0497822],
+            [0,          0,          1]],
+    "Cgs": [0.99762, 1.0006, 1.00098],
+    "Cgr": [[1,         -0.0333694, -0.0268321],
+            [0.0342183,          1,  0.0299705],
+            [0.0224757, -0.0316895,          1]]
+  },
+  "gravity_init_counter": 20,
+
+  "camera_cfg": {
+    "model": "radtan",
+    "rows": 640,
+    "cols": 480,
+    "fx": 514.638,
+    "fy": 518.858,
+    "cx": 315.267,
+    "cy": 247.358,
+    "k012": [0.123, -0.204, 0.0],
+    "p1": 0.000488,
+    "p2": 0.00290,
+    "max_iter": 15,
+    "comment": "512-cam0"
+  },
+
+  "min_inliers": 5, // minimum number of inlier measurements
+
+  "MH_thresh": 5.991, // 8.991
+  "MH_adjust_factor": 1.15,
+
+  "1pt_RANSAC_thresh": 1.5,
+  "1pt_RANSAC_prob": 0.95,
+  "1pt_RANSAC_Chi2": 5.89,
+
+  // "Correct" means 3 XY gauge features. But sometimes the filter works better
+  // with fewer fixed degrees of freedom.
+  "num_gauge_xy_features": 0,
+  "collinear_cross_prod_thresh": 0.001,
+
+  "tracker_cfg": {
+    "use_prediction": false,
+    "mask_size": 15,
+    "margin": 8, // image boundary to mask out
+    "num_features_min": 45,
+    "num_features_max": 120,
+    "max_pixel_displacement": 64,
+    "normalize": false,
+    "match_dropped_tracks": true,
+
+    "KLT": {
+      "win_size": 15,
+      "max_level": 4,
+      "max_iter": 30,
+      "eps": 0.01
+    },
+
+    "extract_descriptor": true,
+    "descriptor_distance_thresh": 64, // -1 to disable descriptor check
+    "descriptor": "BRIEF",
+
+    // "detector": "BRISK",
+    "detector": "FAST",
+    // "detector": "ORB",
+    // "detector": "AGAST",
+    // "detector": "GFTT",
+
+    "FAST": {
+      // https://docs.opencv.org/3.4/df/d74/classcv_1_1FastFeatureDetector.html
+      "threshold": 20,
+      "nonmaxSuppression": true
+    },
+
+    "BRISK": {
+      // https://docs.opencv.org/3.4/de/dbf/classcv_1_1BRISK.html
+      "thresh": 25,
+      "octaves": 3,
+      "patternScale": 1.0
+    },
+
+    "ORB": {
+      // https://docs.opencv.org/3.3.0/db/d95/classcv_1_1ORB.html
+      "nfeatures": 500,
+      "scaleFactor": 1.2,
+      "nlevels": 4,
+      "edgeThreshold": 31,
+      "firstLevel": 0,
+      "WTA_K": 2,
+      "patchSize": 31,
+      "fastThreshold": 20
+    },
+
+    "AGAST": {
+      // https://docs.opencv.org/3.4/d7/d19/classcv_1_1AgastFeatureDetector.html
+      "threshold": 10,
+      "nonmaxSuppression": true
+    },
+
+    "GFTT": {
+      // Good Feature To Track
+      // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
+      "maxCorners": 1000,
+      "qualityLevel": 0.01,
+      "minDistance": 1.0,
+      "blockSize": 3,
+      "useHarrisDetector": false,
+      "k": 0.04
+    },
+
+    "SIFT": {
+      // SIFT
+      // https://docs.opencv.org/3.4/d7/d60/classcv_1_1SIFT.html
+      "nfeatures": 0,
+      "nOctaveLayers": 2,
+      "contrastThreshold": 0.000,
+      "edgeThreshold": 500.0,
+      "sigma": 1.6
+    },
+
+    "SURF": {
+      // SURF
+      // https://docs.opencv.org/3.4/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html 
+      "hessianThreshold": 100,
+      "nOctaves": 1,
+      "nOctaveLayers": 2,
+      "extended": false,
+      "upright": false
+    },
+
+    "BRIEF": {
+      "bytes": 32,
+      "use_orientation": false
+    },
+
+    "FREAK": {
+      "orientationNormalized": true,
+      "scaleNormalized": true,
+      "patternScale": 22.0,
+      "nOctaves": 4
+    }
+  },
+
+  "mapper_cfg": {
+    "detectLoopClosures": false,
+    "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
+    "uplevel_word_search": 0,
+    "nn_dist_thresh": 20.0,
+    "merge_features": true,
+    "feature_merge_cov_factor": 1.0,
+
+    "RANSAC": {
+      "max_iter": 1000,
+      "min_iter": 100,
+      "threshold": 0.03, // In units of px/focal_length
+      "probability": 0.95,
+      "early_exit": false,
+      "early_exit_min_iter": 5,
+      "early_exit_inlier_ratio": 0.85
+    }
+  }
+}
