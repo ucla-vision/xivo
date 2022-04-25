@@ -115,8 +115,8 @@ GetDirs(const std::string dataset, const std::string root,
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else if (dataset_type == "xivo") {
     std::string image_dir =
-        StrFormat("%s/%s/%s/cam0/", root, dataset, seq);
-    std::string imu_dir = StrFormat("%s/%s/%s/imu0/", root, dataset, seq);
+        StrFormat("%s/%s/cam0/", root, seq);
+    std::string imu_dir = StrFormat("%s/%s/imu0/", root, seq);
     std::string mocap_dir = "";
     return std::make_tuple(image_dir, imu_dir, mocap_dir);
   } else {
