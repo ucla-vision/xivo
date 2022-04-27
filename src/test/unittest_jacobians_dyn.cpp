@@ -138,6 +138,24 @@ class DynamicsJacobiansTest : public ::testing::Test {
         imuderiv.setZero();
     }
 
+    number_t CalcNumericalJac(int i,
+                              State::Tangent x_deriv0,
+                              State::Tangent x_deriv1,
+                              IMUState::Tangent imu_deriv0,
+                              IMUState::Tangent imu_deriv1) {
+        number_t num_jac;
+#ifdef USE_ONLINE_IMU_CALIB
+        if (i < Index::Cg) {
+            num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
+        } else {
+            num_jac = (imu_deriv1(i-Index::Cg) - imu_deriv0(i-Index::Cg)) / delta;
+        }
+#else
+        num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
+#endif
+        return num_jac;
+    }
+
     void RunTests(std::string errmsg_start) {
         // Compute Analytical Jacobian
         est->ComputeMotionJacobianAt(est->X_, imu_input);
@@ -152,6 +170,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
         IMUState::Tangent imu_deriv1;
         State X_backup = est->X_;
         IMUState imu_backup = est->imu_.X_;
+
+        number_t num_jac;
 
         // Compute numerical Jacobians in F_ one at a time
         // We are numerically approximating the derivative of element i with
@@ -168,7 +188,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
                 NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
 
                 // Compute numerical jacobian of state i dynamics w.r.t. state j
-                number_t num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
+                num_jac = CalcNumericalJac(i, x_deriv0, x_deriv1, imu_deriv0,
+                                           imu_deriv1);
                 EXPECT_NEAR(num_jac, est->F_.coeff(i,j), tol) <<
                     errmsg_start <<
                     "State jacobian error at state " << i << ", state " << j;
@@ -187,7 +208,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
                 imu_input(j) += delta;
 
                 NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
-                number_t num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
+                num_jac = CalcNumericalJac(i, x_deriv0, x_deriv1, imu_deriv0,
+                                           imu_deriv1);
                 EXPECT_NEAR(num_jac, est->G_.coeff(i,j), tol) <<
                     errmsg_start <<
                     "Input jacobian error at state " << i << ", input " << j;
@@ -205,7 +227,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
                 est->X_.ba = imu_bias_input.tail<3>();
 
                 NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
-                number_t num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
+                num_jac = CalcNumericalJac(i, x_deriv0, x_deriv1, imu_deriv0,
+                                           imu_deriv1);
                 EXPECT_NEAR(num_jac, est->G_.coeff(i,6+j), tol) <<
                     errmsg_start <<
                     "Input jacobian error at state " << i << ", input " << j + 6;
