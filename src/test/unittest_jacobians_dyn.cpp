@@ -61,6 +61,9 @@ class DynamicsJacobiansTest : public ::testing::Test {
         imu_input << -0.00079345703125, -0.000746657228125, -0.0017173580942,
                      -9.57653808594, 0.134033203125, 1.72415161133;
 
+        // something small
+        imu_bias_input << 0.001, 0.001, -0.001, 0.01, -0.01, 0.01;
+
         // {0}
         est->g_ = { 0.0, 0.0, -9.796 };
     }
@@ -84,6 +87,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
 
         // no imu input
         imu_input.setZero();
+        imu_bias_input.setZero();
 
         // default gravity
         est->g_ = {0, 0, -9.8};
@@ -121,8 +125,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
         xdot.segment<3>(Index::Wsb) = Rsb * gyro_calib;
         xdot.segment<3>(Index::Tsb) = est->Vsb();
         xdot.segment<3>(Index::Vsb) = Rsb * accel_calib + est->Rg() * est->g_;
-        xdot.segment<3>(Index::ba).setZero();
-        xdot.segment<3>(Index::bg).setZero();
+        xdot.segment<3>(Index::bg) = imu_bias_input.head<3>();
+        xdot.segment<3>(Index::ba) = imu_bias_input.tail<3>();
         xdot.segment<3>(Index::Wbc).setZero();
         xdot.segment<3>(Index::Tbc).setZero();
         xdot.segment<2>(Index::Wg).setZero();
@@ -175,7 +179,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
             }
         }
 
-        // Compute numerical Jacobians in G_ one at a time
+        // Compute numerical Jacobians in G_ w.r.t. measurement noise
         Vec6 imu_input_backup = imu_input;
 
         for (int i=0; i<kMotionSize; i++) {
@@ -191,11 +195,32 @@ class DynamicsJacobiansTest : public ::testing::Test {
                 imu_input = imu_input_backup;
             }
         }
+
+        // Compute numerical Jacobians in G_ w.r.t. bias noise
+        Vec6 imu_bias_input_backup = imu_bias_input;
+        for (int i=0; i<kMotionSize; i++) {
+            for (int j=0; j<6; j++) {
+                imu_bias_input(j) += delta;
+                est->X_.bg = imu_bias_input.head<3>();
+                est->X_.ba = imu_bias_input.tail<3>();
+
+                NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
+                number_t num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
+                EXPECT_NEAR(num_jac, est->G_.coeff(i,6+j), tol) <<
+                    errmsg_start <<
+                    "Input jacobian error at state " << i << ", input " << j + 6;
+
+                imu_bias_input = imu_bias_input_backup;
+            }
+        }
+        est->X_.bg = imu_bias_input_backup.head<3>();
+        est->X_.ba = imu_bias_input_backup.tail<3>();
     }
 
     // Estimator Object
     EstimatorPtr est;
     Vec6 imu_input;
+    Vec6 imu_bias_input;
     
     number_t tol;   // numerical tolerance for checks
     number_t delta; // finite difference
