@@ -8,11 +8,9 @@
 #include "unittest_helpers.h"
 
 
-
-//using namespace Eigen;
 using namespace xivo;
 
-/* Class to check dxc(now)_d[everything else]. We wil */
+
 class DynamicsJacobiansTest : public ::testing::Test {
   protected:
     void SetUp() override {
@@ -25,7 +23,46 @@ class DynamicsJacobiansTest : public ::testing::Test {
 
     }
 
-    void SetRandomState () {
+    void SetNonZeroState () {
+        est->X_.Rsb = SO3::exp({1.1, 2.2, 3.3});
+        est->X_.Tsb = {3, -5, 7};
+        est->X_.Vsb = {0.2, 0.1, -0.4};
+        est->X_.ba = {1e-3, 2.5e-3, -5.0e-4};
+        est->X_.bg = {-3e-4, -1.1e-4, 2e-4};
+        est->X_.Rbc = SO3::exp({1.87, 1.98, -0.0048}); // phab number
+        est->X_.Tbc = {-0.025, 0.025, -0.040};
+        // from end of seq data9_workbench
+        est->X_.Rg = SO3::exp({0.0123478, -1.301, -0.000133273});
+
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+        est->X_.td = -0.001;
+#endif
+
+        // Values from phab phone
+        Mat3 Ta, Ka;
+        Ta << 1, 0.00533542, 0.00268388,
+              0,          1, -0.0107169;
+              0,          0,          1;
+        Ka << 0.997708, 0.0, 0.0,
+              0.0, 0.997608, 0.0,
+              0.0, 0.0, 0.987496;
+        Mat3 Tg, Kg;
+        Tg << 1,   -0.0115696, -0.000669818,
+              -0.00974687,  1,  -0.00995586,
+               0.00887142,    0.0119916,  1;
+        Kg << 1.03991, 0.0, 0.0,
+              0.0, 1.04305, 0.0,
+              0.0, 0.0, 1.05785;
+        
+        est->imu_.X_.Ca = Ta * Ka;
+        est->imu_.X_.Cg = Tg * Kg;
+
+        // something out of the phab IMU
+        imu_input << -0.00079345703125, -0.000746657228125, -0.0017173580942,
+                     -9.57653808594, 0.134033203125, 1.72415161133;
+
+        // {0}
+        est->g_ = { 0.0, 0.0, -9.796 };
     }
 
     void SetIdentityState() {
@@ -42,14 +79,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
         est->X_.td = 0;
 #endif
 
-#ifdef USE_ONLINE_IMU_CALIB
         est->imu_.X_.Ca.setIdentity();
         est->imu_.X_.Cg.setIdentity();
-#endif
-
-#ifdef USE_ONLINE_CAMERA_CALIB
-        // We will leave camera calibration as is... (do nothing)
-#endif
 
         // no imu input
         imu_input.setZero();
@@ -99,6 +130,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
 #ifdef USE_ONLINE_TEMPORAL_CALIB
         xdot(Index::td) = 0.0;
 #endif
+
+        imuderiv.setZero();
     }
 
     void RunTests(std::string errmsg_start) {
@@ -174,3 +207,8 @@ TEST_F(DynamicsJacobiansTest, Zero) {
     RunTests("Identity State Jacobians: ");
 }
 
+
+TEST_F(DynamicsJacobiansTest, NonZero) {
+    SetNonZeroState();
+    RunTests("Nonzero State Jacobians: ");
+}
