@@ -668,7 +668,10 @@ void Estimator::ComputeMotionJacobianAt(
     G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
 
     for (int i = 0; i < 3; ++i) {
-      G_.coeffRef(Index::V + i, 3 + j) = -R(i, j);  // dV_dna
+      // dV_dna
+      G_.coeffRef(Index::V + j, 3 + i) = R.block<1,3>(j,0) * imu_.Ca().block<3,1>(0,i);
+      // dV_dba
+      G_.coeffRef(Index::V + j, 9 + i) = -R(j,i);
     }
   }
 }
