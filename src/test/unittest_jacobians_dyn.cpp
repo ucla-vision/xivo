@@ -122,7 +122,15 @@ class DynamicsJacobiansTest : public ::testing::Test {
         SE3 gsb = est->gsb();
         Mat3 Rsb = gsb.R().matrix();
 
-        xdot.segment<3>(Index::Wsb) = Rsb * gyro_calib;
+        // Calculate jacobian of Wsbdot
+        Mat3 Rsbdot = Rsb * hat(gyro_calib);
+        Vec9 Rsbdot_flat = Eigen::Map<Vec9> (Rsbdot.transpose().data());
+        Mat39 dWsb_dRsb;
+        Vec3 Wsb = invrodrigues(Rsb, &dWsb_dRsb);
+        for (int i = 0; i < 3; i++) {
+            xdot(Index::Wsb + i) = dWsb_dRsb.row(i) * Rsbdot_flat;
+        }
+
         xdot.segment<3>(Index::Tsb) = est->Vsb();
         xdot.segment<3>(Index::Vsb) = Rsb * accel_calib + est->Rg() * est->g_;
         xdot.segment<3>(Index::bg) = imu_bias_input.head<3>();
@@ -223,8 +231,6 @@ class DynamicsJacobiansTest : public ::testing::Test {
         for (int i=0; i<kMotionSize; i++) {
             for (int j=0; j<6; j++) {
                 imu_bias_input(j) += delta;
-                est->X_.bg = imu_bias_input.head<3>();
-                est->X_.ba = imu_bias_input.tail<3>();
 
                 NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
                 num_jac = CalcNumericalJac(i, x_deriv0, x_deriv1, imu_deriv0,
@@ -236,15 +242,13 @@ class DynamicsJacobiansTest : public ::testing::Test {
                 imu_bias_input = imu_bias_input_backup;
             }
         }
-        est->X_.bg = imu_bias_input_backup.head<3>();
-        est->X_.ba = imu_bias_input_backup.tail<3>();
     }
 
     // Estimator Object
     EstimatorPtr est;
     Vec6 imu_input;
     Vec6 imu_bias_input;
-    
+
     number_t tol;   // numerical tolerance for checks
     number_t delta; // finite difference
 };

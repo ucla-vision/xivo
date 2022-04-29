@@ -659,19 +659,27 @@ void Estimator::ComputeMotionJacobianAt(
   // Mat3 dbg_dnbg = I3;
   // Mat3 dba_dnba = I3;
 
+  Mat39 dW_dR;
+  invrodrigues(R, &dW_dR);
+
   // jacobian w.r.t. noise
+  // == jacobian w.r.t. IMU input since noise is part of IMU input
   G_.setZero();
   for (int j = 0; j < 3; ++j) {
 
-    G_.coeffRef(Index::W + j, j) = -1;  // dW_dng
     G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
     G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
 
+    for (int i = 0; i < 3; i++) {
+      Mat3 dhatj = unstack( dhat<number_t>().col(i) );
+      Mat3 R_dhatj_Cg = R * dhatj * imu_.Cg();
+      Vec9 R_dhatj_Cg_vec = Eigen::Map<Vec9> (R_dhatj_Cg.transpose().data());
+      G_.coeffRef(Index::W+j, i) = dW_dR.row(j) * R_dhatj_Cg_vec; // dW_dng
+    }
+
     for (int i = 0; i < 3; ++i) {
       // dV_dna
-      G_.coeffRef(Index::V + j, 3 + i) = R.block<1,3>(j,0) * imu_.Ca().block<3,1>(0,i);
-      // dV_dba
-      G_.coeffRef(Index::V + j, 9 + i) = -R(j,i);
+      G_.coeffRef(Index::V + j, 3 + i) = R.row(j) * imu_.Ca().col(i); // dV_dna
     }
   }
 }
