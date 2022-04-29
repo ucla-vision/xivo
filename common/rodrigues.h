@@ -45,9 +45,9 @@ unstack(const Eigen::MatrixBase<Derived> &u, int major = Eigen::RowMajor) {
   for (int i = 0; i < M; ++i)
     for (int j = 0; j < N; ++j) {
       if (major == Eigen::RowMajor) {
-        m(i, j) = u(i * M + j);
+        m(i, j) = u(i * N + j);
       } else {
-        m(j, i) = u(i * M + j);
+        m(j, i) = u(i * N + j);
       }
     }
   return m;
