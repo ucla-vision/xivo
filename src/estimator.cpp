@@ -671,15 +671,14 @@ void Estimator::ComputeMotionJacobianAt(
     G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
 
     for (int i = 0; i < 3; i++) {
-      Mat3 dhatj = unstack( dhat<number_t>().col(i) );
-      Mat3 R_dhatj_Cg = R * dhatj * imu_.Cg();
-      Vec9 R_dhatj_Cg_vec = Eigen::Map<Vec9> (R_dhatj_Cg.transpose().data());
-      G_.coeffRef(Index::W+j, i) = dW_dR.row(j) * R_dhatj_Cg_vec; // dW_dng
+      Mat3 dhati = unstack( dhat<number_t>().col(i) );
+      Mat3 R_dhati = R * dhati;
+      Vec9 minus_R_dhati_vec = Eigen::Map<Vec9> (R_dhati.transpose().data()) * -1.0;
+      G_.coeffRef(Index::W+j, i) = dW_dR.row(j) * minus_R_dhati_vec; // dW_dng
     }
 
     for (int i = 0; i < 3; ++i) {
-      // dV_dna
-      G_.coeffRef(Index::V + j, 3 + i) = R.row(j) * imu_.Ca().col(i); // dV_dna
+      G_.coeffRef(Index::V + j, 3 + i) = -R(i,j); // dV_dna
     }
   }
 }

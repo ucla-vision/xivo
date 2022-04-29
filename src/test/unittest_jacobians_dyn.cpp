@@ -62,7 +62,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
                      -9.57653808594, 0.134033203125, 1.72415161133;
 
         // something small
-        imu_bias_input << 0.001, 0.001, -0.001, 0.01, -0.01, 0.01;
+        imu_bias_noise_input << 0.001, 0.001, -0.001, 0.01, -0.01, 0.01;
 
         // {0}
         est->g_ = { 0.0, 0.0, -9.796 };
@@ -87,7 +87,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
 
         // no imu input
         imu_input.setZero();
-        imu_bias_input.setZero();
+        imu_bias_noise_input.setZero();
 
         // default gravity
         est->g_ = {0, 0, -9.8};
@@ -116,8 +116,10 @@ class DynamicsJacobiansTest : public ::testing::Test {
         Vec3 gyro_input = imu_input.head<3>();
         Vec3 accel_input = imu_input.tail<3>();
 
-        Vec3 gyro_calib = est->Cg() * gyro_input - est->bg();
-        Vec3 accel_calib = est->Ca() * accel_input - est->ba();
+        Vec3 gyro_calib = est->Cg() * gyro_input - est->bg() -
+            imu_noise_input.head<3>();
+        Vec3 accel_calib = est->Ca() * accel_input - est->ba() -
+            imu_noise_input.tail<3>();
 
         SE3 gsb = est->gsb();
         Mat3 Rsb = gsb.R().matrix();
@@ -133,8 +135,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
 
         xdot.segment<3>(Index::Tsb) = est->Vsb();
         xdot.segment<3>(Index::Vsb) = Rsb * accel_calib + est->Rg() * est->g_;
-        xdot.segment<3>(Index::bg) = imu_bias_input.head<3>();
-        xdot.segment<3>(Index::ba) = imu_bias_input.tail<3>();
+        xdot.segment<3>(Index::bg) = imu_bias_noise_input.head<3>();
+        xdot.segment<3>(Index::ba) = imu_bias_noise_input.tail<3>();
         xdot.segment<3>(Index::Wbc).setZero();
         xdot.segment<3>(Index::Tbc).setZero();
         xdot.segment<2>(Index::Wg).setZero();
@@ -209,37 +211,37 @@ class DynamicsJacobiansTest : public ::testing::Test {
         }
 
         // Compute numerical Jacobians in G_ w.r.t. measurement noise
-        Vec6 imu_input_backup = imu_input;
+        Vec6 imu_noise_input_backup = imu_noise_input;
 
         for (int i=0; i<kMotionSize; i++) {
             for (int j=0; j<6; j++) {
-                imu_input(j) += delta;
+                imu_noise_input(j) += delta;
 
                 NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
                 num_jac = CalcNumericalJac(i, x_deriv0, x_deriv1, imu_deriv0,
                                            imu_deriv1);
-                EXPECT_NEAR(num_jac, est->G_.coeff(i,j), 0.05) <<
+                EXPECT_NEAR(num_jac, est->G_.coeff(i,j), tol) <<
                     errmsg_start <<
                     "Input jacobian error at state " << i << ", input " << j;
 
-                imu_input = imu_input_backup;
+                imu_noise_input = imu_noise_input_backup;
             }
         }
 
         // Compute numerical Jacobians in G_ w.r.t. bias noise
-        Vec6 imu_bias_input_backup = imu_bias_input;
+        Vec6 imu_bias_noise_input_backup = imu_bias_noise_input;
         for (int i=0; i<kMotionSize; i++) {
             for (int j=0; j<6; j++) {
-                imu_bias_input(j) += delta;
+                imu_bias_noise_input(j) += delta;
 
                 NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
                 num_jac = CalcNumericalJac(i, x_deriv0, x_deriv1, imu_deriv0,
                                            imu_deriv1);
-                EXPECT_NEAR(num_jac, est->G_.coeff(i,6+j), 0.05) <<
+                EXPECT_NEAR(num_jac, est->G_.coeff(i,6+j), tol) <<
                     errmsg_start <<
                     "Input jacobian error at state " << i << ", input " << j + 6;
 
-                imu_bias_input = imu_bias_input_backup;
+                imu_bias_noise_input = imu_bias_noise_input_backup;
             }
         }
     }
@@ -247,7 +249,8 @@ class DynamicsJacobiansTest : public ::testing::Test {
     // Estimator Object
     EstimatorPtr est;
     Vec6 imu_input;
-    Vec6 imu_bias_input;
+    Vec6 imu_noise_input;
+    Vec6 imu_bias_noise_input;
 
     number_t tol;   // numerical tolerance for checks
     number_t delta; // finite difference
