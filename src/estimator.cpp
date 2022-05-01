@@ -665,20 +665,20 @@ void Estimator::ComputeMotionJacobianAt(
   // jacobian w.r.t. noise
   // == jacobian w.r.t. IMU input since noise is part of IMU input
   G_.setZero();
-  for (int j = 0; j < 3; ++j) {
+  for (int i = 0; i < 3; ++i) {
 
-    G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
-    G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
+    G_.coeffRef(Index::bg + i, 6 + i) = 1;  // dbg_dnbg
+    G_.coeffRef(Index::ba + i, 9 + i) = 1;  // dba_dnba
 
-    for (int i = 0; i < 3; i++) {
-      Mat3 dhati = unstack( dhat<number_t>().col(i) );
-      Mat3 R_dhati = R * dhati;
-      Vec9 minus_R_dhati_vec = Eigen::Map<Vec9> (R_dhati.transpose().data()) * -1.0;
-      G_.coeffRef(Index::W+j, i) = dW_dR.row(j) * minus_R_dhati_vec; // dW_dng
+    for (int j = 0; j < 3; j++) {
+      Mat3 dhatj = unstack( dhat<number_t>().col(j) );
+      Mat3 R_dhatj = R * dhatj;
+      Vec9 minus_R_dhatj_vec = Eigen::Map<Vec9> (R_dhatj.transpose().data()) * -1.0;
+      G_.coeffRef(Index::W+i, j) = dW_dR.row(i) * minus_R_dhatj_vec; // dW_dng
     }
 
-    for (int i = 0; i < 3; ++i) {
-      G_.coeffRef(Index::V + j, 3 + i) = -R(i,j); // dV_dna
+    for (int j = 0; j < 3; ++j) {
+      G_.coeffRef(Index::V + i, 3 + j) = -R(i,j); // dV_dna
     }
   }
 }

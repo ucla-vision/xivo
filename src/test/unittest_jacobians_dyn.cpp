@@ -18,7 +18,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
         // Create Estimator with tumvi benchmark parameters
         auto cfg = LoadJson("cfg/tumvi.json");
         est = CreateSystem(LoadJson(cfg["estimator_cfg"].asString()));
-        delta = 1e-9;
+        delta = 1e-6;
         tol = 1e-5;
 
     }
