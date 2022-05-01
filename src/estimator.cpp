@@ -593,6 +593,26 @@ void Estimator::ComputeMotionJacobianAt(
 
   // jacobian w.r.t. error state
   Mat3 R = X.Rsb.matrix();
+  Vec3 W = X.Rsb.log();
+
+  // Useful Quantities
+  Mat39 dW_dR;
+  Mat93 dR_dW;
+  invrodrigues(R, &dW_dR);
+  rodrigues(W, &dR_dW);
+
+  // It begins
+  F_.setZero();
+
+
+  // dW_dbg
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      Mat3 Rhatj = R * unstack(dhat<number_t>().col(j)) * -1.0;
+      Vec9 Rhatj_flat = Eigen::Map<Vec9> (Rhatj.transpose().data());
+      F_.coeffRef(Index::W + i, Index::bg + j) = dW_dR.row(i) * Rhatj_flat;
+    }
+  }
 
   Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {
@@ -607,9 +627,6 @@ void Estimator::ComputeMotionJacobianAt(
   Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
   Mat3 dW_dW = -hat(gyro_calib);
-  // static Mat3 dW_dbg = -I3;
-
-  // static Mat3 dT_dV = I3;
 
   Mat3 dV_dW = -R * hat(accel_calib);
   Mat3 dV_dba = -R;
@@ -617,18 +634,17 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 dV_dWg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
-  F_.setZero(); // wipe out the delta added to F in the previous step
+  //F_.setZero(); // wipe out the delta added to F in the previous step
+
+  // dT_dV
+  for (int i = 0; i < 3; i++) {
+    F_.coeffRef(Index::T + i, Index::V + i) = 1;
+  }
 
   for (int j = 0; j < 3; ++j) {
-    F_.coeffRef(Index::W + j, Index::bg + j) = -1;  // dW_dbg
-    F_.coeffRef(Index::T + j, Index::V + j) = 1;  // dT_dV
-
     for (int i = 0; i < 3; ++i) {
       // W
       F_.coeffRef(Index::W + i, Index::W + j) = dW_dW(i, j);
-      // F_.coeffRef(Index::W + i, Index::bg + j) = dW_dbg(i, j);
-      // T
-      // F_.coeffRef(Index::T + i, Index::V + j) = dT_dV(i, j);
 
       // V
       F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
@@ -653,14 +669,6 @@ void Estimator::ComputeMotionJacobianAt(
     }
   }
 #endif
-
-  // Mat3 dW_dng = -I3;
-  // Mat3 dV_dna = -R;
-  // Mat3 dbg_dnbg = I3;
-  // Mat3 dba_dnba = I3;
-
-  Mat39 dW_dR;
-  invrodrigues(R, &dW_dR);
 
   // jacobian w.r.t. noise
   // == jacobian w.r.t. IMU input since noise is part of IMU input
