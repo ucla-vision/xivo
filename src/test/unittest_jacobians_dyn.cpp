@@ -97,8 +97,10 @@ class DynamicsJacobiansTest : public ::testing::Test {
 #ifdef USE_ONLINE_IMU_CALIB
         State::Tangent X_tangent;
         IMUState::Tangent IMU_tangent;
-        if (j >= Index::Cg) {
-            IMU_tangent(j - Index::Cg) += delta;
+        if ((j >= Index::Cg) && (j < Index::Ca)) {
+            IMU_tangent(6 + (j - Index::Cg)) += delta;
+        } else if (j >= Index::Ca) {
+            IMU_tangent(j - Index::Ca) += delta;
         } else {
             X_tangent(j) += delta;
         }
