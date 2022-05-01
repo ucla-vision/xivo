@@ -643,7 +643,6 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 dW_dW = -hat(gyro_calib);
 
   Mat3 dV_dW = -R * hat(accel_calib);
-  Mat3 dV_dba = -R;
 
   Mat3 dV_dWg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
@@ -655,6 +654,13 @@ void Estimator::ComputeMotionJacobianAt(
     F_.coeffRef(Index::T + i, Index::V + i) = 1;
   }
 
+  // dV_dba
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      F_.coeffRef(Index::V + i, Index::ba + j) = -R(i,j);
+    }
+  }
+
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       // W
@@ -662,7 +668,6 @@ void Estimator::ComputeMotionJacobianAt(
 
       // V
       F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
-      F_.coeffRef(Index::V + i, Index::ba + j) = dV_dba(i, j);
 
       if (j < 2) {
         // NOTE: Wg is 2-dim, i.e., NO z-component
