@@ -627,12 +627,18 @@ void Estimator::ComputeMotionJacobianAt(
       }
     }
   }
-#endif
 
-  Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
-  Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
-  Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
+  // dV_dCa
+  for (int k = 0; k < 3; k++) {
+    int offset = 0;
+    for (int i = 0; i < 3; i++) {
+      for (int j = i; j < 3; j++) {
+        F_.coeffRef(Index::V + k, Index::Ca + offset) = R(k,i) * accel(j);
+        offset++;
+      }
+    }
+  }
+#endif
 
   Mat3 dW_dW = -hat(gyro_calib);
 
@@ -665,13 +671,6 @@ void Estimator::ComputeMotionJacobianAt(
     }
   }
 
-#ifdef USE_ONLINE_IMU_CALIB
-  for (int j = 0; j < 6; ++j) {
-    for (int i = 0; i < 3; ++i) {
-      F_.coeffRef(Index::V + i, Index::Ca + j) = dV_dCa(i, j);
-    }
-  }
-#endif
 
   // jacobian w.r.t. noise
   // == jacobian w.r.t. IMU input since noise is part of IMU input
