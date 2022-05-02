@@ -36,7 +36,9 @@ dA_dAu() {
   return D;
 }
 
-/** Reshapes a dimension 9 vector into a 3x3 matrix */
+/** Reshapes a dimension 9 vector into a 3x3 matrix in a row- or column-major
+ *  manner. Defaults to row-major.
+ */
 template <typename Derived, int M = 3, int N = 3>
 Eigen::Matrix<typename Derived::Scalar, M, N>
 unstack(const Eigen::MatrixBase<Derived> &u, int major = Eigen::RowMajor) {
