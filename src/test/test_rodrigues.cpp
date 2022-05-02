@@ -231,6 +231,27 @@ TEST_F(MatrixDifferentialTest, invrodrigues_small_angle) {
 }
 
 
+TEST_F(MatrixDifferentialTest, dRu_dw) {
+    Eigen::Matrix<number_t, 3, 1> w{1.1, -2.2, 3.3};
+    Eigen::Matrix<number_t, 3, 1> u{-3.0, 4.5, -12.2};
+
+    Eigen::Matrix<number_t, 3, 1> y0 = rodrigues(w) * u;
+    Eigen::Matrix<number_t, 3, 3> jac = dRu_dw(w, u);
+
+    Eigen::Matrix<number_t, 3, 3> num_jac;
+
+    for (int j = 0; j < 3; j++) {
+        Eigen::Matrix<number_t, 3, 1> wp(w);
+        wp(j) += eps;
+        Eigen::Matrix<number_t, 3, 1> y1 = rodrigues(wp) * u;
+
+        num_jac.col(j) = (y1 - y0) / eps;
+    }
+
+    ASSERT_LE((jac - num_jac).norm(), 1e-5);
+}
+
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

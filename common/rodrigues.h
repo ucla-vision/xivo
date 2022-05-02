@@ -387,4 +387,23 @@ invrodrigues(const Eigen::MatrixBase<Derived> &R,
   return w;
 }
 
+
+/** Takes the derivative of the product R(w)*u w.r.t. w, a 3x3 matrix. Formula
+ *  is Result 1 from Gallego and Yezzi, 2015
+ */
+template <typename Derived>
+Eigen::Matrix<typename Derived::Scalar, 3, 3>
+dRu_dw(const Eigen::MatrixBase<Derived> &w,
+       const Eigen::MatrixBase<Derived> &u) {
+  using T = typename Derived::Scalar;
+
+  T theta = w.norm();
+  Eigen::Matrix<T, 3, 3> R = rodrigues(w);
+  Eigen::Matrix<T, 3, 3> RTminusI = R.transpose() - Eigen::Matrix<T, 3, 3>::Identity();
+  Eigen::Matrix<T, 3, 3> wwT = w * w.transpose();
+
+  return -R * hat(u) * (wwT + RTminusI*hat(w)) / theta / theta;
+}
+
+
 } // namespace math
