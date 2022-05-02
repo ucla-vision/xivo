@@ -120,6 +120,9 @@ endif(BUILD_G2O)
 add_executable(vio app/vio.cpp)
 target_link_libraries(vio ${libxivo} gflags::gflags)
 
+add_executable(feature app/feature.cpp)
+target_link_libraries(feature ${libxivo} gflags::gflags)
+
 ################################################################################
 # TOOLING
 ################################################################################
@@ -129,7 +132,7 @@ target_link_libraries(vio ${libxivo} gflags::gflags)
 ################################################################################
 # TESTS
 ################################################################################
-add_executable(unitTests_NumericalAlgorithms 
+add_executable(unitTests_NumericalAlgorithms
                test/unittest_givens.cpp
                test/unittest_helpers.cpp)
 target_link_libraries(unitTests_NumericalAlgorithms xest ${deps} gtest gtest_main)
