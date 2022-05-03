@@ -249,6 +249,32 @@ TEST_F(MatrixDifferentialTest, dRu_dw) {
     }
 
     ASSERT_LE((jac - num_jac).norm(), 1e-5);
+
+
+TEST_F(MatrixDifferentialTest, dRu_dw_small_angle) {
+    Eigen::Matrix<number_t, 3, 1> w{1e-8, 0, 0};
+    Eigen::Matrix<number_t, 3, 1> u;
+    u.setRandom();
+
+    Eigen::Matrix<number_t, 3, 1> y0 = rodrigues(w) * u;
+    Eigen::Matrix<number_t, 3, 3> jac = dRu_dw(w, u);
+    Eigen::Matrix<number_t, 3, 3> num_jac;
+
+    for (int j = 0; j < 3; j++) {
+        Eigen::Matrix<number_t, 3, 1> wp(w);
+        wp(j) += eps;
+        Eigen::Matrix<number_t, 3, 1> y1 = rodrigues(wp) * u;
+
+        num_jac.col(j) = (y1 - y0) / eps;
+    }
+
+    ASSERT_LE((jac - num_jac).norm(), 1e-5);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(jac(i,j), num_jac(i,j), 1e-5) <<
+            "small angle dRu_dw test error at i=" << i << " and j=" << j;
+        }
+    }
 }
 
 

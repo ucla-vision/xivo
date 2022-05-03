@@ -398,11 +398,22 @@ dRu_dw(const Eigen::MatrixBase<Derived> &w,
   using T = typename Derived::Scalar;
 
   T theta = w.norm();
-  Eigen::Matrix<T, 3, 3> R = rodrigues(w);
-  Eigen::Matrix<T, 3, 3> RTminusI = R.transpose() - Eigen::Matrix<T, 3, 3>::Identity();
-  Eigen::Matrix<T, 3, 3> wwT = w * w.transpose();
 
-  return -R * hat(u) * (wwT + RTminusI*hat(w)) / theta / theta;
+  if (theta < 1e-6) {
+    Eigen::Matrix<T, 3, 3> out;
+    for (int j = 0; j < 3; j++) {
+      Eigen::Matrix<T, 3, 3> dhat_mat = unstack(dhat<T>().col(j));
+      out.col(j) = dhat_mat * u;
+    }
+    return out;
+  }
+  else {
+    Eigen::Matrix<T, 3, 3> R = rodrigues(w);
+    Eigen::Matrix<T, 3, 3> RTminusI = R.transpose() - Eigen::Matrix<T, 3, 3>::Identity();
+    Eigen::Matrix<T, 3, 3> wwT = w * w.transpose();
+
+    return -R * hat(u) * (wwT + RTminusI*hat(w)) / theta / theta;
+  }
 }
 
 
