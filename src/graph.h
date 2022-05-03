@@ -19,6 +19,10 @@ class Graph : public GraphBase {
 public:
   static Graph* Create();
   static Graph* instance();
+  ~Graph() {
+    delete random_generator;
+    delete random_device;
+  }
 
   void RemoveFeature(const FeaturePtr f);
   void RemoveFeatures(const std::vector<FeaturePtr> &);
@@ -93,7 +97,11 @@ public:
   std::vector<FeaturePtr> FindNewGaugeFeatures(GroupPtr g);
 
 private:
-  Graph() = default;
+  Graph() {
+    random_device = new std::random_device;
+    random_generator = new std::mt19937((*random_device)());
+  }
+
   Graph(const Graph&) = delete;
   Graph& operator=(const Graph&) = delete;
   static std::unique_ptr<Graph> instance_;
@@ -103,6 +111,10 @@ private:
   /** Maps group id (int) to a unordered set of features whose (x,y) coordinates
    *  of `Feature::x_` is held constant. */
   std::unordered_map<GroupPtr, std::unordered_set<FeaturePtr>> gauge_features_;
+
+  /** For generating random permutations in `FindNewGaugeFeatures` */
+  std::random_device *random_device;
+  std::mt19937 *random_generator;
 };
 
 } // namespace xivo
