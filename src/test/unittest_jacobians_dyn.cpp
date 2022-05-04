@@ -31,7 +31,6 @@ class DynamicsJacobiansTest : public ::testing::Test {
         est->X_.bg = {-3e-4, -1.1e-4, 2e-4};
         est->X_.Rbc = SO3::exp({1.87, 1.98, -0.0048}); // phab number
         est->X_.Tbc = {-0.025, 0.025, -0.040};
-        // from end of seq data9_workbench
         est->X_.Rg = SO3::exp({0.0123478, -1.301, 0});
 
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -61,10 +60,9 @@ class DynamicsJacobiansTest : public ::testing::Test {
         imu_input << -0.00079345703125, -0.000746657228125, -0.0017173580942,
                      -9.57653808594, 0.134033203125, 1.72415161133;
 
-        // something small
-        imu_bias_noise_input << 0.001, 0.001, -0.001, 0.01, -0.01, 0.01;
+        imu_noise_input.setZero();
+        imu_bias_noise_input.setZero();
 
-        // {0}
         est->g_ = { 0.0, 0.0, -9.796 };
     }
 
@@ -88,6 +86,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
         // no imu input
         imu_input.setZero();
         imu_bias_noise_input.setZero();
+        imu_noise_input.setZero();
 
         // default gravity
         est->g_ = {0, 0, -9.8};
@@ -113,8 +112,7 @@ class DynamicsJacobiansTest : public ::testing::Test {
 #endif
     }
 
-    void NonlinearDynamicsFcn(State::Tangent &xdot,
-                              IMUState::Tangent &imuderiv) {
+    void NonlinearDynamicsFcn(State::Tangent &xdot) {
         Vec3 gyro_input = imu_input.head<3>();
         Vec3 accel_input = imu_input.tail<3>();
 
@@ -147,26 +145,6 @@ class DynamicsJacobiansTest : public ::testing::Test {
 #ifdef USE_ONLINE_TEMPORAL_CALIB
         xdot(Index::td) = 0.0;
 #endif
-
-        imuderiv.setZero();
-    }
-
-    number_t CalcNumericalJac(int i,
-                              State::Tangent x_deriv0,
-                              State::Tangent x_deriv1,
-                              IMUState::Tangent imu_deriv0,
-                              IMUState::Tangent imu_deriv1) {
-        number_t num_jac;
-#ifdef USE_ONLINE_IMU_CALIB
-        if (i < Index::Cg) {
-            num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
-        } else {
-            num_jac = (imu_deriv1(i-Index::Cg) - imu_deriv0(i-Index::Cg)) / delta;
-        }
-#else
-        num_jac = (x_deriv1(i) - x_deriv0(i)) / delta;
-#endif
-        return num_jac;
     }
 
     void RunTests(std::string errmsg_start) {
@@ -174,86 +152,66 @@ class DynamicsJacobiansTest : public ::testing::Test {
         est->ComputeMotionJacobianAt(est->X_, imu_input);
 
         // Variables to hold perturbed derivatives and backup state
+        State::Tangent x_deriv0;
         State::Tangent x_deriv1;
-        IMUState::Tangent imu_deriv1;
-        State::Tangent x_deriv2;
-        IMUState::Tangent imu_deriv2;
         State X_backup = est->X_;
         IMUState imu_backup = est->imu_.X_;
 
-        number_t num_jac;
+        NonlinearDynamicsFcn(x_deriv0);
 
         // Compute numerical Jacobians in F_ one at a time
         // We are numerically approximating the derivative of element i with
         // respect to element j
         // Note that since kMotionSize includes td, Cg, Ca, we will only end up
         // testing those derivatives if they are part of the state
-        for (int i=0; i<kMotionSize; i++) {
-            for (int j=0; j<kMotionSize; j++) {
+        for (int j=0; j<kMotionSize; j++) {
+            PerturbElement(j, delta, est->X_, est->imu_.X_);
+            NonlinearDynamicsFcn(x_deriv1);
+            est->X_ = X_backup;
+            est->imu_.X_ = imu_backup;
 
-                // make perturbation in element j of the total state vector
-                PerturbElement(j, -delta/2, est->X_, est->imu_.X_);
-                NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
-                est->X_ = X_backup;
-                est->imu_.X_ = imu_backup;
-
-                PerturbElement(j, delta/2, est->X_, est->imu_.X_);
-                NonlinearDynamicsFcn(x_deriv2, imu_deriv2);
-                est->X_ = X_backup;
-                est->imu_.X_ = imu_backup;
-
-                // Compute numerical jacobian of state i dynamics w.r.t. state j
-                num_jac = CalcNumericalJac(i, x_deriv1, x_deriv2, imu_deriv1,
-                                           imu_deriv2);
-                EXPECT_NEAR(num_jac, est->F_.coeff(i,j), tol) <<
+            Eigen::Matrix<number_t, kMotionSize, 1> num_jac =
+                (x_deriv1 - x_deriv0) / delta;
+            for (int i=0; i<kMotionSize; i++) {
+                EXPECT_NEAR(num_jac(i), est->F_.coeff(i,j), tol) <<
                     errmsg_start <<
-                    "State jacobian error at state " << i << ", state " << j;
-
-                // Put state back where it was
-                est->X_ = X_backup;
-                est->imu_.X_ = imu_backup;
+                    "State jacobian error at state " << i << ", state " << j
+                    << std::endl;
             }
         }
 
+
+
+
         // Compute numerical Jacobians in G_ w.r.t. measurement noise
-        Vec6 imu_noise_input_backup = imu_noise_input;
+        for (int j=0; j<6; j++) {
+            imu_noise_input(j) += delta;
+            NonlinearDynamicsFcn(x_deriv1);
+            imu_noise_input(j) -= delta;
 
-        for (int i=0; i<kMotionSize; i++) {
-            for (int j=0; j<6; j++) {
-                imu_noise_input(j) -= delta/2;
-                NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
-                imu_noise_input = imu_noise_input_backup;
-
-                imu_noise_input(j) += delta/2;
-                NonlinearDynamicsFcn(x_deriv2, imu_deriv2);
-                imu_noise_input = imu_noise_input_backup;
-
-                num_jac = CalcNumericalJac(i, x_deriv1, x_deriv2, imu_deriv1,
-                                           imu_deriv2);
-                EXPECT_NEAR(num_jac, est->G_.coeff(i,j), tol) <<
+            Eigen::Matrix<number_t, kMotionSize, 1> num_jac =
+                (x_deriv1 - x_deriv0) / delta;
+            for (int i=0; i<kMotionSize; i++) {
+                EXPECT_NEAR(num_jac(i), est->G_.coeff(i,j), tol) <<
                     errmsg_start <<
-                    "Input jacobian error at state " << i << ", input " << j;
+                    "Input jacobian error at state " << i << ", input " << j <<
+                    std::endl;
             }
         }
 
         // Compute numerical Jacobians in G_ w.r.t. bias noise
-        Vec6 imu_bias_noise_input_backup = imu_bias_noise_input;
-        for (int i=0; i<kMotionSize; i++) {
-            for (int j=0; j<6; j++) {
-                imu_bias_noise_input(j) -= delta/2;
-                NonlinearDynamicsFcn(x_deriv1, imu_deriv1);
-                imu_bias_noise_input = imu_bias_noise_input_backup;
+        for (int j=0; j<6; j++) {
+            imu_bias_noise_input(j) += delta;
+            NonlinearDynamicsFcn(x_deriv1);
+            imu_bias_noise_input(j) -= delta;
+            Eigen::Matrix<number_t, kMotionSize, 1> num_jac =
+                (x_deriv1 - x_deriv0) / delta;
 
-                imu_bias_noise_input(j) += delta/2;
-                NonlinearDynamicsFcn(x_deriv2, imu_deriv2);
-                imu_bias_noise_input = imu_bias_noise_input_backup;
-
-                num_jac = CalcNumericalJac(i, x_deriv1, x_deriv2, imu_deriv1,
-                                           imu_deriv2);
-                EXPECT_NEAR(num_jac, est->G_.coeff(i,6+j), tol) <<
+            for (int i=0; i<kMotionSize; i++) {
+                EXPECT_NEAR(num_jac(i), est->G_.coeff(i,6+j), tol) <<
                     errmsg_start <<
-                    "Input jacobian error at state " << i << ", input " << j + 6;
-
+                    "Input jacobian error at state " << i << ", input " << j + 6
+                    << std::endl;
             }
         }
     }
