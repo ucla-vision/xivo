@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
   std::tie(image_dir, imu_dir, mocap_dir) =
       GetDirs(FLAGS_dataset, FLAGS_root, FLAGS_seq, FLAGS_cam_id);
 
+  //TODO Do I need to create a separate DataLoader which only takes in image_dir
   std::unique_ptr<DataLoader> loader(new DataLoader{image_dir, imu_dir});
 
   // create estimator
@@ -57,8 +58,6 @@ int main(int argc, char **argv) {
   // setup I/O for saving results
   if (std::ofstream ostream{FLAGS_out, std::ios::out}) {
 
-    std::vector<msg::Pose> traj_est;
-
     for (int i = 0; i < loader->size(); ++i) {
       auto raw_msg = loader->Get(i);
 
@@ -70,43 +69,39 @@ int main(int argc, char **argv) {
         auto image = cv::imread(msg->image_path_);
         est->VisualMeas(msg->ts_, image);
 
-        if (est->UsingLoopClosure()) {
-          est->CloseLoop();
-        }
-
         if (viewer) {
-          viewer->Update_gsb(est->gsb());
-          viewer->Update_gsc(est->gsc());
 
           cv::Mat disp = Canvas::instance()->display();
 
           if (!disp.empty()) {
+            std::cout << "this is running" << std::endl;
             LOG(INFO) << "Display image is ready";
             viewer->Update(disp);
             viewer->Refresh();
           }
         }
-      } else if (auto msg = dynamic_cast<msg::IMU *>(raw_msg)) {
-        est->InertialMeas(msg->ts_, msg->gyro_, msg->accel_);
-      } else {
-        LOG(FATAL) << "Invalid entry type.";
       }
-
-      traj_est.emplace_back(est->ts(), est->gsb());
-      ostream << StrFormat("%ld", est->ts().count()) << " "
-        << est->gsb().translation().transpose() << " "
-        << est->gsb().rotation().log().transpose() << std::endl;
+      else if (auto msg = dynamic_cast<msg::IMU *>(raw_msg)) {
+        timestamp_t ts = msg->ts_;
+        Vec3 gyro = msg->gyro_;
+        Vec3 accel = msg->accel_;
+        // std::cout << "do nothing " << gyro << accel << std::endl;
+        // est->InertialMeas(msg->ts_, msg->gyro_, msg->accel_);
+      }
+      else {
+        LOG(INFO) << "Invalid entry type.";
+      }
     }
 
     // Dump output graph
-    if (!FLAGS_graphout.empty()) {
-      GraphWriter GW;
-      GW.CollectGraph(Graph::instance());
-#ifdef USE_MAPPER
-      GW.CollectGraph(Mapper::instance());
-#endif
-      GW.WriteDot(FLAGS_graphout);
-    }
+//     if (!FLAGS_graphout.empty()) {
+//       GraphWriter GW;
+//       GW.CollectGraph(Graph::instance());
+// #ifdef USE_MAPPER
+//       GW.CollectGraph(Mapper::instance());
+// #endif
+//       GW.WriteDot(FLAGS_graphout);
+//     }
 
   } else {
     LOG(FATAL) << "failed to open output file @ " << FLAGS_out;

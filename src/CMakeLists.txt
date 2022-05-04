@@ -120,8 +120,8 @@ endif(BUILD_G2O)
 add_executable(vio app/vio.cpp)
 target_link_libraries(vio ${libxivo} gflags::gflags)
 
-add_executable(feature app/feature.cpp)
-target_link_libraries(feature ${libxivo} gflags::gflags)
+add_executable(feature_tracker_only app/feature_tracker_only.cpp)
+target_link_libraries(feature_tracker_only ${libxivo} gflags::gflags)
 
 ################################################################################
 # TOOLING
