@@ -232,8 +232,24 @@ TEST_F(MatrixDifferentialTest, invrodrigues_small_angle) {
 
 
 TEST_F(MatrixDifferentialTest, dRu_dw) {
-    Eigen::Matrix<number_t, 3, 1> w{1.1, -2.2, 3.3};
-    Eigen::Matrix<number_t, 3, 1> u{-3.0, 4.5, -12.2};
+    Eigen::Matrix<number_t, 3, 1> w{1.1, 2.2, 3.3};
+    //Eigen::Matrix<number_t, 3, 1> w{-0.579252,   -1.1585,  -1.73776};
+    //Eigen::Matrix<number_t, 3, 1> u{-3.0, 4.5, -12.2};
+    Eigen::Matrix<number_t, 3, 1> accel{-9.57653808594, 0.134033203125, 1.72415161133};
+    Eigen::Matrix<number_t, 3, 1> ba{1e-3, 2.5e-3, -5.0e-4};
+    Eigen::Matrix<number_t, 3, 3> Ta, Ka;
+    Ta << 1, 0.00533542, 0.00268388,
+            0,          1, -0.0107169,
+            0,          0,          1;
+    Ka << 0.997708, 0.0, 0.0,
+            0.0, 0.997608, 0.0,
+            0.0, 0.0, 0.987496;
+    Eigen::Matrix<number_t, 3, 3> Ca = Ta * Ka;
+
+    Eigen::Matrix<number_t, 3, 1> u = Ca * accel - ba;
+    std::cout << "Wsb: " << w.transpose() << std::endl;
+    std::cout << "u: " << u.transpose() << std::endl;
+    std::cout << "Rsb: " << std::endl << rodrigues(w) << std::endl;
 
     Eigen::Matrix<number_t, 3, 1> y0 = rodrigues(w) * u;
     Eigen::Matrix<number_t, 3, 3> jac = dRu_dw(w, u);
@@ -249,6 +265,16 @@ TEST_F(MatrixDifferentialTest, dRu_dw) {
     }
 
     ASSERT_LE((jac - num_jac).norm(), 1e-5);
+    std::cout << "jac" << std::endl << jac << std::endl;
+    std::cout << "num_jac" << std::endl << num_jac << std::endl;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(jac(i,j), num_jac(i,j), 1e-5) <<
+            "dRu_dw test error at i=" << i << " and j=" << j;
+        }
+    }
+}
 
 
 TEST_F(MatrixDifferentialTest, dRu_dw_small_angle) {
@@ -281,4 +307,40 @@ TEST_F(MatrixDifferentialTest, dRu_dw_small_angle) {
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
+}
+
+
+TEST_F(MatrixDifferentialTest, dRu_dw2) {
+    Eigen::Matrix<number_t, 3, 1> wg{0.0123478, -1.301, 0};
+    Eigen::Matrix<number_t, 3, 1> g{0.0, 0.0, -9.8};
+
+    Eigen::Matrix<number_t, 3, 1> u = g;
+    std::cout << "Wsg: " << wg.transpose() << std::endl;
+    std::cout << "u: " << u.transpose() << std::endl;
+    std::cout << "Rsg: " << std::endl << rodrigues(wg) << std::endl;
+
+    Eigen::Matrix<number_t, 3, 1> y0 = rodrigues(wg) * u;
+    Eigen::Matrix<number_t, 3, 3> jac = dRu_dw(wg, u);
+
+    Eigen::Matrix<number_t, 3, 3> num_jac;
+    num_jac.setZero();
+
+    for (int j = 0; j < 3; j++) {
+        Eigen::Matrix<number_t, 3, 1> wp(wg);
+        wp(j) += eps;
+        Eigen::Matrix<number_t, 3, 1> y1 = rodrigues(wp) * u;
+
+        num_jac.col(j) = (y1 - y0) / eps;
+    }
+
+    ASSERT_LE((jac - num_jac).norm(), 1e-5);
+    std::cout << "jac" << std::endl << jac << std::endl;
+    std::cout << "num_jac" << std::endl << num_jac << std::endl;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(jac(i,j), num_jac(i,j), 1e-5) <<
+            "dRu_dw2 test error at i=" << i << " and j=" << j;
+        }
+    }
 }

@@ -18,13 +18,14 @@ class DynamicsJacobiansTest : public ::testing::Test {
         // Create Estimator with tumvi benchmark parameters
         auto cfg = LoadJson("cfg/tumvi.json");
         est = CreateSystem(LoadJson(cfg["estimator_cfg"].asString()));
-        delta = 1e-6;
+        delta = 1e-8;
         tol = 1e-5;
 
     }
 
     void SetNonZeroState () {
-        est->X_.Rsb = SO3::exp({1.1, 2.2, 3.3});
+        //est->X_.Rsb = SO3::exp({1.1, 2.2, 3.3});
+        est->X_.Rsb = SO3::exp({-0.579252,   -1.1585,  -1.73776});
         est->X_.Tsb = {3, -5, 7};
         est->X_.Vsb = {0.2, 0.1, -0.4};
         est->X_.ba = {1e-3, 2.5e-3, -5.0e-4};
@@ -164,9 +165,15 @@ class DynamicsJacobiansTest : public ::testing::Test {
         // respect to element j
         // Note that since kMotionSize includes td, Cg, Ca, we will only end up
         // testing those derivatives if they are part of the state
+        Mat3 num_dV_dw;
+        Mat3 num_dV_dwg;
         for (int j=0; j<kMotionSize; j++) {
             PerturbElement(j, delta, est->X_, est->imu_.X_);
-            NonlinearDynamicsFcn(x_deriv1);
+            NonlinearDynamicsFcn(x_deriv1); 
+            if ((Index::Wsb <= j) && (j < Index::Wsb+3)) {
+                Vec3 Wsb_test = est->X_.Rsb.log();
+                std::cout << "new_wsb: " << Wsb_test.transpose() << std::endl;
+            }
             est->X_ = X_backup;
             est->imu_.X_ = imu_backup;
 
@@ -178,10 +185,44 @@ class DynamicsJacobiansTest : public ::testing::Test {
                     "State jacobian error at state " << i << ", state " << j
                     << std::endl;
             }
+
+            if ((Index::Wsb <= j) && (j < Index::Wsb+3)) {
+                num_dV_dw.col(j-Index::Wsb) = num_jac.segment<3>(Index::V);
+            }
+            if ((Index::Wg <= j) && (j < Index::Wg+2)) {
+                num_dV_dwg.col(j-Index::Wg) = num_jac.segment<3>(Index::V);
+            }
         }
 
 
+        // Print stuff
+        Mat3 Rsb = est->X_.Rsb.matrix();
+        std::cout << "Rsb: " << std::endl << Rsb << std::endl;
 
+        Vec3 accel_calib = est->Ca() * imu_input.tail<3>() - est->ba();
+
+        // print analytical dV_dw
+        Mat3 dV_dw;
+        dV_dw.setZero();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                dV_dw(i,j) = est->F_.coeff(Index::V+i, Index::Wsb+j);
+            }
+        }
+        std::cout << "analytical jac dV_dw" << std::endl << dV_dw << std::endl;
+        std::cout << "numerical jac dV_dw" << std::endl << num_dV_dw << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "Rsg: " << std::endl << est->X_.Rg.matrix() << std::endl;
+        Mat3 dV_dwg;
+        dV_dwg.setZero();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 2; j++) {
+                dV_dwg(i,j) = est->F_.coeff(Index::V+i, Index::Wg+j);
+            }
+        }
+        std::cout << "analytical jac dV_dwg" << std::endl << dV_dwg << std::endl;
+        std::cout << "numerical jac dV_dw" << std::endl << num_dV_dwg << std::endl;
 
         // Compute numerical Jacobians in G_ w.r.t. measurement noise
         for (int j=0; j<6; j++) {
