@@ -3,6 +3,7 @@
 
 #define private public
 
+#include "rodrigues.h"
 #include "estimator.h"
 
 #include "unittest_helpers.h"
@@ -165,64 +166,63 @@ class DynamicsJacobiansTest : public ::testing::Test {
         // respect to element j
         // Note that since kMotionSize includes td, Cg, Ca, we will only end up
         // testing those derivatives if they are part of the state
-        Mat3 num_dV_dw;
-        Mat3 num_dV_dwg;
         for (int j=0; j<kMotionSize; j++) {
             PerturbElement(j, delta, est->X_, est->imu_.X_);
             NonlinearDynamicsFcn(x_deriv1); 
-            if ((Index::Wsb <= j) && (j < Index::Wsb+3)) {
-                Vec3 Wsb_test = est->X_.Rsb.log();
-                std::cout << "new_wsb: " << Wsb_test.transpose() << std::endl;
-            }
             est->X_ = X_backup;
             est->imu_.X_ = imu_backup;
 
             Eigen::Matrix<number_t, kMotionSize, 1> num_jac =
                 (x_deriv1 - x_deriv0) / delta;
             for (int i=0; i<kMotionSize; i++) {
+                // Skip pathological cases that always fail because of numerical
+                // issues that arise when trying to make small changes to
+                // Rsb through a matrix multiplication with Wsb. These cases,
+                // however, are separately coded in a less pathological way in
+                // other unit tests that do pass. A printout of the analytical
+                // jacobians computed here match the analytical and numeric
+                // jacobians in those other test cases.
+                // Pathological test cases:
+                // - dV_dWsb
+                // - dV_dWsg
+                if ((Index::V <= i) && (i < Index::V+3)) {
+                    if ((Index::Wsb <= j) && (j < Index::Wsb+3)) {
+                        continue;
+                    }
+                    if ((Index::Wg <= j) && (j < Index::Wg+2)) {
+                        continue;
+                    }
+                }
+
                 EXPECT_NEAR(num_jac(i), est->F_.coeff(i,j), tol) <<
                     errmsg_start <<
                     "State jacobian error at state " << i << ", state " << j
                     << std::endl;
             }
-
-            if ((Index::Wsb <= j) && (j < Index::Wsb+3)) {
-                num_dV_dw.col(j-Index::Wsb) = num_jac.segment<3>(Index::V);
-            }
-            if ((Index::Wg <= j) && (j < Index::Wg+2)) {
-                num_dV_dwg.col(j-Index::Wg) = num_jac.segment<3>(Index::V);
-            }
         }
 
-
-        // Print stuff
-        Mat3 Rsb = est->X_.Rsb.matrix();
-        std::cout << "Rsb: " << std::endl << Rsb << std::endl;
-
-        Vec3 accel_calib = est->Ca() * imu_input.tail<3>() - est->ba();
-
-        // print analytical dV_dw
+        // print analytical dV_dw and dV_dwg. These match both the analytical
+        // and numerical values in unit tests `DynamicsJacobiansTest.dV_dWsb`
+        // and `DynamicsJacobiansTest.dV_dWsg` that do pass because the small
+        // increment to `Rsb` is applied differently when computing the
+        // numerical derivative.
+        /*
         Mat3 dV_dw;
+        Mat3 dV_dwg;
         dV_dw.setZero();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 dV_dw(i,j) = est->F_.coeff(Index::V+i, Index::Wsb+j);
             }
         }
-        std::cout << "analytical jac dV_dw" << std::endl << dV_dw << std::endl;
-        std::cout << "numerical jac dV_dw" << std::endl << num_dV_dw << std::endl;
-
-        std::cout << std::endl;
-        std::cout << "Rsg: " << std::endl << est->X_.Rg.matrix() << std::endl;
-        Mat3 dV_dwg;
-        dV_dwg.setZero();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 2; j++) {
                 dV_dwg(i,j) = est->F_.coeff(Index::V+i, Index::Wg+j);
             }
         }
-        std::cout << "analytical jac dV_dwg" << std::endl << dV_dwg << std::endl;
-        std::cout << "numerical jac dV_dw" << std::endl << num_dV_dwg << std::endl;
+        std::cout << "analytical jac dV_dw" << std::endl << dV_dw.format(Eigen::FullPrecision) << std::endl;
+        std::cout << "analytical jac dV_dwsg" << std::endl << dV_dwg.format(Eigen::FullPrecision) << std::endl;
+        */
 
         // Compute numerical Jacobians in G_ w.r.t. measurement noise
         for (int j=0; j<6; j++) {
@@ -277,4 +277,65 @@ TEST_F(DynamicsJacobiansTest, Zero) {
 TEST_F(DynamicsJacobiansTest, NonZero) {
     SetNonZeroState();
     RunTests("Nonzero State Jacobians: ");
+}
+
+TEST_F(DynamicsJacobiansTest, dV_dWsb) {
+    SetNonZeroState();
+    est->ComputeMotionJacobianAt(est->X_, imu_input);
+
+    Vec3 Wsb = est->X_.Rsb.log();
+    Vec3 accel_calib = est->imu_.Ca() * imu_input.tail<3>() - est->ba();
+    Mat3 jac;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            jac(i,j) = est->F_.coeffRef(Index::V+i, Index::Wsb+j);
+        }
+    }
+
+    Vec3 y0 = est->X_.Rsb.matrix() * accel_calib;
+    Mat3 num_jac;
+
+    for (int j = 0; j < 3; j++) {
+        Vec3 wp(Wsb);
+        wp(j) += delta;
+        Vec3 y1 = rodrigues(wp) * accel_calib;
+
+        num_jac.col(j) = (y1 - y0) / delta;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(jac(i,j), num_jac(i,j), 1e-5) <<
+            "dV_dWsb test error at i=" << i << " and j=" << j;
+        }
+    }
+}
+
+TEST_F(DynamicsJacobiansTest, dV_dWsg) {
+    SetNonZeroState();
+    est->ComputeMotionJacobianAt(est->X_, imu_input);
+
+    Vec3 Wsg = est->X_.Rg.log();
+    Vec3 y0 = est->X_.Rg.matrix() * est->g_;
+    Mat3 jac; // analytical Jacobians
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            jac(i,j) = est->F_.coeffRef(Index::V+i, Index::Wg+j);
+        }
+    }
+
+    Mat3 num_jac;
+    for (int j = 0; j < 2; j++) {
+        Vec3 wp(Wsg);
+        wp(j) += delta;
+        Vec3 y1 = rodrigues(wp) * est->g_;
+        num_jac.col(j) = (y1 - y0) / delta;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            EXPECT_NEAR(jac(i,j), num_jac(i,j), 1e-5) <<
+            "dV_dWsg test error at i=" << i << " and j=" << j;
+        }
+    }
 }

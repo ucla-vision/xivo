@@ -632,22 +632,6 @@ void Estimator::ComputeMotionJacobianAt(
       F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i,j);
     }
   }
-  //std::cout << "Wsg: " << X_.Rg.log().transpose() << std::endl;
-  //std::cout << "Rsg: " << std::endl << X_.Rg.matrix() << std::endl;
-  //std::cout << "g_: " << g_.transpose() << std::endl;
-  //std::cout << "dV_dWsg: " << std::endl << dV_dWg << std::endl;
-  /*
-  Mat93 dRg_dWg;
-  Vec3 Wg = X_.Rg.log();
-  rodrigues(Wg, &dRg_dWg);
-  for (int j = 0; j < 2; j++) {
-    Mat3 dR_dWgj_mat = unstack(dRg_dWg.col(j));
-    Vec3 prod = dR_dWgj_mat * g_;
-    for (int i = 0; i < 3; i++) {
-      F_.coeffRef(Index::V + i, Index::Wg + j) = prod(i);
-    }
-  }
-  */
 
   // dV_dW
   Mat3 dV_dW = dRu_dw(W, accel_calib);
@@ -656,19 +640,6 @@ void Estimator::ComputeMotionJacobianAt(
       F_.coeffRef(Index::V + i, Index::Wsb + j) = dV_dW(i,j);
     }
   }
-  //std::cout << "Wsb: " << W.transpose() << std::endl;
-  //std::cout << "Rsb:" << std::endl << R << std::endl;
-  //std::cout << "accel_calib: " << accel_calib.transpose() << std::endl;
-  //std::cout << "dV_dW: " << std::endl << dV_dW << std::endl;
-  /*
-  for (int j = 0; j < 3; j++) {
-    Mat3 dR_dWj = unstack(dR_dW.col(j));
-    Vec3 prod = dR_dWj * accel_calib;
-    for (int i = 0; i < 3; i++) {
-      F_.coeffRef(Index::V + i, Index::Wsb + j) = prod(i);
-    }
-  }
-  */
 
 #ifdef USE_ONLINE_IMU_CALIB
   // dW_dCg (dWk_dCgij)
@@ -698,11 +669,6 @@ void Estimator::ComputeMotionJacobianAt(
 
   Mat3 dW_dW = -hat(gyro_calib);
 
-  //Mat3 dV_dW = -R * hat(accel_calib);
-
-  //Mat3 dV_dWg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
-  // Mat2 dWg_dWg = Mat2::Identity();
-
   //F_.setZero(); // wipe out the delta added to F in the previous step
 
   // dT_dV
@@ -721,14 +687,6 @@ void Estimator::ComputeMotionJacobianAt(
     for (int i = 0; i < 3; ++i) {
       // W
       F_.coeffRef(Index::W + i, Index::W + j) = dW_dW(i, j);
-
-      // V
-      //F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
-
-      if (j < 2) {
-        // NOTE: Wg is 2-dim, i.e., NO z-component
-        //F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i, j);
-      }
     }
   }
 
