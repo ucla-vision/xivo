@@ -93,8 +93,7 @@ Viewer::Viewer(const Json::Value &cfg, const std::string &name, bool tracker_onl
         .AddDisplay(camera_view)
         .AddDisplay(image_view);
   }
-  else
-  {
+  else {
     pangolin::DisplayBase()
         .SetBounds(0, 1, 0, 1)
         .SetLayout(pangolin::LayoutEqual)
