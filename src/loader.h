@@ -15,6 +15,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   DataLoader(const std::string &image_dir, const std::string &imu_dir);
+  DataLoader(const std::string &image_dir);
   std::vector<msg::Pose> LoadGroundTruthState(const std::string &state_dir);
 
   msg::Message *Get(int i) const { return entries_[i].get(); };

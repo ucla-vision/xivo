@@ -41,8 +41,10 @@ int main(int argc, char **argv) {
   std::tie(image_dir, imu_dir, mocap_dir) =
       GetDirs(FLAGS_dataset, FLAGS_root, FLAGS_seq, FLAGS_cam_id);
 
-  //TODO Do I need to create a separate DataLoader which only takes in image_dir
-  std::unique_ptr<DataLoader> loader(new DataLoader{image_dir, imu_dir});
+  bool tracker_only = true;
+
+  // read the data
+  std::unique_ptr<DataLoader> loader(new DataLoader{image_dir});
 
   // create estimator
   auto est = CreateSystem(
@@ -52,7 +54,9 @@ int main(int argc, char **argv) {
   std::unique_ptr<Viewer> viewer;
   if (cfg.get("visualize", false).asBool()) {
     viewer = std::make_unique<Viewer>(
-        LoadJson(cfg["viewer_cfg"].asString()), FLAGS_seq);
+        LoadJson(cfg["viewer_cfg"].asString()),
+        FLAGS_seq,
+        tracker_only);
   }
 
   // setup I/O for saving results
@@ -67,41 +71,23 @@ int main(int argc, char **argv) {
 
       if (auto msg = dynamic_cast<msg::Image *>(raw_msg)) {
         auto image = cv::imread(msg->image_path_);
-        est->VisualMeas(msg->ts_, image);
+        est->VisualMeasTrackerOnly(msg->ts_, image);
 
         if (viewer) {
 
           cv::Mat disp = Canvas::instance()->display();
 
           if (!disp.empty()) {
-            std::cout << "this is running" << std::endl;
             LOG(INFO) << "Display image is ready";
             viewer->Update(disp);
             viewer->Refresh();
           }
         }
       }
-      else if (auto msg = dynamic_cast<msg::IMU *>(raw_msg)) {
-        timestamp_t ts = msg->ts_;
-        Vec3 gyro = msg->gyro_;
-        Vec3 accel = msg->accel_;
-        // std::cout << "do nothing " << gyro << accel << std::endl;
-        // est->InertialMeas(msg->ts_, msg->gyro_, msg->accel_);
-      }
       else {
         LOG(INFO) << "Invalid entry type.";
       }
     }
-
-    // Dump output graph
-//     if (!FLAGS_graphout.empty()) {
-//       GraphWriter GW;
-//       GW.CollectGraph(Graph::instance());
-// #ifdef USE_MAPPER
-//       GW.CollectGraph(Mapper::instance());
-// #endif
-//       GW.WriteDot(FLAGS_graphout);
-//     }
 
   } else {
     LOG(FATAL) << "failed to open output file @ " << FLAGS_out;
