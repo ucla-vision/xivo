@@ -7,9 +7,6 @@
 #include "param.h"
 #include "geometry.h"
 
-#include <random>       // std::default_random_engine
-#include <chrono>       // std::chrono::system_clock
-
 
 namespace xivo {
 
@@ -302,8 +299,7 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
       new_gauge_features_for_g = fill_slots(g, candidates);
       if (gauge_features_[g].size() >= 3) {
         if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
-          unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-          std::shuffle(candidates.begin(), candidates.end(), std::default_random_engine(seed));
+          std::shuffle(candidates.begin(), candidates.end(), *random_generator);
           if (NT==9) {
             LOG(WARNING) << "Did not find a set of non-collinear features. defaulting to using those with smallest covariance";
             gauge_features_[g] = gauge_features_backup;
