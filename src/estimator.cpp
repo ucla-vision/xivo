@@ -994,6 +994,19 @@ void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::M
       Canvas::instance()->Draw(f);
   }
 
+
+  // store tracked feature information
+  tracked_features_.empty();
+
+  for (auto f : tracker->features_)
+  {
+    int id = f->id();
+    cv::KeyPoint kp = f->keypoint();
+    cv::Mat des = f->descriptor();
+
+    tracked_features_.push_back(std::tuple(id, kp, des));
+  }
+
   static int print_counter{0};
   if (print_timing_ && ++print_counter % 50 == 0) {
     std::cout << print_counter << std::endl;

@@ -159,6 +159,10 @@ public:
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
+  // returns vector to information about tracked features per instance
+  std::vector<std::tuple<int, cv::KeyPoint, cv::Mat>> tracked_features(){
+    return tracked_features_;
+  }
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }
 
@@ -445,6 +449,14 @@ private:
    *  overlap). */
   Timer timer_;
   std::unique_ptr<std::default_random_engine> rng_;
+
+  /** store tracked feature information -
+   * id
+   * keypoint
+   * descriptor
+  */
+  std::vector<std::tuple<int, cv::KeyPoint, cv::Mat>> tracked_features_;
+
 };
 
 } // xivo
