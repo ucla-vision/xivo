@@ -1,6 +1,7 @@
 #include "pybind11/eigen.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
+#include <pybind11/stl.h>
 
 #include "estimator.h"
 #include "camera_manager.h"
@@ -127,6 +128,10 @@ public:
 
   void CloseLoop() {
     estimator_->CloseLoop();
+  }
+
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features() {
+    return estimator_->tracked_features();
   }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
@@ -290,5 +295,6 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("gauge_group", &EstimatorWrapper::gauge_group)
       .def("CameraIntrinsics", &EstimatorWrapper::CameraIntrinsics)
       .def("CameraDistortionType", &EstimatorWrapper::CameraDistortionType)
-      .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized);
+      .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized)
+      .def("tracked_features", &EstimatorWrapper::tracked_features);
 }

@@ -160,7 +160,7 @@ public:
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
   // returns vector to information about tracked features per instance
-  std::vector<std::tuple<int, cv::KeyPoint, cv::Mat>> tracked_features(){
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features(){
     return tracked_features_;
   }
 private:
@@ -455,7 +455,7 @@ private:
    * keypoint
    * descriptor
   */
-  std::vector<std::tuple<int, cv::KeyPoint, cv::Mat>> tracked_features_;
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_;
 
 };
 

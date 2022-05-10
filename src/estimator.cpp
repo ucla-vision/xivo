@@ -1002,9 +1002,16 @@ void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::M
   {
     int id = f->id();
     cv::KeyPoint kp = f->keypoint();
-    cv::Mat des = f->descriptor();
+    cv::Mat descriptor = f->descriptor();
 
-    tracked_features_.push_back(std::tuple(id, kp, des));
+    // Convert from cv::Mat to matrix
+    Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> descriptor_eigen_row_major(descriptor.ptr<float>(), descriptor.rows, descriptor.cols);
+    MatXf descriptor_eigen = descriptor_eigen_row_major.transpose();
+
+    // Convert cv::Keypoint to vector
+    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+
+    tracked_features_.push_back(std::tuple(id, kp_vector, descriptor_eigen));
   }
 
   static int print_counter{0};
