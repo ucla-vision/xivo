@@ -62,10 +62,10 @@ Viewer::Viewer(const Json::Value &cfg, const std::string &name, bool tracker_onl
   image_view.SetHandler(new pangolin::Handler3D(*image_state_));
 
   // background setup
-  bg_color_[0] = cfg_["bg_color"]["r"].asFloat();
-  bg_color_[1] = cfg_["bg_color"]["g"].asFloat();
-  bg_color_[2] = cfg_["bg_color"]["b"].asFloat();
-  bg_color_[3] = cfg_["bg_color"]["a"].asFloat();
+  bg_color_[0] = cfg_["bg_color"].get("r", 0).asFloat();
+  bg_color_[1] = cfg_["bg_color"].get("g", 0).asFloat();
+  bg_color_[2] = cfg_["bg_color"].get("b", 0).asFloat();
+  bg_color_[3] = cfg_["bg_color"].get("a", 0).asFloat();
 
   // Display Map + Video Sequence
   if(!tracker_only_) {

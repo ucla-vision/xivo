@@ -1,0 +1,17 @@
+{
+  "window": {
+    "height": 960,
+    "width": 640
+  },
+
+  "viewport": {
+    "width": 640,
+    "height": 480,
+    "fx": 400,
+    "fy": 400,
+    "cx": 320,
+    "cy": 240,
+    "znear": 0.1,
+    "zfar": 10
+  }
+}
