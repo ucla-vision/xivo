@@ -22,14 +22,8 @@ parser.add_argument('-cfg', default='cfg/tumvi_cam0.json',
     help='path to the estimator configuration')
 parser.add_argument('-use_viewer', default=False, action='store_true',
     help='visualize trajectory and feature tracks if set')
-parser.add_argument('-mode', default='eval',
-    help='[eval|dump|dumpCov|runOnly] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
-parser.add_argument(
-    '-save_full_cov', default=False, action='store_true',
-    help='save the entire covariance matrix, not just that of the motion state, if set')
-parser.add_argument(
-    '-tracker_only', default=False, action='store_true',
-    help='show only feature tracker viewer')
+parser.add_argument('-mode', default='dumpTracker',
+    help='[eval|dump|dumpCov|runOnly|dumpTracker] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
 
 
 def main(args):
@@ -66,10 +60,20 @@ def main(args):
             saver = savers.XIVOCovDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaCovDumpModeSaver(args)
+    elif args.mode == 'dumpTracker':
+        if args.dataset == 'tumvi':
+            saver = savers.TUMVITrackerDumpModeSaver(args)
+        elif args.dataset == 'cosyvio':
+            saver = savers.COSYVIOCovDumpModeSaver(args)
+        elif args.dataset == 'xivo':
+            saver = savers.XIVOTrackerDumpModeSaver(args)
+        elif args.dataset == 'carla':
+            saver = savers.CarlaTrackerDumpModeSaver(args)
+            
     elif args.mode == 'runOnly':
         pass
     else:
-        raise ValueError('mode=[eval|dump|dumpCov|runOnly]')
+        raise ValueError('mode=[eval|dump|dumpCov|runOnly|dumpTracker]')
 
     ########################################
     # LOAD DATA
@@ -110,7 +114,7 @@ def main(args):
         if args.dataset == 'tumvi':
             viewer_cfg = os.path.join('cfg', 'viewer.json')
         elif args.dataset == 'xivo':
-            viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
+            viewer_cfg = os.path.join('cfg', 'phab_viewer_tracker_only.json')     
         elif args.dataset == 'cosyvio':
             if args.sen == 'tango_top':
                 viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
@@ -125,7 +129,7 @@ def main(args):
     # this is wrapped in a try/finally block so that data will save even when
     # we hit an exception (namely, KeyboardInterrupt)
     try:
-        estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq, args.tracker_only)
+        estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq, True)
         for i, (ts, content) in enumerate(data):
             if i > 0 and i % 1000 == 0:
                 print('{:6}/{:6}'.format(i, len(data)))
@@ -133,6 +137,18 @@ def main(args):
             estimator.Visualize()
             if args.mode != 'runOnly':
                 saver.onVisionUpdate(estimator, datum=(ts, content))
+        
+            # import numpy as np
+
+            # tracked_features = estimator.tracked_features()
+            # for f in tracked_features:
+            #     id, kp, des = f 
+            #     kp = np.reshape(kp,(1,2))
+            #     id_arr = np.array([1, id]).reshape((1,2))
+            #     print(id_arr.shape,kp.shape, np.transpose(des).shape)
+            #     test = np.concatenate((id_arr, kp, np.transpose(des)), axis=1)
+            #     print(test.shape)
+
 
     finally:
         if args.mode != 'runOnly':

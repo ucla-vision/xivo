@@ -249,6 +249,35 @@ class CovDumpModeSaver(BaseSaver):
             output = { "data": self.results }
             fid.write(to_json(output))
 
+class TrackerDumpModeSaver(BaseSaver):
+    """ Callback functions used by tracker dump mode of pyxivo.
+    """
+    def __init__(self, args):
+        BaseSaver.__init__(self, args)
+
+    def onVisionUpdate(self, estimator, datum):
+        ts, content = datum
+
+        tracked_features = estimator.tracked_features()
+
+        for f in tracked_features:
+            id, kp, des = f 
+
+            ts_and_id = np.array([ts, id]).reshape(1,2)
+            kp = np.reshape(kp, (1, 2))     
+            # comment later
+            des = np.transpose(des)
+
+            feature_info = np.concatenate((ts_and_id, kp, des), axis=1)
+
+            with open(self.resultsPath, "a") as f:
+                np.savetxt(
+                    f,
+                    feature_info,
+                    delimiter=',')
+
+    def onResultsReady(self):
+        pass
 
 class TUMVIEvalModeSaver(EvalModeSaver, TUMVISaver):
     def __init__(self, args):
@@ -268,6 +297,13 @@ class TUMVICovDumpModeSaver(CovDumpModeSaver, TUMVISaver):
         TUMVISaver.__init__(self, args)
 
 
+class TUMVITrackerDumpModeSaver(TrackerDumpModeSaver, TUMVISaver):
+    def __init__(self, args):
+        TrackerDumpModeSaver.__init__(self, args)
+        TUMVISaver.__init__(self, args)
+
+
+
 class CarlaEvalModeSaver(EvalModeSaver, CarlaSaver):
     def __init__(self, args):
         EvalModeSaver.__init__(self, args)
@@ -283,6 +319,11 @@ class CarlaDumpModeSaver(DumpModeSaver, CarlaSaver):
 class CarlaCovDumpModeSaver(CovDumpModeSaver, CarlaSaver):
     def __init__(self, args):
         CovDumpModeSaver.__init__(self, args)
+        CarlaSaver.__init__(self, args)
+
+class CarlaTrackerDumpModeSaver(TrackerDumpModeSaver, CarlaSaver):
+    def __init__(self, args):
+        TrackerDumpModeSaver.__init__(self, args)
         CarlaSaver.__init__(self, args)
 
 
@@ -301,4 +342,9 @@ class XIVODumpModeSaver(DumpModeSaver, BaseSaver):
 class XIVOCovDumpModeSaver(CovDumpModeSaver, BaseSaver):
     def __init__(self, args):
         CovDumpModeSaver.__init__(self, args)
+        BaseSaver.__init__(self, args)
+
+class XIVOTrackerDumpModeSaver(TrackerDumpModeSaver, BaseSaver):
+    def __init__(self, args):
+        TrackerDumpModeSaver.__init__(self, args)
         BaseSaver.__init__(self, args)

@@ -28,9 +28,6 @@ parser.add_argument('-mode', default='eval',
 parser.add_argument(
     '-save_full_cov', default=False, action='store_true',
     help='save the entire covariance matrix, not just that of the motion state, if set')
-parser.add_argument(
-    '-tracker_only', default=False, action='store_true',
-    help='show only feature tracker viewer')
 
 
 def main(args):
@@ -140,7 +137,7 @@ def main(args):
     # this is wrapped in a try/finally block so that data will save even when
     # we hit an exception (namely, KeyboardInterrupt)
     try:
-        estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq, args.tracker_only)
+        estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq, False)
         for i, (ts, content) in enumerate(data):
             if i > 0 and i % 1000 == 0:
                 print('{:6}/{:6}'.format(i, len(data)))

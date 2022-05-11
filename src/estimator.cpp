@@ -994,26 +994,6 @@ void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::M
       Canvas::instance()->Draw(f);
   }
 
-
-  // store tracked feature information
-  tracked_features_.empty();
-
-  for (auto f : tracker->features_)
-  {
-    int id = f->id();
-    cv::KeyPoint kp = f->keypoint();
-    cv::Mat descriptor = f->descriptor();
-
-    // Convert from cv::Mat to matrix
-    Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> descriptor_eigen_row_major(descriptor.ptr<float>(), descriptor.rows, descriptor.cols);
-    MatXf descriptor_eigen = descriptor_eigen_row_major.transpose();
-
-    // Convert cv::Keypoint to vector
-    Vec2f kp_vector{kp.pt.x, kp.pt.y};
-
-    tracked_features_.push_back(std::tuple(id, kp_vector, descriptor_eigen));
-  }
-
   static int print_counter{0};
   if (print_timing_ && ++print_counter % 50 == 0) {
     std::cout << print_counter << std::endl;
@@ -1066,6 +1046,32 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     }
   }
   timer_.Tock("visual-meas");
+}
+
+std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
+  
+  auto tracker = Tracker::instance();
+
+  // store tracked feature information
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
+  
+  for (auto f : tracker->features_)
+  {
+    int id = f->id();
+    cv::KeyPoint kp = f->keypoint();
+    cv::Mat descriptor = f->descriptor();
+
+    // Convert from cv::Mat to matrix
+    Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> descriptor_eigen_row_major(descriptor.ptr<float>(), descriptor.rows, descriptor.cols);
+    MatXf descriptor_eigen = descriptor_eigen_row_major.transpose();
+
+    // Convert cv::Keypoint to vector
+    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+
+    tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
+  }
+
+  return tracked_features_info;
 }
 
 void Estimator::Predict(std::list<FeaturePtr> &features) {

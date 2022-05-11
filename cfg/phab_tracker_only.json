@@ -6,20 +6,6 @@
   "use_debug_view": true,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
 
-  // visualization (tracker view) option
-  "draw_OOS": true,
-
-  // memory
-  "memory": {
-    // Values if mapper is not enabled
-    "max_features": 200,
-    "max_groups": 100
-    // Values if mapper is enabled
-    //"max_features": 20000,
-    //"max_groups": 3500
-  },
-
-
   "camera_cfg": {
     "model": "equidistant",
 
