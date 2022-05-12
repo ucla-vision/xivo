@@ -72,4 +72,8 @@ bool check_angular_reprojection(const Vec3 &Rf0, const Vec3 &Rf0_prime, const Ve
 // Check parallex error for above methods
 bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thesh);
 
+// Derivative of Rsb (SO(3) matrix) w.r.t Wsb (rotation vector) through
+// rodrigues formula. (function is autocode)
+Mat93 Rsb_Wsb_deriv(const Vec3 Wsb, const Vec3 omega_sb_b);
+
 } // namespace xivo

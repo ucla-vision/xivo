@@ -605,16 +605,24 @@ void Estimator::ComputeMotionJacobianAt(
   F_.setZero();
 
   // dW_dW
-  /*
+  Mat93 dRsbdot_dW = Rsb_Wsb_deriv(W, gyro_calib);
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      Mat3 dR_dWj_mat = unstack(dR_dW.col(j));
-      Mat3 prod = dR_dWj_mat * hat(gyro_calib);
-      Vec9 prod_flat = Eigen::Map<Vec9> (prod.transpose().data());
-      F_.coeffRef(Index::W + i, Index::W + j) = dW_dR.row(i) * prod_flat;
+      //Vec3 u = hat(gyro_calib).col(j);
+      //Mat3 dRdot_dwj = dRu_dw(W, u);
+      //Vec9 dRdot_dwj_flat = Eigen::Map<Vec9> (dRdot_dwj.transpose().data());
+      //F_.coeffRef(Index::W + i, Index::W + j) = dW_dR.row(i) * dRdot_dwj_flat;
+
+//      Mat3 dR_dWj_mat = unstack(dR_dW.col(j));
+//      Mat3 prod = dR_dWj_mat * hat(gyro_calib);
+//      Vec9 prod_flat = Eigen::Map<Vec9> (prod.transpose().data());
+//      F_.coeffRef(Index::W + i, Index::W + j) = dW_dR.row(i) * prod_flat;
+
+      F_.coeffRef(Index::W + i, Index::W + j) =
+        dW_dR.row(i) * dRsbdot_dW.col(j);
     }
   }
-  */
+
 
   // dW_dbg
   for (int i = 0; i < 3; i++) {
@@ -667,7 +675,7 @@ void Estimator::ComputeMotionJacobianAt(
   }
 #endif
 
-  Mat3 dW_dW = -hat(gyro_calib);
+  //Mat3 dW_dW = -hat(gyro_calib);
 
   //F_.setZero(); // wipe out the delta added to F in the previous step
 
@@ -683,12 +691,14 @@ void Estimator::ComputeMotionJacobianAt(
     }
   }
 
+  /*
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       // W
       F_.coeffRef(Index::W + i, Index::W + j) = dW_dW(i, j);
     }
   }
+  */
 
 
   // jacobian w.r.t. noise

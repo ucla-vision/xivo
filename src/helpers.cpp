@@ -370,4 +370,194 @@ bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thre
   return true;
 }
 
+
+Mat93 Rsb_Wsb_deriv(const Vec3 Wsb, const Vec3 omega_sb_b) {
+
+  if (Wsb.norm() < 1e-6) {
+    return dhat<number_t>() * hat(omega_sb_b);
+  }
+
+  number_t Wsb_1 = Wsb(0);
+  number_t Wsb_2 = Wsb(1);
+  number_t Wsb_3 = Wsb(2);
+
+  number_t omega_sb_b_1 = omega_sb_b(0);
+  number_t omega_sb_b_2 = omega_sb_b(1);
+  number_t omega_sb_b_3 = omega_sb_b(2);
+
+  number_t A0[9][3];
+
+  number_t t2 = fabs(Wsb_1);
+  number_t t3 = fabs(Wsb_2);
+  number_t t4 = fabs(Wsb_3);
+  number_t t5 = (Wsb_1/fabs(Wsb_1));
+  number_t t6 = (Wsb_2/fabs(Wsb_2));
+  number_t t7 = (Wsb_3/fabs(Wsb_3));
+  number_t t8 = Wsb_1*Wsb_1;
+  number_t t9 = Wsb_2*Wsb_2;
+  number_t t10 = Wsb_3*Wsb_3;
+  number_t t11 = t2*t2;
+  number_t t12 = t3*t3;
+  number_t t13 = t4*t4;
+  number_t t14 = t11+t12+t13;
+  number_t t15 = 1.0/t14;
+  number_t t17 = sqrt(t14);
+  number_t t16 = t15*t15;
+  number_t t18 = 1.0/t17;
+  number_t t20 = cos(t17);
+  number_t t21 = sin(t17);
+  number_t t19 = t18*t18*t18;
+  number_t t22 = t20-1.0;
+  number_t t23 = t18*t21;
+  number_t t31 = Wsb_1*t2*t5*t15*t20;
+  number_t t32 = Wsb_2*t2*t5*t15*t20;
+  number_t t33 = Wsb_1*t3*t6*t15*t20;
+  number_t t34 = Wsb_3*t2*t5*t15*t20;
+  number_t t35 = Wsb_2*t3*t6*t15*t20;
+  number_t t36 = Wsb_1*t4*t7*t15*t20;
+  number_t t37 = Wsb_3*t3*t6*t15*t20;
+  number_t t38 = Wsb_2*t4*t7*t15*t20;
+  number_t t39 = Wsb_3*t4*t7*t15*t20;
+  number_t t24 = Wsb_1*t15*t22;
+  number_t t25 = Wsb_2*t15*t22;
+  number_t t26 = Wsb_3*t15*t22;
+  number_t t27 = -t23;
+  number_t t46 = -t31;
+  number_t t47 = -t32;
+  number_t t48 = -t33;
+  number_t t49 = -t34;
+  number_t t50 = -t35;
+  number_t t51 = -t36;
+  number_t t52 = -t37;
+  number_t t53 = -t38;
+  number_t t54 = -t39;
+  number_t t55 = Wsb_1*t2*t5*t19*t21;
+  number_t t56 = Wsb_2*t2*t5*t19*t21;
+  number_t t57 = Wsb_1*t3*t6*t19*t21;
+  number_t t58 = Wsb_3*t2*t5*t19*t21;
+  number_t t59 = Wsb_2*t3*t6*t19*t21;
+  number_t t60 = Wsb_1*t4*t7*t19*t21;
+  number_t t61 = Wsb_3*t3*t6*t19*t21;
+  number_t t62 = Wsb_2*t4*t7*t19*t21;
+  number_t t63 = Wsb_3*t4*t7*t19*t21;
+  number_t t73 = t2*t5*t8*t19*t21;
+  number_t t74 = t2*t5*t9*t19*t21;
+  number_t t75 = t3*t6*t8*t19*t21;
+  number_t t76 = t2*t5*t10*t19*t21;
+  number_t t77 = t3*t6*t9*t19*t21;
+  number_t t78 = t4*t7*t8*t19*t21;
+  number_t t79 = t3*t6*t10*t19*t21;
+  number_t t80 = t4*t7*t9*t19*t21;
+  number_t t81 = t4*t7*t10*t19*t21;
+  number_t t91 = Wsb_1*Wsb_2*t2*t5*t16*t22*2.0;
+  number_t t92 = Wsb_1*Wsb_3*t2*t5*t16*t22*2.0;
+  number_t t93 = Wsb_1*Wsb_2*t3*t6*t16*t22*2.0;
+  number_t t94 = Wsb_2*Wsb_3*t2*t5*t16*t22*2.0;
+  number_t t95 = Wsb_1*Wsb_3*t3*t6*t16*t22*2.0;
+  number_t t96 = Wsb_1*Wsb_2*t4*t7*t16*t22*2.0;
+  number_t t97 = Wsb_2*Wsb_3*t3*t6*t16*t22*2.0;
+  number_t t98 = Wsb_1*Wsb_3*t4*t7*t16*t22*2.0;
+  number_t t99 = Wsb_2*Wsb_3*t4*t7*t16*t22*2.0;
+  number_t t100 = t2*t5*t8*t16*t22*2.0;
+  number_t t101 = t2*t5*t9*t16*t22*2.0;
+  number_t t102 = t3*t6*t8*t16*t22*2.0;
+  number_t t103 = t2*t5*t10*t16*t22*2.0;
+  number_t t104 = t3*t6*t9*t16*t22*2.0;
+  number_t t105 = t4*t7*t8*t16*t22*2.0;
+  number_t t106 = t3*t6*t10*t16*t22*2.0;
+  number_t t107 = t4*t7*t9*t16*t22*2.0;
+  number_t t108 = t4*t7*t10*t16*t22*2.0;
+  number_t t28 = t24*2.0;
+  number_t t29 = t25*2.0;
+  number_t t30 = t26*2.0;
+  number_t t40 = -t24;
+  number_t t42 = -t25;
+  number_t t44 = -t26;
+  number_t t64 = Wsb_2*t55;
+  number_t t65 = Wsb_3*t55;
+  number_t t66 = Wsb_2*t57;
+  number_t t67 = Wsb_3*t56;
+  number_t t68 = Wsb_3*t57;
+  number_t t69 = Wsb_2*t60;
+  number_t t70 = Wsb_3*t59;
+  number_t t71 = Wsb_3*t60;
+  number_t t72 = Wsb_3*t62;
+  number_t t82 = -t55;
+  number_t t83 = -t56;
+  number_t t84 = -t57;
+  number_t t85 = -t58;
+  number_t t86 = -t59;
+  number_t t87 = -t60;
+  number_t t88 = -t61;
+  number_t t89 = -t62;
+  number_t t90 = -t63;
+  number_t t109 = t74+t76+t101+t103;
+  number_t t110 = t75+t79+t102+t106;
+  number_t t111 = t78+t80+t105+t107;
+  number_t t41 = -t28;
+  number_t t43 = -t29;
+  number_t t45 = -t30;
+  number_t t112 = t23+t31+t67+t82+t94;
+  number_t t113 = t23+t35+t68+t86+t95;
+  number_t t114 = t23+t39+t69+t90+t96;
+  number_t t115 = t27+t46+t55+t67+t94;
+  number_t t116 = t27+t50+t59+t68+t95;
+  number_t t117 = t27+t54+t63+t69+t96;
+  number_t t118 = t34+t42+t64+t85+t91;
+  number_t t119 = t42+t49+t58+t64+t91;
+  number_t t120 = t32+t44+t65+t83+t92;
+  number_t t121 = t44+t47+t56+t65+t92;
+  number_t t122 = t37+t40+t66+t88+t93;
+  number_t t123 = t40+t52+t61+t66+t93;
+  number_t t124 = t33+t44+t70+t84+t97;
+  number_t t125 = t44+t48+t57+t70+t97;
+  number_t t126 = t38+t40+t71+t89+t98;
+  number_t t127 = t40+t53+t62+t71+t98;
+  number_t t128 = t36+t42+t72+t87+t99;
+  number_t t129 = t42+t51+t60+t72+t99;
+  number_t t130 = t41+t73+t74+t100+t101;
+  number_t t131 = t41+t73+t76+t100+t103;
+  number_t t132 = t43+t75+t77+t102+t104;
+  number_t t133 = t43+t77+t79+t104+t106;
+  number_t t134 = t45+t78+t81+t105+t108;
+  number_t t135 = t45+t80+t81+t107+t108;
+  A0[0][0] = -omega_sb_b_2*t120+omega_sb_b_3*t119;
+  A0[0][1] = -omega_sb_b_2*t113+omega_sb_b_3*t123;
+  A0[0][2] = omega_sb_b_3*t117-omega_sb_b_2*t126;
+  A0[1][0] = omega_sb_b_3*t109+omega_sb_b_1*t120;
+  A0[1][1] = omega_sb_b_1*t113+omega_sb_b_3*t133;
+  A0[1][2] = omega_sb_b_1*t126+omega_sb_b_3*t135;
+  A0[2][0] = -omega_sb_b_2*t109-omega_sb_b_1*t119;
+  A0[2][1] = -omega_sb_b_1*t123-omega_sb_b_2*t133;
+  A0[2][2] = -omega_sb_b_1*t117-omega_sb_b_2*t135;
+  A0[3][0] = -omega_sb_b_2*t115-omega_sb_b_3*t131;
+  A0[3][1] = -omega_sb_b_3*t110-omega_sb_b_2*t125;
+  A0[3][2] = -omega_sb_b_2*t129-omega_sb_b_3*t134;
+  A0[4][0] = omega_sb_b_1*t115-omega_sb_b_3*t118;
+  A0[4][1] = -omega_sb_b_3*t122+omega_sb_b_1*t125;
+  A0[4][2] = -omega_sb_b_3*t114+omega_sb_b_1*t129;
+  A0[5][0] = omega_sb_b_2*t118+omega_sb_b_1*t131;
+  A0[5][1] = omega_sb_b_1*t110+omega_sb_b_2*t122;
+  A0[5][2] = omega_sb_b_2*t114+omega_sb_b_1*t134;
+  A0[6][0] = omega_sb_b_3*t112+omega_sb_b_2*t130;
+  A0[6][1] = omega_sb_b_3*t124+omega_sb_b_2*t132;
+  A0[6][2] = omega_sb_b_2*t111+omega_sb_b_3*t128;
+  A0[7][0] = -omega_sb_b_3*t121-omega_sb_b_1*t130;
+  A0[7][1] = -omega_sb_b_3*t116-omega_sb_b_1*t132;
+  A0[7][2] = -omega_sb_b_1*t111-omega_sb_b_3*t127;
+  A0[8][0] = -omega_sb_b_1*t112+omega_sb_b_2*t121;
+  A0[8][1] = omega_sb_b_2*t116-omega_sb_b_1*t124;
+  A0[8][2] = -omega_sb_b_1*t128+omega_sb_b_2*t127;
+
+  Mat93 out;
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 3; j++) {
+      out(i,j) = A0[i][j];
+    }
+  }
+
+  return out;
+}
+
+
 } // namespace xivo

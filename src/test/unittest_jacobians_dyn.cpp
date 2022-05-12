@@ -339,3 +339,42 @@ TEST_F(DynamicsJacobiansTest, dV_dWsg) {
         }
     }
 }
+
+
+TEST_F(DynamicsJacobiansTest, dW_dW) {
+    SetNonZeroState();
+    est->ComputeMotionJacobianAt(est->X_, imu_input);
+
+    Mat3 jac;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            jac(i,j) = est->F_.coeffRef(Index::Wsb+i, Index::Wsb+j);
+        }
+    }
+
+    // First numeric value
+    Mat3 Rsb = est->X_.Rsb.matrix();
+    Vec3 Wsb = est->X_.Rsb.log();
+    Mat3 Cg = est->imu_.Cg();
+    Vec3 gyro = imu_input.head<3>();
+    Vec3 bg = est->X_.bg;
+    Vec3 gyro_calib = Cg * gyro - bg;
+    Vec3 y0 = Rsb * gyro_calib;
+
+    // Perturbed numeric values and numeric jacobian
+    Mat3 num_jac;
+    for (int j = 0; j < 3; j++) {
+        Vec3 wp(Wsb);
+        wp(j) += delta;
+        Vec3 y1 = rodrigues(wp) * gyro_calib;
+        num_jac.col(j) = (y1 - y0) / delta;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(jac(i,j), num_jac(i,j), 1e-5) <<
+            "dW_dWsb test error at i=" << i << " and j=" << j;
+        }
+    }
+
+}
