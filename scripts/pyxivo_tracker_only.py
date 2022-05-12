@@ -18,7 +18,7 @@ parser.add_argument("-seq", default="room1",
     help="short tag for sequence name")
 parser.add_argument("-cam_id", default=0, type=int,
     help="camera from stereo camera pair (only used for tumvi dataset)")
-parser.add_argument('-cfg', default='cfg/tumvi_cam0.json',
+parser.add_argument('-cfg', default='cfg/tumvi_tracker_only_cam0.json',
     help='path to the estimator configuration')
 parser.add_argument('-use_viewer', default=False, action='store_true',
     help='visualize trajectory and feature tracks if set')
@@ -69,7 +69,7 @@ def main(args):
             saver = savers.XIVOTrackerDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaTrackerDumpModeSaver(args)
-            
+
     elif args.mode == 'runOnly':
         pass
     else:
@@ -112,9 +112,9 @@ def main(args):
     viewer_cfg = ''
     if args.use_viewer:
         if args.dataset == 'tumvi':
-            viewer_cfg = os.path.join('cfg', 'viewer.json')
+            viewer_cfg = os.path.join('cfg', 'viewer_tracker_only.json')
         elif args.dataset == 'xivo':
-            viewer_cfg = os.path.join('cfg', 'phab_viewer_tracker_only.json')     
+            viewer_cfg = os.path.join('cfg', 'phab_viewer_tracker_only.json')
         elif args.dataset == 'cosyvio':
             if args.sen == 'tango_top':
                 viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
@@ -137,12 +137,12 @@ def main(args):
             estimator.Visualize()
             if args.mode != 'runOnly':
                 saver.onVisionUpdate(estimator, datum=(ts, content))
-        
+
             # import numpy as np
 
             # tracked_features = estimator.tracked_features()
             # for f in tracked_features:
-            #     id, kp, des = f 
+            #     id, kp, des = f
             #     kp = np.reshape(kp,(1,2))
             #     id_arr = np.array([1, id]).reshape((1,2))
             #     print(id_arr.shape,kp.shape, np.transpose(des).shape)
