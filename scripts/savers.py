@@ -261,12 +261,10 @@ class TrackerDumpModeSaver(BaseSaver):
         tracked_features = estimator.tracked_features()
 
         for f in tracked_features:
-            id, kp, des = f 
+            id, kp, des = f
 
             ts_and_id = np.array([ts, id]).reshape(1,2)
-            kp = np.reshape(kp, (1, 2))     
-            # comment later
-            des = np.transpose(des)
+            kp = np.reshape(kp, (1, 2))
 
             feature_info = np.concatenate((ts_and_id, kp, des), axis=1)
 

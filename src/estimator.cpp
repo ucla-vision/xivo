@@ -17,6 +17,8 @@
 #include "helpers.h"
 #include "mapper.h"
 
+#include <opencv2/core/eigen.hpp>
+
 #ifdef USE_G2O
 #include "optimizer.h"
 #endif
@@ -1049,12 +1051,12 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
 }
 
 std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
-  
+
   auto tracker = Tracker::instance();
 
   // store tracked feature information
   std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
-  
+
   for (auto f : tracker->features_)
   {
     int id = f->id();
@@ -1062,8 +1064,8 @@ std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
     cv::Mat descriptor = f->descriptor();
 
     // Convert from cv::Mat to matrix
-    Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> descriptor_eigen_row_major(descriptor.ptr<float>(), descriptor.rows, descriptor.cols);
-    MatXf descriptor_eigen = descriptor_eigen_row_major.transpose();
+    MatXf descriptor_eigen;
+    cv2eigen(descriptor, descriptor_eigen);
 
     // Convert cv::Keypoint to vector
     Vec2f kp_vector{kp.pt.x, kp.pt.y};
