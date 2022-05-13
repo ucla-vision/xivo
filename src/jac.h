@@ -28,13 +28,13 @@ struct JacobianCache {
 
   Vec3 Xs;                 // 3D point in spatial frame
   Mat3 dXs_dXc;            // 3D point in spatial frame w.r.t. Xc
-  Mat3 dXs_dTr, dXs_dWr;   // w.r.t. body2spatial pose of the reference group
+  Mat3 dXs_dTsbr, dXs_dWsbr;   // w.r.t. body2spatial pose of the reference group
   Mat3 dXs_dTbc, dXs_dWbc; // w.r.t. cam2body alignment
   Mat3 dXs_dx;
 
   Vec3 Xcn;      // 3D point in camera frame of the "new" (current) group
   Mat3 dXcn_dXs; // Xc in "new" (current) camera frame w.r.t. Xs
-  Mat3 dXcn_dTr, dXcn_dWr;   // w.r.t. body2spatial pose of the reference group
+  Mat3 dXcn_dTsbr, dXcn_dWsbr;   // w.r.t. body2spatial pose of the reference group
   Mat3 dXcn_dTsb, dXcn_dWsb; // w.r.t. body2spatial pose
   Mat3 dXcn_dTbc, dXcn_dWbc; // w.r.t. cam2body alignment
   Mat3 dXcn_dx;

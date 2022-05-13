@@ -33,8 +33,8 @@ class InstateJacobiansTest : public ::testing::Test {
 
 
         // Set nominal and error variables to random values
-        Rr_nom = RandomTransformationMatrix();
-        Tr_nom = Vec3::Random();
+        Rsbr_nom = RandomTransformationMatrix();
+        Tsbr_nom = Vec3::Random();
         Rsb_nom = RandomTransformationMatrix();
         Tsb_nom = Vec3::Random();
         Rbc_nom = RandomTransformationMatrix();
@@ -45,8 +45,8 @@ class InstateJacobiansTest : public ::testing::Test {
         Vsb_nom = Vec3::Random();
 
         // Initialize the error variables
-        Wr_err = Vec3::Zero();
-        Tr_err = Vec3::Zero();
+        Wsbr_err = Vec3::Zero();
+        Tsbr_err = Vec3::Zero();
         Wsb_err = Vec3::Zero();
         Tsb_err = Vec3::Zero();
         Wbc_err = Vec3::Zero();
@@ -67,7 +67,7 @@ class InstateJacobiansTest : public ::testing::Test {
         f->x_(0) = xc(0);
         f->x_(1) = xc(1);
         // f->x_(2) = 2.0;
-        group = Group::Create(SO3(Rr_nom), Tr_nom);
+        group = Group::Create(SO3(Rsbr_nom), Tsbr_nom);
         group->SetSind(0);
         f->ref_ = group;
         f->SetSind(0);
@@ -79,8 +79,8 @@ class InstateJacobiansTest : public ::testing::Test {
     }
 
     Vec3 ComputeXcn() {
-        Rr = Rr_nom*rodrigues(Wr_err);
-        Tr = Tr_nom + Tr_err;
+        Rsbr = Rsbr_nom*rodrigues(Wsbr_err);
+        Tsbr = Tsbr_nom + Tsbr_err;
         
         Cg = Cg_nom + Cg_err;
         bg = bg_nom + bg_err;
@@ -102,7 +102,7 @@ class InstateJacobiansTest : public ::testing::Test {
 
 
         Vec3 Xc = f->Xc();
-        Vec3 Xs = Rr*(Rbc*Xc + Tbc) + Tr;
+        Vec3 Xs = Rsbr*(Rbc*Xc + Tbc) + Tsbr;
 
         Mat3 Rbc_t = Rbc.transpose();
         Mat3 Rsb_t = Rsb.transpose();
@@ -116,7 +116,7 @@ class InstateJacobiansTest : public ::testing::Test {
         Mat3 Rbc_nom_t = Rbc_nom.transpose();
 
         Xc_nom = f->Xc(nullptr);
-        Xs_nom = Rr_nom * (Rbc_nom * Xc_nom + Tbc_nom) + Tr_nom;
+        Xs_nom = Rsbr_nom * (Rbc_nom * Xc_nom + Tbc_nom) + Tsbr_nom;
         Xcn_nom = Rbc_nom_t*(Rsb_nom_t*(Xs_nom - Tsb_nom) - Tbc_nom);
     }
 
@@ -133,8 +133,8 @@ class InstateJacobiansTest : public ::testing::Test {
     number_t tol;
 
     // Real values (= nominal + error)
-    Mat3 Rr;
-    Vec3 Tr;
+    Mat3 Rsbr;
+    Vec3 Tsbr;
     Mat3 Rsb;
     Vec3 Tsb;
     Mat3 Rbc;
@@ -144,8 +144,8 @@ class InstateJacobiansTest : public ::testing::Test {
     number_t td;
 
     // Nominal state variables containing placeholder values
-    Mat3 Rr_nom;
-    Vec3 Tr_nom;
+    Mat3 Rsbr_nom;
+    Vec3 Tsbr_nom;
     Mat3 Rsb_nom;
     Vec3 Tsb_nom;
     Mat3 Rbc_nom;
@@ -157,8 +157,8 @@ class InstateJacobiansTest : public ::testing::Test {
 
     // Error variables containing placeholder values
     VecX err_state;
-    Vec3 Wr_err;
-    Vec3 Tr_err;
+    Vec3 Wsbr_err;
+    Vec3 Tsbr_err;
     Vec3 Wsb_err;
     Vec3 Tsb_err;
     Vec3 Wbc_err;
@@ -192,69 +192,69 @@ TEST_F(InstateJacobiansTest, NominalStates) {
 }
 
 
-TEST_F(InstateJacobiansTest, Wr) {
+TEST_F(InstateJacobiansTest, Wsbr) {
     Vec3 Xcn0 = ComputeXcn();
 
-    Wr_err(0) = delta;
+    Wsbr_err(0) = delta;
     Vec3 Xcn1_0 = ComputeXcn();
-    Wr_err(0) = 0;
+    Wsbr_err(0) = 0;
 
-    Wr_err(1) = delta;
+    Wsbr_err(1) = delta;
     Vec3 Xcn1_1 = ComputeXcn();
-    Wr_err(1) = 0;
+    Wsbr_err(1) = 0;
 
-    Wr_err(2) = delta;
+    Wsbr_err(2) = delta;
     Vec3 Xcn1_2 = ComputeXcn();
-    Wr_err(2) = 0;
+    Wsbr_err(2) = 0;
 
-    Vec3 dXcn_dWr0 = (Xcn1_0 - Xcn0) / delta;
-    Vec3 dXcn_dWr1 = (Xcn1_1 - Xcn0) / delta;
-    Vec3 dXcn_dWr2 = (Xcn1_2 - Xcn0) / delta;
+    Vec3 dXcn_dWsbr0 = (Xcn1_0 - Xcn0) / delta;
+    Vec3 dXcn_dWsbr1 = (Xcn1_1 - Xcn0) / delta;
+    Vec3 dXcn_dWsbr2 = (Xcn1_2 - Xcn0) / delta;
 
-    EXPECT_NEAR(dXcn_dWr0(0), f->cache_.dXcn_dWr(0,0), tol);
-    EXPECT_NEAR(dXcn_dWr0(1), f->cache_.dXcn_dWr(1,0), tol);
-    EXPECT_NEAR(dXcn_dWr0(2), f->cache_.dXcn_dWr(2,0), tol);
+    EXPECT_NEAR(dXcn_dWsbr0(0), f->cache_.dXcn_dWsbr(0,0), tol);
+    EXPECT_NEAR(dXcn_dWsbr0(1), f->cache_.dXcn_dWsbr(1,0), tol);
+    EXPECT_NEAR(dXcn_dWsbr0(2), f->cache_.dXcn_dWsbr(2,0), tol);
     
-    EXPECT_NEAR(dXcn_dWr1(0), f->cache_.dXcn_dWr(0,1), tol);
-    EXPECT_NEAR(dXcn_dWr1(1), f->cache_.dXcn_dWr(1,1), tol);
-    EXPECT_NEAR(dXcn_dWr1(2), f->cache_.dXcn_dWr(2,1), tol);
+    EXPECT_NEAR(dXcn_dWsbr1(0), f->cache_.dXcn_dWsbr(0,1), tol);
+    EXPECT_NEAR(dXcn_dWsbr1(1), f->cache_.dXcn_dWsbr(1,1), tol);
+    EXPECT_NEAR(dXcn_dWsbr1(2), f->cache_.dXcn_dWsbr(2,1), tol);
 
-    EXPECT_NEAR(dXcn_dWr2(0), f->cache_.dXcn_dWr(0,2), tol);
-    EXPECT_NEAR(dXcn_dWr2(1), f->cache_.dXcn_dWr(1,2), tol);
-    EXPECT_NEAR(dXcn_dWr2(2), f->cache_.dXcn_dWr(2,2), tol);
+    EXPECT_NEAR(dXcn_dWsbr2(0), f->cache_.dXcn_dWsbr(0,2), tol);
+    EXPECT_NEAR(dXcn_dWsbr2(1), f->cache_.dXcn_dWsbr(1,2), tol);
+    EXPECT_NEAR(dXcn_dWsbr2(2), f->cache_.dXcn_dWsbr(2,2), tol);
 }
 
 
 TEST_F(InstateJacobiansTest, Tr) {
     Vec3 Xcn0 = ComputeXcn();
 
-    Tr_err(0) = delta;
+    Tsbr_err(0) = delta;
     Vec3 Xcn1_0 = ComputeXcn();
-    Tr_err(0) = 0;
+    Tsbr_err(0) = 0;
 
-    Tr_err(1) = delta;
+    Tsbr_err(1) = delta;
     Vec3 Xcn1_1 = ComputeXcn();
-    Tr_err(1) = 0;
+    Tsbr_err(1) = 0;
 
-    Tr_err(2) = delta;
+    Tsbr_err(2) = delta;
     Vec3 Xcn1_2 = ComputeXcn();
-    Tr_err(2) = 0;
+    Tsbr_err(2) = 0;
 
-    Vec3 dXcn_dTr0 = (Xcn1_0 - Xcn0) / delta;
-    Vec3 dXcn_dTr1 = (Xcn1_1 - Xcn0) / delta;
-    Vec3 dXcn_dTr2 = (Xcn1_2 - Xcn0) / delta;
+    Vec3 dXcn_dTsbr0 = (Xcn1_0 - Xcn0) / delta;
+    Vec3 dXcn_dTsbr1 = (Xcn1_1 - Xcn0) / delta;
+    Vec3 dXcn_dTsbr2 = (Xcn1_2 - Xcn0) / delta;
 
-    EXPECT_NEAR(dXcn_dTr0(0), f->cache_.dXcn_dTr(0,0), tol);
-    EXPECT_NEAR(dXcn_dTr0(1), f->cache_.dXcn_dTr(1,0), tol);
-    EXPECT_NEAR(dXcn_dTr0(2), f->cache_.dXcn_dTr(2,0), tol);
+    EXPECT_NEAR(dXcn_dTsbr0(0), f->cache_.dXcn_dTsbr(0,0), tol);
+    EXPECT_NEAR(dXcn_dTsbr0(1), f->cache_.dXcn_dTsbr(1,0), tol);
+    EXPECT_NEAR(dXcn_dTsbr0(2), f->cache_.dXcn_dTsbr(2,0), tol);
     
-    EXPECT_NEAR(dXcn_dTr1(0), f->cache_.dXcn_dTr(0,1), tol);
-    EXPECT_NEAR(dXcn_dTr1(1), f->cache_.dXcn_dTr(1,1), tol);
-    EXPECT_NEAR(dXcn_dTr1(2), f->cache_.dXcn_dTr(2,1), tol);
+    EXPECT_NEAR(dXcn_dTsbr1(0), f->cache_.dXcn_dTsbr(0,1), tol);
+    EXPECT_NEAR(dXcn_dTsbr1(1), f->cache_.dXcn_dTsbr(1,1), tol);
+    EXPECT_NEAR(dXcn_dTsbr1(2), f->cache_.dXcn_dTsbr(2,1), tol);
 
-    EXPECT_NEAR(dXcn_dTr2(0), f->cache_.dXcn_dTr(0,2), tol);
-    EXPECT_NEAR(dXcn_dTr2(1), f->cache_.dXcn_dTr(1,2), tol);
-    EXPECT_NEAR(dXcn_dTr2(2), f->cache_.dXcn_dTr(2,2), tol);
+    EXPECT_NEAR(dXcn_dTsbr2(0), f->cache_.dXcn_dTsbr(0,2), tol);
+    EXPECT_NEAR(dXcn_dTsbr2(1), f->cache_.dXcn_dTsbr(1,2), tol);
+    EXPECT_NEAR(dXcn_dTsbr2(2), f->cache_.dXcn_dTsbr(2,2), tol);
 }
 
 
