@@ -11,6 +11,10 @@ parser.add_argument('--input', type=str, required=True,
         help='input CSV file of inertial measurements')
 parser.add_argument('--output', type=str, required=True,
         help='output CSV file')
+parser.add_argument('--gyro_calib', type=str, required=True,
+        help="imu_tk gyro calibration output")
+parser.add_argument('--accel_calib', type=str, required=True,
+        help="imu_tk accel calibration output")
 args = parser.parse_args()
 
 def load_imu_intrinsics(filename, tag=''):
@@ -40,8 +44,8 @@ def load_imu_intrinsics(filename, tag=''):
 
 if __name__ == '__main__':
   # load imu intrinsics
-  Ta, Ka, ba = load_imu_intrinsics('test_imu_acc.calib', 'a')
-  Tg, Kg, bg = load_imu_intrinsics('test_imu_gyro.calib', 'g')
+  Ta, Ka, ba = load_imu_intrinsics(args.accel_calib, 'a')
+  Tg, Kg, bg = load_imu_intrinsics(args.gyro_calib, 'g')
 
 
   csv_filename =args.input
@@ -54,9 +58,6 @@ if __name__ == '__main__':
     for line in fid.readlines():
       data = line.split(',')
       ts = int(data[0])
-      # gyro = np.array([float(x) for x in data[1:4]])
-      # accel = np.array([float(x) for x in data[4:]])
-
       gyro = np.array([float(x) for x in data[1:4]])
       accel = np.array([float(x) for x in data[4:7]])
 

@@ -66,6 +66,10 @@ add_executable(phab_calib apps/phab_calib.cpp)
 target_link_libraries( phab_calib ${IMU_TK_LIBS})
 set_target_properties( phab_calib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
+add_executable(realsense_calib apps/realsense_calib.cpp)
+target_link_libraries( realsense_calib ${IMU_TK_LIBS})
+set_target_properties( realsense_calib PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
 add_executable(test_integration apps/test_integration.cpp)
 target_link_libraries( test_integration ${IMU_TK_LIBS})
                        
