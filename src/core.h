@@ -37,12 +37,9 @@ using timestamp_t = nanoseconds;
 // Since the rotation around z-axis of the inertial frame is not observable, the z-component of Wg=Log(Rg)
 // is not included in the model.
 enum Index : int {
-  W = 0, // Wsb, rotation
-  Wsb = 0,
-  T = 3, // Tsb, translation
-  Tsb = 3,
-  V = 6, // vsb, velocity
-  Vsb = 6,
+  Wsb = 0, // Wsb, rotation
+  Tsb = 3, // Tsb, translation
+  Vsb = 6, // vsb, velocity
   bg = 9,   // omega bias
   ba = 12,  // alpha bias
   Wbc = 15, // alignment rotation

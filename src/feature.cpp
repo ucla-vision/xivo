@@ -553,8 +553,8 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   Vec3 Tr_err  = error_state.segment<3>(offset+3);
 
   // Get derivatives of error state matrix exponentials w.r.t vector.
-  Mat93 dR_dWsb_err, dR_dWbc_err, dR_dWr_err;
-  Mat3 R_Wsb_err = rodrigues(Wsb_err, &dR_dWsb_err);
+  Mat93 dRsb_dWsb_err, dR_dWbc_err, dR_dWr_err;
+  Mat3 Rsb_Wsb_err = rodrigues(Wsb_err, &dRsb_dWsb_err);
   Mat3 R_Wbc_err = rodrigues(Wbc_err, &dR_dWbc_err);
   Mat3 R_Wr_err  = rodrigues(Wr_err, &dR_dWr_err);
 
@@ -583,11 +583,11 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   for (int i=0; i<3; i++) {
     // Reshape columns of output of rodrigues()
     Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
-    Mat3 dR_dWsb_err_i = unstack(dR_dWsb_err.block<9,1>(0,i));
+    Mat3 dRsb_dWsb_err_i = unstack(dRsb_dWsb_err.block<9,1>(0,i));
     Mat3 dR_dWbc_err_i_t = dR_dWbc_err_i.transpose();
-    Mat3 dR_dWsb_err_i_t = dR_dWsb_err_i.transpose();
+    Mat3 dRsb_dWsb_err_i_t = dRsb_dWsb_err_i.transpose();
     // Compute derivatives
-    Vec3 dXcn_dWsb_err_i = Rbc_t * dR_dWsb_err_i_t * Rsb_t * (cache_.Xs - Tsb);
+    Vec3 dXcn_dWsb_err_i = Rbc_t * dRsb_dWsb_err_i_t * Rsb_t * (cache_.Xs - Tsb);
     Vec3 dXcn_dWbc_err_i = (dR_dWbc_err_i_t * Rbc_t * Rsb_t * cache_.Xs)
       + (R_Wbc_err.transpose() * Rbc_t * Rsb_t * cache_.dXs_dWbc.block<3,1>(0,i))
       - (dR_dWbc_err_i_t * Rbc_t * (Rsb_t*Tsb + Tbc));

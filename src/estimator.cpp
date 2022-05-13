@@ -185,13 +185,13 @@ Estimator::Estimator(const Json::Value &cfg)
   // /////////////////////////////
   auto X = cfg_["X"];
   try {
-    X_.Rsb = SO3::exp(GetVectorFromJson<number_t, 3>(X, "W"));
+    X_.Rsb = SO3::exp(GetVectorFromJson<number_t, 3>(X, "Wsb"));
   } catch (const Json::LogicError &e) {
     X_.Rsb =
-        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "W", JsonMatLayout::RowMajor));
+        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wsb", JsonMatLayout::RowMajor));
   }
-  X_.Tsb = GetVectorFromJson<number_t, 3>(X, "T");
-  X_.Vsb = GetVectorFromJson<number_t, 3>(X, "V");
+  X_.Tsb = GetVectorFromJson<number_t, 3>(X, "Tsb");
+  X_.Vsb = GetVectorFromJson<number_t, 3>(X, "Vsb");
   X_.bg = GetVectorFromJson<number_t, 3>(X, "bg");
   X_.ba = GetVectorFromJson<number_t, 3>(X, "ba");
 
@@ -230,9 +230,9 @@ Estimator::Estimator(const Json::Value &cfg)
 
   auto P = cfg_["P"];
   P_.setIdentity(kFullSize, kFullSize);
-  P_.block<3, 3>(Index::W, Index::W) *= P["W"].asDouble();
-  P_.block<3, 3>(Index::T, Index::T) *= P["T"].asDouble();
-  P_.block<3, 3>(Index::V, Index::V) *= P["V"].asDouble();
+  P_.block<3, 3>(Index::Wsb, Index::Wsb) *= P["Wsb"].asDouble();
+  P_.block<3, 3>(Index::Tsb, Index::Tsb) *= P["Tsb"].asDouble();
+  P_.block<3, 3>(Index::Vsb, Index::Vsb) *= P["Vsb"].asDouble();
   P_.block<3, 3>(Index::bg, Index::bg) *= P["bg"].asDouble();
   P_.block<3, 3>(Index::ba, Index::ba) *= P["ba"].asDouble();
   P_.block<3, 3>(Index::Wbc, Index::Wbc) *= P["Wbc"].asDouble();
@@ -285,7 +285,7 @@ Estimator::Estimator(const Json::Value &cfg)
 
   auto Qmodel = cfg_["Qmodel"];
   Qmodel_.setZero(kMotionSize, kMotionSize);
-  Qmodel_.block<3, 3>(Index::W, Index::W) = I3 * Qmodel["W"].asDouble();
+  Qmodel_.block<3, 3>(Index::Wsb, Index::Wsb) = I3 * Qmodel["Wsb"].asDouble();
   Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) = I3 * Qmodel["Wbc"].asDouble();
   Qmodel_.block<2, 2>(Index::Wsg, Index::Wsg) = I2 * Qmodel["Wsg"].asDouble();
   Qmodel_.block<kMotionSize, kMotionSize>(0, 0) *=
@@ -476,11 +476,11 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
     if (InitializeGravity()) {
       // lock 4DoF gauge freedom
       for (int i = 0; i < 3; ++i) {
-        P_(Index::T + i, Index::T + i) = eps;
+        P_(Index::Tsb + i, Index::Tsb + i) = eps;
       }
-      P_(Index::W + 0, Index::W + 0) = eps;
-      P_(Index::W + 1, Index::W + 1) = eps;
-      P_(Index::W + 2, Index::W + 2) = eps;
+      P_(Index::Wsb + 0, Index::Wsb + 0) = eps;
+      P_(Index::Wsb + 1, Index::Wsb + 1) = eps;
+      P_(Index::Wsb + 2, Index::Wsb + 2) = eps;
 
       curr_imu_time_ = last_time_ = ts;
 
@@ -592,51 +592,51 @@ void Estimator::ComputeMotionJacobianAt(
   Vec3 accel_calib = imu_.Ca() * accel - X.ba; // \hat\alpha in the doc
 
   // jacobian w.r.t. error state
-  Mat3 R = X.Rsb.matrix();
+  Mat3 Rsb = X.Rsb.matrix();
 
-  Eigen::Matrix<number_t, 3, 9> dW_dCg;
+  Eigen::Matrix<number_t, 3, 9> dWsb_dCg;
   for (int i = 0; i < 3; ++i) {
     // NOTE: use the raw measurement (gyro) here. NOT the calibrated one
     // (gyro_calib)!!!
-    dW_dCg.block<1, 3>(i, 3 * i) = gyro;
+    dWsb_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
   Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
+  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(Rsb); // fm: full matrix
   Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
   Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
-  Mat3 dW_dW = -hat(gyro_calib);
+  Mat3 dWsb_dWsb = -hat(gyro_calib);
   // static Mat3 dW_dbg = -I3;
 
   // static Mat3 dT_dV = I3;
 
-  Mat3 dV_dW = -R * hat(accel_calib);
-  Mat3 dV_dba = -R;
+  Mat3 dV_dWsb = -Rsb * hat(accel_calib);
+  Mat3 dV_dba = -Rsb;
 
-  Mat3 dV_dWsg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
+  Mat3 dV_dWsg = -Rsb * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
 
   for (int j = 0; j < 3; ++j) {
-    F_.coeffRef(Index::W + j, Index::bg + j) = -1;  // dW_dbg
-    F_.coeffRef(Index::T + j, Index::V + j) = 1;  // dT_dV
+    F_.coeffRef(Index::Wsb + j, Index::bg + j) = -1;  // dW_dbg
+    F_.coeffRef(Index::Tsb + j, Index::Vsb + j) = 1;  // dT_dV
 
     for (int i = 0; i < 3; ++i) {
       // W
-      F_.coeffRef(Index::W + i, Index::W + j) = dW_dW(i, j);
+      F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dWsb(i, j);
       // F_.coeffRef(Index::W + i, Index::bg + j) = dW_dbg(i, j);
       // T
       // F_.coeffRef(Index::T + i, Index::V + j) = dT_dV(i, j);
 
       // V
-      F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
-      F_.coeffRef(Index::V + i, Index::ba + j) = dV_dba(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::Wsb + j) = dV_dWsb(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::ba + j) = dV_dba(i, j);
 
       if (j < 2) {
         // NOTE: Wg is 2-dim, i.e., NO z-component
-        F_.coeffRef(Index::V + i, Index::Wsg + j) = dV_dWsg(i, j);
+        F_.coeffRef(Index::Vsb + i, Index::Wsg + j) = dV_dWsg(i, j);
       }
     }
   }
@@ -644,12 +644,12 @@ void Estimator::ComputeMotionJacobianAt(
 #ifdef USE_ONLINE_IMU_CALIB
   for (int j = 0; j < 9; ++j) {
     for (int i = 0 ; i < 3; ++i) {
-      F_.coeffRef(Index::W + i, Index::Cg + j) = dW_dCg(i, j);
+      F_.coeffRef(Index::Wsb + i, Index::Cg + j) = dWsb_dCg(i, j);
     }
   }
   for (int j = 0; j < 6; ++j) {
     for (int i = 0; i < 3; ++i) {
-      F_.coeffRef(Index::V + i, Index::Ca + j) = dV_dCa(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::Ca + j) = dV_dCa(i, j);
     }
   }
 #endif
@@ -663,12 +663,12 @@ void Estimator::ComputeMotionJacobianAt(
   G_.setZero();
   for (int j = 0; j < 3; ++j) {
 
-    G_.coeffRef(Index::W + j, j) = -1;  // dW_dng
+    G_.coeffRef(Index::Wsb + j, j) = -1;  // dWsb_dng
     G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
     G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
 
     for (int i = 0; i < 3; ++i) {
-      G_.coeffRef(Index::V + i, 3 + j) = -R(i, j);  // dV_dna
+      G_.coeffRef(Index::Vsb + i, 3 + j) = -Rsb(i, j);  // dV_dna
     }
   }
 }
