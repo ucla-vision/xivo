@@ -112,7 +112,7 @@ public:
   Vec3 Vsb() const { return X_.Vsb; }
   Vec3 bg() const { return X_.bg; }
   Vec3 ba() const { return X_.ba; }
-  SO3 Rg() const { return X_.Rg; }
+  SO3 Rsg() const { return X_.Rsg; }
   number_t td() const { return X_.td; }
   Mat3 Ca() const { return imu_.Ca(); }
   Mat3 Cg() const { return imu_.Cg(); }

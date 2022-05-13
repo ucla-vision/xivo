@@ -94,7 +94,7 @@ bool EstimatorProcess::Handle(EstimatorMessage *message) {
 
     if (twod_nav_publisher_ != nullptr) {
       twod_nav_publisher_->Publish(msg->ts(), estimator_->gsb(),
-        estimator_->Vsb(), estimator_->Rg(), estimator_->Pstate());
+        estimator_->Vsb(), estimator_->Rsg(), estimator_->Pstate());
     }
 
     return true;

@@ -47,9 +47,9 @@ enum Index : int {
   ba = 12,  // alpha bias
   Wbc = 15, // alignment rotation
   Tbc = 18, // alignment translation
-  Wg = 21,  // alignment of gravity from [0, 0, -9.8] to the spatial frame
+  Wsg = 21,  // alignment of gravity from [0, 0, -9.8] to the spatial frame
 #ifdef USE_ONLINE_TEMPORAL_CALIB
-  td = Wg + 2, // temporal offset
+  td = Wsg + 2, // temporal offset
 #endif
 
 #ifdef USE_ONLINE_IMU_CALIB // USE_ONLINE_IMU_CALIB and USE_ONLINE_TEMPORAL_CALIB
@@ -57,7 +57,7 @@ enum Index : int {
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Cg = td + 1, // gyro calibration, 9 numbers
 #else
-  Cg = Wg + 2, // gyro calibration, 9 numbers
+  Cg = Wsg + 2, // gyro calibration, 9 numbers
 #endif
   Ca = Cg + 9, // accel calibration, 6 numbers
   End = Ca + 6,
@@ -67,7 +67,7 @@ enum Index : int {
 #ifdef USE_ONLINE_TEMPORAL_CALIB // USE_ONLINE_TEMPORAL_CALIB, but not USE_ONLINE_IMU_CALIB
   End = td + 1,
 #else
-  End = Wg + 2
+  End = Wsg + 2
 #endif
 
 #endif
@@ -128,7 +128,7 @@ struct State {
 
   SO3 Rbc;
   Vec3 Tbc;
-  SO3 Rg;  // gravity -> spatial
+  SO3 Rsg;  // gravity -> spatial
 
   number_t td;
 
@@ -142,7 +142,7 @@ struct State {
     ba += dX.segment<3>(Index::ba);
     Rbc *= SO3::exp(dX.segment<3>(Index::Wbc));
     Tbc += dX.segment<3>(Index::Tbc);
-    Rg *= SO3::exp(Vec3{dX(Index::Wg), dX(Index::Wg + 1), 0.0});
+    Rsg *= SO3::exp(Vec3{dX(Index::Wsg), dX(Index::Wsg + 1), 0.0});
     // Rg *= SO3::exp(dX.segment<3>(Index::Wg));
 // std::cout << "Wg=" << dX.segment<3>(Index::Wg).transpose() << std::endl;
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -153,9 +153,9 @@ struct State {
       if (++counter % kEnforceSO3Freq == 0) {
         Rsb = SO3::project(Rsb.matrix());
         Rbc = SO3::project(Rbc.matrix());
-        auto Wg = SO3::log(Rg);
-        Wg(2) = 0;
-        Rg = SO3::exp(Wg);
+        auto Wsg = SO3::log(Rsg);
+        Wsg(2) = 0;
+        Rsg = SO3::exp(Wsg);
       }
     }
 
@@ -171,7 +171,7 @@ struct State {
     os << "\nba=\n" << s.ba.transpose();
     os << "\nRbc=\n" << s.Rbc.matrix();
     os << "\nTbc=\n" << s.Tbc.transpose();
-    os << "\nRg=\n" << s.Rg.matrix();
+    os << "\nRg=\n" << s.Rsg.matrix();
     os << "\n=====\n";
     return os;
   }

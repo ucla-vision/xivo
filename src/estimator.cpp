@@ -69,8 +69,8 @@ Estimator::~Estimator() {
     std::cout << "td=" << X_.td << std::endl;
     std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
     std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
-    std::cout << "Rg=" << X_.Rg << std::endl;
-    std::cout << "Wg=" << SO3::log(X_.Rg).transpose() << std::endl;
+    std::cout << "Rsg=" << X_.Rsg << std::endl;
+    std::cout << "Wsg=" << SO3::log(X_.Rsg).transpose() << std::endl;
     std::cout << "===== IMU intrinsics =====\n";
     std::cout << "Ca=\n" << imu_.Ca() << std::endl;
     std::cout << "Cg=\n" << imu_.Cg() << std::endl;
@@ -211,9 +211,9 @@ Estimator::Estimator(const Json::Value &cfg)
         SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wbc", JsonMatLayout::RowMajor));
   }
   X_.Tbc = GetVectorFromJson<number_t, 3>(X, "Tbc");
-  Vec3 Wg;
-  Wg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wg");
-  X_.Rg = SO3::exp(Wg);
+  Vec3 Wsg;
+  Wsg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wsg");
+  X_.Rsg = SO3::exp(Wsg);
 // temporal offset
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   X_.td = X["td"].asDouble();
@@ -242,7 +242,7 @@ Estimator::Estimator(const Json::Value &cfg)
     auto Cov = GetVectorFromJson<number_t, 3>(P, "Tbc");
     P_.block<3, 3>(Index::Tbc, Index::Tbc) *= Cov.asDiagonal();
   }
-  P_.block<2, 2>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
+  P_.block<2, 2>(Index::Wsg, Index::Wsg) *= P["Wsg"].asDouble();
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   P_(Index::td, Index::td) *= P["td"].asDouble();
 #endif
@@ -287,7 +287,7 @@ Estimator::Estimator(const Json::Value &cfg)
   Qmodel_.setZero(kMotionSize, kMotionSize);
   Qmodel_.block<3, 3>(Index::W, Index::W) = I3 * Qmodel["W"].asDouble();
   Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) = I3 * Qmodel["Wbc"].asDouble();
-  Qmodel_.block<2, 2>(Index::Wg, Index::Wg) = I2 * Qmodel["Wg"].asDouble();
+  Qmodel_.block<2, 2>(Index::Wsg, Index::Wsg) = I2 * Qmodel["Wsg"].asDouble();
   Qmodel_.block<kMotionSize, kMotionSize>(0, 0) *=
       Qmodel_.block<kMotionSize, kMotionSize>(0, 0);
   LOG(INFO) << "Covariance of process noises loaded";
@@ -420,17 +420,17 @@ bool Estimator::InitializeGravity() {
     // so accel = Rg * (-g_)
     Eigen::AngleAxis<number_t> AAg(
         Eigen::Quaternion<number_t>::FromTwoVectors(-g_, accel_calib));
-    Vec3 Wg(AAg.axis() * AAg.angle());
-    Wg(2) = 0;
-    X_.Rg = SO3::exp(Wg);
+    Vec3 Wsg(AAg.axis() * AAg.angle());
+    Wsg(2) = 0;
+    X_.Rsg = SO3::exp(Wsg);
 
-    LOG(INFO) << "===== Wg initialization =====";
+    LOG(INFO) << "===== Wsg initialization =====";
     LOG(INFO) << "stationary accel samples=" << gravity_init_buf_.size();
     LOG(INFO) << "accel " << accel_calib.transpose();
-    LOG(INFO) << "Wg=" << Wg.transpose();
+    LOG(INFO) << "Wsg=" << Wsg.transpose();
     LOG(INFO) << "g=" << g_.transpose();
     LOG(INFO) << "The norm below should be small";
-    LOG(INFO) << "|Rsb*a+Rg*g|=" << (X_.Rsb * accel_calib + X_.Rg * g_).norm();
+    LOG(INFO) << "|Rsb*a+Rg*g|=" << (X_.Rsb * accel_calib + X_.Rsg * g_).norm();
   }
   return true;
 }
@@ -445,7 +445,7 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
   Vec3 gyro_new;
   Vec3 accel_new;
 
-  Vec3 grav_s = X_.Rg * g_;
+  Vec3 grav_s = X_.Rsg * g_;
   Vec3 grav_b = X_.Rsb.inv() * grav_s;
 
   if (clamp_signals_) {
@@ -576,7 +576,7 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
 
   // integrate the nominal state
   X.Tsb += V * dt; //+ 0.5 * a * dt * dt;
-  X.Vsb += (X.Rsb * accel_calib + X.Rg * g_) * dt;
+  X.Vsb += (X.Rsb * accel_calib + X.Rsg * g_) * dt;
   X.Rsb *= SO3::exp(gyro_calib * dt);
 
   X.Rsb = SO3::project(X.Rsb.matrix());
@@ -614,7 +614,7 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 dV_dW = -R * hat(accel_calib);
   Mat3 dV_dba = -R;
 
-  Mat3 dV_dWg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
+  Mat3 dV_dWsg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
@@ -636,7 +636,7 @@ void Estimator::ComputeMotionJacobianAt(
 
       if (j < 2) {
         // NOTE: Wg is 2-dim, i.e., NO z-component
-        F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i, j);
+        F_.coeffRef(Index::V + i, Index::Wsg + j) = dV_dWsg(i, j);
       }
     }
   }
@@ -818,11 +818,11 @@ void Estimator::AddFeatureToState(FeaturePtr f) {
 void Estimator::PrintErrorStateNorm() {
   VLOG(0) << StrFormat(
       "|Wsb|=%0.8f, |Tsb|=%0.8f, |Vsb|=%0.8f, "
-      "|bg|=%0.8f, |ba|=%0.8f, |Wbc|=%0.8f, |Tbc|=%0.8f, |Wg|=%0.8f\n",
+      "|bg|=%0.8f, |ba|=%0.8f, |Wbc|=%0.8f, |Tbc|=%0.8f, |Wsg|=%0.8f\n",
       err_.segment<3>(Index::Wsb).norm(), err_.segment<3>(Index::Tsb).norm(),
       err_.segment<3>(Index::Vsb).norm(), err_.segment<3>(Index::bg).norm(),
       err_.segment<3>(Index::ba).norm(), err_.segment<3>(Index::Wbc).norm(),
-      err_.segment<3>(Index::Tbc).norm(), err_.segment<2>(Index::Wg).norm());
+      err_.segment<3>(Index::Tbc).norm(), err_.segment<2>(Index::Wsg).norm());
   for (auto g : instate_groups_) {
 #ifndef NDEBUG
     CHECK(gsel_[g->sind()]) << "instate group not actually instate";

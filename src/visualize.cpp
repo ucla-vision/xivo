@@ -172,9 +172,9 @@ void Canvas::OverlayStateInfo(const State &X, const IMUState &IMU,
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 
-  auto Wg{X.Rg.log()};
-  cv::putText(disp_, StrFormat("Wg=[%0.4f, %0.4f, %0.4f]", Wg(0),
-                                     Wg(1), Wg(2)),
+  auto Wsg{X.Rsg.log()};
+  cv::putText(disp_, StrFormat("Wsg=[%0.4f, %0.4f, %0.4f]", Wsg(0),
+                                      Wsg(1), Wsg(2)),
               cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
               kColorLakeBlue, thickness);
 

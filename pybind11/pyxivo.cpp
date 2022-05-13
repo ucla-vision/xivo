@@ -107,7 +107,7 @@ public:
   Vec3 Vsb() { return estimator_->Vsb(); }
   Vec3 bg() { return estimator_->bg(); }
   Vec3 ba() { return estimator_->ba(); }
-  Mat3 Rg() { return estimator_->Rg().matrix(); }
+  Mat3 Rsg() { return estimator_->Rsg().matrix(); }
   number_t td() { return estimator_->td(); }
   Mat3 Ca() { return estimator_->Ca(); }
   Mat3 Cg() { return estimator_->Cg(); }
@@ -232,7 +232,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("P", &EstimatorWrapper::P)
       .def("bg", &EstimatorWrapper::bg)
       .def("ba", &EstimatorWrapper::ba)
-      .def("Rg", &EstimatorWrapper::Rg)
+      .def("Rg", &EstimatorWrapper::Rsg)
       .def("td", &EstimatorWrapper::td)
       .def("Ca", &EstimatorWrapper::Ca)
       .def("Cg", &EstimatorWrapper::Cg)
