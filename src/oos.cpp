@@ -126,16 +126,16 @@ void Feature::ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc,
   cache_.dXcn_dTbc = -Rbc_t;
   //cache_.dXcn_dWsb = Rbc_t * hat(Rsb_t*(cache_.Xs - Tsb));
   //cache_.dXcn_dWbc = Rbc_t*hat(Rsb_t * (cache_.Xs - Tsb) - Tbc);
-  Mat93 dR_dWsb_err, dR_dWbc_err;
-  Mat3 R_Wsb_err = rodrigues(Wsb_err, &dR_dWsb_err);
-  Mat3 R_Wbc_err = rodrigues(Wbc_err, &dR_dWbc_err);
+  Mat93 dRsb_dWsb_err, dRbc_dWbc_err;
+  Mat3 Rsb_Wsb_err = rodrigues(Wsb_err, &dRsb_dWsb_err);
+  Mat3 Rbc_Wbc_err = rodrigues(Wbc_err, &dRbc_dWbc_err);
   for (int i=0; i<3; i++) {
     // Grab matrix from column
-    Mat3 dR_dWsb_err_i = unstack(dR_dWsb_err.block<9,1>(0,i));
-    Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
+    Mat3 dRsb_dWsb_err_i = unstack(dRsb_dWsb_err.block<9,1>(0,i));
+    Mat3 dRbc_dWbc_err_i = unstack(dRbc_dWbc_err.block<9,1>(0,i));
     // Compute derivatives
-    Vec3 dXcn_dWbci = dR_dWbc_err_i.transpose() * Rbc_t * (Rsb_t*(cache_.Xs - Tsb) - Tbc);
-    Vec3 dXcn_dWsbi = Rbc_t * dR_dWsb_err_i.transpose() * Rsb_t * (cache_.Xs - Tsb);
+    Vec3 dXcn_dWbci = dRbc_dWbc_err_i.transpose() * Rbc_t * (Rsb_t*(cache_.Xs - Tsb) - Tbc);
+    Vec3 dXcn_dWsbi = Rbc_t * dRsb_dWsb_err_i.transpose() * Rsb_t * (cache_.Xs - Tsb);
     // Fill in columns in cache
     cache_.dXcn_dWsb.block<3,1>(0,i) = dXcn_dWsbi;
     cache_.dXcn_dWbc.block<3,1>(0,i) = dXcn_dWbci;
