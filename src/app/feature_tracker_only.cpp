@@ -17,9 +17,9 @@
 #include "graphwriter.h"
 
 // flags
-DEFINE_string(cfg, "cfg/vio.json",
+DEFINE_string(cfg, "cfg/tracker_only.json",
               "Configuration file for the VIO application.");
-DEFINE_string(root, "/home/feixh/Data/tumvi/exported/euroc/512_16/",
+DEFINE_string(root, "xivo_dataset/tumvi",
               "Root directory containing tumvi dataset folder.");
 DEFINE_string(dataset, "tumvi", "xivo | euroc | tumvi");
 DEFINE_string(seq, "room1", "Sequence of TUM VI benchmark to play with.");

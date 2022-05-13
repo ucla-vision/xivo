@@ -33,34 +33,7 @@ def main(args):
     ########################################
     # CHOOSE SAVERS
     ########################################
-    if args.mode == 'eval':
-        if args.dataset == 'tumvi':
-            saver = savers.TUMVIEvalModeSaver(args)
-        elif args.dataset == 'cosyvio':
-            saver = savers.COSYVIOEvalModeSaver(args)
-        elif args.dataset == 'xivo':
-            saver = savers.XIVOEvalModeSaver(args)
-        elif args.dataset == 'carla':
-            saver = savers.CarlaEvalModeSaver(args)
-    elif args.mode == 'dump':
-        if args.dataset == 'tumvi':
-            saver = savers.TUMVIDumpModeSaver(args)
-        elif args.dataset == 'cosyvio':
-            saver = savers.COSYVIODumpModeSaver(args)
-        elif args.dataset == 'xivo':
-            saver = savers.XIVODumpModeSaver(args)
-        elif args.dataset == 'carla':
-            saver = savers.CarlaDumpModeSaver(args)
-    elif args.mode == 'dumpCov':
-        if args.dataset == 'tumvi':
-            saver = savers.TUMVICovDumpModeSaver(args)
-        elif args.dataset == 'cosyvio':
-            saver = savers.COSYVIOCovDumpModeSaver(args)
-        elif args.dataset == 'xivo':
-            saver = savers.XIVOCovDumpModeSaver(args)
-        elif args.dataset == 'carla':
-            saver = savers.CarlaCovDumpModeSaver(args)
-    elif args.mode == 'dumpTracker':
+    if args.mode == 'dumpTracker':
         if args.dataset == 'tumvi':
             saver = savers.TUMVITrackerDumpModeSaver(args)
         elif args.dataset == 'cosyvio':
