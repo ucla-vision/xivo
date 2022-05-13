@@ -996,6 +996,12 @@ void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::M
       Canvas::instance()->Draw(f);
   }
 
+  for (auto f : tracker->features_) {
+    if (f->track_status() == TrackStatus::REJECTED || f->track_status() == TrackStatus::DROPPED) {
+          Feature::Destroy(f);
+    }
+  }
+
   static int print_counter{0};
   if (print_timing_ && ++print_counter % 50 == 0) {
     std::cout << print_counter << std::endl;
