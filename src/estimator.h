@@ -33,6 +33,7 @@ namespace xivo {
 class Estimator;
 using EstimatorPtr = Estimator*;
 EstimatorPtr CreateSystem(const Json::Value &cfg);
+EstimatorPtr CreateSystemTrackerOnly(const Json::Value &cfg);
 
 
 namespace internal {

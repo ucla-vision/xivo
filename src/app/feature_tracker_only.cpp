@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<DataLoader> loader(new DataLoader{image_dir});
 
   // create estimator
-  auto est = CreateSystem(
+  auto est = CreateSystemTrackerOnly(
       LoadJson(cfg["estimator_cfg"].asString()));
 
   // create viewer
