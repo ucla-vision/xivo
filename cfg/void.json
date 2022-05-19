@@ -1,6 +1,6 @@
 {
     "estimator_cfg": "cfg/void_params.json",
-    "viewer_cfg": "cfg/phab_viewer.json",
+    "viewer_cfg": "cfg/void_viewer.json",
 
     "visualize": true,
     "wait_time": 1,
