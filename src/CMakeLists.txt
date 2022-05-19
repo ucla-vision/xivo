@@ -31,6 +31,11 @@ add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 # rid of accumulated numeric error
 #add_definitions(-DENFORCE_SO3_FREQ=50)
 
+# Sets the size of the message buffer heap; this is the number of messages stored
+# before they are processed. A bigger size can accommodate a more-negative value
+# of td, but will be slower.
+#add_definitions(-DMESSAGE_BUFFER_SIZE=1)
+
 include_directories(
   ${PROJECT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/common)

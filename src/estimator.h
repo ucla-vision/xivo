@@ -414,7 +414,11 @@ private:
   // measurements buffer
   struct InternalBuffer
       : public std::vector<std::unique_ptr<internal::Message>> {
+#ifdef MESSAGE_BUFFER_SIZE
+    static constexpr int MAX_SIZE = MESSAGE_BUFFER_SIZE;
+#else
     static constexpr int MAX_SIZE = 10;
+#endif
     InternalBuffer() : initialized{false} {}
     std::mutex mtx;
     bool initialized;
