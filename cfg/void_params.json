@@ -78,18 +78,18 @@
 
   "P" : {
     "W"   : 3.0,
-    "T"   : 0.001,
+    "T"   : 0.01,
     "V"   : 0.5,
     "bg"  : 1e-05,
     "ba"  : 0.0001,
-    "Wbc" : 0.001,
-    "Tbc" : 0.0001,
-    "Wg"  : 3.00,
+    "Wbc" : 1e-6,
+    "Tbc" : 1e-6,
+    "Wg"  : 1.50,
     "td"  : 1e-4, // 1ms
     "Cg"  : 5e-06, // not used
     "Ca"  : 5e-06, // not used
-    "FC"  : [50, 50.0], // not used
-    "distortion": 5e-06
+    "FC"  : [0.5, 1e-4], // not used
+    "distortion": 1e-06
   },
 
   "Qmodel" : {
@@ -113,11 +113,11 @@
 
 
   // Feature initialization parameters
-  "initial_z": 2.5, // initial subfilter depth value (meter)
-  "initial_std_x": 32.434, // initial std on subfilter state (pixel)
-  "initial_std_y": 32.434, // initial std on subfilter state (pixel)
+  "initial_z": 2.0, // initial subfilter depth value (meter)
+  "initial_std_x": 16.434, // initial std on subfilter state (pixel)
+  "initial_std_y": 16.434, // initial std on subfilter state (pixel)
   "initial_std_z": 1.414,  // initial std on subfilter state (meter)
-  "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
+  "max_subfilter_outlier": 0.5, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
                                   // looser criteria for admitting features to
@@ -197,7 +197,7 @@
 
   "min_inliers": 5, // minimum number of inlier measurements
 
-  "MH_thresh": 5.991, // 8.991
+  "MH_thresh": 20.991, // 8.991
   "MH_adjust_factor": 1.15,
 
   "1pt_RANSAC_thresh": 1.5,
@@ -206,7 +206,7 @@
 
   // "Correct" means 3 XY gauge features. But sometimes the filter works better
   // with fewer fixed degrees of freedom.
-  "num_gauge_xy_features": 0,
+  "num_gauge_xy_features": 3,
   "collinear_cross_prod_thresh": 0.001,
 
   "tracker_cfg": {

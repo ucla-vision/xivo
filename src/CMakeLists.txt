@@ -10,9 +10,9 @@ project(estimator)
 # add_definitions(-DUSE_INVDEPTH)
 
 # if set, perform online temporal calibration
-add_definitions(-DUSE_ONLINE_IMU_CALIB)
-add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
-add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
+#add_definitions(-DUSE_ONLINE_IMU_CALIB)
+#add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
+#add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 
 # if set, enables the mapper object (and loop closure)
 # add_definitions(-DUSE_MAPPER)
@@ -34,7 +34,7 @@ add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 # Sets the size of the message buffer heap; this is the number of messages stored
 # before they are processed. A bigger size can accommodate a more-negative value
 # of td, but will be slower.
-#add_definitions(-DMESSAGE_BUFFER_SIZE=1)
+add_definitions(-DMESSAGE_BUFFER_SIZE=100)
 
 include_directories(
   ${PROJECT_SOURCE_DIR}

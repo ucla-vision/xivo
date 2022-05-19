@@ -942,9 +942,10 @@ void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
 }
 
 void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
-  if (!GoodTimestamp(ts))
+  if (!GoodTimestamp(ts)) {
+    std::cout << "Dropping a visual frame because its timestamp was delayed too far back in the past. Make MESSAGE_BUFFER_SIZE bigger." << std::endl;
     return;
-
+  }
   if (simulation_) {
     throw std::invalid_argument(
         "function VisualMeas cannot be called in simulation");
