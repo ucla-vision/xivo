@@ -1,5 +1,5 @@
 import argparse
-import os, glob
+import os, glob, json, re
 
 import sys
 sys.path.insert(0, 'lib')
@@ -79,6 +79,19 @@ def main(args):
 
     data.sort(key=lambda tup: tup[0])
 
+    # Open the file and remove all comments 
+    json_file = open(args.cfg)
+    json_string = ''.join(re.sub('//.*','',line) for line in json_file)
+        
+    # Parse as json object
+    json_data = json.loads(json_string)
+
+    # Store the descriptor type
+    descriptor_type = json_data['tracker_cfg']['descriptor']
+    
+    # Determine the format for writing descriptor values based on descriptor type
+    descriptor_format = "%f" if descriptor_type in ["SIFT", "SURF"] else "%d"
+
     ########################################
     # INITIALIZE ESTIMATOR
     ########################################
@@ -109,19 +122,7 @@ def main(args):
             estimator.VisualMeasTrackerOnly(ts, content)
             estimator.Visualize()
             if args.mode != 'runOnly':
-                saver.onVisionUpdate(estimator, datum=(ts, content))
-
-            # import numpy as np
-
-            # tracked_features = estimator.tracked_features()
-            # for f in tracked_features:
-            #     id, kp, des = f
-            #     kp = np.reshape(kp,(1,2))
-            #     id_arr = np.array([1, id]).reshape((1,2))
-            #     print(id_arr.shape,kp.shape, np.transpose(des).shape)
-            #     test = np.concatenate((id_arr, kp, np.transpose(des)), axis=1)
-            #     print(test.shape)
-
+                saver.onVisionUpdate(estimator, datum=(ts, content), descriptor_format=descriptor_format)
 
     finally:
         if args.mode != 'runOnly':

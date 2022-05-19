@@ -255,7 +255,7 @@ class TrackerDumpModeSaver(BaseSaver):
     def __init__(self, args):
         BaseSaver.__init__(self, args)
 
-    def onVisionUpdate(self, estimator, datum):
+    def onVisionUpdate(self, estimator, datum, descriptor_format):
         ts, content = datum
 
         tracked_features = estimator.tracked_features()
@@ -266,7 +266,7 @@ class TrackerDumpModeSaver(BaseSaver):
             # Convert timestamp to seconds from nanoseconds
             ts_and_id = np.array([ts*1e-9, id]).reshape(1,2)
             kp = np.reshape(kp, (1, 2))
-            
+
             # Number of dimensions of the descriptor
             N = des.shape[1]
 
@@ -277,7 +277,7 @@ class TrackerDumpModeSaver(BaseSaver):
                     f,
                     feature_info,
                     delimiter=',',
-                    fmt=','.join(['%f'] + ['%d'] + ['%f'] * (N+2)))
+                    fmt=','.join(['%f'] + ['%d'] + ['%f'] * 2 + [descriptor_format] * N))
 
     def onResultsReady(self):
         pass
