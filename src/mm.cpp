@@ -8,11 +8,12 @@
 namespace xivo {
 
 template<typename T>
-CircBufWithHash<T>::CircBufWithHash(int max_items) {
+CircBufWithHash<T>::CircBufWithHash(int max_items, bool is_feature) {
   max_items_ = max_items;
   num_slots_initialized_ = 0;
   num_slots_active_ = 0;
   slot_search_ind_ = 0;
+  is_feature_buf_ = is_feature;
 
   for (int i=0; i < max_items_; i++) {
     T* addr = new T();
@@ -63,6 +64,8 @@ T* CircBufWithHash<T>::GetItem() {
 
   // If all slots have been used before, just find one that isn't "active".
   else {
+    int start_index = slot_search_ind_;
+
     while (!slot_found) {
       if (!slots_active_[slot_search_ind_]) {
         T* ret = slots_[slot_search_ind_];
@@ -84,6 +87,14 @@ T* CircBufWithHash<T>::GetItem() {
       }
       else {
         slot_search_ind_ = (slot_search_ind_ + 1) % max_items_;
+      }
+
+      if (slot_search_ind_ == start_index) {
+        if (is_feature_buf_) {
+          LOG(FATAL) << "Out of feature slots in the memory manager";
+        } else {
+          LOG(FATAL) << "Out of group slots in the memory manager";
+        }
       }
     }
   }
@@ -142,8 +153,8 @@ MemoryManagerPtr MemoryManager::Create(int max_features, int max_groups) {
 }
 
 MemoryManager::MemoryManager(int max_features, int max_groups) {
-  feature_slots_ = new CircBufWithHash<Feature>(max_features);
-  group_slots_ = new CircBufWithHash<Group>(max_groups);
+  feature_slots_ = new CircBufWithHash<Feature>(max_features, true);
+  group_slots_ = new CircBufWithHash<Group>(max_groups, false);
 }
 
 MemoryManager::~MemoryManager() {

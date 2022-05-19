@@ -16,7 +16,7 @@ template<typename T>
 class CircBufWithHash {
 
 public:
-  CircBufWithHash(int max_items);
+  CircBufWithHash(int max_items, bool is_feature);
   ~CircBufWithHash();
   T* GetItem();
   void DeactivateItem(T* item);
@@ -31,6 +31,7 @@ private:
   std::vector<bool> slots_active_;
   std::vector<T*> slots_;
   std::unordered_map<T*, int> slots_map_;
+  bool is_feature_buf_; // true if storing features, false if storing groups
 
   void RemoveFromMapper(T* item);
 };

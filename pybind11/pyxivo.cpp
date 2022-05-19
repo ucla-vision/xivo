@@ -1,6 +1,7 @@
 #include "pybind11/eigen.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
+#include <pybind11/stl.h>
 
 #include "estimator.h"
 #include "camera_manager.h"
@@ -19,8 +20,9 @@ class EstimatorWrapper {
 public:
   EstimatorWrapper(const std::string &cfg_path,
                    const std::string &viewer_cfg_path,
-                   const std::string &name)
-    : name_{name}, imu_calls_{0}, visual_calls_{0} {
+                   const std::string &name,
+                   bool tracker_only)
+    : name_{name}, imu_calls_{0}, visual_calls_{0}, tracker_only_{tracker_only} {
 
     if (!glog_init_) {
       google::InitGoogleLogging("pyxivo");
@@ -28,21 +30,17 @@ public:
     }
 
     auto cfg = LoadJson(cfg_path);
-    // estimator_ = std::unique_ptr<Estimator>(new Estimator{cfg});
     estimator_ = CreateSystem(cfg);
     camera_ = CameraManager::instance();
 
     if (!viewer_cfg_path.empty()) {
       auto viewer_cfg = LoadJson(viewer_cfg_path);
-      viewer_ = std::unique_ptr<Viewer>(new Viewer{viewer_cfg, name});
+      viewer_ = std::unique_ptr<Viewer>(new Viewer{viewer_cfg, name, tracker_only_});
     }
   }
 
   void InertialMeas(uint64_t ts, double wx, double wy, double wz, double ax,
                     double ay, double az) {
-
-    // std::cout << "InertialMeas called on " << name_ << " " 
-    //   << ++imu_calls_ << " times" << std::endl;
 
     estimator_->InertialMeas(timestamp_t{ts}, {wx, wy, wz}, {ax, ay, az});
 
@@ -54,9 +52,6 @@ public:
 
   void VisualMeas(uint64_t ts, std::string &image_path) {
 
-    // std::cout << "VisualMeas called on " << name_ << " " 
-    //   << ++visual_calls_ << " times" << std::endl;
-
     auto image = cv::imread(image_path);
 
     estimator_->VisualMeas(timestamp_t{ts}, image);
@@ -66,8 +61,6 @@ public:
 
       if (!disp.empty()) {
         LOG(INFO) << "Display image is ready";
-        // cv::imshow("tracker", disp);
-        // if (cv::waitKey(cfg.get("wait_time", 5).asInt()) == 'q') break;
         viewer_->Update(disp);
       }
     }
@@ -95,8 +88,50 @@ public:
     }
   }
 
+  void VisualMeasTrackerOnly(uint64_t ts, std::string &image_path) {
+
+    auto image = cv::imread(image_path);
+
+    estimator_->VisualMeasTrackerOnly(timestamp_t{ts}, image);
+
+    if (viewer_) {
+      auto disp = Canvas::instance()->display();
+
+      if (!disp.empty()) {
+        LOG(INFO) << "Display image is ready";
+        viewer_->Update(disp);
+      }
+    }
+  }
+
+  void VisualMeasTrackerOnly(uint64_t ts,
+    py::array_t<unsigned char, py::array::c_style | py::array::forcecast> b)
+  {
+    py::buffer_info info = b.request();
+
+    int size_row = info.strides[0];
+    int num_col = size_row / info.strides[1] / info.itemsize;
+    int num_row = info.size / size_row;
+
+    cv::Mat image(num_row, num_col, CV_8UC3, info.ptr);
+
+    estimator_->VisualMeasTrackerOnly(timestamp_t{ts}, image);
+
+    if (viewer_) {
+      auto disp = Canvas::instance()->display();
+      if (!disp.empty()) {
+        LOG(INFO) << "Display image is ready";
+        viewer_->Update(disp);
+      }
+    }
+  }
+
   void CloseLoop() {
     estimator_->CloseLoop();
+  }
+
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features() {
+    return estimator_->tracked_features();
   }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
@@ -107,12 +142,12 @@ public:
   Vec3 Vsb() { return estimator_->Vsb(); }
   Vec3 bg() { return estimator_->bg(); }
   Vec3 ba() { return estimator_->ba(); }
-  Mat3 Rg() { return estimator_->Rg().matrix(); }
+  Mat3 Rsg() { return estimator_->Rsg().matrix(); }
   number_t td() { return estimator_->td(); }
   Mat3 Ca() { return estimator_->Ca(); }
   Mat3 Cg() { return estimator_->Cg(); }
 
-  bool MeasurementUpdateInitialized() { 
+  bool MeasurementUpdateInitialized() {
     return estimator_->MeasurementUpdateInitialized();
   }
   Vec3 inn_Wsb() { return estimator_->inn_Wsb(); }
@@ -201,13 +236,13 @@ public:
   }
 
 private:
-  // std::unique_ptr<Estimator> estimator_;
   EstimatorPtr estimator_;
   CameraPtr camera_;
   std::unique_ptr<Viewer> viewer_;
   static bool glog_init_;
   std::string name_;
   int imu_calls_, visual_calls_;
+  bool tracker_only_;
 };
 
 bool EstimatorWrapper::glog_init_{false};
@@ -216,10 +251,12 @@ PYBIND11_MODULE(pyxivo, m) {
   m.doc() = "python binding of XIVO (Xiaohan's Inertial-aided Visual Odometry)";
   py::class_<EstimatorWrapper>(m, "Estimator")
       .def(py::init<const std::string &, const std::string &,
-                    const std::string &>())
+                    const std::string &, bool>())
       .def("InertialMeas", &EstimatorWrapper::InertialMeas)
       .def("VisualMeas", py::overload_cast<uint64_t, std::string &>(&EstimatorWrapper::VisualMeas))
       .def("VisualMeas", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeas))
+      .def("VisualMeasTrackerOnly", py::overload_cast<uint64_t, std::string &>(&EstimatorWrapper::VisualMeasTrackerOnly))
+      .def("VisualMeasTrackerOnly", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeasTrackerOnly))
       .def("CloseLoop", &EstimatorWrapper::CloseLoop)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
@@ -232,7 +269,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("P", &EstimatorWrapper::P)
       .def("bg", &EstimatorWrapper::bg)
       .def("ba", &EstimatorWrapper::ba)
-      .def("Rg", &EstimatorWrapper::Rg)
+      .def("Rg", &EstimatorWrapper::Rsg)
       .def("td", &EstimatorWrapper::td)
       .def("Ca", &EstimatorWrapper::Ca)
       .def("Cg", &EstimatorWrapper::Cg)
@@ -258,5 +295,6 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("gauge_group", &EstimatorWrapper::gauge_group)
       .def("CameraIntrinsics", &EstimatorWrapper::CameraIntrinsics)
       .def("CameraDistortionType", &EstimatorWrapper::CameraDistortionType)
-      .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized);
+      .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized)
+      .def("tracked_features", &EstimatorWrapper::tracked_features);
 }

@@ -1,0 +1,109 @@
+{
+  // verbose
+  "simulation": false,
+  "print_timing": false,
+  "use_canvas": true,
+  "use_debug_view": true,  // draw rejected & dropped features on canvas
+  "async_run": false, // turn this off in benchmarking
+
+  "camera_cfg": {
+    "model": "equidistant",
+    "rows": 512,
+    "cols": 512
+  },
+
+  "tracker_cfg": {
+    "use_prediction": false,
+    "mask_size": 15,
+    "margin": 8, // image boundary to mask out
+    "num_features_min": 45,
+    "num_features_max": 60,
+    "max_pixel_displacement": 64,
+    "normalize": false,
+    "match_dropped_tracks": true,
+
+    "extract_descriptor": true,
+    "descriptor_distance_thresh": -1, // -1 to disable descriptor check
+    "descriptor": "BRIEF",
+
+    // "detector": "BRISK",
+    "detector": "FAST",
+    // "detector": "ORB",
+    // "detector": "AGAST",
+    // "detector": "GFTT",
+
+    "FAST": {
+      // https://docs.opencv.org/3.4/df/d74/classcv_1_1FastFeatureDetector.html
+      "threshold": 20,
+      "nonmaxSuppression": true
+    },
+
+    "BRISK": {
+      // https://docs.opencv.org/3.4/de/dbf/classcv_1_1BRISK.html
+      "thresh": 25,
+      "octaves": 3,
+      "patternScale": 1.0
+    },
+
+    "ORB": {
+      // https://docs.opencv.org/3.3.0/db/d95/classcv_1_1ORB.html
+      "nfeatures": 500,
+      "scaleFactor": 1.2,
+      "nlevels": 4,
+      "edgeThreshold": 31,
+      "firstLevel": 0,
+      "WTA_K": 2,
+      "patchSize": 31,
+      "fastThreshold": 20
+    },
+
+    "AGAST": {
+      // https://docs.opencv.org/3.4/d7/d19/classcv_1_1AgastFeatureDetector.html
+      "threshold": 10,
+      "nonmaxSuppression": true
+    },
+
+    "GFTT": {
+      // Good Feature To Track
+      // https://docs.opencv.org/3.3.0/df/d21/classcv_1_1GFTTDetector.html
+      "maxCorners": 1000,
+      "qualityLevel": 0.01,
+      "minDistance": 1.0,
+      "blockSize": 3,
+      "useHarrisDetector": false,
+      "k": 0.04
+    },
+
+    "SIFT": {
+      // SIFT
+      // https://docs.opencv.org/3.4/d7/d60/classcv_1_1SIFT.html
+      "nfeatures": 0,
+      "nOctaveLayers": 2,
+      "contrastThreshold": 0.000,
+      "edgeThreshold": 500.0,
+      "sigma": 1.6
+    },
+
+    "SURF": {
+      // SURF
+      // https://docs.opencv.org/3.4/d5/df7/classcv_1_1xfeatures2d_1_1SURF.html
+      "hessianThreshold": 100,
+      "nOctaves": 1,
+      "nOctaveLayers": 2,
+      "extended": false,
+      "upright": false
+    },
+
+    "BRIEF": {
+      "bytes": 32,
+      "use_orientation": false
+    },
+
+    "FREAK": {
+      "orientationNormalized": true,
+      "scaleNormalized": true,
+      "patternScale": 22.0,
+      "nOctaves": 4
+    }
+  }
+}

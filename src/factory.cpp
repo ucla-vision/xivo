@@ -81,5 +81,45 @@ EstimatorPtr CreateSystem(const Json::Value &cfg) {
   return Estimator::instance();
 }
 
+
+EstimatorPtr CreateSystemTrackerOnly(const Json::Value &cfg) {
+  static bool system_created{false};
+
+  if (system_created) {
+    return Estimator::instance();
+  }
+
+  // Initialize paramter server
+  ParameterServer::Create(cfg);
+  LOG(INFO) << "Parameter server created";
+
+  // Load camera parameters
+  auto cam_cfg = cfg["camera_cfg"].isString()
+                     ? LoadJson(cfg["camera_cfg"].asString())
+                     : cfg["camera_cfg"];
+  Camera::Create(cam_cfg);
+  LOG(INFO) << "Camera created";
+
+  // // Initialize memory manager
+  MemoryManager::Create(cfg["memory"].get("max_features", 256).asInt(),
+                        cfg["memory"].get("max_groups", 128).asInt());
+  LOG(INFO) << "Memory management unit created";
+
+  // Initialize tracker
+  auto tracker_cfg = cfg["tracker_cfg"].isString()
+                         ? LoadJson(cfg["tracker_cfg"].asString())
+                         : cfg["tracker_cfg"];
+  Tracker::Create(tracker_cfg);
+  LOG(INFO) << "Tracker created";
+
+  // Initialize the estimator
+  Estimator::Create(cfg);
+  LOG(INFO) << "Estimator created";
+
+  system_created = true;
+
+  return Estimator::instance();
+}
+
  
 } // namespace xivo

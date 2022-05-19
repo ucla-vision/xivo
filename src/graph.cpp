@@ -15,7 +15,7 @@ std::unique_ptr<Graph> Graph::instance_ = nullptr;
 Graph* Graph::Create() {
   if (instance_ == nullptr) {
     instance_ = std::unique_ptr<Graph>(new Graph);
-  } 
+  }
   return instance_.get();
 }
 
@@ -23,7 +23,7 @@ Graph* Graph::instance() {
   if (instance_ == nullptr) {
     LOG(WARNING) << "Graph not created yet! Creating one ...";
     Graph::Create();
-  } 
+  }
   return instance_.get();
 }
 
@@ -299,7 +299,7 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
       new_gauge_features_for_g = fill_slots(g, candidates);
       if (gauge_features_[g].size() >= 3) {
         if (collinear_check(gauge_features_[g], collinear_cross_prod_thresh)) {
-          std::random_shuffle(candidates.begin(), candidates.end());
+          std::shuffle(candidates.begin(), candidates.end(), *random_generator);
           if (NT==9) {
             LOG(WARNING) << "Did not find a set of non-collinear features. defaulting to using those with smallest covariance";
             gauge_features_[g] = gauge_features_backup;

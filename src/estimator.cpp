@@ -17,6 +17,8 @@
 #include "helpers.h"
 #include "mapper.h"
 
+#include <opencv2/core/eigen.hpp>
+
 #ifdef USE_G2O
 #include "optimizer.h"
 #endif
@@ -57,6 +59,8 @@ void Inertial::Execute(Estimator *est) {
 }
 
 void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
+
+void VisualTrackerOnly::Execute(Estimator *est) { est->VisualMeasInternalTrackerOnly(ts_, img_); }
 } // namespace internal
 
 // destructor
@@ -69,8 +73,8 @@ Estimator::~Estimator() {
     std::cout << "td=" << X_.td << std::endl;
     std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
     std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
-    std::cout << "Rg=" << X_.Rg << std::endl;
-    std::cout << "Wg=" << SO3::log(X_.Rg).transpose() << std::endl;
+    std::cout << "Rsg=" << X_.Rsg << std::endl;
+    std::cout << "Wsg=" << SO3::log(X_.Rsg).transpose() << std::endl;
     std::cout << "===== IMU intrinsics =====\n";
     std::cout << "Ca=\n" << imu_.Ca() << std::endl;
     std::cout << "Cg=\n" << imu_.Cg() << std::endl;
@@ -185,13 +189,13 @@ Estimator::Estimator(const Json::Value &cfg)
   // /////////////////////////////
   auto X = cfg_["X"];
   try {
-    X_.Rsb = SO3::exp(GetVectorFromJson<number_t, 3>(X, "W"));
+    X_.Rsb = SO3::exp(GetVectorFromJson<number_t, 3>(X, "Wsb"));
   } catch (const Json::LogicError &e) {
     X_.Rsb =
-        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "W", JsonMatLayout::RowMajor));
+        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wsb", JsonMatLayout::RowMajor));
   }
-  X_.Tsb = GetVectorFromJson<number_t, 3>(X, "T");
-  X_.Vsb = GetVectorFromJson<number_t, 3>(X, "V");
+  X_.Tsb = GetVectorFromJson<number_t, 3>(X, "Tsb");
+  X_.Vsb = GetVectorFromJson<number_t, 3>(X, "Vsb");
   X_.bg = GetVectorFromJson<number_t, 3>(X, "bg");
   X_.ba = GetVectorFromJson<number_t, 3>(X, "ba");
 
@@ -211,9 +215,9 @@ Estimator::Estimator(const Json::Value &cfg)
         SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wbc", JsonMatLayout::RowMajor));
   }
   X_.Tbc = GetVectorFromJson<number_t, 3>(X, "Tbc");
-  Vec3 Wg;
-  Wg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wg");
-  X_.Rg = SO3::exp(Wg);
+  Vec3 Wsg;
+  Wsg.head<2>() = GetVectorFromJson<number_t, 2>(X, "Wsg");
+  X_.Rsg = SO3::exp(Wsg);
 // temporal offset
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   X_.td = X["td"].asDouble();
@@ -230,9 +234,9 @@ Estimator::Estimator(const Json::Value &cfg)
 
   auto P = cfg_["P"];
   P_.setIdentity(kFullSize, kFullSize);
-  P_.block<3, 3>(Index::W, Index::W) *= P["W"].asDouble();
-  P_.block<3, 3>(Index::T, Index::T) *= P["T"].asDouble();
-  P_.block<3, 3>(Index::V, Index::V) *= P["V"].asDouble();
+  P_.block<3, 3>(Index::Wsb, Index::Wsb) *= P["Wsb"].asDouble();
+  P_.block<3, 3>(Index::Tsb, Index::Tsb) *= P["Tsb"].asDouble();
+  P_.block<3, 3>(Index::Vsb, Index::Vsb) *= P["Vsb"].asDouble();
   P_.block<3, 3>(Index::bg, Index::bg) *= P["bg"].asDouble();
   P_.block<3, 3>(Index::ba, Index::ba) *= P["ba"].asDouble();
   P_.block<3, 3>(Index::Wbc, Index::Wbc) *= P["Wbc"].asDouble();
@@ -242,7 +246,7 @@ Estimator::Estimator(const Json::Value &cfg)
     auto Cov = GetVectorFromJson<number_t, 3>(P, "Tbc");
     P_.block<3, 3>(Index::Tbc, Index::Tbc) *= Cov.asDiagonal();
   }
-  P_.block<2, 2>(Index::Wg, Index::Wg) *= P["Wg"].asDouble();
+  P_.block<2, 2>(Index::Wsg, Index::Wsg) *= P["Wsg"].asDouble();
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   P_(Index::td, Index::td) *= P["td"].asDouble();
 #endif
@@ -285,9 +289,9 @@ Estimator::Estimator(const Json::Value &cfg)
 
   auto Qmodel = cfg_["Qmodel"];
   Qmodel_.setZero(kMotionSize, kMotionSize);
-  Qmodel_.block<3, 3>(Index::W, Index::W) = I3 * Qmodel["W"].asDouble();
+  Qmodel_.block<3, 3>(Index::Wsb, Index::Wsb) = I3 * Qmodel["Wsb"].asDouble();
   Qmodel_.block<3, 3>(Index::Wbc, Index::Wbc) = I3 * Qmodel["Wbc"].asDouble();
-  Qmodel_.block<2, 2>(Index::Wg, Index::Wg) = I2 * Qmodel["Wg"].asDouble();
+  Qmodel_.block<2, 2>(Index::Wsg, Index::Wsg) = I2 * Qmodel["Wsg"].asDouble();
   Qmodel_.block<kMotionSize, kMotionSize>(0, 0) *=
       Qmodel_.block<kMotionSize, kMotionSize>(0, 0);
   LOG(INFO) << "Covariance of process noises loaded";
@@ -420,17 +424,17 @@ bool Estimator::InitializeGravity() {
     // so accel = Rg * (-g_)
     Eigen::AngleAxis<number_t> AAg(
         Eigen::Quaternion<number_t>::FromTwoVectors(-g_, accel_calib));
-    Vec3 Wg(AAg.axis() * AAg.angle());
-    Wg(2) = 0;
-    X_.Rg = SO3::exp(Wg);
+    Vec3 Wsg(AAg.axis() * AAg.angle());
+    Wsg(2) = 0;
+    X_.Rsg = SO3::exp(Wsg);
 
-    LOG(INFO) << "===== Wg initialization =====";
+    LOG(INFO) << "===== Wsg initialization =====";
     LOG(INFO) << "stationary accel samples=" << gravity_init_buf_.size();
     LOG(INFO) << "accel " << accel_calib.transpose();
-    LOG(INFO) << "Wg=" << Wg.transpose();
+    LOG(INFO) << "Wsg=" << Wsg.transpose();
     LOG(INFO) << "g=" << g_.transpose();
     LOG(INFO) << "The norm below should be small";
-    LOG(INFO) << "|Rsb*a+Rg*g|=" << (X_.Rsb * accel_calib + X_.Rg * g_).norm();
+    LOG(INFO) << "|Rsb*a+Rg*g|=" << (X_.Rsb * accel_calib + X_.Rsg * g_).norm();
   }
   return true;
 }
@@ -445,7 +449,7 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
   Vec3 gyro_new;
   Vec3 accel_new;
 
-  Vec3 grav_s = X_.Rg * g_;
+  Vec3 grav_s = X_.Rsg * g_;
   Vec3 grav_b = X_.Rsb.inv() * grav_s;
 
   if (clamp_signals_) {
@@ -476,11 +480,11 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
     if (InitializeGravity()) {
       // lock 4DoF gauge freedom
       for (int i = 0; i < 3; ++i) {
-        P_(Index::T + i, Index::T + i) = eps;
+        P_(Index::Tsb + i, Index::Tsb + i) = eps;
       }
-      P_(Index::W + 0, Index::W + 0) = eps;
-      P_(Index::W + 1, Index::W + 1) = eps;
-      P_(Index::W + 2, Index::W + 2) = eps;
+      P_(Index::Wsb + 0, Index::Wsb + 0) = eps;
+      P_(Index::Wsb + 1, Index::Wsb + 1) = eps;
+      P_(Index::Wsb + 2, Index::Wsb + 2) = eps;
 
       curr_imu_time_ = last_time_ = ts;
 
@@ -576,7 +580,7 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
 
   // integrate the nominal state
   X.Tsb += V * dt; //+ 0.5 * a * dt * dt;
-  X.Vsb += (X.Rsb * accel_calib + X.Rg * g_) * dt;
+  X.Vsb += (X.Rsb * accel_calib + X.Rsg * g_) * dt;
   X.Rsb *= SO3::exp(gyro_calib * dt);
 
   X.Rsb = SO3::project(X.Rsb.matrix());
@@ -592,51 +596,51 @@ void Estimator::ComputeMotionJacobianAt(
   Vec3 accel_calib = imu_.Ca() * accel - X.ba; // \hat\alpha in the doc
 
   // jacobian w.r.t. error state
-  Mat3 R = X.Rsb.matrix();
+  Mat3 Rsb = X.Rsb.matrix();
 
-  Eigen::Matrix<number_t, 3, 9> dW_dCg;
+  Eigen::Matrix<number_t, 3, 9> dWsb_dCg;
   for (int i = 0; i < 3; ++i) {
     // NOTE: use the raw measurement (gyro) here. NOT the calibrated one
     // (gyro_calib)!!!
-    dW_dCg.block<1, 3>(i, 3 * i) = gyro;
+    dWsb_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
   Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(R); // fm: full matrix
+  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(Rsb); // fm: full matrix
   Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
   Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
-  Mat3 dW_dW = -hat(gyro_calib);
+  Mat3 dWsb_dWsb = -hat(gyro_calib);
   // static Mat3 dW_dbg = -I3;
 
   // static Mat3 dT_dV = I3;
 
-  Mat3 dV_dW = -R * hat(accel_calib);
-  Mat3 dV_dba = -R;
+  Mat3 dV_dWsb = -Rsb * hat(accel_calib);
+  Mat3 dV_dba = -Rsb;
 
-  Mat3 dV_dWg = -R * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
+  Mat3 dV_dWsg = -Rsb * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
 
   for (int j = 0; j < 3; ++j) {
-    F_.coeffRef(Index::W + j, Index::bg + j) = -1;  // dW_dbg
-    F_.coeffRef(Index::T + j, Index::V + j) = 1;  // dT_dV
+    F_.coeffRef(Index::Wsb + j, Index::bg + j) = -1;  // dW_dbg
+    F_.coeffRef(Index::Tsb + j, Index::Vsb + j) = 1;  // dT_dV
 
     for (int i = 0; i < 3; ++i) {
       // W
-      F_.coeffRef(Index::W + i, Index::W + j) = dW_dW(i, j);
+      F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dWsb(i, j);
       // F_.coeffRef(Index::W + i, Index::bg + j) = dW_dbg(i, j);
       // T
       // F_.coeffRef(Index::T + i, Index::V + j) = dT_dV(i, j);
 
       // V
-      F_.coeffRef(Index::V + i, Index::W + j) = dV_dW(i, j);
-      F_.coeffRef(Index::V + i, Index::ba + j) = dV_dba(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::Wsb + j) = dV_dWsb(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::ba + j) = dV_dba(i, j);
 
       if (j < 2) {
         // NOTE: Wg is 2-dim, i.e., NO z-component
-        F_.coeffRef(Index::V + i, Index::Wg + j) = dV_dWg(i, j);
+        F_.coeffRef(Index::Vsb + i, Index::Wsg + j) = dV_dWsg(i, j);
       }
     }
   }
@@ -644,12 +648,12 @@ void Estimator::ComputeMotionJacobianAt(
 #ifdef USE_ONLINE_IMU_CALIB
   for (int j = 0; j < 9; ++j) {
     for (int i = 0 ; i < 3; ++i) {
-      F_.coeffRef(Index::W + i, Index::Cg + j) = dW_dCg(i, j);
+      F_.coeffRef(Index::Wsb + i, Index::Cg + j) = dWsb_dCg(i, j);
     }
   }
   for (int j = 0; j < 6; ++j) {
     for (int i = 0; i < 3; ++i) {
-      F_.coeffRef(Index::V + i, Index::Ca + j) = dV_dCa(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::Ca + j) = dV_dCa(i, j);
     }
   }
 #endif
@@ -663,12 +667,12 @@ void Estimator::ComputeMotionJacobianAt(
   G_.setZero();
   for (int j = 0; j < 3; ++j) {
 
-    G_.coeffRef(Index::W + j, j) = -1;  // dW_dng
+    G_.coeffRef(Index::Wsb + j, j) = -1;  // dWsb_dng
     G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
     G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
 
     for (int i = 0; i < 3; ++i) {
-      G_.coeffRef(Index::V + i, 3 + j) = -R(i, j);  // dV_dna
+      G_.coeffRef(Index::Vsb + i, 3 + j) = -Rsb(i, j);  // dV_dna
     }
   }
 }
@@ -818,11 +822,11 @@ void Estimator::AddFeatureToState(FeaturePtr f) {
 void Estimator::PrintErrorStateNorm() {
   VLOG(0) << StrFormat(
       "|Wsb|=%0.8f, |Tsb|=%0.8f, |Vsb|=%0.8f, "
-      "|bg|=%0.8f, |ba|=%0.8f, |Wbc|=%0.8f, |Tbc|=%0.8f, |Wg|=%0.8f\n",
+      "|bg|=%0.8f, |ba|=%0.8f, |Wbc|=%0.8f, |Tbc|=%0.8f, |Wsg|=%0.8f\n",
       err_.segment<3>(Index::Wsb).norm(), err_.segment<3>(Index::Tsb).norm(),
       err_.segment<3>(Index::Vsb).norm(), err_.segment<3>(Index::bg).norm(),
       err_.segment<3>(Index::ba).norm(), err_.segment<3>(Index::Wbc).norm(),
-      err_.segment<3>(Index::Tbc).norm(), err_.segment<2>(Index::Wg).norm());
+      err_.segment<3>(Index::Tbc).norm(), err_.segment<2>(Index::Wsg).norm());
   for (auto g : instate_groups_) {
 #ifndef NDEBUG
     CHECK(gsel_[g->sind()]) << "instate group not actually instate";
@@ -929,6 +933,25 @@ void Estimator::VisualMeas(const timestamp_t &ts_raw, const cv::Mat &img) {
   }
 }
 
+void Estimator::VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &img) {
+  timestamp_t ts{ts_raw};
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+  if (X_.td >= 0) {
+    ts += timestamp_t(uint64_t(X_.td * 1e9)); // seconds -> nanoseconds
+  } else {
+    ts -= timestamp_t(uint64_t(-X_.td * 1e9)); // seconds -> nanoseconds
+  }
+#endif
+  if (async_run_) {
+    std::scoped_lock lck(buf_.mtx);
+    buf_.push_back(std::make_unique<internal::VisualTrackerOnly>(ts, img));
+    MaintainBuffer();
+  } else {
+    buf_.push_back(std::make_unique<internal::VisualTrackerOnly>(ts, img));
+    MaintainBuffer();
+  }
+}
+
 void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
                              const Vec3 &accel) {
   if (async_run_) {
@@ -939,6 +962,61 @@ void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
     buf_.push_back(std::make_unique<internal::Inertial>(ts, gyro, accel));
     MaintainBuffer();
   }
+}
+
+
+void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::Mat &img) {
+  if (!GoodTimestamp(ts))
+    return;
+
+  if (simulation_) {
+    throw std::invalid_argument(
+        "function VisualMeas cannot be called in simulation");
+  }
+
+  ++vision_counter_;
+  timer_.Tick("visual-meas-tracker-only");
+  UpdateSystemClock(ts);
+
+  if (use_canvas_) {
+    Canvas::instance()->Update(img);
+  }
+  // measurement prediction for feature tracking
+  auto tracker = Tracker::instance();
+
+  // track features
+  timer_.Tick("track");
+  tracker->Update(img);
+  timer_.Tock("track");
+  // process features
+  timer_.Tick("process-tracks");
+
+  if (use_canvas_) {
+    for (auto f : tracker->features_)
+      Canvas::instance()->Draw(f);
+  }
+
+  for (auto f : tracker->features_) {
+    if (f->track_status() == TrackStatus::REJECTED || f->track_status() == TrackStatus::DROPPED) {
+          Feature::Destroy(f);
+    }
+  }
+
+  static int print_counter{0};
+  if (print_timing_ && ++print_counter % 50 == 0) {
+    std::cout << print_counter << std::endl;
+    std::cout << timer_;
+  }
+
+  // Save the frame (only if set to true in json file)
+  Canvas::instance()->SaveFrame();
+
+  timer_.Tock("process-tracks");
+
+  if (gauge_group_ == -1) {
+    SwitchRefGroup();
+  }
+  timer_.Tock("visual-meas-tracker-only");
 }
 
 void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
@@ -977,6 +1055,32 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     }
   }
   timer_.Tock("visual-meas");
+}
+
+std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
+
+  auto tracker = Tracker::instance();
+
+  // store tracked feature information
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
+
+  for (auto f : tracker->features_)
+  {
+    int id = f->id();
+    cv::KeyPoint kp = f->keypoint();
+    cv::Mat descriptor = f->descriptor();
+
+    // Convert from cv::Mat to matrix
+    MatXf descriptor_eigen;
+    cv2eigen(descriptor, descriptor_eigen);
+
+    // Convert cv::Keypoint to vector
+    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+
+    tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
+  }
+
+  return tracked_features_info;
 }
 
 void Estimator::Predict(std::list<FeaturePtr> &features) {
@@ -1259,7 +1363,7 @@ MatX3 Estimator::InstateFeaturePositions(int n_output) const {
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by uncertainty 
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) -> bool {
               return FeatureCovComparison(f1, f2);
@@ -1293,7 +1397,7 @@ MatX3 Estimator::InstateFeatureXc(int n_output) const {
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by uncertainty 
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) {
               return FeatureCovComparison(f1, f2);
@@ -1326,7 +1430,7 @@ MatX6 Estimator::InstateFeatureCovs(int n_output) const {
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by uncertainty 
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) {
               return FeatureCovComparison(f1, f2);
@@ -1365,7 +1469,7 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
   MakePtrVectorUnique(instate_features);
   npts = std::min((int) instate_features.size(), max_output);
 
-  // Sort features by uncertainty so we grab the "best" features 
+  // Sort features by uncertainty so we grab the "best" features
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) {
               return FeatureCovComparison(f1, f2);

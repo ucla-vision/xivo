@@ -538,8 +538,8 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   Mat3 Rsb_t = Rsb.transpose();
   Mat3 Rbc_t = Rbc.transpose();
 
-  Mat3 Rr = ref_->Rsb();
-  Vec3 Tr = ref_->Tsb();
+  Mat3 Rsbr = ref_->Rsb();
+  Vec3 Tsbr = ref_->Tsb();
 
   cache_.Xc = Xc(&cache_.dXc_dx);
 
@@ -549,28 +549,28 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   Vec3 Tsb_err = error_state.segment<3>(Index::Tsb);
   Vec3 Wbc_err = error_state.segment<3>(Index::Wbc);
   Vec3 Tbc_err = error_state.segment<3>(Index::Tbc);
-  Vec3 Wr_err  = error_state.segment<3>(offset);
-  Vec3 Tr_err  = error_state.segment<3>(offset+3);
+  Vec3 Wsbr_err  = error_state.segment<3>(offset);
+  Vec3 Tsbr_err  = error_state.segment<3>(offset+3);
 
   // Get derivatives of error state matrix exponentials w.r.t vector.
-  Mat93 dR_dWsb_err, dR_dWbc_err, dR_dWr_err;
-  Mat3 R_Wsb_err = rodrigues(Wsb_err, &dR_dWsb_err);
-  Mat3 R_Wbc_err = rodrigues(Wbc_err, &dR_dWbc_err);
-  Mat3 R_Wr_err  = rodrigues(Wr_err, &dR_dWr_err);
+  Mat93 dRsb_dWsb_err, dRbc_dWbc_err, dRsbr_dWsbr_err;
+  Mat3 Rsb_Wsb_err = rodrigues(Wsb_err, &dRsb_dWsb_err);
+  Mat3 Rbc_Wbc_err = rodrigues(Wbc_err, &dRbc_dWbc_err);
+  Mat3 Rsb_Wsbr_err  = rodrigues(Wsbr_err, &dRsbr_dWsbr_err);
 
   // Xc(ref) to Xs
-  cache_.Xs = Rr * Rbc * cache_.Xc + Rr * Tbc + Tr;
-  cache_.dXs_dx = Rr * Rbc * cache_.dXc_dx;
-  cache_.dXs_dTbc = Rr;
-  cache_.dXs_dTr = Mat3::Identity();
+  cache_.Xs = Rsbr * Rbc * cache_.Xc + Rsbr * Tbc + Tsbr;
+  cache_.dXs_dx = Rsbr * Rbc * cache_.dXc_dx;
+  cache_.dXs_dTbc = Rsbr;
+  cache_.dXs_dTsbr = Mat3::Identity();
   for (int i=0; i<3; i++) {
-    Mat3 dR_dWr_err_i  = unstack(dR_dWr_err.block<9,1>(0,i));
-    Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
+    Mat3 dRsbr_dWsbr_err_i  = unstack(dRsbr_dWsbr_err.block<9,1>(0,i));
+    Mat3 dRbc_dWbc_err_i = unstack(dRbc_dWbc_err.block<9,1>(0,i));
     // Compute derivatives
-    Vec3 dXs_dWri = Rr * dR_dWr_err_i * (Rbc * cache_.Xc + Tbc);
-    Vec3 dXs_dWbci = Rr * Rbc * dR_dWbc_err_i * cache_.Xc;
+    Vec3 dXs_dWsbri = Rsbr * dRsbr_dWsbr_err_i * (Rbc * cache_.Xc + Tbc);
+    Vec3 dXs_dWbci = Rsbr * Rbc * dRbc_dWbc_err_i * cache_.Xc;
     // Fill in columns in cache_
-    cache_.dXs_dWr.block<3,1>(0,i) = dXs_dWri;
+    cache_.dXs_dWsbr.block<3,1>(0,i) = dXs_dWsbri;
     cache_.dXs_dWbc.block<3,1>(0,i) = dXs_dWbci;
   }
 
@@ -582,23 +582,23 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   cache_.dXcn_dTbc = -Rbc_t + (cache_.dXcn_dXs * cache_.dXs_dTbc);
   for (int i=0; i<3; i++) {
     // Reshape columns of output of rodrigues()
-    Mat3 dR_dWbc_err_i = unstack(dR_dWbc_err.block<9,1>(0,i));
-    Mat3 dR_dWsb_err_i = unstack(dR_dWsb_err.block<9,1>(0,i));
-    Mat3 dR_dWbc_err_i_t = dR_dWbc_err_i.transpose();
-    Mat3 dR_dWsb_err_i_t = dR_dWsb_err_i.transpose();
+    Mat3 dRbc_dWbc_err_i = unstack(dRbc_dWbc_err.block<9,1>(0,i));
+    Mat3 dRsb_dWsb_err_i = unstack(dRsb_dWsb_err.block<9,1>(0,i));
+    Mat3 dRbc_dWbc_err_i_t = dRbc_dWbc_err_i.transpose();
+    Mat3 dRsb_dWsb_err_i_t = dRsb_dWsb_err_i.transpose();
     // Compute derivatives
-    Vec3 dXcn_dWsb_err_i = Rbc_t * dR_dWsb_err_i_t * Rsb_t * (cache_.Xs - Tsb);
-    Vec3 dXcn_dWbc_err_i = (dR_dWbc_err_i_t * Rbc_t * Rsb_t * cache_.Xs)
-      + (R_Wbc_err.transpose() * Rbc_t * Rsb_t * cache_.dXs_dWbc.block<3,1>(0,i))
-      - (dR_dWbc_err_i_t * Rbc_t * (Rsb_t*Tsb + Tbc));
+    Vec3 dXcn_dWsb_err_i = Rbc_t * dRsb_dWsb_err_i_t * Rsb_t * (cache_.Xs - Tsb);
+    Vec3 dXcn_dWbc_err_i = (dRbc_dWbc_err_i_t * Rbc_t * Rsb_t * cache_.Xs)
+      + (Rbc_Wbc_err.transpose() * Rbc_t * Rsb_t * cache_.dXs_dWbc.block<3,1>(0,i))
+      - (dRbc_dWbc_err_i_t * Rbc_t * (Rsb_t*Tsb + Tbc));
     // Fill in columns in cache_
     cache_.dXcn_dWsb.block<3,1>(0,i) = dXcn_dWsb_err_i;
     cache_.dXcn_dWbc.block<3,1>(0,i) = dXcn_dWbc_err_i;
   }
 
   cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dx;
-  cache_.dXcn_dWr = cache_.dXcn_dXs * cache_.dXs_dWr;
-  cache_.dXcn_dTr = cache_.dXcn_dXs * cache_.dXs_dTr;
+  cache_.dXcn_dWsbr = cache_.dXcn_dXs * cache_.dXs_dWsbr;
+  cache_.dXcn_dTsbr = cache_.dXcn_dXs * cache_.dXs_dTsbr;
 
 
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -652,8 +652,8 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   int goff = kGroupBegin + 6 * ref_->sind();
   int foff = kFeatureBegin + 3 * sind();
 
-  J_.block<2, 3>(0, goff) = cache_.dxp_dXcn * cache_.dXcn_dWr;
-  J_.block<2, 3>(0, goff + 3) = cache_.dxp_dXcn * cache_.dXcn_dTr;
+  J_.block<2, 3>(0, goff) = cache_.dxp_dXcn * cache_.dXcn_dWsbr;
+  J_.block<2, 3>(0, goff + 3) = cache_.dxp_dXcn * cache_.dXcn_dTsbr;
   J_.block<2, 3>(0, foff) = cache_.dxp_dXcn * cache_.dXcn_dx;
 
 #ifdef USE_ONLINE_CAMERA_CALIB
