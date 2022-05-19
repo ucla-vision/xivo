@@ -11,7 +11,7 @@ project(estimator)
 
 # if set, perform online temporal calibration
 #add_definitions(-DUSE_ONLINE_IMU_CALIB)
-#add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
+add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
 #add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 
 # if set, enables the mapper object (and loop closure)
