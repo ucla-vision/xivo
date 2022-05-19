@@ -81,7 +81,7 @@ void Canvas::Draw(const FeaturePtr f) {
   }
 
   bool use_debug_view{ParameterServer::instance()->get("use_debug_view", false).asBool()};
-  bool draw_OOS{ParameterServer::instance()->get("draw_OOS", false).asBool()};
+  bool draw_OOS{ParameterServer::instance()->get("draw_OOS", true).asBool()};
 
   auto pos(f->xp());
   cv::Scalar color;

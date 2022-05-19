@@ -39,12 +39,12 @@ public:
 
   /** Marks that feature `f` was visible at group `g`. Function is called
    * when a feature is first detected by the tracker, and whenever it continues
-   * to be tracked by the `Tracker`. 
+   * to be tracked by the `Tracker`.
    */
   void AddGroupToFeature(GroupPtr g, FeaturePtr f);
   /** Marks that feature `f` was visible at group `g`. Function is called
    * when a feature is first detected by the tracker, and whenever it continues
-   * to be tracked by the `Tracker`. 
+   * to be tracked by the `Tracker`.
    */
   void AddFeatureToGroup(FeaturePtr f, GroupPtr g);
 
@@ -80,14 +80,14 @@ public:
   */
   void SanityCheck();
 
-  /** Removes (and deletes) all groups that have no adjacent features. 
+  /** Removes (and deletes) all groups that have no adjacent features.
    * (Function not actually used.)
   */
   void CleanIsolatedGroups();
   /** Removes (and deletes all features) that have no observations in
    * `feature_adj_`.
    * (Function not actualy used.)
-   */ 
+   */
   void CleanIsolatedFeatures();
   /** Calls `CleanIsolatedGroups()` and `CleanIsolatedFeatures()`.
    * (Function not actually used.)

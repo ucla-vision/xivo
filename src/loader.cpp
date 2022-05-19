@@ -58,6 +58,30 @@ DataLoader::DataLoader(const std::string &image_dir,
             [](const auto &e1, const auto &e2) { return e1->ts_ < e2->ts_; });
 }
 
+DataLoader::DataLoader(const std::string &image_dir) {
+
+  // load image data entries
+  std::string image_data = image_dir + "/data.csv";
+  if (std::ifstream is{image_data}) {
+    std::string line;
+    std::getline(is, line); // get rid of the header
+    while (is >> line) {
+      if (line.front() != '#') {
+        std::vector<std::string> content = StrSplit(line, ',');
+        auto ts{timestamp_t(std::stoll(content[0]))};
+        std::string image_path = image_dir + "/data/" + content[1];
+        entries_.emplace_back(std::make_unique<msg::Image>(ts, image_path));
+      }
+    }
+  } else {
+    LOG(FATAL) << "failed to open image csv @ " << image_data;
+  }
+
+  // ascend timestamps
+  std::sort(entries_.begin(), entries_.end(),
+            [](const auto &e1, const auto &e2) { return e1->ts_ < e2->ts_; });
+}
+
 std::vector<msg::Pose>
 DataLoader::LoadGroundTruthState(const std::string &state_dir) {
   std::string state_data = state_dir + "/data.csv";

@@ -1,11 +1,10 @@
 import argparse
-import os, glob
+import os, glob, json, re
 
 import sys
 sys.path.insert(0, 'lib')
 import pyxivo
 import savers
-
 
 
 parser = argparse.ArgumentParser()
@@ -19,15 +18,12 @@ parser.add_argument("-seq", default="room1",
     help="short tag for sequence name")
 parser.add_argument("-cam_id", default=0, type=int,
     help="camera from stereo camera pair (only used for tumvi dataset)")
-parser.add_argument('-cfg', default='cfg/tumvi_cam0.json',
+parser.add_argument('-cfg', default='cfg/tumvi_tracker_only_cam0.json',
     help='path to the estimator configuration')
 parser.add_argument('-use_viewer', default=False, action='store_true',
     help='visualize trajectory and feature tracks if set')
-parser.add_argument('-mode', default='eval',
-    help='[eval|dump|dumpCov|runOnly] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
-parser.add_argument(
-    '-save_full_cov', default=False, action='store_true',
-    help='save the entire covariance matrix, not just that of the motion state, if set')
+parser.add_argument('-mode', default='dumpTracker',
+    help='[eval|dump|dumpCov|runOnly|dumpTracker] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
 
 
 def main(args):
@@ -37,37 +33,20 @@ def main(args):
     ########################################
     # CHOOSE SAVERS
     ########################################
-    if args.mode == 'eval':
+    if args.mode == 'dumpTracker':
         if args.dataset == 'tumvi':
-            saver = savers.TUMVIEvalModeSaver(args)
-        elif args.dataset == 'cosyvio':
-            saver = savers.COSYVIOEvalModeSaver(args)
-        elif args.dataset == 'xivo':
-            saver = savers.XIVOEvalModeSaver(args)
-        elif args.dataset == 'carla':
-            saver = savers.CarlaEvalModeSaver(args)
-    elif args.mode == 'dump':
-        if args.dataset == 'tumvi':
-            saver = savers.TUMVIDumpModeSaver(args)
-        elif args.dataset == 'cosyvio':
-            saver = savers.COSYVIODumpModeSaver(args)
-        elif args.dataset == 'xivo':
-            saver = savers.XIVODumpModeSaver(args)
-        elif args.dataset == 'carla':
-            saver = savers.CarlaDumpModeSaver(args)
-    elif args.mode == 'dumpCov':
-        if args.dataset == 'tumvi':
-            saver = savers.TUMVICovDumpModeSaver(args)
+            saver = savers.TUMVITrackerDumpModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIOCovDumpModeSaver(args)
         elif args.dataset == 'xivo':
-            saver = savers.XIVOCovDumpModeSaver(args)
+            saver = savers.XIVOTrackerDumpModeSaver(args)
         elif args.dataset == 'carla':
-            saver = savers.CarlaCovDumpModeSaver(args)
+            saver = savers.CarlaTrackerDumpModeSaver(args)
+
     elif args.mode == 'runOnly':
         pass
     else:
-        raise ValueError('mode=[eval|dump|dumpCov|runOnly]')
+        raise ValueError('mode=[eval|dump|dumpCov|runOnly|dumpTracker]')
 
     ########################################
     # LOAD DATA
@@ -75,15 +54,10 @@ def main(args):
     if args.dataset == 'tumvi':
         img_dir = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
                                'mav0', 'cam{}'.format(args.cam_id), 'data')
-
-        imu_path = os.path.join(args.root, 'dataset-{}_512_16'.format(args.seq),
-                                'mav0', 'imu0', 'data.csv')
     elif args.dataset == 'cosyvio':
         img_dir = os.path.join(args.root, 'data', args.sen, args.seq, 'frames')
-        imu_path = os.path.join(args.root, 'data', args.sen, args.seq, 'data.csv')
     elif args.dataset in ['xivo', 'carla']:
         img_dir = os.path.join(args.root, args.seq, 'cam0', 'data')
-        imu_path = os.path.join(args.root, args.seq, 'imu0', 'data.csv')
     else:
         raise ValueError('unknown dataset argument; choose from tumvi, xivo, cosyvio, carla')
 
@@ -103,16 +77,20 @@ def main(args):
                     png_file = os.path.join(img_dir, larr[1])
                     data.append((ts,png_file))
 
-    with open(imu_path, 'r') as fid:
-        for l in fid.readlines():
-            if l[0].isdigit():
-                v = l.strip().split(',')
-                ts = int(v[0])
-                w = [float(x) for x in v[1:4]]
-                t = [float(x) for x in v[4:]]
-                data.append((ts, (w, t)))
-
     data.sort(key=lambda tup: tup[0])
+
+    # Open the file and remove all comments 
+    json_file = open(args.cfg)
+    json_string = ''.join(re.sub('//.*','',line) for line in json_file)
+        
+    # Parse as json object
+    json_data = json.loads(json_string)
+
+    # Store the descriptor type
+    descriptor_type = json_data['tracker_cfg']['descriptor']
+    
+    # Determine the format for writing descriptor values based on descriptor type
+    descriptor_format = "%f" if descriptor_type in ["SIFT", "SURF"] else "%d"
 
     ########################################
     # INITIALIZE ESTIMATOR
@@ -120,9 +98,9 @@ def main(args):
     viewer_cfg = ''
     if args.use_viewer:
         if args.dataset == 'tumvi':
-            viewer_cfg = os.path.join('cfg', 'viewer.json')
+            viewer_cfg = os.path.join('cfg', 'viewer_tracker_only.json')
         elif args.dataset == 'xivo':
-            viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
+            viewer_cfg = os.path.join('cfg', 'phab_viewer_tracker_only.json')
         elif args.dataset == 'cosyvio':
             if args.sen == 'tango_top':
                 viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
@@ -137,21 +115,14 @@ def main(args):
     # this is wrapped in a try/finally block so that data will save even when
     # we hit an exception (namely, KeyboardInterrupt)
     try:
-        estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq, False)
+        estimator = pyxivo.Estimator(args.cfg, viewer_cfg, args.seq, True)
         for i, (ts, content) in enumerate(data):
             if i > 0 and i % 1000 == 0:
                 print('{:6}/{:6}'.format(i, len(data)))
-            if isinstance(content, tuple):
-                gyro, accel = content
-                estimator.InertialMeas(ts, gyro[0], gyro[1], gyro[2], accel[0],
-                                    accel[1], accel[2])
-            else:
-                estimator.VisualMeas(ts, content)
-                if estimator.UsingLoopClosure():
-                    estimator.CloseLoop()
-                estimator.Visualize()
-                if args.mode != 'runOnly':
-                    saver.onVisionUpdate(estimator, datum=(ts, content))
+            estimator.VisualMeasTrackerOnly(ts, content)
+            estimator.Visualize()
+            if args.mode != 'runOnly':
+                saver.onVisionUpdate(estimator, datum=(ts, content), descriptor_format=descriptor_format)
 
     finally:
         if args.mode != 'runOnly':

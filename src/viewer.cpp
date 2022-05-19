@@ -26,8 +26,9 @@ Viewer::~Viewer() {
   }
 }
 
-Viewer::Viewer(const Json::Value &cfg, const std::string &name)
+Viewer::Viewer(const Json::Value &cfg, const std::string &name, bool tracker_only)
     : window_name_{name.empty() ? "XIVO Display" : name},
+      tracker_only_{tracker_only},
       camera_state_{nullptr}, image_state_{nullptr}, texture_{nullptr},
       cfg_{cfg} {
 
@@ -48,25 +49,9 @@ Viewer::Viewer(const Json::Value &cfg, const std::string &name)
   K_ << fx_, 0, cx_, 0, fy_, cy_, 0, 0, 1;
   Kinv_ = K_.inverse();
 
-  camera_state_ = new pangolin::OpenGlRenderState();
-
-  camera_state_->SetProjectionMatrix(pangolin::ProjectionMatrixRDF_TopLeft(
-      width_, height_, fx_, fy_, cx_, cy_, znear_, zfar_));
-
-  auto modelView = cfg_["ModelViewMatrix"];
-  Vec3 upVec = GetVectorFromJson<double, 3>(modelView, "upVector");
-  camera_state_->SetModelViewMatrix(
-    pangolin::ModelViewLookAtRDF(modelView["x"].asDouble(),
-                                 modelView["y"].asDouble(),
-                                 modelView["z"].asDouble(),
-                                 0.0f, 0.0f, 0.0f,
-                                 upVec(0), upVec(1), upVec(2)));
-
   float aspect = width_ / (float)height_;
-  pangolin::View &camera_view = pangolin::Display("cam").SetAspect(aspect);
 
-  camera_view.SetHandler(new pangolin::Handler3D(*camera_state_));
-
+  // Display Video Sequence
   image_state_ = new pangolin::OpenGlRenderState(
       pangolin::ProjectionMatrix(width_, height_, fx_, fy_, cx_, cy_, znear_,
                                  zfar_),
@@ -77,16 +62,43 @@ Viewer::Viewer(const Json::Value &cfg, const std::string &name)
   image_view.SetHandler(new pangolin::Handler3D(*image_state_));
 
   // background setup
-  bg_color_[0] = cfg_["bg_color"]["r"].asFloat();
-  bg_color_[1] = cfg_["bg_color"]["g"].asFloat();
-  bg_color_[2] = cfg_["bg_color"]["b"].asFloat();
-  bg_color_[3] = cfg_["bg_color"]["a"].asFloat();
+  bg_color_[0] = cfg_["bg_color"].get("r", 0).asFloat();
+  bg_color_[1] = cfg_["bg_color"].get("g", 0).asFloat();
+  bg_color_[2] = cfg_["bg_color"].get("b", 0).asFloat();
+  bg_color_[3] = cfg_["bg_color"].get("a", 0).asFloat();
 
-  pangolin::DisplayBase()
-      .SetBounds(0, 1, 0, 1)
-      .SetLayout(pangolin::LayoutEqual)
-      .AddDisplay(camera_view)
-      .AddDisplay(image_view);
+  // Display Map + Video Sequence
+  if(!tracker_only_) {
+    camera_state_ = new pangolin::OpenGlRenderState();
+
+    camera_state_->SetProjectionMatrix(pangolin::ProjectionMatrixRDF_TopLeft(
+        width_, height_, fx_, fy_, cx_, cy_, znear_, zfar_));
+
+    auto modelView = cfg_["ModelViewMatrix"];
+    Vec3 upVec = GetVectorFromJson<double, 3>(modelView, "upVector");
+    camera_state_->SetModelViewMatrix(
+      pangolin::ModelViewLookAtRDF(modelView["x"].asDouble(),
+                                  modelView["y"].asDouble(),
+                                  modelView["z"].asDouble(),
+                                  0.0f, 0.0f, 0.0f,
+                                  upVec(0), upVec(1), upVec(2)));
+
+    pangolin::View &camera_view = pangolin::Display("cam").SetAspect(aspect);
+
+    camera_view.SetHandler(new pangolin::Handler3D(*camera_state_));
+
+    pangolin::DisplayBase()
+        .SetBounds(0, 1, 0, 1)
+        .SetLayout(pangolin::LayoutEqual)
+        .AddDisplay(camera_view)
+        .AddDisplay(image_view);
+  }
+  else {
+    pangolin::DisplayBase()
+        .SetBounds(0, 1, 0, 1)
+        .SetLayout(pangolin::LayoutEqual)
+        .AddDisplay(image_view);
+  }
 
   // NOTE: have to unset the current context from the main thread
   // otherwise segfault
@@ -98,6 +110,7 @@ Viewer::Viewer(const Json::Value &cfg, const std::string &name)
 void Viewer::Update(const cv::Mat &image) {
   if (image.empty())
     return;
+
   image_ = image.clone();
   cv::cvtColor(image_, image_, CV_RGB2BGR);
   cv::flip(image_, image_, 0);
@@ -125,43 +138,59 @@ void Viewer::Update_gbc(const SE3 &gbc) { gbc_ = gbc; }
 void Viewer::Update_gsc(const SE3 &gsc) { gsc_ = gsc; }
 
 void Viewer::Refresh() {
+
   // bind to context
   pangolin::BindToContext(window_name_);
 
-  pangolin::View &camera_view = pangolin::Display("cam");
-  camera_view.Activate(*camera_state_);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
+  if(!tracker_only_) {
 
-  // DrawGrid(half_grid_size_);
-  glColor3f(0.25f, 0.25f, 0.25f);
-  pangolin::glDraw_z0(0.2, cfg_.get("grid_size", 20).asInt());
+    pangolin::View &camera_view = pangolin::Display("cam");
+    camera_view.Activate(*camera_state_);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(bg_color_[0], bg_color_[1], bg_color_[2], bg_color_[3]);
 
-  // draw axis for body frame
-  pangolin::glDrawAxis(gsb_.matrix(), 0.2);
+    // DrawGrid(half_grid_size_);
+    glColor3f(0.25f, 0.25f, 0.25f);
+    pangolin::glDraw_z0(0.2, cfg_.get("grid_size", 20).asInt());
 
-  // draw trace
-  glColor3f(kYellow(0), kYellow(1), kYellow(2));
+    // draw axis for body frame
+    pangolin::glDrawAxis(gsb_.matrix(), 0.2);
 
-  if (cfg_.get("draw_trace_as_dots", false).asBool()) {
-    pangolin::glDrawVertices(trace_, GL_POINTS); // as points
+    // draw trace
+    glColor3f(kYellow(0), kYellow(1), kYellow(2));
+
+    if (cfg_.get("draw_trace_as_dots", false).asBool()) {
+      pangolin::glDrawVertices(trace_, GL_POINTS); // as points
+    } else {
+      pangolin::glDrawVertices(trace_, GL_LINE_STRIP); // as line strips
+    }
+
+    // draw frustrum for camera frame
+    glColor3f(kGreen(0), kGreen(1), kGreen(2));
+    pangolin::glDrawFrustum(Kinv_, width_, height_, gsc_.matrix4x4(), 0.2);
+
+     // tracker view
+    if (texture_) {
+      pangolin::View &image_view = pangolin::Display("image");
+
+      camera_view.Activate(*image_state_);
+
+      image_view.Activate();
+      glColor3f(1.0, 1.0, 1.0);
+      texture_->RenderToViewport();
+    }
   } else {
-    pangolin::glDrawVertices(trace_, GL_LINE_STRIP); // as line strips
+
+    // tracker view
+    if (texture_) {
+      pangolin::View &image_view = pangolin::Display("image");
+
+      image_view.Activate();
+      glColor3f(1.0, 1.0, 1.0);
+      texture_->RenderToViewport();
+    }
   }
 
-  // draw frustrum for camera frame
-  glColor3f(kGreen(0), kGreen(1), kGreen(2));
-  pangolin::glDrawFrustum(Kinv_, width_, height_, gsc_.matrix4x4(), 0.2);
-
-  // tracker view
-  if (texture_) {
-    pangolin::View &image_view = pangolin::Display("image");
-    camera_view.Activate(*image_state_);
-
-    image_view.Activate();
-    glColor3f(1.0, 1.0, 1.0);
-    texture_->RenderToViewport();
-  }
   pangolin::FinishFrame();
   // unbind context
   pangolin::GetBoundWindow()->RemoveCurrent();
