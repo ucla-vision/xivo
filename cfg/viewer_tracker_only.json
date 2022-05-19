@@ -1,0 +1,17 @@
+{
+  "window": {
+    "height": 512,
+    "width": 512
+  },
+
+  "viewport": {
+    "width": 512,
+    "height": 512,
+    "fx": 800,
+    "fy": 800,
+    "cx": 256,
+    "cy": 256,
+    "znear": 0.1,
+    "zfar": 10
+  }
+}

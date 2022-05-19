@@ -33,6 +33,7 @@ namespace xivo {
 class Estimator;
 using EstimatorPtr = Estimator*;
 EstimatorPtr CreateSystem(const Json::Value &cfg);
+EstimatorPtr CreateSystemTrackerOnly(const Json::Value &cfg);
 
 
 namespace internal {
@@ -56,6 +57,15 @@ private:
   cv::Mat img_;
 };
 
+class VisualTrackerOnly : public Message {
+public:
+  VisualTrackerOnly(const timestamp_t &ts, const cv::Mat &img) : Message{ts}, img_{img} {}
+  void Execute(EstimatorPtr est);
+
+private:
+  cv::Mat img_;
+};
+
 class Inertial : public Message {
 public:
   Inertial(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel)
@@ -71,6 +81,7 @@ private:
 
 class Estimator : public Component<Estimator, State> {
   friend class internal::Visual;
+  friend class internal::VisualTrackerOnly;
   friend class internal::Inertial;
 
 public:
@@ -87,6 +98,8 @@ public:
   void InertialMeas(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel);
   // perform tracking/matching to generate tracks
   void VisualMeas(const timestamp_t &ts, const cv::Mat &img);
+  // perform tracking/matching for feature tracker only application
+  void VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &img);
 
   /** Loop Closure Measurement Update - older features, newer group. */
   void CloseLoop();
@@ -147,6 +160,10 @@ public:
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
+  // returns vector to information about tracked features per instance
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features();
+
+  
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }
 
@@ -158,6 +175,10 @@ private:
   /** Top-level function for state prediction and update when an image
    *  packet arrives */
   void VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img);
+
+  /** Top-level function for update when an image packet arrives for
+   * feature tracker*/
+  void VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::Mat &img);
 
   // initialize gravity with initial stationary samples
   bool InitializeGravity();
@@ -340,7 +361,7 @@ private:
   MatX P0_;
   /** Filter motion covariance. Size is `kMotionSize` x `kMotionSize` */
   MatX Qmodel_;
-  /** 
+  /**
    * Filter IMU measurement covaraince, made up of four 3x3 blocks for a total
    * dimention of 12 x 12. The four blocks correspond to the gyro,
    * accelerometer, gyro bias, and accelerometer bias, measurements,
@@ -429,6 +450,14 @@ private:
    *  overlap). */
   Timer timer_;
   std::unique_ptr<std::default_random_engine> rng_;
+
+  /** store tracked feature information -
+   * id
+   * keypoint
+   * descriptor
+  */
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_;
+
 };
 
 } // xivo

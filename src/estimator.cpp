@@ -17,6 +17,8 @@
 #include "helpers.h"
 #include "mapper.h"
 
+#include <opencv2/core/eigen.hpp>
+
 #ifdef USE_G2O
 #include "optimizer.h"
 #endif
@@ -57,6 +59,8 @@ void Inertial::Execute(Estimator *est) {
 }
 
 void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
+
+void VisualTrackerOnly::Execute(Estimator *est) { est->VisualMeasInternalTrackerOnly(ts_, img_); }
 } // namespace internal
 
 // destructor
@@ -929,6 +933,25 @@ void Estimator::VisualMeas(const timestamp_t &ts_raw, const cv::Mat &img) {
   }
 }
 
+void Estimator::VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &img) {
+  timestamp_t ts{ts_raw};
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+  if (X_.td >= 0) {
+    ts += timestamp_t(uint64_t(X_.td * 1e9)); // seconds -> nanoseconds
+  } else {
+    ts -= timestamp_t(uint64_t(-X_.td * 1e9)); // seconds -> nanoseconds
+  }
+#endif
+  if (async_run_) {
+    std::scoped_lock lck(buf_.mtx);
+    buf_.push_back(std::make_unique<internal::VisualTrackerOnly>(ts, img));
+    MaintainBuffer();
+  } else {
+    buf_.push_back(std::make_unique<internal::VisualTrackerOnly>(ts, img));
+    MaintainBuffer();
+  }
+}
+
 void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
                              const Vec3 &accel) {
   if (async_run_) {
@@ -939,6 +962,61 @@ void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
     buf_.push_back(std::make_unique<internal::Inertial>(ts, gyro, accel));
     MaintainBuffer();
   }
+}
+
+
+void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::Mat &img) {
+  if (!GoodTimestamp(ts))
+    return;
+
+  if (simulation_) {
+    throw std::invalid_argument(
+        "function VisualMeas cannot be called in simulation");
+  }
+
+  ++vision_counter_;
+  timer_.Tick("visual-meas-tracker-only");
+  UpdateSystemClock(ts);
+
+  if (use_canvas_) {
+    Canvas::instance()->Update(img);
+  }
+  // measurement prediction for feature tracking
+  auto tracker = Tracker::instance();
+
+  // track features
+  timer_.Tick("track");
+  tracker->Update(img);
+  timer_.Tock("track");
+  // process features
+  timer_.Tick("process-tracks");
+
+  if (use_canvas_) {
+    for (auto f : tracker->features_)
+      Canvas::instance()->Draw(f);
+  }
+
+  for (auto f : tracker->features_) {
+    if (f->track_status() == TrackStatus::REJECTED || f->track_status() == TrackStatus::DROPPED) {
+          Feature::Destroy(f);
+    }
+  }
+
+  static int print_counter{0};
+  if (print_timing_ && ++print_counter % 50 == 0) {
+    std::cout << print_counter << std::endl;
+    std::cout << timer_;
+  }
+
+  // Save the frame (only if set to true in json file)
+  Canvas::instance()->SaveFrame();
+
+  timer_.Tock("process-tracks");
+
+  if (gauge_group_ == -1) {
+    SwitchRefGroup();
+  }
+  timer_.Tock("visual-meas-tracker-only");
 }
 
 void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
@@ -976,6 +1054,32 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     }
   }
   timer_.Tock("visual-meas");
+}
+
+std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
+
+  auto tracker = Tracker::instance();
+
+  // store tracked feature information
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
+
+  for (auto f : tracker->features_)
+  {
+    int id = f->id();
+    cv::KeyPoint kp = f->keypoint();
+    cv::Mat descriptor = f->descriptor();
+
+    // Convert from cv::Mat to matrix
+    MatXf descriptor_eigen;
+    cv2eigen(descriptor, descriptor_eigen);
+
+    // Convert cv::Keypoint to vector
+    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+
+    tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
+  }
+
+  return tracked_features_info;
 }
 
 void Estimator::Predict(std::list<FeaturePtr> &features) {
@@ -1258,7 +1362,7 @@ MatX3 Estimator::InstateFeaturePositions(int n_output) const {
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by uncertainty 
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) -> bool {
               return FeatureCovComparison(f1, f2);
@@ -1292,7 +1396,7 @@ MatX3 Estimator::InstateFeatureXc(int n_output) const {
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by uncertainty 
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) {
               return FeatureCovComparison(f1, f2);
@@ -1325,7 +1429,7 @@ MatX6 Estimator::InstateFeatureCovs(int n_output) const {
   MakePtrVectorUnique(instate_features);
   int npts = std::max((int) instate_features.size(), n_output);
 
-  // Sort features by uncertainty 
+  // Sort features by uncertainty
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) {
               return FeatureCovComparison(f1, f2);
@@ -1364,7 +1468,7 @@ void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
   MakePtrVectorUnique(instate_features);
   npts = std::min((int) instate_features.size(), max_output);
 
-  // Sort features by uncertainty so we grab the "best" features 
+  // Sort features by uncertainty so we grab the "best" features
   std::sort(instate_features.begin(), instate_features.end(),
             [this](FeaturePtr f1, FeaturePtr f2) {
               return FeatureCovComparison(f1, f2);

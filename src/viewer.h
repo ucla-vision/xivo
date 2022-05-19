@@ -16,7 +16,7 @@ using XYZRGB = std::array<float, 6>;
 
 class Viewer {
 public:
-  Viewer(const Json::Value &cfg, const std::string &name = "");
+  Viewer(const Json::Value &cfg, const std::string &name = "", bool tracker_only=false);
   ~Viewer();
 
   void Update_gsb(const SE3 &gsb);
@@ -31,6 +31,7 @@ private:
   pangolin::OpenGlRenderState *image_state_;
   pangolin::GlTexture *texture_;
   Json::Value cfg_;
+  bool tracker_only_;
 
   // viewport attributes
   int height_, width_;
