@@ -16,7 +16,7 @@
   },
 
   "ModelViewMatrix": {
-    "x": 1.5,
+    "x": 5.0,
     "y": 0.2,
     "z": 0.0,
     "upVector": [ 0, 0, 1 ]

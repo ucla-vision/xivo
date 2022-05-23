@@ -24,7 +24,7 @@
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
-  "use_depth_opt": true,  // depth optimization
+  "use_depth_opt": false,  // depth optimization
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,
   "use_compression": false,  // measurement compression
@@ -52,11 +52,11 @@
   // memory
   "memory": {
     // Values if mapper is not enabled
-    "max_features": 500,
-    "max_groups": 150
+    //"max_features": 1000,
+    //"max_groups": 500
     // Values if mapper is enabled
-    //"max_features": 30000,
-    //"max_groups": 5000
+    "max_features": 30000,
+    "max_groups": 5000
   },
 
   // gravity constant
@@ -78,18 +78,18 @@
 
   "P" : {
     "W"   : 3.0,
-    "T"   : 0.001,
-    "V"   : 0.5,
+    "T"   : 0.01,
+    "V"   : 0.1,
     "bg"  : 1e-05,
     "ba"  : 0.0001,
-    "Wbc" : 1e-6,
-    "Tbc" : 1e-6,
-    "Wsg"  : 1.5,
-    "td"  : 5e-3, // 1ms
+    "Wbc" : 0.00,
+    "Tbc" : 0.00,
+    "Wsg"  : 0.00,
+    "td"  : 1e-4, // 1ms
     "Cg"  : 5e-06, // not used
     "Ca"  : 5e-06, // not used
     "FC"  : [0.5, 1e-4], // not used
-    "distortion": 1e-06
+    "distortion": 1e-06 // not used
   },
 
   "Qmodel" : {
@@ -131,21 +131,21 @@
   },
 
   // Feature initialization parameters
-  "initial_z": 1.0, // initial subfilter depth value (meter)
+  "initial_z": 2.0, // initial subfilter depth value (meter)
   "initial_std_x": 1.5, // initial std on subfilter state (pixel)
   "initial_std_y": 1.5, // initial std on subfilter state (pixel)
   "initial_std_z": 1.414,  // initial std on subfilter state (meter)
-  "max_subfilter_outlier": 0.1, // maximum outlier counter in subfilter allowed
+  "max_subfilter_outlier": 0.5, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
                                   // looser criteria for admitting features to
                                   // the state
   "comparison_score_type": "DepthUncertainty",
  
-  "visual_meas_std":  3.4, // std of visual measurement for x and y (pixel)
+  "visual_meas_std":  1.0, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
-  "max_depth": 5.0,
+  "max_depth": 12.0,
   "min_depth": 0.05,
 
   // Adaptive initial depth
@@ -155,20 +155,20 @@
   },
 
   // Loop closure measurement, in pixels
-  "loop_closure_meas_std": 4.0,
+  "loop_closure_meas_std": 2.0,
 
   // depth sub-filter setting
   "subfilter": {
     "visual_meas_std":  3.5,
-    "ready_steps": 2,
+    "ready_steps": 5,
     "MH_thresh": 8.991
   },
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": "l1_angular",
+    "method": "direct_linear_transform_avg",
     "zmin": 0.05,
-    "zmax": 10.0,
+    "zmax": 12.0,
     "max_theta_thresh": 0.1, // in degrees
     "beta_thesh": 0.25 // in degrees
   },
@@ -213,14 +213,14 @@
     "comment": "calibrated with Kalibr after correcting IMU measurements using imu_tk"
   },
 
-  "min_inliers": 5, // minimum number of inlier measurements
+  "min_inliers": 15, // minimum number of inlier measurements
 
-  "MH_thresh": 25, // 8.991
-  "MH_adjust_factor": 1.15,
+  "MH_thresh": 500, // 8.991
+  "MH_adjust_factor": 2.0,
 
-  "1pt_RANSAC_thresh": 1.5,
+  "1pt_RANSAC_thresh": 4.0,
   "1pt_RANSAC_prob": 0.95,
-  "1pt_RANSAC_Chi2": 5.89,
+  "1pt_RANSAC_Chi2": 25,
 
   // "Correct" means 3 XY gauge features. But sometimes the filter works better
   // with fewer fixed degrees of freedom.
@@ -231,9 +231,9 @@
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 120,
-    "max_pixel_displacement": 64,
+    "num_features_min": 90,
+    "num_features_max": 150,
+    "max_pixel_displacement": 32,
     "normalize": false,
     "match_dropped_tracks": true,
 
@@ -330,7 +330,7 @@
   },
 
   "mapper_cfg": {
-    "detectLoopClosures": false,
+    "detectLoopClosures": true,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
     "nn_dist_thresh": 20.0,
