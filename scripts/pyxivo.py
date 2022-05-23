@@ -14,7 +14,7 @@ parser.add_argument("-root", default="/media/data1/Data/tumvi/exported/euroc/512
 parser.add_argument("-dump", default=".",
     help="location of xivo's output data from a dataset")
 parser.add_argument("-dataset", default="tumvi",
-    help="name of a (supported) VIO dataset [tumvi|cosyvio|alphred|xivo]")
+    help="name of a (supported) VIO dataset [tumvi|cosyvio|alphred|xivo|void]")
 parser.add_argument("-seq", default="room1",
     help="short tag for sequence name")
 parser.add_argument("-cam_id", default=0, type=int,
@@ -42,8 +42,10 @@ def main(args):
             saver = savers.TUMVIEvalModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIOEvalModeSaver(args)
-        elif args.dataset in ['xivo', 'void']:
+        elif args.dataset == "xivo":
             saver = savers.XIVOEvalModeSaver(args)
+        elif args.dataset == "void":
+            saver = savers.VOIDEvalModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaEvalModeSaver(args)
     elif args.mode == 'dump':
@@ -51,8 +53,10 @@ def main(args):
             saver = savers.TUMVIDumpModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIODumpModeSaver(args)
-        elif args.dataset in ['xivo', 'void']:
+        elif args.dataset == "xivo":
             saver = savers.XIVODumpModeSaver(args)
+        elif args.dataset == "void":
+            saver = savers.VOIDDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaDumpModeSaver(args)
     elif args.mode == 'dumpCov':
@@ -60,8 +64,10 @@ def main(args):
             saver = savers.TUMVICovDumpModeSaver(args)
         elif args.dataset == 'cosyvio':
             saver = savers.COSYVIOCovDumpModeSaver(args)
-        elif args.dataset in ['xivo', 'void']:
+        elif args.dataset == "xivo":
             saver = savers.XIVOCovDumpModeSaver(args)
+        elif args.dataset == "void":
+            saver = savers.VOIDCovDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaCovDumpModeSaver(args)
     elif args.mode == 'runOnly':

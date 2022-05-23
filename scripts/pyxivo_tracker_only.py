@@ -23,7 +23,7 @@ parser.add_argument('-cfg', default='cfg/tumvi_tracker_only_cam0.json',
 parser.add_argument('-use_viewer', default=False, action='store_true',
     help='visualize trajectory and feature tracks if set')
 parser.add_argument('-mode', default='dumpTracker',
-    help='[eval|dump|dumpCov|runOnly|dumpTracker] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
+    help='[runOnly|dumpTracker] mode to handle the state estimates. eval: save states for evaluation; dump: save to json file for further processing')
 
 
 def main(args):
@@ -40,13 +40,15 @@ def main(args):
             saver = savers.COSYVIOCovDumpModeSaver(args)
         elif args.dataset == 'xivo':
             saver = savers.XIVOTrackerDumpModeSaver(args)
+        elif args.dataset == "void":
+            saver = savers.VOIDTrackerDumpModeSaver(args)
         elif args.dataset == 'carla':
             saver = savers.CarlaTrackerDumpModeSaver(args)
 
     elif args.mode == 'runOnly':
         pass
     else:
-        raise ValueError('mode=[eval|dump|dumpCov|runOnly|dumpTracker]')
+        raise ValueError('mode=[runOnly|dumpTracker]')
 
     ########################################
     # LOAD DATA
@@ -56,14 +58,14 @@ def main(args):
                                'mav0', 'cam{}'.format(args.cam_id), 'data')
     elif args.dataset == 'cosyvio':
         img_dir = os.path.join(args.root, 'data', args.sen, args.seq, 'frames')
-    elif args.dataset in ['xivo', 'carla']:
+    elif args.dataset in ['xivo', 'carla', 'void']:
         img_dir = os.path.join(args.root, args.seq, 'cam0', 'data')
     else:
         raise ValueError('unknown dataset argument; choose from tumvi, xivo, cosyvio, carla')
 
     data = []
 
-    if args.dataset in ['tumvi', 'xivo', 'carla']:
+    if args.dataset in ['tumvi', 'xivo', 'carla', 'void']:
         for p in glob.glob(os.path.join(img_dir, '*.png')):
             ts = int(os.path.basename(p)[:-4])
             data.append((ts, p))
@@ -108,6 +110,8 @@ def main(args):
                 viewer_cfg = os.path.join('cfg', 'cosyvio_tango_bottom_viewer.json')
         elif args.dataset == 'carla':
             viewer_cfg = os.path.join('cfg', 'carla_viewer.json')
+        elif args.dataset == 'void':
+            viewer_cfg = os.path.join('cfg', 'void_viewer_tracker_only.json')
 
     #########################################
     # RUN ESTIMATOR AND SAVE DATA

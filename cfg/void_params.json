@@ -168,7 +168,7 @@
   "triangulation": {
     "method": "l1_angular",
     "zmin": 0.05,
-    "zmax": 5.0,
+    "zmax": 10.0,
     "max_theta_thresh": 0.1, // in degrees
     "beta_thesh": 0.25 // in degrees
   },

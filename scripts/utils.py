@@ -19,6 +19,8 @@ def get_xivo_output_filename(dumpdir, dataset, seq, cam_id=0, sen='tango_top'):
 def get_xivo_gt_filename(dumpdir, dataset, seq, sen='tango_top'):
   if dataset=="cosyvio":
     gt_data = os.path.join(dumpdir, "cosyvio_{}_{}_gt".format(sen, seq))
+  elif dataset == "void":
+    gt_data = os.path.join(dumpdir, "void_{}_posenet".format(seq))
   else:
     gt_data = os.path.join(dumpdir, "{}_{}_gt".format(dataset, seq))
   return gt_data

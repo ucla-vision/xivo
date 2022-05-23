@@ -2,6 +2,8 @@ import numpy as np
 import argparse
 import os, sys
 from shutil import copyfile
+from utils import get_xivo_gt_filename, get_xivo_output_filename
+
 
 TP_ROOT = '/home/feixh/Data/tumvi/exported/euroc/512_16'
 KIF_ROOT = '/local2/Data/tumvi/exported/euroc/512_16'
@@ -24,7 +26,10 @@ parser.add_argument(
     '-use_viewer', default=False, action='store_true', help='visualize if set')
 parser.add_argument(
     '-plot', default=False, action="store_true", help="plot if set")
-
+parser.add_argument(
+    '-ate_max_difference', default=0.001, type=float,
+    help="maximum timestamp difference to use when aligning ground-truth and output points in calculating ATE"
+)
 
 # parser.add_argument(
 #     '-double-fusion', default=False, action='store_true', help='if ture, take average of two trajectories in the same coordinate system')
@@ -68,8 +73,10 @@ if __name__ == '__main__':
         print(cmd)
         os.system(cmd)
 
-        result_file = os.path.join(args.out_dir, '{}_{}_cam{}'.format(args.dataset, args.seq, cam_id))
-        groundtruth_file = os.path.join(args.out_dir, '{}_{}_gt'.format(args.dataset, args.seq))
+        result_file = get_xivo_output_filename(args.out_dir, args.dataset, args.seq, cam_id=cam_id)
+        #result_file = os.path.join(args.out_dir, '{}_{}_cam{}'.format(args.dataset, args.seq, cam_id))
+        #groundtruth_file = os.path.join(args.out_dir, '{}_{}_gt'.format(args.dataset, args.seq))
+        groundtruth_file = get_xivo_gt_filename(args.out_dir, args.dataset, args.seq)
         benchmark_file = os.path.join(args.out_dir, '{}_{}_bench'.format(args.dataset, args.seq))
 
         if cam_id == 0:

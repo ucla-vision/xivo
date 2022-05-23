@@ -59,6 +59,12 @@ class CarlaSaver(TUMVISaver):
         self.saveMocapAs(mocapPath, groundtruthPath)
 
 
+class VOIDSaver:
+    def __init__(self, args):
+        # Move posenet file to current directory
+        posenetPath = os.path.join(args.root, args.seq, "traj_posenet")
+        output_path = get_xivo_gt_filename(args.dump, args.dataset, args.seq)
+        os.system("cp {} {}".format(posenetPath, output_path))
 
 
 class EvalModeSaver(BaseSaver):
@@ -351,3 +357,26 @@ class XIVOTrackerDumpModeSaver(TrackerDumpModeSaver, BaseSaver):
     def __init__(self, args):
         TrackerDumpModeSaver.__init__(self, args)
         BaseSaver.__init__(self, args)
+
+
+class VOIDEvalModeSaver(EvalModeSaver, VOIDSaver):
+    def __init__(self, args):
+        EvalModeSaver.__init__(self, args)
+        VOIDSaver.__init__(self, args)
+
+
+class VOIDDumpModeSaver(DumpModeSaver, VOIDSaver):
+    def __init__(self, args):
+        DumpModeSaver.__init__(self, args)
+        VOIDSaver.__init__(self, args)
+
+
+class VOIDCovDumpModeSaver(CovDumpModeSaver, VOIDSaver):
+    def __init__(self, args):
+        CovDumpModeSaver.__init__(self, args)
+        VOIDSaver.__init__(self, args)
+
+class VOIDTrackerDumpModeSaver(TrackerDumpModeSaver, VOIDSaver):
+    def __init__(self, args):
+        TrackerDumpModeSaver.__init__(self, args)
+        VOIDSaver.__init__(self, args)
