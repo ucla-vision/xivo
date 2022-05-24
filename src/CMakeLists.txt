@@ -24,8 +24,8 @@ add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
 
 # Sets the maximum number of features and groups in the EKF. Otherwise
 # use the default values in core.h
-add_definitions(-DEKF_MAX_FEATURES=120)
-add_definitions(-DEKF_MAX_GROUPS=90)
+add_definitions(-DEKF_MAX_FEATURES=45)
+add_definitions(-DEKF_MAX_GROUPS=30)
 
 # Sets the frequency at which to project rotation matrices to SO(3) to get
 # rid of accumulated numeric error

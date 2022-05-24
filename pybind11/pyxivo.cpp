@@ -230,6 +230,10 @@ public:
     return estimator_->UsingLoopClosure();
   }
 
+  bool VisionInitialized() {
+    return estimator_->VisionInitialized();
+  }
+
   void Visualize() {
     if (viewer_)
       viewer_->Refresh();
@@ -290,6 +294,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("num_instate_features", &EstimatorWrapper::num_instate_features)
       .def("num_instate_groups", &EstimatorWrapper::num_instate_groups)
       .def("UsingLoopClosure", &EstimatorWrapper::UsingLoopClosure)
+      .def("VisionInitialized", &EstimatorWrapper::VisionInitialized)
       .def("now", &EstimatorWrapper::now)
       .def("Visualize", &EstimatorWrapper::Visualize)
       .def("gauge_group", &EstimatorWrapper::gauge_group)

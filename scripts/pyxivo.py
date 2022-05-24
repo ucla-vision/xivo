@@ -152,11 +152,15 @@ def main(args):
                 estimator.InertialMeas(ts, gyro[0], gyro[1], gyro[2], accel[0],
                                     accel[1], accel[2])
             else:
+                print("hello0")
+                print(estimator.VisionInitialized())
                 estimator.VisualMeas(ts, content)
                 if estimator.UsingLoopClosure():
                     estimator.CloseLoop()
                 estimator.Visualize()
-                if args.mode != 'runOnly':
+                if (args.mode != 'runOnly') and (estimator.VisionInitialized()):
+                    print("hello1")
+                    print(estimator.VisionInitialized())
                     saver.onVisionUpdate(estimator, datum=(ts, content))
 
     finally:

@@ -75,7 +75,9 @@ class EvalModeSaver(BaseSaver):
 
     def onVisionUpdate(self, estimator, datum):
         now = estimator.now()
+        print("hello2")
         gsb = np.array(estimator.gsb())
+        print("hello3")
         Tsb = gsb[:, 3]
 
         # print gsb[:3, :3]

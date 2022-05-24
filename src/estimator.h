@@ -157,6 +157,7 @@ public:
   bool UsingLoopClosure() const;
   bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
   bool FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const;
+  bool VisionInitialized() const { return vision_initialized_; };
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
