@@ -77,14 +77,14 @@
   },
 
   "P" : {
-    "W"   : 3.0,
+    "W"   : 1.0,
     "T"   : 0.01,
-    "V"   : 0.1,
+    "V"   : 0.5,
     "bg"  : 1e-05,
     "ba"  : 0.0001,
     "Wbc" : 0.00,
     "Tbc" : 0.00,
-    "Wsg"  : 0.00,
+    "Wsg"  : 0.001,
     "td"  : 1e-4, // 1ms
     "Cg"  : 5e-06, // not used
     "Ca"  : 5e-06, // not used
@@ -114,28 +114,28 @@
   */
 
   // 3x
-  /*
   "Qimu": {
     "gyro": [0.0062941, 0.0062941, 0.0062941 ],
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [0.100206846, 0.100206846, 0.100206846],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
   },
-  */
   // 10x
+  /*
   "Qimu": {
     "gyro": [0.020980334, 0.020980334, 0.020980334 ],
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [0.33402282, 0.33402282, 0.33402282],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
   },
+  */
 
   // Feature initialization parameters
   "initial_z": 2.0, // initial subfilter depth value (meter)
   "initial_std_x": 1.5, // initial std on subfilter state (pixel)
   "initial_std_y": 1.5, // initial std on subfilter state (pixel)
-  "initial_std_z": 1.414,  // initial std on subfilter state (meter)
-  "max_subfilter_outlier": 0.5, // maximum outlier counter in subfilter allowed
+  "initial_std_z": 2.0,  // initial std on subfilter state (meter)
+  "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
                                   // looser criteria for admitting features to
@@ -155,7 +155,7 @@
   },
 
   // Loop closure measurement, in pixels
-  "loop_closure_meas_std": 2.0,
+  "loop_closure_meas_std": 4.0,
 
   // depth sub-filter setting
   "subfilter": {
@@ -166,7 +166,7 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": "direct_linear_transform_avg",
+    "method": "direct_linear_transform_svd",
     "zmin": 0.05,
     "zmax": 12.0,
     "max_theta_thresh": 0.1, // in degrees
@@ -195,7 +195,7 @@
             [ 0.00647833,           1, 0.0326920],
             [-0.00158846,  -0.0222391,         1]]
   },
-  "gravity_init_counter": 20,
+  "gravity_init_counter": 30,
 
   // 2022-05-16-camera_calib1-camchain_rollingshutter_corrected.yaml 
   "camera_cfg": {
@@ -213,9 +213,9 @@
     "comment": "calibrated with Kalibr after correcting IMU measurements using imu_tk"
   },
 
-  "min_inliers": 15, // minimum number of inlier measurements
+  "min_inliers": 25, // minimum number of inlier measurements
 
-  "MH_thresh": 500, // 8.991
+  "MH_thresh": 30,
   "MH_adjust_factor": 2.0,
 
   "1pt_RANSAC_thresh": 4.0,
@@ -224,16 +224,16 @@
 
   // "Correct" means 3 XY gauge features. But sometimes the filter works better
   // with fewer fixed degrees of freedom.
-  "num_gauge_xy_features": 3,
+  "num_gauge_xy_features": 0,
   "collinear_cross_prod_thresh": 0.001,
 
   "tracker_cfg": {
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 90,
-    "num_features_max": 150,
-    "max_pixel_displacement": 32,
+    "num_features_min": 150,
+    "num_features_max": 200,
+    "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": true,
 
@@ -245,7 +245,7 @@
     },
 
     "extract_descriptor": true,
-    "descriptor_distance_thresh": 64, // -1 to disable descriptor check
+    "descriptor_distance_thresh": -1, // -1 to disable descriptor check
     "descriptor": "BRIEF",
 
     // "detector": "BRISK",
@@ -330,10 +330,10 @@
   },
 
   "mapper_cfg": {
-    "detectLoopClosures": true,
+    "detectLoopClosures": false,
     "vocabulary": "cfg/ukbench10K_FASTBRIEF32.yml.gz",
     "uplevel_word_search": 0,
-    "nn_dist_thresh": 20.0,
+    "nn_dist_thresh": 30.0,
     "merge_features": true,
     "feature_merge_cov_factor": 1.0,
 
