@@ -75,9 +75,7 @@ class EvalModeSaver(BaseSaver):
 
     def onVisionUpdate(self, estimator, datum):
         now = estimator.now()
-        print("hello2")
         gsb = np.array(estimator.gsb())
-        print("hello3")
         Tsb = gsb[:, 3]
 
         # print gsb[:3, :3]
@@ -160,11 +158,13 @@ class CovDumpModeSaver(BaseSaver):
         Cam = estimator.CameraIntrinsics()
         CamType = estimator.CameraDistortionType()
 
+        # For some reason, this interface is broken, and I can't figure out
+        # why (ST, May 2022)
         # Get filter covariance
-        if self.save_full_cov:
-            Pstate = np.array(estimator.P())
-        else:
-            Pstate = np.array(estimator.Pstate())
+        #if self.save_full_cov:
+        #    Pstate = np.array(estimator.P())
+        #else:
+        #    Pstate = np.array(estimator.Pstate())
 
         # Group ID
         GaugeGroup = estimator.gauge_group()
@@ -221,7 +221,8 @@ class CovDumpModeSaver(BaseSaver):
         entry['qsc_WXYZ'] = qsc.tolist()
         entry['Vsb_XYZ'] = Vsb.tolist()
 
-        entry['Pstate'] = upper_triangular_list(Pstate)
+        # Related to broken interface above
+        #entry['Pstate'] = upper_triangular_list(Pstate)
 
         entry['MeasurementUpdateInitialized'] = estimator.MeasurementUpdateInitialized()
         entry['inn_Tsb'] = inn_Tsb.tolist()

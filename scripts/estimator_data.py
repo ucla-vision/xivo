@@ -30,12 +30,12 @@ class EstimatorData:
     else:
       self.nposes = self.end_ind - self.start_ind
 
-    (total_dim,_) = self.estimator_results["data"][0]["Pstate"]
+    #(total_dim,_) = self.estimator_results["data"][0]["Pstate"]
     self.time_axis = np.zeros((self.nposes,1))
     self.Rsb = []
     self.Tsb = np.zeros((3,self.nposes))
     self.Vsb = np.zeros((3,self.nposes))
-    self.P = np.zeros((total_dim, total_dim, self.nposes))
+    #self.P = np.zeros((total_dim, total_dim, self.nposes))
 
     self.MeasurementUpdateInitialized = []
     self.inn_Wsb = np.zeros((3,self.nposes))
@@ -86,7 +86,7 @@ class EstimatorData:
       self.Rsb.append(R_sb)
       self.Tsb[:,i] = T_sb
       self.Vsb[:,i] = V_sb
-      self.P[:,:,i] = P
+      #self.P[:,:,i] = P
       self.inn_Wsb[:,i] = inn_Wsb
       self.inn_Tsb[:,i] = inn_Tsb
       self.inn_Vsb[:,i] = inn_Vsb
@@ -149,8 +149,9 @@ class EstimatorData:
     R_sb = Q_wxyz_to_Rotation(data["qsb_WXYZ"])
 
     # Covariance
-    (Pdim, Plist) = data["Pstate"]
-    P = from_upper_triangular_list(Pdim, Plist)
+    #(Pdim, Plist) = data["Pstate"]
+    #P = from_upper_triangular_list(Pdim, Plist)
+    P = 0
 
     # innovation
     inn_Wsb = np.array(data["inn_Wsb"])
