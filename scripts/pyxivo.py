@@ -157,8 +157,6 @@ def main(args):
                     estimator.CloseLoop()
                 estimator.Visualize()
                 if (args.mode != 'runOnly') and (estimator.VisionInitialized()):
-                    print("hello1")
-                    print(estimator.VisionInitialized())
                     saver.onVisionUpdate(estimator, datum=(ts, content))
 
     finally:
