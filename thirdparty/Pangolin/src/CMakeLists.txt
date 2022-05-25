@@ -380,7 +380,7 @@ if(BUILD_PANGOLIN_V4L AND BUILD_PANGOLIN_VIDEO AND _LINUX_)
   message(STATUS "V4L Found and Enabled")
 endif()
 
-option(BUILD_PANGOLIN_FFMPEG "Build support for ffmpeg video input" ON)
+option(BUILD_PANGOLIN_FFMPEG "Build support for ffmpeg video input" OFF)
 if(BUILD_PANGOLIN_FFMPEG AND BUILD_PANGOLIN_VIDEO)
   find_package(FFMPEG QUIET)
   if(FFMPEG_FOUND)

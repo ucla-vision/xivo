@@ -47,18 +47,6 @@ cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=..
 make install -j $CPU_COUNT
 
-cd $PROJECT_DIR/thirdparty/gflags
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=..
-make install -j $CPU_COUNT
-
-cd $PROJECT_DIR/thirdparty/glog
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=.. 
-make install -j $CPU_COUNT
-
 cd $PROJECT_DIR/thirdparty/DBoW2
 mkdir build
 cd build
