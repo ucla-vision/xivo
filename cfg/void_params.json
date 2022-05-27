@@ -75,8 +75,13 @@
     //"Tbc" : [-0.0331629,   0.00076533,  0.02849713],
 
     // This is after an autocalibration procedure using XIVO
-    "Wbc": [ -0.0405473, -0.00647958,  -0.0147505],
-    "Tbc": [ -0.031963, -0.00558908,   0.0281807],
+    //"Wbc": [ -0.0405473, -0.00647958,  -0.0147505],
+    //"Tbc": [ -0.031963, -0.00558908,   0.0281807],
+
+    // A better autocalibration run?
+    "Wbc": [-0.0244496, -0.00112985,  -0.0420581 ],
+    "Tbc": [ -0.0436523, 0.00692472, 0.00695763],
+
     "Wsg"  : [0, 0, 0],
     "td"  : -0.025574776954225456 
   },
@@ -262,8 +267,8 @@
     "cols": 480,
     //"fx": 601.99752046,
     //"fy": 602.94138176,
-    "fx": 601.926, // after a separate autocalibration using XIVO
-    "fy": 603.046,
+    "fx": 601.993, // after a separate autocalibration using XIVO
+    "fy": 602.945,
     "cx": 319.76338334,
     "cy": 243.9617793,
     "k012": [0.14423904, -0.31385738, 0.0],
@@ -273,10 +278,11 @@
     "comment": "calibrated with Kalibr after correcting IMU measurements using imu_tk"
   },
 
-  "min_inliers": 5, // minimum number of inlier measurements
+  "min_inliers": 15, // minimum number of inlier measurements
 
   //"MH_thresh": 8.991,
-  "MH_thresh": 30,
+  //"MH_thresh": 30,
+  "MH_thresh": 15,
   "MH_adjust_factor": 2.0,
 
   "1pt_RANSAC_thresh": 4.0,

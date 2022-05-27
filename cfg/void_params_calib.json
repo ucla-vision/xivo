@@ -78,14 +78,14 @@
   },
 
   "P" : {
-    "W"   : 3.0,
+    "W"   : 2.0,
     "T"   : 0.001,
     "V"   : 0.5,
     "bg"  : 0.0,
     "ba"  : 0.0,
-    "Wbc" : 5e-4,
-    "Tbc" : 5e-4,
-    "Wsg"  : 3.0,
+    "Wbc" : 0.005,
+    "Tbc" : 0.005,
+    "Wsg"  : 2.0,
     "td"  : 1e-4, // 1ms
     "Cg"  : 5e-06,
     "Ca"  : 5e-06,
@@ -94,7 +94,7 @@
   },
 
   "Qmodel" : {
-    "W"   : 0.000,
+    "W"   : 0.001,
     "T"   : 0.0,
     "V"   : 0.0000,
     "wb"  : 0.0000,
@@ -185,7 +185,7 @@
                                   // the state
   "comparison_score_type": "DepthUncertainty",
  
-  "visual_meas_std":  0.75, // std of visual measurement for x and y (pixel)
+  "visual_meas_std":  1.50, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 2.5,
