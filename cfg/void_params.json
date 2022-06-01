@@ -35,7 +35,7 @@
   "remove_outlier_counter": 10,
   "OOS_update_min_observations": 5,
   "feature_owner_change_cov_factor": 1.5,
-  "group_degrees_fixed": 4,
+  "group_degrees_fixed": 6,
 
   "PrinceDormand": {
     "control_stepsize": false,
@@ -69,34 +69,24 @@
     "V"   : [0, 0, 0],
     "bg"  : [-0.00247439, -0.00130643, -0.000431067],
     "ba"  : [-0.00239555, 0.167205, 0.00327895],
-    // These come from 2022-04-21-calib2_corrected-camchain-imucam.yaml
-    // 20x_1x on allen bias multiplier
-    //"Wbc" : [-0.03906916, -0.00096214, -0.0125812],
-    //"Tbc" : [-0.0331629,   0.00076533,  0.02849713],
-
-    // This is after an autocalibration procedure using XIVO
-    //"Wbc": [ -0.0405473, -0.00647958,  -0.0147505],
-    //"Tbc": [ -0.031963, -0.00558908,   0.0281807],
-
-    // A better autocalibration run?
-    "Wbc": [-0.0244496, -0.00112985,  -0.0420581 ],
-    "Tbc": [ -0.0436523, 0.00692472, 0.00695763],
-
+    // After solid autocalibration
+    "Wbc": [-0.02645247, -0.0014035,  -0.01380335],
+    "Tbc": [-0.02180578,  0.00252089,  0.01253788],
     "Wsg"  : [0, 0, 0],
-    "td"  : -0.025574776954225456 
+    "td"  : -0.031770650
   },
 
   "P" : {
-    "W"   : 1.0,
-    "T"   : 0.01,
-    "V"   : 0.5,
+    "W"   : 3.0,
+    "T"   : 0.1,
+    "V"   : 2.0,
     "bg"  : 1e-05,
     "ba"  : 0.0001,
-    "Wbc" : 0.00,
-    "Tbc" : 0.00,
-    "Wsg"  : 2.0,
+    "Wbc" : 1e-10,
+    "Tbc" : 1e-10,
+    "Wsg"  : 1e-10,
     //"Wsg": 1e-6,
-    "td"  : 1e-4, // 1ms
+    "td"  : 1e-5, // 1ms
     "Cg"  : 5e-06, // not used
     "Ca"  : 5e-06, // not used
     "FC"  : [0.5, 1e-4], // not used
@@ -136,14 +126,12 @@
   */
 
   // 10x noise, 1x bias
-  /*
   "Qimu": {
     "gyro": [ 0.0010490167893878809, 0.0010490167893878809, 0.0010490167893878809 ],
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [ 0.01670114101261374, 0.01670114101261374, 0.01670114101261374 ],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
   },
-  */
 
   // 20x noise, 1x bias
   /*
@@ -186,29 +174,31 @@
   */
 
   // 200x noise, 1x bias
+  /*
   "Qimu": {
     "gyro": [0.020980334, 0.020980334, 0.020980334 ],
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [0.33402282, 0.33402282, 0.33402282],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
   },
+  */
 
   // Feature initialization parameters
   "initial_z": 2.0, // initial subfilter depth value (meter)
   "initial_std_x": 1.5, // initial std on subfilter state (pixel)
   "initial_std_y": 1.5, // initial std on subfilter state (pixel)
-  "initial_std_z": 2.0,  // initial std on subfilter state (meter)
-  "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
+  "initial_std_z": 0.5,  // initial std on subfilter state (meter)
+  "max_subfilter_outlier": 1.0, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
                                   // looser criteria for admitting features to
                                   // the state
   "comparison_score_type": "DepthUncertainty",
  
-  "visual_meas_std":  1.0, // std of visual measurement for x and y (pixel)
+  "visual_meas_std":  3.0, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
-  "max_depth": 12.0,
+  "max_depth": 10.0,
   "min_depth": 0.05,
 
   // Adaptive initial depth
@@ -229,7 +219,7 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": "direct_linear_transform_avg",
+    "method": "l1_angular",
     "zmin": 0.05,
     "zmax": 12.0,
     "max_theta_thresh": 0.1, // in degrees
@@ -265,15 +255,13 @@
     "model": "radtan",
     "rows": 640,
     "cols": 480,
-    //"fx": 601.99752046,
-    //"fy": 602.94138176,
-    "fx": 601.993, // after a separate autocalibration using XIVO
-    "fy": 602.945,
-    "cx": 319.76338334,
-    "cy": 243.9617793,
-    "k012": [0.14423904, -0.31385738, 0.0],
-    "p1": 0.00267941,
-    "p2": 0.00045607,
+    "fx": 603.99052888,
+    "fy": 604.65168623,
+    "cx": 319.51752111,
+    "cy": 236.25265879,
+    "k012": [ 0.15699292, -0.33979514, 0.0],
+    "p1": 0.00087686,
+    "p2": 0.00113128,
     "max_iter": 15,
     "comment": "calibrated with Kalibr after correcting IMU measurements using imu_tk"
   },
@@ -281,8 +269,7 @@
   "min_inliers": 15, // minimum number of inlier measurements
 
   //"MH_thresh": 8.991,
-  //"MH_thresh": 30,
-  "MH_thresh": 15,
+  "MH_thresh": 30,
   "MH_adjust_factor": 2.0,
 
   "1pt_RANSAC_thresh": 4.0,
