@@ -42,6 +42,7 @@ private:
   static std::unique_ptr<Tracker> instance_;
 
   // variables
+  bool differential_;
   bool initialized_;
   Json::Value cfg_;
   int descriptor_distance_thresh_; // use this to verify feature tracking

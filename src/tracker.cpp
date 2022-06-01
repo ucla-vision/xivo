@@ -97,6 +97,7 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
   num_features_min_ = cfg_.get("num_features_min", 120).asInt();
   num_features_max_ = cfg_.get("num_features_max", 150).asInt();
   max_pixel_displacement_ = cfg_.get("max_pixel_displacement", 64).asInt();
+  differential_ = cfg_.get("differential", true).asBool();
 
   auto klt_cfg = cfg_["KLT"];
   win_size_ = klt_cfg.get("win_size", 15).asInt();
@@ -226,7 +227,9 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
       if (match_dropped_tracks_ && matched[i]) {
         int idx = matchIdx[i];
         FeaturePtr f1 = newly_dropped_tracks_[idx];
-        f1->SetDescriptor(descriptors.row(i));
+        if (differential_) {
+          f1->SetDescriptor(descriptors.row(i));
+        }
         f1->UpdateTrack(kp.pt.x, kp.pt.y);
         f1->SetTrackStatus(TrackStatus::TRACKED);
         LOG(INFO) << "Rescued dropped feature #" << f1->id();
@@ -345,10 +348,14 @@ void Tracker::Update(const cv::Mat &image) {
         if (dist > descriptor_distance_thresh_) {
           status[i] = 0; // enforce to be dropped
         } else {
-          f->SetDescriptor(descriptors.row(i));
+          if (differential_) {
+            f->SetDescriptor(descriptors.row(i));
+          }
         }
       } else {
-        f->SetDescriptor(descriptors.row(i));
+        if (differential_) {
+          f->SetDescriptor(descriptors.row(i));
+        }
       }
     }
   }
