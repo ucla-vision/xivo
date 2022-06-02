@@ -15,6 +15,12 @@
 
 namespace xivo {
 
+
+enum TrackerType : int {
+  LK = 0,
+  MATCH = 1
+};
+
 class Tracker {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -25,6 +31,10 @@ public:
    *  using LK-pyramid and detects a new set of features to be tracked.
    *  \todo Rescue features that would otherwise be dropped from tracker with newly
    *        detected features. */
+  void UpdateLK(const cv::Mat &img);
+
+  void UpdateMatch(const cv::Mat &img);
+
   void Update(const cv::Mat &img);
 
   /** Called by function `CreateSystem` to force extraction of descriptors when
@@ -48,6 +58,7 @@ private:
   int descriptor_distance_thresh_; // use this to verify feature tracking
   int max_pixel_displacement_;     // pixels shifted larger than this amount are
                                    // dropped
+  TrackerType tracker_type_;
 
   cv::Mat img_;
 
@@ -94,7 +105,7 @@ private:
   cv::Ptr<cv::BFMatcher> matcher_;
 
 private:
-  void Detect(const cv::Mat &img, int num_to_add);
+  void DetectLK(const cv::Mat &img, int num_to_add);
 
 };
 
