@@ -169,7 +169,7 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
       matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
     }
   } else { // TrackerType::Match
-      matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), false);
+      matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
   }
 }
 
@@ -321,10 +321,10 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
                      extractor_->descriptorSize(),
                      extractor_->descriptorType());
 
-    // query descriptors = new kps/descriptors
-    // train descriptors = existing kps/descriptors
+    // query descriptors = existing kps/descriptors
+    // train descriptors = new kps/descriptors
     std::vector<std::vector<cv::DMatch>> matches;
-    matcher_->knnMatch(new_descriptors, existing_descriptors, matches, 1);
+    matcher_->knnMatch(existing_descriptors, new_descriptors, matches, 1);
 
     // Check matches for distance ratio, descriptor distance, pixel displacement
     for (int i=0; i<matches.size(); i++) {
@@ -336,27 +336,43 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
         bool descriptor_distance_check_passed =
           CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
         bool pixel_displacement_check_passed =
-          CheckPixelDisplacement(new_kps[D.queryIdx],
-                                 feature_vec[D.trainIdx]->back(),
+          CheckPixelDisplacement(new_kps[D.trainIdx],
+                                 feature_vec[D.queryIdx]->back(),
                                  max_pixel_displacement_);
 
         if (descriptor_distance_check_passed &&
             pixel_displacement_check_passed)
         {
-          new_kp_matched[D.queryIdx] = true;
-          existing_feature_matched[D.trainIdx] = true;
+          new_kp_matched[D.trainIdx] = true;
+          existing_feature_matched[D.queryIdx] = true;
 
-          FeaturePtr f = feature_vec[D.trainIdx];
-          cv::KeyPoint kp = new_kps[D.queryIdx];
+          FeaturePtr f = feature_vec[D.queryIdx];
+          cv::KeyPoint kp = new_kps[D.trainIdx];
           f->UpdateTrack(Vec2{kp.pt.x, kp.pt.y});
           if (differential_) {
-            f->SetDescriptor(new_descriptors.row(D.queryIdx));
+            f->SetDescriptor(new_descriptors.row(D.trainIdx));
           }
           f->SetTrackStatus(TrackStatus::TRACKED);
         }
       }
     }
   }
+
+  auto count_true = [](std::vector<bool> vec) {
+    int counter = 0;
+    for (auto b: vec) {
+      if (b) {
+        counter++;
+      }
+    }
+    return counter;
+  };
+
+  // DEBUG: count number of newly matched features
+  int num_new_kp_matches = count_true(new_kp_matched);
+  int num_existing_f_matches = count_true(existing_feature_matched);
+  std::cout << "num new features matched: " << num_new_kp_matches << std::endl;
+  std::cout << "num old features matched: " << num_existing_f_matches << std::endl;
 
   // Drop features that weren't matched to a new point
   int num_features_dropped = 0;
@@ -371,6 +387,7 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
   // Turn rest of detected tracks into a new feature
   int num_to_create = num_features_max_ - feature_vec.size()
     + num_features_dropped;
+  std::cout << "num to create: " << num_to_create << std::endl;
   for (int i=0; i<new_kps.size(); i++) {
     if (num_to_create <= 0) {
       break;
