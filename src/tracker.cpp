@@ -187,33 +187,34 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
   if (match_dropped_tracks_ && (newly_dropped_tracks_.size() > 0)) {
 
     // Get matrix of old descriptors
-    cv::Mat newly_dropped_descriptors(newly_dropped_tracks_.size(),
-                                      extractor_->descriptorSize(),
-                                      extractor_->descriptorType());
-    int i = 0;
-    for (auto f: newly_dropped_tracks_) {
-      newly_dropped_descriptors.row(i) = f->descriptor();
-      i++;
-    }
+    cv::Mat newly_dropped_descriptors =
+      GetDescriptors(newly_dropped_tracks_,
+                     extractor_->descriptorSize(),
+                     extractor_->descriptorType());
 
-    // radius match - this really just checks for inaccurate optical flows
+    // Attempt to rescue newly-dropped descriptors with brute-force feature
+    // matching.
     // query = newly-dropped descriptors
     // train = just-found descriptors
     std::vector<std::vector<cv::DMatch>> matches;
-    matcher_->radiusMatch(newly_dropped_descriptors, descriptors, matches,
-                          max_pixel_displacement_);
+    matcher_->knnMatch(newly_dropped_descriptors, descriptors, matches, 1);
     for (int i=0; i<matches.size(); i++) {
       if (matches[i].size() > 0) {
         cv::DMatch D = matches[i][0];
 
-        // Check descriptor accuracy
-        number_t descriptor_distance =
-          cv::norm(newly_dropped_descriptors.row(D.queryIdx),
-                   descriptors.row(D.trainIdx),
-                   extractor_->defaultNorm());
-        if (descriptor_distance < descriptor_distance_thresh_) {
+        // Check that descriptor distance and pixel displacement are small
+        // enough
+        bool descriptor_distance_check_passed =
+          CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
+        bool pixel_displacement_check_passed =
+          CheckPixelDisplacement(kps[D.trainIdx],
+                                 newly_dropped_tracks_[D.queryIdx]->back(),
+                                 max_pixel_displacement_);
+
+        if (descriptor_distance_check_passed && pixel_displacement_check_passed) {
           matched[D.trainIdx] = true;
           matchIdx[D.trainIdx] = D.queryIdx;
+          int fid = newly_dropped_tracks_[D.queryIdx]->id();
         }
       }
     }
@@ -232,7 +233,7 @@ void Tracker::Detect(const cv::Mat &img, int num_to_add) {
         }
         f1->UpdateTrack(kp.pt.x, kp.pt.y);
         f1->SetTrackStatus(TrackStatus::TRACKED);
-        LOG(INFO) << "Rescued dropped feature #" << f1->id();
+        LOG(INFO) << "Potentially rescued dropped feature #" << f1->id();
         MaskOut(mask_, kp.pt.x, kp.pt.y, mask_size_);
         --num_to_add;
         continue;
@@ -366,7 +367,6 @@ void Tracker::Update(const cv::Mat &image) {
 
   // Clear list of newly dropped tracks from last time
   newly_dropped_tracks_.clear();
-  newly_dropped_tracks_hlpr_.clear();
 
   for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
     FeaturePtr f(*it);
@@ -384,12 +384,10 @@ void Tracker::Update(const cv::Mat &image) {
       } else {
         // failed to extract descriptors or invalid mask
         newly_dropped_tracks_.push_back(f);
-        newly_dropped_tracks_hlpr_.insert(f);
       }
     } else {
       // failed to track, reject
       newly_dropped_tracks_.push_back(f);
-      newly_dropped_tracks_hlpr_.insert(f);
     }
   }
 
@@ -400,7 +398,8 @@ void Tracker::Update(const cv::Mat &image) {
   }
 
   // Mark all features that are still in newly_dropped_tracks_ at this point
-  // as dropped
+  // as dropped. Dropped features will get deleted later in the function
+  // Estimator::ProcessTracks()
   for (auto f: newly_dropped_tracks_) {
     f->SetTrackStatus(TrackStatus::DROPPED);
   }
@@ -428,5 +427,47 @@ bool MaskValid(const cv::Mat &mask, number_t x, number_t y) {
     return false;
   return static_cast<bool>(mask.at<uint8_t>(row, col));
 }
+
+
+template<class AutoIterable>
+cv::Mat GetDescriptors(AutoIterable fvec,
+                       int descriptor_size,
+                       int descriptor_type)
+{
+  cv::Mat descriptors(fvec.size(), descriptor_size, descriptor_type);
+  int i = 0;
+  for (auto f: fvec) {
+    descriptors.row(i) = f->descriptor();
+    i++;
+  }
+  return descriptors;
+}
+
+bool CheckDescriptorDistance(number_t descriptor_distance,
+                             number_t max_distance)
+{
+  if (max_distance > 0) {
+    return (descriptor_distance < max_distance);
+  } else {
+    return true;
+  }
+}
+
+bool CheckPixelDisplacement(const Vec2 kp1,
+                            const Vec2 kp2,
+                            const number_t max_displacement)
+{
+  return ((kp1 - kp2).norm() < max_displacement);
+}
+
+bool CheckPixelDisplacement(const cv::KeyPoint kp1,
+                            const Vec2 kp2,
+                            const number_t max_displacement)
+{
+  return CheckPixelDisplacement(Vec2{kp1.pt.x, kp1.pt.y},
+                                kp2,
+                                max_displacement);
+}
+
 
 } // namespace xivo

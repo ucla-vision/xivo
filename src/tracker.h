@@ -91,7 +91,6 @@ private:
   // Matching newly detected tracks to tracks that were just dropped
   bool match_dropped_tracks_;
   std::vector<FeaturePtr> newly_dropped_tracks_;
-  std::unordered_set<FeaturePtr> newly_dropped_tracks_hlpr_;
   cv::Ptr<cv::BFMatcher> matcher_;
 
 private:
@@ -112,5 +111,23 @@ void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size = 15);
 /** Checks whether or not `mask_` is white at pixel `(x,y)` and whether or not
  *  (x,y) is not too close to the edge of the image. */
 bool MaskValid(const cv::Mat &mask, number_t x, number_t y);
+
+
+bool CheckDescriptorDistance(number_t descriptor_distance,
+                             number_t max_distance);
+
+bool CheckPixelDisplacement(const Vec2 kp1,
+                            const Vec2 kp2,
+                            const number_t max_displacement);
+
+bool CheckPixelDisplacement(const cv::KeyPoint kp1,
+                            const Vec2 kp2,
+                            const number_t max_displacement);
+
+template<class AutoIterable>
+cv::Mat GetDescriptors(AutoIterable fvec,
+                       int descriptor_size,
+                       int descriptor_type);
+
 
 } // namespace xivo
