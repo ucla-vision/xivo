@@ -524,9 +524,6 @@ void Tracker::UpdateLK(const cv::Mat &image) {
   int num_valid_features = 0;
   int i = 0;
 
-  // Clear list of newly dropped tracks from last time
-  newly_dropped_tracks_.clear();
-
   for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
     FeaturePtr f(*it);
 
@@ -542,10 +539,22 @@ void Tracker::UpdateLK(const cv::Mat &image) {
         ++num_valid_features;
       } else {
         // failed to extract descriptors or invalid mask
-        newly_dropped_tracks_.push_back(f);
+        status[i] = 0;
       }
-    } else {
-      // failed to track, reject
+    }
+  }
+
+  cv::Mat H;
+  if (do_outlier_rejection_) {
+    H = OutlierRejection(pts0, pts1, status);
+  }
+
+  // Mark newly dropped tracks for possible rescue
+  newly_dropped_tracks_.clear();
+  i = 0;
+  for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
+    if (!status[i]) {
+      FeaturePtr f(*it);
       newly_dropped_tracks_.push_back(f);
     }
   }
@@ -569,7 +578,7 @@ void Tracker::UpdateLK(const cv::Mat &image) {
 }
 
 
-void Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
+cv::Mat Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
                                const std::vector<cv::Point2f> pts1,
                                std::vector<uint8_t>& match_status)
 {
@@ -593,10 +602,10 @@ void Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
 
   // Call OpenCV
   cv::Mat inlier_outlier_mask(1, pts0_valid.size(), CV_8UC1);
-  cv::findHomography(pts0_valid, pts1_valid, outlier_rejection_method_,
-                     outlier_rejection_reproj_thresh_, inlier_outlier_mask,
-                     outlier_rejection_maxiters_,
-                     outlier_rejection_confidence_);
+  cv::Mat H = cv::findHomography(
+    pts0_valid, pts1_valid, outlier_rejection_method_,
+    outlier_rejection_reproj_thresh_, inlier_outlier_mask,
+    outlier_rejection_maxiters_, outlier_rejection_confidence_);
 
   // Mark outliers in `match_status`
   for (int i=0; i<pts0.size(); i++) {
@@ -607,6 +616,7 @@ void Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
     }
   }
 
+  return H;
 }
 
 

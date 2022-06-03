@@ -113,10 +113,9 @@ private:
   void DetectLK(const cv::Mat &img, int num_to_add);
 
   /** An interface to OpenCV's `findHomography` that checks for outliers. */
-  void OutlierRejection(const std::vector<cv::Point2f> pts0,
+  cv::Mat OutlierRejection(const std::vector<cv::Point2f> pts0,
                         const std::vector<cv::Point2f> pts1,
                         std::vector<uint8_t>& match_status);
-
 };
 
 // helpers
