@@ -123,18 +123,26 @@ void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size = 15);
  *  (x,y) is not too close to the edge of the image. */
 bool MaskValid(const cv::Mat &mask, number_t x, number_t y);
 
-
+/** Returns `true` if the distance between two descriptors,
+ *  `descriptor_distance`, is less than `max_distance`. Also returns `true`
+ *  if we are not doing a descriptor distance check (i.e.
+ *  `max_distance = -1`). */
 bool CheckDescriptorDistance(number_t descriptor_distance,
                              number_t max_distance);
 
+/** Returns `true` if two keypoints are close-enough together (in Euclidean
+ *  distance of pixel coordinates) */
 bool CheckPixelDisplacement(const Vec2 kp1,
                             const Vec2 kp2,
                             const number_t max_displacement);
 
+/** Same as above with different API, for convenience. */
 bool CheckPixelDisplacement(const cv::KeyPoint kp1,
                             const Vec2 kp2,
                             const number_t max_displacement);
 
+/** Assembles the descriptors of all the features in `fvec` into a single
+ *  matrix. */
 cv::Mat GetDescriptors(std::vector<FeaturePtr> fvec);
 
 

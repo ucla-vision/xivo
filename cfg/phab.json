@@ -244,9 +244,9 @@
 
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
-    "descriptor": "SIFT",
+    "descriptor": "BRIEF",
     "differential": true,
-    "tracker_type": "MATCH",
+    "tracker_type": "LK",
 
     // "detector": "BRISK",
     "detector": "FAST",
