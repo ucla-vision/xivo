@@ -3,7 +3,7 @@
   "simulation": false,
   "print_timing": false,
   "use_canvas": true,
-  "use_debug_view": true,  // draw rejected & dropped features on canvas
+  "use_debug_view": false,  // draw rejected & dropped features on canvas
   "async_run": false, // turn this off in benchmarking
 
   "camera_cfg": {
@@ -13,23 +13,29 @@
     "cols": 640
   },
 
+  "memory": {
+    "max_features": 40000,
+    "max_groups": 100
+  },
 
   "tracker_cfg": {
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
     "num_features_min": 45,
-    "num_features_max": 60,
+    "num_features_max": 1500,
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": false,
     "match_dropped_tracks_tol": 50,
 
+    "distance_ratio": 1.0,
 
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
-    "descriptor": "BRIEF",
-    "differential": false,
+    "descriptor": "SIFT",
+    "differential": true,
+    "tracker_type": "MATCH",
 
     // "detector": "BRISK",
     "detector": "FAST",
@@ -84,9 +90,9 @@
       // https://docs.opencv.org/3.4/d7/d60/classcv_1_1SIFT.html
       "nfeatures": 0,
       "nOctaveLayers": 3,
-      "contrastThreshold": 0.000,
-      "edgeThreshold": 50.0,
-      "sigma": 1.0
+      "contrastThreshold": 0.04,
+      "edgeThreshold": 10.0,
+      "sigma": 1.6
     },
 
     "SURF": {

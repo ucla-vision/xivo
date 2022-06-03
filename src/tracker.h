@@ -95,9 +95,12 @@ private:
   int max_iter_;
   number_t eps_;
 
-  // fast params
+  // feature detector params
   int num_features_min_;
   int num_features_max_;
+
+  // feature matching parameters
+  number_t distance_ratio_;
 
   // Matching newly detected tracks to tracks that were just dropped
   bool match_dropped_tracks_;
@@ -135,10 +138,11 @@ bool CheckPixelDisplacement(const cv::KeyPoint kp1,
                             const Vec2 kp2,
                             const number_t max_displacement);
 
-template<class AutoIterable>
-cv::Mat GetDescriptors(AutoIterable fvec,
+cv::Mat GetDescriptors(std::vector<FeaturePtr> fvec,
                        int descriptor_size,
                        int descriptor_type);
+
+bool CheckDistanceRatio(cv::DMatch D1, cv::DMatch D2, number_t ratio);
 
 
 } // namespace xivo
