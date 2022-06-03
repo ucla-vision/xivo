@@ -59,6 +59,11 @@ private:
   int max_pixel_displacement_;     // pixels shifted larger than this amount are
                                    // dropped
   TrackerType tracker_type_;
+  bool do_outlier_rejection_;
+  int outlier_rejection_method_;
+  int outlier_rejection_maxiters_;
+  number_t outlier_rejection_confidence_;
+  number_t outlier_rejection_reproj_thresh_;
 
   cv::Mat img_;
 
@@ -106,6 +111,11 @@ private:
 
 private:
   void DetectLK(const cv::Mat &img, int num_to_add);
+
+  /** An interface to OpenCV's `findHomography` that checks for outliers. */
+  void OutlierRejection(const std::vector<cv::Point2f> pts0,
+                        const std::vector<cv::Point2f> pts1,
+                        std::vector<uint8_t>& match_status);
 
 };
 

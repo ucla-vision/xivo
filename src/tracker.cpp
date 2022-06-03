@@ -7,6 +7,7 @@
 #include "glog/logging.h"
 #include "opencv2/video/video.hpp"
 #include "opencv2/xfeatures2d.hpp"
+#include "opencv2/calib3d.hpp"
 
 #include "feature.h"
 #include "tracker.h"
@@ -108,6 +109,28 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
     LOG(FATAL) << "Invalid tracker type";
   }
 
+  do_outlier_rejection_ = cfg_.get("do_outlier_rejection", false).asBool();
+  auto outlier_rejection_cfg = cfg_["outlier_rejection"];
+  outlier_rejection_maxiters_ =
+    outlier_rejection_cfg.get("RANSAC_max_iters", 2000).asInt();
+  outlier_rejection_confidence_ =
+    outlier_rejection_cfg.get("confidence", 2000).asDouble();
+  outlier_rejection_reproj_thresh_ =
+    outlier_rejection_cfg.get("RANSAC_reproj_thresh", 3.0).asDouble();
+  std::string outlier_rejection_method =
+    outlier_rejection_cfg.get("method", "RANSAC").asString();
+  if (outlier_rejection_method == "RANSAC") {
+    outlier_rejection_method_ = cv::RANSAC;
+  } else if (outlier_rejection_method == "LMEDS") {
+    outlier_rejection_method_ = cv::LMEDS;
+  } else if (outlier_rejection_method == "RHO") {
+    outlier_rejection_method_ = cv::RHO;
+  } else {
+    LOG(FATAL) << "Invalid robust outlier rejection method " <<
+      outlier_rejection_method;
+  }
+
+
   auto klt_cfg = cfg_["KLT"];
   win_size_ = klt_cfg.get("win_size", 15).asInt();
   max_level_ = klt_cfg.get("max_level", 4).asInt();
@@ -169,7 +192,7 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
       matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
     }
   } else { // TrackerType::Match
-      matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
+    matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
   }
 }
 
@@ -194,12 +217,8 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
 
   // match keypoints to old features - indices of these vectors correspond to
   // new features
-  std::vector<bool> matched;
-  std::vector<int> matchIdx;
-  for (int i=0;  i<kps.size(); i++) {
-    matched.push_back(false);
-    matchIdx.push_back(-1);
-  }
+  std::vector<bool> matched(kps.size(), false);
+  std::vector<int> matchIdx(kps.size(), -1);
 
   if (match_dropped_tracks_ && (newly_dropped_tracks_.size() > 0)) {
 
@@ -211,25 +230,24 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
     // query = newly-dropped descriptors
     // train = just-found descriptors
     std::vector<std::vector<cv::DMatch>> matches;
-    matcher_->knnMatch(newly_dropped_descriptors, descriptors, matches, 1);
+    matcher_->knnMatch(newly_dropped_descriptors, descriptors, matches, 1,
+                       cv::noArray(), true);
     for (int i=0; i<matches.size(); i++) {
-      if (matches[i].size() > 0) {
-        cv::DMatch D = matches[i][0];
+      cv::DMatch D = matches[i][0];
 
-        // Check that descriptor distance and pixel displacement are small
-        // enough
-        bool descriptor_distance_check_passed =
-          CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
-        bool pixel_displacement_check_passed =
-          CheckPixelDisplacement(kps[D.trainIdx],
-                                 newly_dropped_tracks_[D.queryIdx]->back(),
-                                 max_pixel_displacement_);
+      // Check that descriptor distance and pixel displacement are small
+      // enough
+      bool descriptor_distance_check_passed =
+        CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
+      bool pixel_displacement_check_passed =
+        CheckPixelDisplacement(kps[D.trainIdx],
+                               newly_dropped_tracks_[D.queryIdx]->back(),
+                               max_pixel_displacement_);
 
-        if (descriptor_distance_check_passed && pixel_displacement_check_passed) {
-          matched[D.trainIdx] = true;
-          matchIdx[D.trainIdx] = D.queryIdx;
-          int fid = newly_dropped_tracks_[D.queryIdx]->id();
-        }
+      if (descriptor_distance_check_passed && pixel_displacement_check_passed) {
+        matched[D.trainIdx] = true;
+        matchIdx[D.trainIdx] = D.queryIdx;
+        int fid = newly_dropped_tracks_[D.queryIdx]->id();
       }
     }
   }
@@ -302,11 +320,8 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
 
   std::vector<FeaturePtr> feature_vec{features_.begin(), features_.end()};
 
-  std::vector<bool> new_kp_matched;
-  std::vector<bool> existing_feature_matched;
-  new_kp_matched.insert(new_kp_matched.begin(), new_kps.size(), false);
-  existing_feature_matched.insert(existing_feature_matched.begin(),
-                                  feature_vec.size(), false);
+  std::vector<bool> new_kp_matched(new_kps.size(), false);
+  std::vector<bool> existing_feature_matched(feature_vec.size(), false);
 
   // if initialized, then match descriptors to existing features
   if (initialized_) {
@@ -319,37 +334,57 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
     matcher_->knnMatch(existing_descriptors, new_descriptors, matches, 1,
                        cv::noArray(), true);
 
-    // Check matches for distance ratio, descriptor distance, pixel displacement
+    // Check matches for descriptor distance, pixel displacement
+    // outlier rejection -- mark status of each one
+    std::vector<uint8_t> match_status(matches.size(), 0);
+
     for (int i=0; i<matches.size(); i++) {
-      if (matches[i].size() > 0) {
+      cv::DMatch D = matches[i][0];
+
+      // Check that descriptor distance and pixel displacement are small
+      // enough
+      bool descriptor_distance_check_passed =
+        CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
+      bool pixel_displacement_check_passed =
+        CheckPixelDisplacement(new_kps[D.trainIdx],
+                               feature_vec[D.queryIdx]->back(),
+                               max_pixel_displacement_);
+
+      match_status[i] = uint8_t(descriptor_distance_check_passed &&
+                                pixel_displacement_check_passed);
+    }
+
+    // Outlier rejection
+    if (do_outlier_rejection_) {
+      std::vector<cv::Point2f> pts0;
+      std::vector<cv::Point2f> pts1;
+      for (int i = 0; i < matches.size(); i++) {
         cv::DMatch D = matches[i][0];
+        pts0.push_back(feature_vec[D.queryIdx]->keypoint().pt);
+        pts1.push_back(new_kps[D.trainIdx].pt);
+      }
+      OutlierRejection(pts0, pts1, match_status);
+    }
 
-        // Check that descriptor distance and pixel displacement are small
-        // enough
-        bool descriptor_distance_check_passed =
-          CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
-        bool pixel_displacement_check_passed =
-          CheckPixelDisplacement(new_kps[D.trainIdx],
-                                 feature_vec[D.queryIdx]->back(),
-                                 max_pixel_displacement_);
+    // After outlier rejection, mark match status of old and new features and
+    // update existing tracks
+    for (int i=0; i<matches.size(); i++) {
+      if (match_status[i]) {
+        cv::DMatch D = matches[i][0];
+        new_kp_matched[D.trainIdx] = true;
+        existing_feature_matched[D.queryIdx] = true;
 
-        if (descriptor_distance_check_passed &&
-            pixel_displacement_check_passed)
-        {
-          new_kp_matched[D.trainIdx] = true;
-          existing_feature_matched[D.queryIdx] = true;
-
-          FeaturePtr f = feature_vec[D.queryIdx];
-          cv::KeyPoint kp = new_kps[D.trainIdx];
-          f->UpdateTrack(Vec2{kp.pt.x, kp.pt.y});
-          if (differential_) {
-            f->SetDescriptor(new_descriptors.row(D.trainIdx));
-          }
-          f->SetTrackStatus(TrackStatus::TRACKED);
+        FeaturePtr f = feature_vec[D.queryIdx];
+        cv::KeyPoint kp = new_kps[D.trainIdx];
+        f->UpdateTrack(Vec2{kp.pt.x, kp.pt.y});
+        if (differential_) {
+          f->SetDescriptor(new_descriptors.row(D.trainIdx));
         }
+        f->SetTrackStatus(TrackStatus::TRACKED);
       }
     }
   }
+
 
   // Drop features that weren't matched to a new point
   int num_features_dropped = 0;
@@ -532,6 +567,49 @@ void Tracker::UpdateLK(const cv::Mat &image) {
   std::swap(pyramid, pyramid_);
 
 }
+
+
+void Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
+                               const std::vector<cv::Point2f> pts1,
+                               std::vector<uint8_t>& match_status)
+{
+  CHECK(pts0.size() == pts1.size());
+
+  // Remove all points that are already marked as rejected
+  std::vector<cv::Point2f> pts0_valid;
+  std::vector<cv::Point2f> pts1_valid;
+  std::vector<int> idx_map; // maps input idx to _valid idx
+  int cnt = 0;
+  for (int i=0; i<pts0.size(); i++) {
+    if (match_status[i] != 0) {
+      pts0_valid.push_back(pts0[i]);
+      pts1_valid.push_back(pts1[i]);
+      idx_map.push_back(cnt);
+      cnt++;
+    } else {
+      idx_map.push_back(-1);
+    }
+  }
+
+  // Call OpenCV
+  cv::Mat inlier_outlier_mask(1, pts0_valid.size(), CV_8UC1);
+  cv::findHomography(pts0_valid, pts1_valid, outlier_rejection_method_,
+                     outlier_rejection_reproj_thresh_, inlier_outlier_mask,
+                     outlier_rejection_maxiters_,
+                     outlier_rejection_confidence_);
+
+  // Mark outliers in `match_status`
+  for (int i=0; i<pts0.size(); i++) {
+    if (match_status[i] != 0) {
+      if (inlier_outlier_mask.at<uchar>(idx_map[i]) == 0) {
+        match_status[i] = 0;
+      }
+    }
+  }
+
+}
+
+
 
 ////////////////////////////////////////
 // helpers

@@ -29,11 +29,26 @@
     "match_dropped_tracks": false,
     "match_dropped_tracks_tol": 50,
 
+    "KLT": {
+      "win_size": 15,
+      "max_level": 5,
+      "max_iter": 30,
+      "eps": 0.01
+    },
+
+    "outlier_rejection": {
+      "method": "LMEDS",
+      "RANSAC_reproj_thresh": 3.0,
+      "RANSAC_max_iters": 2000,
+      "confidence": 0.995
+    },
+
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
     "descriptor": "SIFT",
     "differential": true,
     "tracker_type": "MATCH",
+    "do_outlier_rejection": true,
 
     // "detector": "BRISK",
     "detector": "FAST",
