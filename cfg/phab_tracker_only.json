@@ -23,13 +23,11 @@
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
     "num_features_min": 45,
-    "num_features_max": 1500,
+    "num_features_max": 60,
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": false,
     "match_dropped_tracks_tol": 50,
-
-    "distance_ratio": 1.0,
 
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check

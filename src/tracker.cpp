@@ -114,8 +114,6 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
   max_iter_ = klt_cfg.get("max_iter", 15).asInt();
   eps_ = klt_cfg.get("eps", 0.01).asDouble();
 
-  distance_ratio_ = cfg_.get("distance_ratio", 0.8).asDouble();
-
   std::string detector_type = cfg_.get("detector", "FAST").asString();
   LOG(INFO) << "detector type=" << detector_type;
   if ((detector_type == "FAST") ||
@@ -206,10 +204,7 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
   if (match_dropped_tracks_ && (newly_dropped_tracks_.size() > 0)) {
 
     // Get matrix of old descriptors
-    cv::Mat newly_dropped_descriptors =
-      GetDescriptors(newly_dropped_tracks_,
-                     extractor_->descriptorSize(),
-                     extractor_->descriptorType());
+    cv::Mat newly_dropped_descriptors = GetDescriptors(newly_dropped_tracks_);
 
     // Attempt to rescue newly-dropped descriptors with brute-force feature
     // matching.
@@ -296,17 +291,14 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
   std::vector<cv::KeyPoint> new_kps;
   detector_->detect(img_, new_kps, cv::noArray());
   // sort
-  //std::sort(new_kps.begin(), new_kps.end(),
-  //          [](const cv::KeyPoint &kp1, const cv::KeyPoint &kp2) {
-  //            return kp1.response > kp2.response;
-  //          });
-  std::cout << "detected " << new_kps.size() << " features" << std::endl;
+  std::sort(new_kps.begin(), new_kps.end(),
+            [](const cv::KeyPoint &kp1, const cv::KeyPoint &kp2) {
+              return kp1.response > kp2.response;
+            });
 
   cv::Mat new_descriptors;
   new_descriptors.reserveBuffer(new_kps.size() * extractor_->descriptorSize());
   extractor_->compute(img_, new_kps, new_descriptors);
-
-  //std::cout << new_descriptors.row(0) << std::endl;
 
   std::vector<FeaturePtr> feature_vec{features_.begin(), features_.end()};
 
@@ -319,13 +311,7 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
   // if initialized, then match descriptors to existing features
   if (initialized_) {
 
-    cv::Mat existing_descriptors =
-      GetDescriptors(feature_vec,
-                     extractor_->descriptorSize(),
-                     extractor_->descriptorType());
-    std::cout << new_descriptors.row(0) << std::endl;
-    std::cout << existing_descriptors.row(0) << std::endl;
-    std::cout << feature_vec[0]->descriptor() << std::endl;
+    cv::Mat existing_descriptors = GetDescriptors(feature_vec);
 
     // query descriptors = existing kps/descriptors
     // train descriptors = new kps/descriptors
@@ -334,34 +320,21 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
                        cv::noArray(), true);
 
     // Check matches for distance ratio, descriptor distance, pixel displacement
-    //std::cout << "distance ratio: ";
     for (int i=0; i<matches.size(); i++) {
       if (matches[i].size() > 0) {
         cv::DMatch D = matches[i][0];
 
         // Check that descriptor distance and pixel displacement are small
         // enough
-        /*
         bool descriptor_distance_check_passed =
           CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
         bool pixel_displacement_check_passed =
           CheckPixelDisplacement(new_kps[D.trainIdx],
                                  feature_vec[D.queryIdx]->back(),
                                  max_pixel_displacement_);
-        */
-        bool descriptor_distance_check_passed = true;
-        bool pixel_displacement_check_passed = true;
-        //bool distance_ratio_passed =
-        //  CheckDistanceRatio(D, matches[i][1], distance_ratio_);
-        bool distance_ratio_passed = true;
-
-        //DEBUG
-        //number_t dist_ratio = matches[i][0].distance / matches[i][1].distance;
-        //std::cout << dist_ratio << ", ";
 
         if (descriptor_distance_check_passed &&
-            pixel_displacement_check_passed &&
-            distance_ratio_passed)
+            pixel_displacement_check_passed)
         {
           new_kp_matched[D.trainIdx] = true;
           existing_feature_matched[D.queryIdx] = true;
@@ -376,24 +349,7 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
         }
       }
     }
-    //std::cout << std::endl;
   }
-
-  auto count_true = [](std::vector<bool> vec) {
-    int counter = 0;
-    for (auto b: vec) {
-      if (b) {
-        counter++;
-      }
-    }
-    return counter;
-  };
-
-  // DEBUG: count number of newly matched features
-  int num_new_kp_matches = count_true(new_kp_matched);
-  int num_existing_f_matches = count_true(existing_feature_matched);
-  std::cout << "num new features matched: " << num_new_kp_matches << std::endl;
-  std::cout << "num old features matched: " << num_existing_f_matches << std::endl;
 
   // Drop features that weren't matched to a new point
   int num_features_dropped = 0;
@@ -403,12 +359,10 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
       num_features_dropped += 1;
     }
   }
-  std::cout << "dropped " << num_features_dropped << " features" << std::endl;
 
   // Turn rest of detected tracks into a new feature
   int num_to_create = num_features_max_ - feature_vec.size()
     + num_features_dropped;
-  std::cout << "num to create: " << num_to_create << std::endl;
   for (int i=0; i<new_kps.size(); i++) {
     if (num_to_create <= 0) {
       break;
@@ -454,7 +408,6 @@ void Tracker::UpdateLK(const cv::Mat &image) {
   // reset mask
   ResetMask(mask_(
       cv::Rect(margin_, margin_, cols_ - 2 * margin_, rows_ - 2 * margin_)));
-  // std::cout << "reset mask\n";
 
   // build new pyramid
   std::vector<cv::Mat> pyramid;
@@ -600,21 +553,15 @@ bool MaskValid(const cv::Mat &mask, number_t x, number_t y) {
 }
 
 
-cv::Mat GetDescriptors(std::vector<FeaturePtr> fvec,
-                       int descriptor_size,
-                       int descriptor_type)
+cv::Mat GetDescriptors(std::vector<FeaturePtr> fvec)
 {
-  FeaturePtr f0 = fvec[0];
-  int d_size = f0->descriptor().cols;
-  int d_type = f0->descriptor().type();
-  std::cout << "d_size/descriptor_size: " << d_size << "/" << descriptor_size << std::endl;
-  std::cout << "d_type/descriptor_type: " << d_type << "/" << descriptor_type << std::endl;
+  int d_size = fvec[0]->descriptor().cols;
+  int d_type = fvec[0]->descriptor().type();
 
-  //cv::Mat descriptors(fvec.size(), descriptor_size, descriptor_type);
   cv::Mat descriptors(fvec.size(), d_size, d_type);
   int i = 0;
   for (auto f: fvec) {
-    descriptors.row(i) = f->descriptor();
+    f->descriptor().copyTo(descriptors.row(i));
     i++;
   }
   return descriptors;
@@ -647,8 +594,5 @@ bool CheckPixelDisplacement(const cv::KeyPoint kp1,
 }
 
 
-bool CheckDistanceRatio(cv::DMatch D1, cv::DMatch D2, number_t ratio) {
-  return (D1.distance < (ratio * D2.distance));
-}
 
 } // namespace xivo
