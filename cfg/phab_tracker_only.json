@@ -27,7 +27,7 @@
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": false,
-    "match_dropped_tracks_tol": 50,
+    "do_outlier_rejection": true,
 
     "KLT": {
       "win_size": 15,
@@ -48,7 +48,6 @@
     "descriptor": "SIFT",
     "differential": true,
     "tracker_type": "MATCH",
-    "do_outlier_rejection": true,
 
     // "detector": "BRISK",
     "detector": "FAST",

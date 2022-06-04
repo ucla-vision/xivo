@@ -21,6 +21,21 @@
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": true,
+    "do_outlier_rejection": true,
+
+    "KLT": {
+      "win_size": 15,
+      "max_level": 5,
+      "max_iter": 30,
+      "eps": 0.01
+    },
+
+    "outlier_rejection": {
+      "method": "LMEDS",
+      "RANSAC_reproj_thresh": 3.0,
+      "RANSAC_max_iters": 2000,
+      "confidence": 0.995
+    },
 
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
