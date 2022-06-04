@@ -15,6 +15,13 @@
 
 namespace xivo {
 
+auto sum_total = [](std::vector<uint8_t> vec) {
+  int sum = 0;
+  for (auto v: vec) {
+    sum += v;
+  }
+  return sum;
+};
 
 cv::Ptr<cv::FeatureDetector> GetOpenCVDetectorDescriptor(
   std::string feature_type, Json::Value feature_cfg)
@@ -114,7 +121,7 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
   outlier_rejection_maxiters_ =
     outlier_rejection_cfg.get("RANSAC_max_iters", 2000).asInt();
   outlier_rejection_confidence_ =
-    outlier_rejection_cfg.get("confidence", 2000).asDouble();
+    outlier_rejection_cfg.get("confidence", 0.995).asDouble();
   outlier_rejection_reproj_thresh_ =
     outlier_rejection_cfg.get("RANSAC_reproj_thresh", 3.0).asDouble();
   std::string outlier_rejection_method =
@@ -197,7 +204,10 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
 }
 
 
-void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
+void Tracker::DetectLK(const cv::Mat &img, int num_to_add,
+                       std::vector<FeaturePtr> newly_dropped_tracks,
+                       bool check_homography, cv::Mat H)
+{
   std::vector<cv::KeyPoint> kps;
   detector_->detect(img, kps, mask_);
   // sort
@@ -220,10 +230,10 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
   std::vector<bool> matched(kps.size(), false);
   std::vector<int> matchIdx(kps.size(), -1);
 
-  if (match_dropped_tracks_ && (newly_dropped_tracks_.size() > 0)) {
+  if (match_dropped_tracks_ && (newly_dropped_tracks.size() > 0)) {
 
     // Get matrix of old descriptors
-    cv::Mat newly_dropped_descriptors = GetDescriptors(newly_dropped_tracks_);
+    cv::Mat newly_dropped_descriptors = GetDescriptors(newly_dropped_tracks);
 
     // Attempt to rescue newly-dropped descriptors with brute-force feature
     // matching.
@@ -241,13 +251,27 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
         CheckDescriptorDistance(D.distance, descriptor_distance_thresh_);
       bool pixel_displacement_check_passed =
         CheckPixelDisplacement(kps[D.trainIdx],
-                               newly_dropped_tracks_[D.queryIdx]->back(),
+                               newly_dropped_tracks[D.queryIdx]->back(),
                                max_pixel_displacement_);
+      
+      // check reprojection error
+      bool reprojection_error_check_passed;
+      if (!check_homography) {
+        reprojection_error_check_passed = true;
+      } else {
+        reprojection_error_check_passed =
+          CheckHomography(newly_dropped_tracks[D.queryIdx]->keypoint().pt,
+                          kps[D.trainIdx].pt, H,
+                          outlier_rejection_reproj_thresh_);
+      }
 
-      if (descriptor_distance_check_passed && pixel_displacement_check_passed) {
+      if (descriptor_distance_check_passed &&
+          pixel_displacement_check_passed &&
+          reprojection_error_check_passed)
+      {
         matched[D.trainIdx] = true;
         matchIdx[D.trainIdx] = D.queryIdx;
-        int fid = newly_dropped_tracks_[D.queryIdx]->id();
+        int fid = newly_dropped_tracks[D.queryIdx]->id();
       }
     }
   }
@@ -259,13 +283,14 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add) {
 
       if (match_dropped_tracks_ && matched[i]) {
         int idx = matchIdx[i];
-        FeaturePtr f1 = newly_dropped_tracks_[idx];
+        FeaturePtr f1 = newly_dropped_tracks[idx];
         if (differential_) {
           f1->SetDescriptor(descriptors.row(i));
         }
         f1->UpdateTrack(kp.pt.x, kp.pt.y);
         f1->SetTrackStatus(TrackStatus::TRACKED);
         LOG(INFO) << "Potentially rescued dropped feature #" << f1->id();
+        std::cout << "Potentially rescued dropped feature #" << f1->id() << std::endl;
         MaskOut(mask_, kp.pt.x, kp.pt.y, mask_size_);
         --num_to_add;
         continue;
@@ -363,7 +388,8 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
         pts0.push_back(feature_vec[D.queryIdx]->keypoint().pt);
         pts1.push_back(new_kps[D.trainIdx].pt);
       }
-      OutlierRejection(pts0, pts1, match_status);
+      cv::Mat H;
+      OutlierRejection(pts0, pts1, match_status, H);
     }
 
     // After outlier rejection, mark match status of old and new features and
@@ -436,7 +462,8 @@ void Tracker::UpdateLK(const cv::Mat &image) {
     ResetMask(mask_(
         cv::Rect(margin_, margin_, cols_ - 2 * margin_, rows_ - 2 * margin_)));
     // detect an initial set of features
-    DetectLK(img_, num_features_max_);
+    DetectLK(img_, num_features_max_, std::vector<FeaturePtr>(),
+             false, cv::Mat());
     initialized_ = true;
     return;
   }
@@ -503,8 +530,8 @@ void Tracker::UpdateLK(const cv::Mat &image) {
     for (int i = 0; i < kps.size(); ++i) {
       auto f = vf[kps[i].class_id];
       if (descriptor_distance_thresh_ != -1) {
-        int dist =
-            cv::norm(f->descriptor(), descriptors.row(i), extractor_->defaultNorm());
+        int dist = cv::norm(f->descriptor(), descriptors.row(i),
+                            extractor_->defaultNorm());
         if (dist > descriptor_distance_thresh_) {
           status[i] = 0; // enforce to be dropped
         } else {
@@ -545,30 +572,33 @@ void Tracker::UpdateLK(const cv::Mat &image) {
   }
 
   cv::Mat H;
+  bool outlier_rejection_success;
   if (do_outlier_rejection_) {
-    H = OutlierRejection(pts0, pts1, status);
+    outlier_rejection_success = OutlierRejection(pts0, pts1, status, H);
   }
 
   // Mark newly dropped tracks for possible rescue
-  newly_dropped_tracks_.clear();
+  std::vector<FeaturePtr> newly_dropped_tracks;
   i = 0;
   for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
     if (!status[i]) {
       FeaturePtr f(*it);
-      newly_dropped_tracks_.push_back(f);
+      newly_dropped_tracks.push_back(f);
     }
   }
 
   // detect a new set of features
   // this can rescue dropped featuers by matching them to newly detected ones
   if (num_valid_features < num_features_min_) {
-    DetectLK(img_, num_features_max_ - num_valid_features);
+    bool check_homography = outlier_rejection_success && do_outlier_rejection_;
+    DetectLK(img_, num_features_max_ - num_valid_features,
+             newly_dropped_tracks, check_homography, H);
   }
 
   // Mark all features that are still in newly_dropped_tracks_ at this point
   // as dropped. Dropped features will get deleted later in the function
   // Estimator::ProcessTracks()
-  for (auto f: newly_dropped_tracks_) {
+  for (auto f: newly_dropped_tracks) {
     f->SetTrackStatus(TrackStatus::DROPPED);
   }
 
@@ -578,11 +608,17 @@ void Tracker::UpdateLK(const cv::Mat &image) {
 }
 
 
-cv::Mat Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
+bool Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
                                const std::vector<cv::Point2f> pts1,
-                               std::vector<uint8_t>& match_status)
+                               std::vector<uint8_t>& match_status,
+                               cv::Mat& H)
 {
   CHECK(pts0.size() == pts1.size());
+
+  // Check that we have at least 4 valid points
+  if (sum_total(match_status) < 4) {
+    return false;
+  }
 
   // Remove all points that are already marked as rejected
   std::vector<cv::Point2f> pts0_valid;
@@ -602,7 +638,7 @@ cv::Mat Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
 
   // Call OpenCV
   cv::Mat inlier_outlier_mask(1, pts0_valid.size(), CV_8UC1);
-  cv::Mat H = cv::findHomography(
+  H = cv::findHomography(
     pts0_valid, pts1_valid, outlier_rejection_method_,
     outlier_rejection_reproj_thresh_, inlier_outlier_mask,
     outlier_rejection_maxiters_, outlier_rejection_confidence_);
@@ -616,7 +652,7 @@ cv::Mat Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
     }
   }
 
-  return H;
+  return true;
 }
 
 
@@ -679,6 +715,19 @@ bool CheckPixelDisplacement(const cv::KeyPoint kp1,
   return CheckPixelDisplacement(Vec2{kp1.pt.x, kp1.pt.y},
                                 kp2,
                                 max_displacement);
+}
+
+
+bool CheckHomography(cv::Point2f p0,
+                     cv::Point2f p1,
+                     cv::Mat H,
+                     number_t reproj_threshold)
+{
+  cv::Mat p0_h(cv::Vec3d(p0.x, p0.y, 1.0), true);
+  cv::Mat p1_h(cv::Vec3d(p1.x, p1.y, 1.0), true);
+  cv::Mat Hp0 = H * p0_h;
+  number_t dist = cv::norm(p0_h, p1_h, cv::NORM_L2);
+  return (dist < reproj_threshold);
 }
 
 

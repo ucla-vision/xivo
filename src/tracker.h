@@ -106,16 +106,18 @@ private:
 
   // Matching newly detected tracks to tracks that were just dropped
   bool match_dropped_tracks_;
-  std::vector<FeaturePtr> newly_dropped_tracks_;
   cv::Ptr<cv::BFMatcher> matcher_;
 
 private:
-  void DetectLK(const cv::Mat &img, int num_to_add);
+  void DetectLK(const cv::Mat &img, int num_to_add,
+                std::vector<FeaturePtr> newly_dropped_tracks,
+                bool check_homography, cv::Mat H);
 
   /** An interface to OpenCV's `findHomography` that checks for outliers. */
-  cv::Mat OutlierRejection(const std::vector<cv::Point2f> pts0,
+  bool OutlierRejection(const std::vector<cv::Point2f> pts0,
                         const std::vector<cv::Point2f> pts1,
-                        std::vector<uint8_t>& match_status);
+                        std::vector<uint8_t>& match_status,
+                        cv::Mat& H);
 };
 
 // helpers
@@ -149,6 +151,9 @@ bool CheckPixelDisplacement(const Vec2 kp1,
 bool CheckPixelDisplacement(const cv::KeyPoint kp1,
                             const Vec2 kp2,
                             const number_t max_displacement);
+
+bool CheckHomography(cv::Point2f p0, cv::Point2f p1, cv::Mat H,
+                     number_t reproj_threshold);
 
 /** Assembles the descriptors of all the features in `fvec` into a single
  *  matrix. */
