@@ -81,6 +81,7 @@ target_link_libraries(xapp ${deps})
 add_library(xest STATIC
         factory.cpp
         estimator.cpp
+        estimator_accessors.cpp
         princedormand.cpp
         rk4.cpp
         visualize.cpp
