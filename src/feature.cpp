@@ -47,6 +47,12 @@ FeaturePtr Feature::Create(number_t x, number_t y) {
   return f;
 }
 
+FeaturePtr Feature::PointCloudWorldCreate(int fid, number_t x, number_t y) {
+  FeaturePtr f = Feature::Create(x, y);
+  f->id_ = fid;
+  return f;
+}
+
 void Feature::Deactivate(FeaturePtr f) {
   MemoryManager::instance()->DeactivateFeature(f);
 }

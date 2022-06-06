@@ -61,6 +61,10 @@ void Inertial::Execute(Estimator *est) {
 void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
 
 void VisualTrackerOnly::Execute(Estimator *est) { est->VisualMeasInternalTrackerOnly(ts_, img_); }
+
+void VisualPointCloud::Execute(Estimator *est) {
+  est->VisualMeasPointCloudInternal(ts_, feature_ids_, xp_vals_);
+}
 } // namespace internal
 
 // destructor
@@ -944,6 +948,33 @@ void Estimator::VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &
   }
 }
 
+
+void Estimator::VisualMeasPointCloud(
+  const timestamp_t &ts_raw,
+  const VecXi &feature_ids,
+  const MatX2 &xp_vals)
+{
+  timestamp_t ts{ts_raw};
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+  if (X_.td >= 0) {
+    ts += timestamp_t(uint64_t(X_.td * 1e9)); // seconds -> nanoseconds
+  } else {
+    ts -= timestamp_t(uint64_t(-X_.td * 1e9)); // seconds -> nanoseconds
+  }
+#endif
+  if (async_run_) {
+    std::scoped_lock lck(buf_.mtx);
+    buf_.push_back(std::make_unique<internal::VisualPointCloud>(
+      ts, feature_ids, xp_vals));
+    MaintainBuffer();
+  } else {
+    buf_.push_back(std::make_unique<internal::VisualPointCloud>(
+      ts, feature_ids, xp_vals));
+    MaintainBuffer();
+  }
+}
+
+
 void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
                              const Vec3 &accel) {
   if (async_run_) {
@@ -1054,6 +1085,49 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
   }
   timer_.Tock("visual-meas");
 }
+
+
+void Estimator::VisualMeasPointCloudInternal(
+  const timestamp_t &ts,
+  const VecXi &feature_ids,
+  const MatX2 &xps)
+{
+  if (!GoodTimestamp(ts))
+    return;
+
+  if (simulation_) {
+    throw std::invalid_argument(
+        "function VisualMeas cannot be called in simulation");
+  }
+
+  ++vision_counter_;
+  timer_.Tick("visual-meas");
+  UpdateSystemClock(ts);
+  if (vision_initialized_) {
+    // propagate state upto current timestamp
+    Propagate(true);
+    //if (use_canvas_) {
+    //  Canvas::instance()->Update(img);
+    //}
+    // measurement prediction for feature tracking
+    auto tracker = Tracker::instance();
+    Predict(tracker->features_);
+    // track features
+    timer_.Tick("track");
+    tracker->UpdatePointCloud(feature_ids, xps);
+    timer_.Tock("track");
+    // process features
+    timer_.Tick("process-tracks");
+    ProcessTracks(ts, tracker->features_);
+    timer_.Tock("process-tracks");
+
+    if (gauge_group_ == -1) {
+      SwitchRefGroup();
+    }
+  }
+  timer_.Tock("visual-meas");
+}
+
 
 std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
 
