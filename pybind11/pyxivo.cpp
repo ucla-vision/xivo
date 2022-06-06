@@ -50,6 +50,12 @@ public:
     }
   }
 
+
+  void VisualMeasPointCloud(uint64_t ts, VecXi &feature_ids, MatX2 &xps) {
+    estimator_->VisualMeasPointCloud(timestamp_t{ts}, feature_ids, xps);
+  }
+
+
   void VisualMeas(uint64_t ts, std::string &image_path) {
 
     auto image = cv::imread(image_path);
