@@ -1,5 +1,8 @@
 #include "estimator.h"
 
+#include <opencv2/core/eigen.hpp>
+
+
 namespace xivo {
 
 VecXi Estimator::InstateFeatureSinds(int n_output) const {
@@ -443,6 +446,33 @@ Mat6 Estimator::InstateGroupCov(GroupPtr g) const {
 #endif
   int goff = kGroupBegin + 6*g->sind();
   return P_.block<6,6>(goff, goff);
+}
+
+
+std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
+
+  auto tracker = Tracker::instance();
+
+  // store tracked feature information
+  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
+
+  for (auto f : tracker->features_)
+  {
+    int id = f->id();
+    cv::KeyPoint kp = f->keypoint();
+    cv::Mat descriptor = f->descriptor();
+
+    // Convert from cv::Mat to matrix
+    MatXf descriptor_eigen;
+    cv2eigen(descriptor, descriptor_eigen);
+
+    // Convert cv::Keypoint to vector
+    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+
+    tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
+  }
+
+  return tracked_features_info;
 }
 
 
