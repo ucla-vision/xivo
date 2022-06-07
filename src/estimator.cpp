@@ -17,8 +17,6 @@
 #include "helpers.h"
 #include "mapper.h"
 
-#include <opencv2/core/eigen.hpp>
-
 #ifdef USE_G2O
 #include "optimizer.h"
 #endif
@@ -1135,32 +1133,6 @@ void Estimator::VisualMeasPointCloudInternal(
   timer_.Tock("visual-meas");
 }
 
-
-std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
-
-  auto tracker = Tracker::instance();
-
-  // store tracked feature information
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
-
-  for (auto f : tracker->features_)
-  {
-    int id = f->id();
-    cv::KeyPoint kp = f->keypoint();
-    cv::Mat descriptor = f->descriptor();
-
-    // Convert from cv::Mat to matrix
-    MatXf descriptor_eigen;
-    cv2eigen(descriptor, descriptor_eigen);
-
-    // Convert cv::Keypoint to vector
-    Vec2f kp_vector{kp.pt.x, kp.pt.y};
-
-    tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
-  }
-
-  return tracked_features_info;
-}
 
 void Estimator::Predict(std::list<FeaturePtr> &features) {
   for (auto f : features) {
