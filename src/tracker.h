@@ -15,6 +15,12 @@
 
 namespace xivo {
 
+
+enum TrackerType : int {
+  LK = 0,
+  MATCH = 1
+};
+
 class Tracker {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -25,6 +31,10 @@ public:
    *  using LK-pyramid and detects a new set of features to be tracked.
    *  \todo Rescue features that would otherwise be dropped from tracker with newly
    *        detected features. */
+  void UpdateLK(const cv::Mat &img);
+
+  void UpdateMatch(const cv::Mat &img);
+
   void Update(const cv::Mat &img);
 
   /** Called by function `CreateSystem` to force extraction of descriptors when
@@ -42,11 +52,18 @@ private:
   static std::unique_ptr<Tracker> instance_;
 
   // variables
+  bool differential_;
   bool initialized_;
   Json::Value cfg_;
   int descriptor_distance_thresh_; // use this to verify feature tracking
   int max_pixel_displacement_;     // pixels shifted larger than this amount are
                                    // dropped
+  TrackerType tracker_type_;
+  bool do_outlier_rejection_;
+  int outlier_rejection_method_;
+  int outlier_rejection_maxiters_;
+  number_t outlier_rejection_confidence_;
+  number_t outlier_rejection_reproj_thresh_;
 
   cv::Mat img_;
 
@@ -83,19 +100,24 @@ private:
   int max_iter_;
   number_t eps_;
 
-  // fast params
+  // feature detector params
   int num_features_min_;
   int num_features_max_;
 
   // Matching newly detected tracks to tracks that were just dropped
   bool match_dropped_tracks_;
-  std::vector<FeaturePtr> newly_dropped_tracks_;
-  std::unordered_set<FeaturePtr> newly_dropped_tracks_hlpr_;
   cv::Ptr<cv::BFMatcher> matcher_;
 
 private:
-  void Detect(const cv::Mat &img, int num_to_add);
+  void DetectLK(const cv::Mat &img, int num_to_add,
+                std::vector<FeaturePtr> newly_dropped_tracks,
+                bool check_homography, cv::Mat H);
 
+  /** An interface to OpenCV's `findHomography` that checks for outliers. */
+  bool OutlierRejection(const std::vector<cv::Point2f> pts0,
+                        const std::vector<cv::Point2f> pts1,
+                        std::vector<uint8_t>& match_status,
+                        cv::Mat& H);
 };
 
 // helpers
@@ -111,5 +133,31 @@ void MaskOut(cv::Mat mask, number_t x, number_t y, int mask_size = 15);
 /** Checks whether or not `mask_` is white at pixel `(x,y)` and whether or not
  *  (x,y) is not too close to the edge of the image. */
 bool MaskValid(const cv::Mat &mask, number_t x, number_t y);
+
+/** Returns `true` if the distance between two descriptors,
+ *  `descriptor_distance`, is less than `max_distance`. Also returns `true`
+ *  if we are not doing a descriptor distance check (i.e.
+ *  `max_distance = -1`). */
+bool CheckDescriptorDistance(number_t descriptor_distance,
+                             number_t max_distance);
+
+/** Returns `true` if two keypoints are close-enough together (in Euclidean
+ *  distance of pixel coordinates) */
+bool CheckPixelDisplacement(const Vec2 kp1,
+                            const Vec2 kp2,
+                            const number_t max_displacement);
+
+/** Same as above with different API, for convenience. */
+bool CheckPixelDisplacement(const cv::KeyPoint kp1,
+                            const Vec2 kp2,
+                            const number_t max_displacement);
+
+bool CheckHomography(cv::Point2f p0, cv::Point2f p1, cv::Mat H,
+                     number_t reproj_threshold);
+
+/** Assembles the descriptors of all the features in `fvec` into a single
+ *  matrix. */
+cv::Mat GetDescriptors(std::vector<FeaturePtr> fvec);
+
 
 } // namespace xivo

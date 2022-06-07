@@ -233,7 +233,7 @@
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": false,
-    "match_dropped_tracks_tol": 50,
+    "do_outlier_rejection": false,
 
     "KLT": {
       "win_size": 15,
@@ -242,9 +242,18 @@
       "eps": 0.01
     },
 
+    "outlier_rejection": {
+      "method": "LMEDS",
+      "RANSAC_reproj_thresh": 3.0,
+      "RANSAC_max_iters": 2000,
+      "confidence": 0.995
+    },
+
     "extract_descriptor": true,
     "descriptor_distance_thresh": -1, // -1 to disable descriptor check
     "descriptor": "BRIEF",
+    "differential": true,
+    "tracker_type": "LK",
 
     // "detector": "BRISK",
     "detector": "FAST",
