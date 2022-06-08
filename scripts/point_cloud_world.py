@@ -1,6 +1,7 @@
 from typing import Union, List, Tuple
 
 import numpy as np
+from numpy.random import default_rng
 from scipy.spatial.transform import Rotation
 
 
@@ -78,11 +79,33 @@ class PointCloudWorld:
     return (feature_ids, xp_vals)
 
 
+class RandomPCW(PointCloudWorld):
+  def __init__(self, xlim, ylim, zlim, seed=None):
+    PointCloudWorld.__init__(self)
+    self.xlim = xlim
+    self.ylim = ylim
+    self.zlim = zlim
+    self.rng = default_rng(seed)
+
+  def addPt(self):
+    x = self.rng.uniform(low=self.xlim[0], high=self.xlim[1])
+    y = self.rng.uniform(low=self.ylim[0], high=self.ylim[1])
+    z = self.rng.uniform(low=self.zlim[0], high=self.zlim[1])
+    Xs = np.array([x, y, z])
+    PointCloudWorld.addPt(self, Xs)
+
+  def addNPts(self, N: int):
+    for _ in range(N):
+      self.addPt()
+
 
 if __name__ == "__main__":
   PCW = PointCloudWorld()
   PCW.addPt([10, 10, 1])
   PCW.addPt((10, 11, 1.5))
+
+  RPCW = RandomPCW((-10, 10), (-10, 10), (-5, 5))
+  RPCW.addNPts(100000)
 
   Rsc = Rotation.from_euler('XYZ', [-np.pi/2, 0, 0]).as_matrix()
   Tsc = np.reshape(np.array([ 10, 8, 1 ]), (3, 1))
@@ -92,6 +115,8 @@ if __name__ == "__main__":
                 [   0,   0,   1 ]])
 
   (feature_ids0, xp0) = PCW.generateMeasurements(gsc, K, 640, 480)
+
+  (feature_ids1, xp1) = RPCW.generateMeasurements(gsc, K, 640, 480)
 
   import pdb
   pdb.set_trace()
