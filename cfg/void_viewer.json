@@ -16,10 +16,10 @@
   },
 
   "ModelViewMatrix": {
-    "x": 5.0,
-    "y": 0.2,
-    "z": 0.0,
-    "upVector": [ 0, 0, 1 ]
+    "x": 0.0,
+    "y": 0.0,
+    "z": -2.0,
+    "upVector": [ 0, -1, 0 ]
   },
 
   "bg_color": {

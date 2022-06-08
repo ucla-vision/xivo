@@ -127,8 +127,10 @@ def main(args):
     if args.use_viewer:
         if args.dataset == 'tumvi':
             viewer_cfg = os.path.join('cfg', 'viewer.json')
-        elif args.dataset in ['xivo', 'void']:
+        elif args.dataset == "xivo":
             viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
+        elif args.dataset == 'void':
+            viewer_cfg = os.path.join('cfg', 'void_viewer.json')
         elif args.dataset == 'cosyvio':
             if args.sen == 'tango_top':
                 viewer_cfg = os.path.join('cfg', 'phab_viewer.json')
