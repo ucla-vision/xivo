@@ -359,9 +359,14 @@ Estimator::Estimator(const Json::Value &cfg)
   }
 
   // reset initialization status
-  gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
-  gravity_initialized_ = false;
-  vision_initialized_ = false;
+  if (simulation_) {
+    gravity_init_counter_ = 0;
+    gravity_initialized_ = true;
+  } else {
+    gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
+    gravity_initialized_ = false;
+  }
+    vision_initialized_ = false;
   // reset measurement counter
   imu_counter_ = 0;
   vision_counter_ = 0;
@@ -1100,9 +1105,9 @@ void Estimator::VisualMeasPointCloudInternal(
   if (!GoodTimestamp(ts))
     return;
 
-  if (simulation_) {
+  if (!simulation_) {
     throw std::invalid_argument(
-        "function VisualMeas cannot be called in simulation");
+        "function VisualMeasPointCloud is only for simulation");
   }
 
   ++vision_counter_;
