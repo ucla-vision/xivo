@@ -51,7 +51,9 @@ public:
   }
 
 
-  void VisualMeasPointCloud(uint64_t ts, VecXi &feature_ids, MatX2 &xps) {
+  void VisualMeasPointCloud(uint64_t ts,
+                            const Eigen::Ref<const VecXi> &feature_ids,
+                            const Eigen::Ref<const MatX2> &xps) {
     estimator_->VisualMeasPointCloud(timestamp_t{ts}, feature_ids, xps);
   }
 
@@ -263,6 +265,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("VisualMeas", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeas))
       .def("VisualMeasTrackerOnly", py::overload_cast<uint64_t, std::string &>(&EstimatorWrapper::VisualMeasTrackerOnly))
       .def("VisualMeasTrackerOnly", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeasTrackerOnly))
+      .def("VisualMeasPointCloud", &EstimatorWrapper::VisualMeasPointCloud)
       .def("CloseLoop", &EstimatorWrapper::CloseLoop)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
