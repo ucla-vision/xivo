@@ -478,14 +478,6 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
     gravity_init_buf_.emplace_back(accel_new);
 
     if (InitializeGravity()) {
-      // lock 4DoF gauge freedom
-      for (int i = 0; i < 3; ++i) {
-        P_(Index::Tsb + i, Index::Tsb + i) = eps;
-      }
-      P_(Index::Wsb + 0, Index::Wsb + 0) = eps;
-      P_(Index::Wsb + 1, Index::Wsb + 1) = eps;
-      P_(Index::Wsb + 2, Index::Wsb + 2) = eps;
-
       curr_imu_time_ = last_time_ = ts;
 
       curr_accel_ = last_accel_ = accel_new;

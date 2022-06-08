@@ -230,7 +230,10 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add,
   std::vector<bool> matched(kps.size(), false);
   std::vector<int> matchIdx(kps.size(), -1);
 
-  if (match_dropped_tracks_ && (newly_dropped_tracks.size() > 0)) {
+  if (match_dropped_tracks_ &&
+      (newly_dropped_tracks.size() > 0) &&
+      (kps.size() > 0))
+  {
 
     // Get matrix of old descriptors
     cv::Mat newly_dropped_descriptors = GetDescriptors(newly_dropped_tracks);
@@ -290,7 +293,6 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add,
         f1->UpdateTrack(kp.pt.x, kp.pt.y);
         f1->SetTrackStatus(TrackStatus::TRACKED);
         LOG(INFO) << "Potentially rescued dropped feature #" << f1->id();
-        std::cout << "Potentially rescued dropped feature #" << f1->id() << std::endl;
         MaskOut(mask_, kp.pt.x, kp.pt.y, mask_size_);
         --num_to_add;
         continue;
