@@ -95,7 +95,7 @@ class IMUSim:
     noise_g = self.noise_gyro * self.rng.standard_normal(3)  
     meas_a = accel + noise_a + self.bias_accel
     meas_g = gyro + noise_g + self.bias_gyro
-    return np.hstack((meas_a, meas_g))
+    return meas_a, meas_g
 
   def dX_dt(self, t, X):
     curr_qsb = X[0:4]
@@ -114,7 +114,7 @@ class IMUSim:
 
   def update_state(self, t):
     dt = t - self.curr_t
-    if dt > 0:
+    if dt > np.finfo(float).eps:
       ic = np.hstack((self.qsb, self.Tsb, self.Vsb))
       output = solve_ivp(self.dX_dt, [0, dt], ic)
       all_X = output.y
@@ -122,8 +122,10 @@ class IMUSim:
       self.Tsb = all_X[4:7, -1]
       self.Vsb = all_X[7:10, -1]
       self.curr_t = t
-    else:
+    elif dt < 0:
       raise ValueError("requesting state at a time in the past")
+    else: #  dt is tiny so we just don't update the state
+      pass
 
   def gsb(self, t):
     self.update_state(t) 
@@ -134,6 +136,6 @@ if __name__ == "__main__":
   imu = IMUSim("sinusoid")
   Rsb, Tsb = imu.gsb(10)
 
-  imu_meas = imu.meas(20)
+  accel, gyro = imu.meas(20)
 
   pdb.set_trace()

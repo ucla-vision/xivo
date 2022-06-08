@@ -30,6 +30,10 @@ def cleanup_and_load_json(results_filename):
   with open(results_filename, 'r') as fp:
     filestr = ""
     for line in fp:
+      # delete all text after "//"
+      if "//" in line:
+        idx = line.index("//")
+        line = line[:idx]
       sub1 = re.sub('nan', 'NaN', line)
       sub2 = re.sub('inf', 'Infinity', sub1)
       filestr = filestr + sub2
