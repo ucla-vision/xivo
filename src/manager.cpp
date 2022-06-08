@@ -17,11 +17,6 @@ namespace xivo {
 
 void Estimator::ProcessTracks(const timestamp_t &ts,
                               std::list<FeaturePtr> &tracks) {
-  if (simulation_) {
-    UpdateSystemClock(ts);
-    // propagate state upto current timestamp
-    Propagate(true);
-  }
   instate_features_.clear();
   oos_features_.clear();
   instate_groups_.clear();

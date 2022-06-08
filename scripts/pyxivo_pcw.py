@@ -59,14 +59,23 @@ def read_cfg_data(cfg_json: str):
   imw = camera_cfg["cols"]
   imh = camera_cfg["rows"]
 
-  return (Rbc, Tbc, K, imw, imh)
+  # gravity
+  grav_g = np.reshape(np.array(cfg_data["gravity"]), (3,1))
+  Rsg = Rotation.from_rotvec(np.array(X["Wsg"])).as_matrix()
+  grav_s = Rsg @ grav_g
+
+  return (Rbc, Tbc, K, imw, imh, grav_s)
 
 
 def main(args):
+  # Read Wbc, Tbc from .cfg file
+  Rbc, Tbc, K, imw, imh, grav_s = read_cfg_data(args.cfg)
+
   imu = IMUSim(args.motion_type,
                noise_accel=args.noise_accel,
                noise_gyro=args.noise_gyro,
-               seed=args.imu_seed)
+               seed=args.imu_seed,
+               grav_s=grav_s)
   vision = RandomPCW(args.xlim, args.ylim, args.zlim, seed=args.pcw_seed)
   vision.addNPts(10000)
 
@@ -82,9 +91,6 @@ def main(args):
 
   # Lambda function: whether or not a packet is IMU 
   is_imu = lambda x: (x[1] < 0.5)
-
-  # Read Wbc, Tbc from .cfg file
-  Rbc, Tbc, K, imw, imh = read_cfg_data(args.cfg)
 
   # estimator object
   estimator = pyxivo.Estimator(args.cfg, args.viewer_cfg, args.motion_type, False)
@@ -102,6 +108,7 @@ def main(args):
       gsc = np.hstack((Rsc, Tsc))
       (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh)
       estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
+      estimator.Visualize()
 
 
 if __name__ == "__main__":

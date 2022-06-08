@@ -7,7 +7,7 @@
 
 
   // verbose
-  "simulation": false,
+  "simulation": true,
   "print_timing": false,
   "print_calibration": true,
   "use_canvas": true,
@@ -58,7 +58,7 @@
   },
 
   // gravity constant
-  "gravity": [0, 0, 0],
+  "gravity": [0, 0, 9.8],
   // Initial State
   "X" : {
     "Wsb"   : [0, 0, 0],
@@ -80,7 +80,7 @@
     "ba"  : 0.0,
     "Wbc" : 0.0,
     "Tbc" : 0.0,
-    "Wsg"  : 3.1,
+    "Wsg"  : 0.0,
     "td"  : 5e-4, // not used
     "Cg"  : 1e-3, // not used
     "Ca"  : 1e-3, // not used

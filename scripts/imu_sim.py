@@ -41,6 +41,7 @@ class IMUSim:
                bias_accel: np.ndarray=np.zeros(3),
                bias_gyro: np.ndarray=np.zeros(3),
                seed: int=None,
+               grav_s: np.ndarray=np.array([0, 0, -9.8]),
                init_Vsb: np.ndarray=np.zeros(3),
   ) -> None:
     assert(type in ["sinusoid", "straight", "VR", "box"])
@@ -50,6 +51,7 @@ class IMUSim:
     self.bias_accel = bias_accel
     self.bias_gyro = bias_gyro
     self.rng = default_rng(seed)
+    self.grav_s = grav_s
 
     # ground-truth values
     self.curr_t = 0.0
@@ -90,10 +92,11 @@ class IMUSim:
 
   def meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     self.update_state(t)
+    Rsb, _ = self.gsb(t)
     accel, gyro = self.real_accel_gyro(t)
     noise_a = self.noise_accel * self.rng.standard_normal(3)
     noise_g = self.noise_gyro * self.rng.standard_normal(3)  
-    meas_a = accel + noise_a + self.bias_accel
+    meas_a = accel + noise_a + self.bias_accel + np.squeeze(Rsb @ self.grav_s)
     meas_g = gyro + noise_g + self.bias_gyro
     return meas_a, meas_g
 
