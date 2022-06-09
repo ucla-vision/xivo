@@ -232,7 +232,10 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add,
   std::vector<bool> matched(kps.size(), false);
   std::vector<int> matchIdx(kps.size(), -1);
 
-  if (match_dropped_tracks_ && (newly_dropped_tracks.size() > 0)) {
+  if (match_dropped_tracks_ &&
+      (newly_dropped_tracks.size() > 0) &&
+      (kps.size() > 0))
+  {
 
     // Get matrix of old descriptors
     cv::Mat newly_dropped_descriptors = GetDescriptors(newly_dropped_tracks);
