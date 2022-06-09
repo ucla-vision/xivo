@@ -26,8 +26,8 @@
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
   "use_depth_opt": false,  // depth optimization
-  "use_MH_gating": true,
-  "use_1pt_RANSAC": false,
+  "use_MH_gating": false,
+  "use_1pt_RANSAC": true,
   "use_compression": false,  // measurement compression
   "triangulate_pre_subfilter": true,
   "compression_trigger_ratio": 1.5,
@@ -35,7 +35,7 @@
   "remove_outlier_counter": 10,
   "OOS_update_min_observations": 5,
   "feature_owner_change_cov_factor": 1.5,
-  "group_degrees_fixed": 6,
+  "group_degrees_fixed": 4,
 
   "PrinceDormand": {
     "control_stepsize": false,
@@ -78,8 +78,8 @@
 
   "P" : {
     "W"   : 3.0,
-    "T"   : 0.1,
-    "V"   : 2.0,
+    "T"   : 0.001,
+    "V"   : 1.0,
     "bg"  : 1e-05,
     "ba"  : 0.0001,
     "Wbc" : 1e-10,
@@ -94,7 +94,7 @@
   },
 
   "Qmodel" : {
-    "W"   : 0,
+    "W"   : 0.001,
     "T"   : 0.0,
     "V"   : 0.0,
     "wb"  : 0.0000,
@@ -126,12 +126,14 @@
   */
 
   // 10x noise, 1x bias
+  /*
   "Qimu": {
     "gyro": [ 0.0010490167893878809, 0.0010490167893878809, 0.0010490167893878809 ],
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [ 0.01670114101261374, 0.01670114101261374, 0.01670114101261374 ],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
   },
+  */
 
   // 20x noise, 1x bias
   /*
@@ -164,14 +166,12 @@
   */
 
   // 150x noise, 1x bias
-  /*
   "Qimu": {
     "gyro": [ 0.0157352505, 0.0157352505, 0.0157352505 ],
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [ 0.250517115, 0.250517115, 0.250517115 ],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
   },
-  */
 
   // 200x noise, 1x bias
   /*
@@ -180,6 +180,15 @@
     "gyro_bias": [4.987501564748478e-06, 4.987501564748478e-06, 4.987501564748478e-06],
     "accel": [0.33402282, 0.33402282, 0.33402282],
     "accel_bias": [0.0002857627899749819, 0.0002857627899749819, 0.0002857627899749819 ]
+  },
+  */
+
+  /*
+  "Qimu": {
+    "gyro": [1.00, 1.00, 1.00],
+    "gyro_bias": [0.00001, 0.00001, 0.00001],
+    "accel": [10.0, 10.0, 10.0],
+    "accel_bias": [0.001, 0.001, 0.001]
   },
   */
 
@@ -198,7 +207,7 @@
   "visual_meas_std":  3.0, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
-  "max_depth": 10.0,
+  "max_depth": 12.0,
   "min_depth": 0.05,
 
   // Adaptive initial depth
@@ -212,8 +221,8 @@
 
   // depth sub-filter setting
   "subfilter": {
-    "visual_meas_std":  3.5,
-    "ready_steps": 3,
+    "visual_meas_std":  2.5,
+    "ready_steps": 2,
     "MH_thresh": 8.991
   },
 
@@ -268,13 +277,13 @@
 
   "min_inliers": 15, // minimum number of inlier measurements
 
-  //"MH_thresh": 8.991,
-  "MH_thresh": 30,
+  "MH_thresh": 5.991,
+  //"MH_thresh": 30,
   "MH_adjust_factor": 2.0,
 
   "1pt_RANSAC_thresh": 4.0,
-  "1pt_RANSAC_prob": 0.95,
-  "1pt_RANSAC_Chi2": 25,
+  "1pt_RANSAC_prob": 0.90,
+  "1pt_RANSAC_Chi2": 20.991,
 
   // "Correct" means 3 XY gauge features. But sometimes the filter works better
   // with fewer fixed degrees of freedom.
