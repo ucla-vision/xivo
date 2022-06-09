@@ -1109,9 +1109,9 @@ void Estimator::VisualMeasPointCloudInternal(
   if (vision_initialized_) {
     // propagate state upto current timestamp
     Propagate(true);
-    //if (use_canvas_) {
-    //  Canvas::instance()->Update(img);
-    //}
+    if (use_canvas_) {
+      Canvas::instance()->UpdatePointCloud(xps);
+    }
     // measurement prediction for feature tracking
     auto tracker = Tracker::instance();
     Predict(tracker->features_);

@@ -22,6 +22,8 @@ static cv::Scalar kColorGreen(0, 255, 0);
 static cv::Scalar kColorYellow(0, 255, 255);
 static cv::Scalar kColorBlue(255, 0, 0);
 static cv::Scalar kColorLakeBlue(219, 152, 52);
+static cv::Scalar kColorWhite(255, 255, 255);
+static cv::Scalar kColorBlack(0, 0, 0);
 
 
 
@@ -74,6 +76,25 @@ void Canvas::Update(const cv::Mat &img) {
     img.copyTo(disp_);
   }
 }
+
+
+void Canvas::UpdatePointCloud(const MatX2 &px) {
+  if (px.size() == 0) {
+    return;
+  }
+
+  int nrows = CameraManager::instance()->rows();
+  int ncols = CameraManager::instance()->cols();
+  cv::Mat point_cloud_image(nrows, ncols, CV_8UC3, kColorBlack);
+
+  for (int i = 0; i < px.rows(); i++) {
+    cv::Point2d pt(px(i,0), px(i,1));
+    cv::circle(point_cloud_image, pt, 2, kColorWhite);
+  }
+
+  point_cloud_image.copyTo(disp_);
+}
+
 
 void Canvas::Draw(const FeaturePtr f) {
   if (disp_.empty()) {

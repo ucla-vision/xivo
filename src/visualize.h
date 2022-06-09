@@ -21,6 +21,7 @@ public:
 
   static void Delete();
   void Update(const cv::Mat &img);
+  void UpdatePointCloud(const MatX2 &px);
   void Draw(const FeaturePtr f);
   void OverlayStateInfo(const State &X, const IMUState &IMU, const Vec9 &Cam,
                         int vspace = 12, int hspace = 12,

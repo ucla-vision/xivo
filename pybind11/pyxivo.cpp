@@ -55,6 +55,13 @@ public:
                             const Eigen::Ref<const VecXi> &feature_ids,
                             const Eigen::Ref<const MatX2> &xps) {
     estimator_->VisualMeasPointCloud(timestamp_t{ts}, feature_ids, xps);
+    if (viewer_) {
+      auto disp = Canvas::instance()->display();
+      if (!disp.empty()) {
+        LOG(INFO) << "Display image is ready";
+        viewer_->Update(disp);
+      }
+    }
   }
 
 
