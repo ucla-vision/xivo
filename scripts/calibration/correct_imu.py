@@ -1,6 +1,4 @@
 # apply scale and misalignment correction to IMU measurement
-# usage:
-# python correct_imu.py --input /INPUT/CSV/FILE/OF/IMU/MEASUREMENTS --output /OUTPUT/CSV/FILE/OF/IMU/MEASUREMENTS
 import numpy as np
 import argparse
 import sys
