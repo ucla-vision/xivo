@@ -17,8 +17,6 @@
 #include "helpers.h"
 #include "mapper.h"
 
-#include <opencv2/core/eigen.hpp>
-
 #ifdef USE_G2O
 #include "optimizer.h"
 #endif
@@ -61,6 +59,10 @@ void Inertial::Execute(Estimator *est) {
 void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
 
 void VisualTrackerOnly::Execute(Estimator *est) { est->VisualMeasInternalTrackerOnly(ts_, img_); }
+
+void VisualPointCloud::Execute(Estimator *est) {
+  est->VisualMeasPointCloudInternal(ts_, feature_ids_, xp_vals_);
+}
 } // namespace internal
 
 // destructor
@@ -357,9 +359,14 @@ Estimator::Estimator(const Json::Value &cfg)
   }
 
   // reset initialization status
-  gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
-  gravity_initialized_ = false;
-  vision_initialized_ = false;
+  if (simulation_) {
+    gravity_init_counter_ = 0;
+    gravity_initialized_ = true;
+  } else {
+    gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
+    gravity_initialized_ = false;
+  }
+    vision_initialized_ = false;
   // reset measurement counter
   imu_counter_ = 0;
   vision_counter_ = 0;
@@ -944,6 +951,33 @@ void Estimator::VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &
   }
 }
 
+
+void Estimator::VisualMeasPointCloud(
+  const timestamp_t &ts_raw,
+  const VecXi &feature_ids,
+  const MatX2 &xp_vals)
+{
+  timestamp_t ts{ts_raw};
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+  if (X_.td >= 0) {
+    ts += timestamp_t(uint64_t(X_.td * 1e9)); // seconds -> nanoseconds
+  } else {
+    ts -= timestamp_t(uint64_t(-X_.td * 1e9)); // seconds -> nanoseconds
+  }
+#endif
+  if (async_run_) {
+    std::scoped_lock lck(buf_.mtx);
+    buf_.push_back(std::make_unique<internal::VisualPointCloud>(
+      ts, feature_ids, xp_vals));
+    MaintainBuffer();
+  } else {
+    buf_.push_back(std::make_unique<internal::VisualPointCloud>(
+      ts, feature_ids, xp_vals));
+    MaintainBuffer();
+  }
+}
+
+
 void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
                              const Vec3 &accel) {
   if (async_run_) {
@@ -1055,31 +1089,48 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
   timer_.Tock("visual-meas");
 }
 
-std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
 
-  auto tracker = Tracker::instance();
+void Estimator::VisualMeasPointCloudInternal(
+  const timestamp_t &ts,
+  const VecXi &feature_ids,
+  const MatX2 &xps)
+{
+  if (!GoodTimestamp(ts))
+    return;
 
-  // store tracked feature information
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
-
-  for (auto f : tracker->features_)
-  {
-    int id = f->id();
-    cv::KeyPoint kp = f->keypoint();
-    cv::Mat descriptor = f->descriptor();
-
-    // Convert from cv::Mat to matrix
-    MatXf descriptor_eigen;
-    cv2eigen(descriptor, descriptor_eigen);
-
-    // Convert cv::Keypoint to vector
-    Vec2f kp_vector{kp.pt.x, kp.pt.y};
-
-    tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
+  if (!simulation_) {
+    throw std::invalid_argument(
+        "function VisualMeasPointCloud is only for simulation");
   }
 
-  return tracked_features_info;
+  ++vision_counter_;
+  timer_.Tick("visual-meas");
+  UpdateSystemClock(ts);
+  if (vision_initialized_) {
+    // propagate state upto current timestamp
+    Propagate(true);
+    if (use_canvas_) {
+      Canvas::instance()->UpdatePointCloud(xps);
+    }
+    // measurement prediction for feature tracking
+    auto tracker = Tracker::instance();
+    Predict(tracker->features_);
+    // track features
+    timer_.Tick("track");
+    tracker->UpdatePointCloud(feature_ids, xps);
+    timer_.Tock("track");
+    // process features
+    timer_.Tick("process-tracks");
+    ProcessTracks(ts, tracker->features_);
+    timer_.Tock("process-tracks");
+
+    if (gauge_group_ == -1) {
+      SwitchRefGroup();
+    }
+  }
+  timer_.Tock("visual-meas");
 }
+
 
 void Estimator::Predict(std::list<FeaturePtr> &features) {
   for (auto f : features) {
@@ -1287,450 +1338,6 @@ void Estimator::RestoreState(std::unordered_set<FeaturePtr>& features,
   Camera::instance()->RestoreState();
 #endif
 }
-
-VecXi Estimator::InstateFeatureSinds(int n_output) const {
-
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
-  MakePtrVectorUnique(instate_features);
-  int npts = std::max((int) instate_features.size(), n_output);
-
-  // Sort features by uncertainty
-  std::sort(instate_features.begin(), instate_features.end(),
-            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
-              return FeatureCovComparison(f1, f2);
-            });
-
-  //std::vector<int> FeatureIDs;
-  VecXi FeatureSinds(npts);
-
-  int i = 0;
-  for (auto it = instate_features.begin();
-       it != instate_features.end() && i < n_output;
-       ) {
-    FeaturePtr f = *it;
-    FeatureSinds(i,0) = f->sind();
-    ++i;
-    ++it;
-  }
-  return FeatureSinds;
-}
-
-VecXi Estimator::InstateFeatureIDs(int n_output) const {
-
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
-  MakePtrVectorUnique(instate_features);
-  int npts = std::max((int) instate_features.size(), n_output);
-
-  // Sort features by uncertainty
-  std::sort(instate_features.begin(), instate_features.end(),
-            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
-              return FeatureCovComparison(f1, f2);
-            });
-
-  //std::vector<int> FeatureIDs;
-  VecXi FeatureIDs(npts);
-
-  int i = 0;
-  for (auto it = instate_features.begin();
-       it != instate_features.end() && i < n_output;
-       ) {
-    FeaturePtr f = *it;
-    FeatureIDs(i,0) = f->id();
-    ++i;
-    ++it;
-  }
-  return FeatureIDs;
-}
-
-
-MatX3 Estimator::InstateFeaturePositions(int n_output) const {
-
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
-  MakePtrVectorUnique(instate_features);
-  int npts = std::max((int) instate_features.size(), n_output);
-
-  // Sort features by uncertainty
-  std::sort(instate_features.begin(), instate_features.end(),
-            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
-              return FeatureCovComparison(f1, f2);
-            });
-
-  MatX3 feature_positions(npts,3);
-
-  int i = 0;
-  for (auto it = instate_features.begin();
-       it != instate_features.end() && i < n_output;
-       ) {
-    FeaturePtr f = *it;
-    Vec3 Xs = f->Xs();
-    feature_positions(i,0) = Xs(0);
-    feature_positions(i,1) = Xs(1);
-    feature_positions(i,2) = Xs(2);
-    ++i;
-    ++it;
-  }
-  return feature_positions;
-}
-
-
-MatX3 Estimator::InstateFeatureXc(int n_output) const {
-
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
-  MakePtrVectorUnique(instate_features);
-  int npts = std::max((int) instate_features.size(), n_output);
-
-  // Sort features by uncertainty
-  std::sort(instate_features.begin(), instate_features.end(),
-            [this](FeaturePtr f1, FeaturePtr f2) {
-              return FeatureCovComparison(f1, f2);
-            });
-
-  MatX3 feature_positions(npts,3);
-
-  int i = 0;
-  for (auto it = instate_features.begin();
-       it != instate_features.end() && i < n_output;
-       ) {
-    FeaturePtr f = *it;
-    Vec3 Xc = f->Xc();
-    feature_positions(i,0) = Xc(0);
-    feature_positions(i,1) = Xc(1);
-    feature_positions(i,2) = Xc(2);
-    ++i;
-    ++it;
-  }
-  return feature_positions;
-}
-
-
-MatX6 Estimator::InstateFeatureCovs(int n_output) const {
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
-  MakePtrVectorUnique(instate_features);
-  int npts = std::max((int) instate_features.size(), n_output);
-
-  // Sort features by uncertainty
-  std::sort(instate_features.begin(), instate_features.end(),
-            [this](FeaturePtr f1, FeaturePtr f2) {
-              return FeatureCovComparison(f1, f2);
-            });
-
-  MatX6 feature_covs(npts,6);
-
-  int i = 0;
-  for (auto it = instate_features.begin();
-       it != instate_features.end() && i < n_output;
-       ) {
-    FeaturePtr f = *it;
-    int foff = kFeatureBegin + 3*f->sind();
-    Mat3 cov = P_.block<3,3>(foff, foff);
-
-    feature_covs.block(i, 0, 1, 6) <<
-      cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
-
-    ++i;
-    ++it;
-  }
-
-  return feature_covs;
-}
-
-
-void Estimator::InstateFeaturePositionsAndCovs(int max_output, int &npts,
-  MatX3 &feature_positions, MatX6 &feature_covs, MatX2 &feature_last_px,
-  VecXi &feature_ids)
-{
-  // Retrieve visibility graph
-  Graph& graph{*Graph::instance()};
-
-  // Get vectors of instate features and all features
-  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
-  MakePtrVectorUnique(instate_features);
-  npts = std::min((int) instate_features.size(), max_output);
-
-  // Sort features by uncertainty so we grab the "best" features
-  std::sort(instate_features.begin(), instate_features.end(),
-            [this](FeaturePtr f1, FeaturePtr f2) {
-              return FeatureCovComparison(f1, f2);
-            });
-
-  feature_positions.resize(npts,3);
-  feature_covs.resize(npts,6);
-  feature_last_px.resize(npts,2);
-  feature_ids.resize(npts);
-
-  int i = 0;
-  for (auto it = instate_features.begin();
-       it != instate_features.end() && i < npts;
-       ) {
-    FeaturePtr f = *it;
-
-    Vec3 Xs = f->Xs();
-    feature_positions(i,0) = Xs(0);
-    feature_positions(i,1) = Xs(1);
-    feature_positions(i,2) = Xs(2);
-
-    int foff = kFeatureBegin + 3*f->sind();
-    Mat3 cov = P_.block<3,3>(foff, foff);
-
-    feature_covs.block(i, 0, 1, 6) <<
-      cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
-
-    feature_ids(i) = f->id();
-
-    Vec2 xp = f->xp();
-    feature_last_px(i,0) = xp(0);
-    feature_last_px(i,1) = xp(1);
-
-    ++i;
-    ++it;
-  }
-}
-
-
-VecXi Estimator::InstateFeatureIDs() const
-{
-  int num_instate_features = instate_features_.size();
-
-  // Get all features
-  VecXi FeatureIDs(num_instate_features);
-
-  int i = 0;
-  for (auto it = instate_features_.begin();
-       it != instate_features_.end() && i < num_instate_features;
-       ) {
-    FeaturePtr f = *it;
-    FeatureIDs(i) = f->id();
-    ++i;
-    ++it;
-  }
-  return FeatureIDs;
-}
-
-
-VecXi Estimator::InstateFeatureSinds() const
-{
-  int num_instate_features = instate_features_.size();
-
-  // Get all features
-  VecXi FeatureSinds(num_instate_features);
-
-  int i = 0;
-  for (auto it = instate_features_.begin();
-       it != instate_features_.end() && i < num_instate_features;
-       ) {
-    FeaturePtr f = *it;
-    FeatureSinds(i) = f->sind();
-    ++i;
-    ++it;
-  }
-  return FeatureSinds;
-}
-
-
-MatX3 Estimator::InstateFeaturePositions() const
-{
-  int num_features = instate_features_.size();
-
-  MatX3 feature_positions(num_features,3);
-
-  int i = 0;
-  for (auto it = instate_features_.begin();
-       it != instate_features_.end() && i < num_features;
-       ) {
-    FeaturePtr f = *it;
-    Vec3 Xs = f->Xs();
-    feature_positions(i,0) = Xs(0);
-    feature_positions(i,1) = Xs(1);
-    feature_positions(i,2) = Xs(2);
-    ++i;
-    ++it;
-  }
-  return feature_positions;
-}
-
-
-MatX3 Estimator::InstateFeatureXc() const
-{
-  int num_features = instate_features_.size();
-
-  MatX3 feature_positions(num_features,3);
-
-  int i = 0;
-  for (auto it = instate_features_.begin();
-       it != instate_features_.end() && i < num_features;
-       ) {
-    FeaturePtr f = *it;
-    Vec3 Xc = f->Xc();
-    feature_positions(i,0) = Xc(0);
-    feature_positions(i,1) = Xc(1);
-    feature_positions(i,2) = Xc(2);
-    ++i;
-    ++it;
-  }
-  return feature_positions;
-}
-
-
-MatX6 Estimator::InstateFeatureCovs() const {
-
-  int num_features = instate_features_.size();
-
-  MatX6 feature_covs(num_features,6);
-
-  int i = 0;
-  for (auto it = instate_features_.begin();
-       it != instate_features_.end() && i < num_features;
-       ) {
-    FeaturePtr f = *it;
-    int foff = kFeatureBegin + 3*f->sind();
-    Mat3 cov = P_.block<3,3>(foff, foff);
-
-    feature_covs.block(i, 0, 1, 6) <<
-      cov(0,0), cov(0,1), cov(0,2), cov(1,1), cov(1,2), cov(2,2);
-
-    ++i;
-    ++it;
-  }
-
-  return feature_covs;
-}
-
-
-VecXi Estimator::InstateGroupIDs() const
-{
-  int num_groups = instate_groups_.size();
-
-  VecXi GroupIDs(num_groups);
-
-  int i = 0;
-  for (auto it = instate_groups_.begin();
-       it != instate_groups_.end() && i<num_groups;) {
-    GroupPtr g = *it;
-    GroupIDs(i) = g->id();
-    ++i;
-    ++it;
-  }
-  return GroupIDs;
-}
-
-
-VecXi Estimator::InstateGroupSinds() const
-{
-  int num_groups = instate_groups_.size();
-
-  VecXi GroupSinds(num_groups);
-
-  int i = 0;
-  for (auto it = instate_groups_.begin();
-       it != instate_groups_.end() && i<num_groups;) {
-    GroupPtr g = *it;
-    GroupSinds(i) = g->sind();
-    ++i;
-    ++it;
-  }
-  return GroupSinds;
-}
-
-
-MatX7 Estimator::InstateGroupPoses() const
-{
-  int num_groups = instate_groups_.size();
-
-  MatX7 group_poses(num_groups, 7);
-
-  int i = 0;
-  for (auto it = instate_groups_.begin();
-       it != instate_groups_.end() && i < num_groups;
-       ) {
-    GroupPtr g = *it;
-    Vec3 Tsb = g->Tsb();
-    Mat3 Rsb = g->Rsb().matrix();
-    Quat Qsb(Rsb);
-
-    group_poses(i,0) = Qsb.x();
-    group_poses(i,1) = Qsb.y();
-    group_poses(i,2) = Qsb.z();
-    group_poses(i,3) = Qsb.w();
-    group_poses(i,4) = Tsb(0);
-    group_poses(i,5) = Tsb(1);
-    group_poses(i,6) = Tsb(2);
-
-    ++i;
-    ++it;
-  }
-
-  return group_poses;
-}
-
-
-MatX Estimator::InstateGroupCovs() const
-{
-  int num_groups = instate_groups_.size();
-
-  MatX group_covs(num_groups, 21);
-
-  int i = 0;
-  for (auto it = instate_groups_.begin();
-       it != instate_groups_.end() && i < num_groups;
-       ) {
-    GroupPtr g = *it;
-    Mat6 cov = InstateGroupCov(g);
-
-    int cnt;
-    for (int ii = 0; ii<6; ii++) {
-      cnt = 0;
-      for (int jj = ii; jj<6; jj++) {
-        group_covs(i,cnt) = cov(ii,jj);
-        cnt++;
-      }
-    }
-
-    ++i;
-    ++it;
-  }
-
-  return group_covs;
-
-}
-
-
-
-Mat3 Estimator::InstateFeatureCov(FeaturePtr f) const {
-#ifndef NDEBUG
-  CHECK(f->instate());
-#endif
-  int foff = kFeatureBegin + 3*f->sind();
-  return P_.block<3,3>(foff, foff);
-}
-
-Mat6 Estimator::InstateGroupCov(GroupPtr g) const {
-#ifndef NDEBUG
-  CHECK(g->instate());
-#endif
-  int goff = kGroupBegin + 6*g->sind();
-  return P_.block<6,6>(goff, goff);
-}
-
 
 bool Estimator::FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const {
   number_t score1 = InstateFeatureCov(f1).norm();

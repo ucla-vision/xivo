@@ -112,6 +112,8 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
     tracker_type_ = TrackerType::LK;
   } else if (tracker_type == "MATCH") {
     tracker_type_ = TrackerType::MATCH;
+  } else if (tracker_type == "POINTCLOUD") {
+    tracker_type_ = TrackerType::POINTCLOUD;
   } else {
     LOG(FATAL) << "Invalid tracker type";
   }
@@ -198,7 +200,7 @@ Tracker::Tracker(const Json::Value &cfg) : cfg_{cfg} {
       // using Brute-Force matcher instead of FLANN-based matcher.
       matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
     }
-  } else { // TrackerType::Match
+  } else if (tracker_type_ == TrackerType::MATCH) {
     matcher_ = cv::BFMatcher::create(extractor_->defaultNorm(), true);
   }
 }
@@ -607,6 +609,64 @@ void Tracker::UpdateLK(const cv::Mat &image) {
   // swap buffers ...
   std::swap(pyramid, pyramid_);
 
+}
+
+
+void Tracker::UpdatePointCloud(const VecXi &feature_ids, const MatX2 &xps)
+{
+  // Turn input into a hash table for measurements.
+  // unmarked points become new features at the end of this function
+  std::unordered_map<int, Vec2> measurements;
+  std::unordered_map<int, bool> measurement_marked;
+  for (int i = 0; i < feature_ids.size(); i++) {
+    measurements[feature_ids[i]] = xps.row(i);
+    measurement_marked[feature_ids[i]] = false;
+  }
+
+  // status of existing tracks
+  int i = 0;
+  int num_dropped = 0;
+  std::vector<uint8_t> status(features_.size(), 0);
+  for (auto it = features_.begin(); it != features_.end(); ++it, ++i) {
+    FeaturePtr f{*it};
+    bool existing_feature_seen = (measurements.count(f->id()) > 0);
+    if (existing_feature_seen) {
+      // distance between current and last point
+      bool close_enough =
+        CheckPixelDisplacement(measurements[f->id()], f->xp(),
+                               max_pixel_displacement_);
+      if (close_enough) {
+        status[i] = 1;
+        f->push_back(measurements[f->id()]);
+        f->SetTrackStatus(TrackStatus::TRACKED);
+        measurement_marked[f->id()] = true;
+      } else {
+        status[i] = 0;
+        f->SetTrackStatus(TrackStatus::DROPPED);
+        num_dropped++;
+      }
+    } else {
+      status[i] = 0;
+      f->SetTrackStatus(TrackStatus::DROPPED);
+      num_dropped++;
+    }
+  }
+
+  // Create new tracks
+  int num_to_add = num_features_max_ - features_.size() + num_dropped;
+  for (i = 0; i < feature_ids.size(); i++) {
+    if (num_to_add <= 0) {
+      break;
+    }
+
+    int fid = feature_ids[i];
+    if (!measurement_marked[fid]) {
+      Vec2 xp = measurements[fid];
+      FeaturePtr f = Feature::PointCloudWorldCreate(fid, xp(0), xp(1));
+      features_.push_back(f);
+    }
+    num_to_add--;
+  }
 }
 
 

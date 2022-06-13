@@ -66,6 +66,24 @@ private:
   cv::Mat img_;
 };
 
+
+class VisualPointCloud : public Message {
+public:
+  VisualPointCloud(const timestamp_t &ts,
+                   const VecXi &feature_ids,
+                   const MatX2 &xp_vals) :
+    Message{ts},
+    feature_ids_{feature_ids},
+    xp_vals_{xp_vals}
+    {}
+  void Execute(EstimatorPtr est);
+
+private:
+  VecXi feature_ids_;
+  MatX2 xp_vals_;
+};
+
+
 class Inertial : public Message {
 public:
   Inertial(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel)
@@ -82,6 +100,7 @@ private:
 class Estimator : public Component<Estimator, State> {
   friend class internal::Visual;
   friend class internal::VisualTrackerOnly;
+  friend class internal::VisualPointCloud;
   friend class internal::Inertial;
 
 public:
@@ -97,9 +116,14 @@ public:
   // process inertial measurements
   void InertialMeas(const timestamp_t &ts, const Vec3 &gyro, const Vec3 &accel);
   // perform tracking/matching to generate tracks
-  void VisualMeas(const timestamp_t &ts, const cv::Mat &img);
+  void VisualMeas(const timestamp_t &ts_raw, const cv::Mat &img);
   // perform tracking/matching for feature tracker only application
   void VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &img);
+
+  // Perform tracking in Point Cloud World (no images, only features)
+  void VisualMeasPointCloud(const timestamp_t &ts,
+                            const VecXi &feature_ids,
+                            const MatX2 &xps);
 
   /** Loop Closure Measurement Update - older features, newer group. */
   void CloseLoop();
@@ -180,6 +204,11 @@ private:
   /** Top-level function for update when an image packet arrives for
    * feature tracker*/
   void VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::Mat &img);
+
+  /** top-level function for update when we receive an update from point-cloud world */
+  void VisualMeasPointCloudInternal(const timestamp_t &ts,
+                                    const VecXi &feature_ids,
+                                    const MatX2 &xps);
 
   // initialize gravity with initial stationary samples
   bool InitializeGravity();

@@ -18,7 +18,8 @@ namespace xivo {
 
 enum TrackerType : int {
   LK = 0,
-  MATCH = 1
+  MATCH = 1,
+  POINTCLOUD = 2
 };
 
 class Tracker {
@@ -36,6 +37,8 @@ public:
   void UpdateMatch(const cv::Mat &img);
 
   void Update(const cv::Mat &img);
+
+  void UpdatePointCloud(const VecXi &feature_ids, const MatX2 &xps);
 
   /** Called by function `CreateSystem` to force extraction of descriptors when
    * we want to use loop closure. */
