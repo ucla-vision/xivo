@@ -96,7 +96,7 @@ class IMUSim:
     accel, gyro = self.real_accel_gyro(t)
     noise_a = self.noise_accel * self.rng.standard_normal(3)
     noise_g = self.noise_gyro * self.rng.standard_normal(3)  
-    meas_a = accel + noise_a + self.bias_accel + np.squeeze(Rsb @ self.grav_s)
+    meas_a = accel + noise_a + self.bias_accel - np.squeeze(Rsb @ self.grav_s)
     meas_g = gyro + noise_g + self.bias_gyro
     return meas_a, meas_g
 

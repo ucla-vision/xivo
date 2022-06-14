@@ -58,7 +58,7 @@
   },
 
   // gravity constant
-  "gravity": [0, 0, 9.8],
+  "gravity": [0, 0, -9.8],
   // Initial State
   "X" : {
     "Wsb"   : [0, 0, 0],
