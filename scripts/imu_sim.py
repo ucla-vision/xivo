@@ -4,6 +4,7 @@ import numpy as np
 from numpy.random import default_rng
 from scipy.spatial.transform import Rotation
 from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d
 
 import matplotlib.pyplot as plt
 
@@ -42,6 +43,7 @@ def q2w(q):
 class IMUSim:
   def __init__(self,
                type: str,
+               T: float=100.0,
                noise_accel: float=1e-4,
                noise_gyro: float=1e-5,
                bias_accel: np.ndarray=np.zeros(3),
@@ -58,21 +60,28 @@ class IMUSim:
     self.bias_gyro = bias_gyro
     self.rng = default_rng(seed)
     self.grav_s = grav_s
+    self.T = T
 
-    # ground-truth values
-    self.curr_t = 0.0
-    self.qsb = np.array([0, 0, 0, 1])
-    self.Tsb = np.zeros(3,)
-    self.Vsb = init_Vsb
+    # solve for ground-truth values
+    init_qsb = np.array([0, 0, 0, 1])
+    init_Tsb = np.zeros(3,)
+    ic = np.hstack((init_qsb, init_Tsb, init_Vsb))
+    output = solve_ivp(self.dX_dt, [0, self.T], ic)
+    self.t = output.t
+    self.qsb = output.y[:4,:]
+    self.Tsb = output.y[4:7,:]
+    self.Vsb = output.y[7:10,:]
+    self.interpolator = interp1d(self.t, output.y)
+
 
   def sinusoid_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    accel_x = 2*np.sin(0.2 * t)
-    accel_y = np.cos(0.25 * t)
-    accel_z = np.sin(0.5 * t)
+    accel_x = 0.2 * np.sin(3 * t)
+    accel_y = 0.1 * np.cos(0.4 * t)
+    accel_z = 0.1 * np.sin(5 * t)
     accel = np.array([accel_x, accel_y, accel_z])
-    gyro_x = 5 * D2R * np.sin(0.3 * t)
-    gyro_y = 3 * D2R * np.cos(0.3 * t)
-    gyro_z = 10 * D2R * np.sin(0.3 * t)
+    gyro_x = -0.5 * D2R * np.sin(0.3 * t)
+    gyro_y = 0.5 * D2R * np.cos(0.1 * t)
+    gyro_z = 0.3 * D2R * np.sin(0.1 * t)
     gyro = np.array([gyro_x, gyro_y, gyro_z])
     return (accel, gyro)
 
@@ -97,7 +106,6 @@ class IMUSim:
     return accel, gyro
 
   def meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    self.update_state(t)
     Rsb, _ = self.gsb(t)
     accel, gyro = self.real_accel_gyro(t)
     noise_a = self.noise_accel * self.rng.standard_normal(3)
@@ -121,51 +129,27 @@ class IMUSim:
     Xdot[7:10] = np.squeeze(curr_Rsb @ alpha_sb_b_col)
     return Xdot
 
-  def update_state(self, t):
-    dt = t - self.curr_t
-    if dt > np.finfo(float).eps:
-      ic = np.hstack((self.qsb, self.Tsb, self.Vsb))
-      output = solve_ivp(self.dX_dt, [0, dt], ic)
-      all_X = output.y
-      self.qsb = all_X[0:4, -1]
-      self.Tsb = all_X[4:7, -1]
-      self.Vsb = all_X[7:10, -1]
-      self.curr_t = t
-    elif dt < 0:
-      raise ValueError("requesting state at a time in the past")
-    else: #  dt is tiny so we just don't update the state
-      pass
-
   def gsb(self, t):
-    self.update_state(t) 
-    return (q2m(self.qsb), self.Tsb)
+    X_t = self.interpolator(t)
+    qsb = X_t[:4]
+    Tsb = X_t[4:7]
+    return (q2m(qsb), Tsb)
 
-  def plt_ground_truth(self, T):
-    # ground-truth values
-    self.curr_t = 0.0
-    self.qsb = np.array([0, 0, 0, 1])
-    self.Tsb = np.zeros(3,)
-    self.Vsb = self.init_Vsb
-
-    ic = np.hstack((self.qsb, self.Tsb, self.Vsb))
-    output = solve_ivp(self.dX_dt, [0, T], ic)
-
-    times = output.t
-    qsb_t = output.y[:4,:]
-    Tsb_t = output.y[4:7,:]
-    Vsb_t = output.y[7:10,:]
-    Wsb_t = q2w(qsb_t.transpose()).transpose()
-
-    time_three_plots(times, Tsb_t, "Ground truth Tsb (m)")
-    time_three_plots(times, Wsb_t, "Ground truth Wsb (rad?)")
+  def plt_ground_truth(self):
+    Wsb = q2w(self.qsb.transpose()).transpose()
+    time_three_plots(self.t, self.Tsb, "Ground truth Tsb (m)")
+    time_three_plots(self.t, Wsb, "Ground truth Wsb (rad?)")
 
 
 
 if __name__ == "__main__":
   imu = IMUSim("sinusoid")
-  Rsb, Tsb = imu.gsb(10)
 
-  accel, gyro = imu.meas(20)
-  imu.plt_ground_truth(100.0)
+  # Test retrieval
+  Rsb, Tsb = imu.gsb(10)
+  accel, gyro = imu.meas(20.0)
+
+  # Test plotting
+  imu.plt_ground_truth()
 
   plt.show()

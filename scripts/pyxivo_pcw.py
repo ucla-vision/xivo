@@ -72,6 +72,7 @@ def main(args):
   Rbc, Tbc, K, imw, imh, grav_s = read_cfg_data(args.cfg)
 
   imu = IMUSim(args.motion_type,
+               T=args.total_time,
                noise_accel=args.noise_accel,
                noise_gyro=args.noise_gyro,
                seed=args.imu_seed,
