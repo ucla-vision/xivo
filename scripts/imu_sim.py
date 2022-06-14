@@ -5,7 +5,9 @@ from numpy.random import default_rng
 from scipy.spatial.transform import Rotation
 from scipy.integrate import solve_ivp
 
-import pdb
+import matplotlib.pyplot as plt
+
+from pltutils import time_three_plots
 
 
 D2R = np.pi / 180.0
@@ -31,6 +33,10 @@ def qdot(q, omega):
 
 def q2m(q):
   return Rotation.from_quat(q).as_matrix()
+
+
+def q2w(q):
+  return Rotation.from_quat(q).as_rotvec()
 
 
 class IMUSim:
@@ -134,11 +140,32 @@ class IMUSim:
     self.update_state(t) 
     return (q2m(self.qsb), self.Tsb)
 
+  def plt_ground_truth(self, T):
+    # ground-truth values
+    self.curr_t = 0.0
+    self.qsb = np.array([0, 0, 0, 1])
+    self.Tsb = np.zeros(3,)
+    self.Vsb = self.init_Vsb
+
+    ic = np.hstack((self.qsb, self.Tsb, self.Vsb))
+    output = solve_ivp(self.dX_dt, [0, T], ic)
+
+    times = output.t
+    qsb_t = output.y[:4,:]
+    Tsb_t = output.y[4:7,:]
+    Vsb_t = output.y[7:10,:]
+    Wsb_t = q2w(qsb_t.transpose()).transpose()
+
+    time_three_plots(times, Tsb_t, "Ground truth Tsb (m)")
+    time_three_plots(times, Wsb_t, "Ground truth Wsb (rad?)")
+
+
 
 if __name__ == "__main__":
   imu = IMUSim("sinusoid")
   Rsb, Tsb = imu.gsb(10)
 
   accel, gyro = imu.meas(20)
+  imu.plt_ground_truth(100.0)
 
-  pdb.set_trace()
+  plt.show()
