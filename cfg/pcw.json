@@ -50,11 +50,11 @@
   // memory
   "memory": {
     // Values if mapper is not enabled
-    "max_features": 200,
-    "max_groups": 100
+    //"max_features": 200,
+    //"max_groups": 100
     // Values if mapper is enabled
-    //"max_features": 20000,
-    //"max_groups": 3500
+    "max_features": 20000,
+    "max_groups": 3500
   },
 
   // gravity constant
@@ -63,7 +63,7 @@
   "X" : {
     "Wsb"   : [0, 0, 0],
     "Tsb"   : [0, 0, 0],
-    "Vsb"   : [0, 0, 0],
+    "Vsb"   : [0, 10, 3],
     "bg"  : [0, 0, 0],
     "ba"  : [0, 0, 0],
     "Wbc" : [ -1.57079633, 0, 0 ],
@@ -73,14 +73,14 @@
   },
 
   "P" : {
-    "Wsb"   : 0.0001,
+    "Wsb"   : 0.1,
     "Tsb"   : 0.001,
-    "Vsb"   : 0.5,
-    "bg"  : 0.0,
-    "ba"  : 0.0,
-    "Wbc" : 0.0,
-    "Tbc" : 0.0,
-    "Wsg"  : 0.0,
+    "Vsb"   : 0.001,
+    "bg"  : 1e-5,
+    "ba"  : 1e-5,
+    "Wbc" : 1e-5,
+    "Tbc" : 1e-5,
+    "Wsg"  : 1e-5,
     "td"  : 5e-4, // not used
     "Cg"  : 1e-3, // not used
     "Ca"  : 1e-3, // not used
@@ -118,10 +118,10 @@
 
 
   // Feature initialization parameters
-  "initial_z": 2.5, // initial subfilter depth value (meter)
-  "initial_std_x": 1.5, // initial std on subfilter state (pixel)
-  "initial_std_y": 1.5, // initial std on subfilter state (pixel)
-  "initial_std_z": 2.0,  // initial std on subfilter state (meter)
+  "initial_z": 5.0, // initial subfilter depth value (meter)
+  "initial_std_x": 0.5, // initial std on subfilter state (pixel)
+  "initial_std_y": 0.5, // initial std on subfilter state (pixel)
+  "initial_std_z": 1e-5,  // initial std on subfilter state (meter)
   "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
@@ -132,7 +132,7 @@
   "visual_meas_std":  1.5, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
-  "max_depth": 8.0,
+  "max_depth": 15.0,
   "min_depth": 0.05,
 
   // Adaptive initial depth
@@ -147,7 +147,7 @@
   // depth sub-filter setting
   "subfilter": {
     "visual_meas_std":  3.5,
-    "ready_steps": 2,
+    "ready_steps": 0,
     "MH_thresh": 8.991
   },
 
@@ -185,7 +185,6 @@
 
   "camera_cfg": {
     "model": "pinhole",
-    "max_iter": 25,
 
     "rows": 480,
     "cols": 640,
@@ -196,9 +195,9 @@
     "cy": 240
   },
 
-  "min_inliers": 5, // minimum number of inlier measurements
+  "min_inliers": 15, // minimum number of inlier measurements
 
-  "MH_thresh": 5.991, // 8.991
+  "MH_thresh": 8.991,
   "MH_adjust_factor": 1.15,
 
   "1pt_RANSAC_thresh": 1.5,
@@ -214,8 +213,8 @@
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 60,
+    "num_features_min": 150,
+    "num_features_max": 200,
     "max_pixel_displacement": 64,
     "normalize": false,
     "do_outlier_rejection": false,
