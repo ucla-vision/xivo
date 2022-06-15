@@ -66,7 +66,8 @@ class IMUSim:
     init_qsb = np.array([0, 0, 0, 1])
     init_Tsb = np.zeros(3,)
     ic = np.hstack((init_qsb, init_Tsb, init_Vsb))
-    output = solve_ivp(self.dX_dt, [0, self.T], ic)
+
+    output = solve_ivp(self.dX_dt, [0, self.T], ic, t_eval=np.arange(0.0, T, 0.01))
     self.t = output.t
     self.qsb = output.y[:4,:]
     self.Tsb = output.y[4:7,:]

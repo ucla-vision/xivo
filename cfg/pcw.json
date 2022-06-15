@@ -16,7 +16,7 @@
   "imu_tk_convention": true,
 
   // visualization (tracker view) option
-  "print_bias_info": true,
+  "print_bias_info": false,
   "draw_OOS": true,
 
   // algorithmic-level knobs

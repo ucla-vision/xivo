@@ -55,7 +55,7 @@ def read_cfg_data(cfg_json: str):
   cy = camera_cfg["cy"]
   K = np.array([[fx, 0, cx],
                 [0, fy, cy],
-                [0,  0,  1]])
+                [0,  0,  1]], dtype=np.float64)
   imw = camera_cfg["cols"]
   imh = camera_cfg["rows"]
 
@@ -78,7 +78,7 @@ def main(args):
                seed=args.imu_seed,
                grav_s=grav_s)
   vision = RandomPCW(args.xlim, args.ylim, args.zlim, seed=args.pcw_seed)
-  vision.addNPts(10000)
+  vision.addNPts(args.npts)
 
   # Assemble IMU and vision packets in order of arrival. If two packets have the
   # same timestamp, then the IMU packet arrives first
@@ -88,7 +88,6 @@ def main(args):
   vision_meas = np.vstack((vision_meas_times, np.ones(vision_meas_times.size))) # (2, NT)
   all_packets = np.hstack((imu_meas, vision_meas))  # (2, 2*NT)
   all_packets = all_packets[:,all_packets[0,:].argsort()]
-  #all_packets = np.sort(all_packets, axis=1)
 
   # Lambda function: whether or not a packet is IMU 
   is_imu = lambda x: (x[1] < 0.5)
@@ -108,7 +107,8 @@ def main(args):
       Tsc = Rsb @ Tbc + Tsb
       gsc = np.hstack((Rsc, Tsc))
       (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh)
-      estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
+      if len(feature_ids) > 0:
+        estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
       estimator.Visualize()
 
 
