@@ -6,6 +6,8 @@ import os, glob
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+import matplotlib.pyplot as plt
+
 import sys
 sys.path.insert(0, 'lib')
 import pyxivo

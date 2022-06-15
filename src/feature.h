@@ -315,6 +315,9 @@ private:
 
 public:
   // simulation
+  static int num_good_triangulations_;
+  static int num_bad_triangulations_;
+
   struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Vec3 Xs;

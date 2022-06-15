@@ -15,6 +15,8 @@ namespace xivo {
 
 // Feature
 int Feature::counter_ = Feature::counter0;
+int Feature::num_good_triangulations_ = 0;
+int Feature::num_bad_triangulations_ = 0;
 JacobianCache Feature::cache_ = {};
 
 // Operations for FeatureAdj
@@ -746,12 +748,14 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 
   if(!return_output)
   {
+    num_bad_triangulations_++;
     return;
   }
 
   if (auto z = Xc1(2); z < options.zmin || z > options.zmax) {
     // triangulated depth is not great
     // stick to the constant depth
+    num_bad_triangulations_++;
   } else {
     x_.head<2>() = Xc1.head<2>() / z;
     #ifdef USE_INVDEPTH
@@ -759,6 +763,7 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
     #else
       x_(2) = log(z);
     #endif
+    num_good_triangulations_++;
   }
 
   return;

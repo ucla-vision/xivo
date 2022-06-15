@@ -366,7 +366,7 @@ Estimator::Estimator(const Json::Value &cfg)
     gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
     gravity_initialized_ = false;
   }
-    vision_initialized_ = false;
+  vision_initialized_ = false;
   // reset measurement counter
   imu_counter_ = 0;
   vision_counter_ = 0;
@@ -1129,6 +1129,14 @@ void Estimator::VisualMeasPointCloudInternal(
     }
   }
   timer_.Tock("visual-meas");
+
+  /*
+  static int print_tri_counter{0};
+  if (++print_tri_counter % 5 == 0) {
+    std::cout << "good/bad triangulations: " << Feature::num_good_triangulations_ << "/" << Feature::num_bad_triangulations_ << std::endl;
+  }
+  */
+
 }
 
 
