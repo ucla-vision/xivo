@@ -52,7 +52,7 @@ class IMUSim:
                grav_s: np.ndarray=np.array([0, 0, -9.8]),
                init_Vsb: np.ndarray=np.zeros(3),
   ) -> None:
-    assert(type in ["sinusoid", "straight", "VR", "box"])
+    assert(type in ["sinusoid", "trefoil", "VR", "box"])
     self.type = type
     self.noise_accel = noise_accel
     self.noise_gyro = noise_gyro
@@ -67,7 +67,7 @@ class IMUSim:
     init_Tsb = np.zeros(3,)
     ic = np.hstack((init_qsb, init_Tsb, init_Vsb))
 
-    output = solve_ivp(self.dX_dt, [0, self.T], ic, t_eval=np.arange(0.0, T, 0.01))
+    output = solve_ivp(self.dX_dt, [0, self.T], ic, t_eval=np.arange(0.0, T, 0.001))
     self.t = output.t
     self.qsb = output.y[:4,:]
     self.Tsb = output.y[4:7,:]
@@ -76,9 +76,9 @@ class IMUSim:
 
 
   def sinusoid_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    accel_x = 0.2 * np.sin(3 * t)
+    accel_x = 0.2 * np.cos(0.3 * t)
     accel_y = 0.1 * np.cos(0.4 * t)
-    accel_z = 0.1 * np.sin(5 * t)
+    accel_z = 0.2 * np.cos(0.5 * t)
     accel = np.array([accel_x, accel_y, accel_z])
     gyro_x = -0.5 * D2R * np.sin(0.3 * t)
     gyro_y = 0.5 * D2R * np.cos(0.1 * t)
@@ -86,8 +86,24 @@ class IMUSim:
     gyro = np.array([gyro_x, gyro_y, gyro_z])
     return (accel, gyro)
 
-  def straight_line_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    raise NotImplementedError
+  def trefoil_meas(self,
+                   t: float,
+                   Rsb: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    accel_x_s = 12*np.sin(2*t)*np.sin(3*t) - 9*np.cos(2*t)*np.cos(3*t) - 4*np.cos(2*t)*(np.cos(3*t)+4)
+    accel_y_s = -4*np.sin(2*t)*(np.cos(3*t)+4) - 12*np.cos(2*t)*np.sin(3*t) - 9*np.cos(3*t)*np.sin(2*t)
+    accel_z_s = -9.0 * np.sin(3*t)
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
+
+    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
+    accel_b = accel_b.flatten()
+
+    gyro_x = np.sin(0.3*t)
+    gyro_y = np.cos(0.4*t)
+    gyro_z = np.sin(0.1*t)
+    gyro = np.array([gyro_x, gyro_y, gyro_z])
+
+    return (accel_b, gyro)
 
   def VR_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     raise NotImplementedError
@@ -95,11 +111,14 @@ class IMUSim:
   def box_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     raise NotImplementedError
 
-  def real_accel_gyro(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
+  def real_accel_gyro(self,
+                      t: float,
+                      X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    Rsb = q2m(X[0:4])
     if self.type == "sinusoid":
       accel, gyro = self.sinusoid_meas(t)
-    elif self.type == "straight":
-      accel, gyro = self.straight_line_meas(t)
+    elif self.type == "trefoil":
+      accel, gyro = self.trefoil_meas(t, Rsb)
     elif self.type == "VR":
       accel, gyro = self.VR_meas(t)
     elif self.type == "box":
@@ -108,7 +127,7 @@ class IMUSim:
 
   def meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     Rsb, _ = self.gsb(t)
-    accel, gyro = self.real_accel_gyro(t)
+    accel, gyro = self.real_accel_gyro(t, self.X(t))
     noise_a = self.noise_accel * self.rng.standard_normal(3)
     noise_g = self.noise_gyro * self.rng.standard_normal(3)  
     meas_a = accel + noise_a + self.bias_accel - np.squeeze(Rsb @ self.grav_s)
@@ -121,7 +140,7 @@ class IMUSim:
     curr_Vsb = X[7:10]
 
     # these are alpha_sb_b and omega_sb_b
-    alpha_sb_b, omega_sb_b = self.real_accel_gyro(t)
+    alpha_sb_b, omega_sb_b = self.real_accel_gyro(t, X)
     alpha_sb_b_col = np.reshape(alpha_sb_b, (3,1))
 
     Xdot = np.zeros(10)
@@ -136,6 +155,9 @@ class IMUSim:
     Tsb = X_t[4:7]
     return (q2m(qsb), Tsb)
 
+  def X(self, t):
+    return self.interpolator(t)
+
   def plt_ground_truth(self):
     Wsb = q2w(self.qsb.transpose()).transpose()
     time_three_plots(self.t, self.Tsb, "Ground truth Tsb (m)")
@@ -144,7 +166,13 @@ class IMUSim:
 
 
 if __name__ == "__main__":
-  imu = IMUSim("sinusoid")
+
+  t = 0
+  xd = -2*np.sin(2*t)*(np.cos(3*t) + 4) - 3*np.cos(2*t) * np.sin(3*t)
+  yd = 2*np.cos(2*t)*(np.cos(3*t) + 4) - 3*np.sin(2*t) * np.sin(3*t)
+  zd = 3 * np.cos(3*t)
+
+  imu = IMUSim("trefoil", init_Vsb=np.array([xd, yd, zd]))
 
   # Test retrieval
   Rsb, Tsb = imu.gsb(10)
