@@ -526,7 +526,9 @@ void Estimator::Propagate(bool visual_meas) {
 
   dt = std::chrono::duration<number_t>(curr_time_ - last_time_).count();
   if (dt == 0) {
-    LOG(WARNING) << "measurement timestamps coincide?";
+    if (!simulation_) {
+      LOG(WARNING) << "measurement timestamps coincide?";
+    }
     return;
   }
 
@@ -548,7 +550,6 @@ void Estimator::Propagate(bool visual_meas) {
     last_accel_ = accel0 + slope_accel_ * dt;
     last_gyro_ = gyro0 + slope_gyro_ * dt;
   }
-  // std::cout << slope_accel_.transpose() << std::endl;
 
   if (dt > 0.030) {
     LOG(WARNING) << "dt=" << dt << "  > 30 ms";
@@ -563,7 +564,7 @@ void Estimator::Propagate(bool visual_meas) {
     LOG(FATAL) << "Unknown integration method";
   }
 
-  // P_.block<kMotionSize, kMotionSize>(0, 0).noalias() += Qmodel_;
+  P_.block<kMotionSize, kMotionSize>(0, 0).noalias() += Qmodel_;
   timer_.Tock("propagation");
 }
 
