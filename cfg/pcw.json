@@ -4,6 +4,8 @@
   // no temporal calibration
   // no online IMU calibration
   // no online camera calibration
+  // 125 max features in EKF
+  // 75 max groups in EKF
 
 
   // verbose
@@ -16,13 +18,13 @@
   "imu_tk_convention": true,
 
   // visualization (tracker view) option
-  "print_bias_info": true,
+  "print_bias_info": false,
   "draw_OOS": true,
 
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
-  "use_depth_opt": true,  // depth optimization
+  "use_depth_opt": false,  // depth optimization
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,
   "use_compression": true,  // measurement compression
@@ -50,20 +52,21 @@
   // memory
   "memory": {
     // Values if mapper is not enabled
-    "max_features": 200,
-    "max_groups": 100
+    //"max_features": 200,
+    //"max_groups": 100
     // Values if mapper is enabled
-    //"max_features": 20000,
-    //"max_groups": 3500
+    "max_features": 20000,
+    "max_groups": 3500
   },
 
   // gravity constant
-  "gravity": [0, 0, 9.8],
+  "gravity": [0, 0, -9.8],
   // Initial State
   "X" : {
     "Wsb"   : [0, 0, 0],
     "Tsb"   : [0, 0, 0],
-    "Vsb"   : [0, 0, 0],
+    "Vsb"   : [0, 0.7, 8],   // lissajous init velocity
+    // "Vsb"    : [ 0, 10, 3], // trefoil init velocity
     "bg"  : [0, 0, 0],
     "ba"  : [0, 0, 0],
     "Wbc" : [ -1.57079633, 0, 0 ],
@@ -73,14 +76,14 @@
   },
 
   "P" : {
-    "Wsb"   : 0.0001,
-    "Tsb"   : 0.001,
-    "Vsb"   : 0.5,
-    "bg"  : 0.0,
-    "ba"  : 0.0,
-    "Wbc" : 0.0,
-    "Tbc" : 0.0,
-    "Wsg"  : 0.0,
+    "Wsb"   : 0.000001,
+    "Tsb"   : 0.0001,
+    "Vsb"   : 0.0001,
+    "bg"  : 1e-10,
+    "ba"  : 1e-10,
+    "Wbc" : 1e-10,
+    "Tbc" : 1e-10,
+    "Wsg"  : 1e-10,
     "td"  : 5e-4, // not used
     "Cg"  : 1e-3, // not used
     "Ca"  : 1e-3, // not used
@@ -110,18 +113,21 @@
   // },
 
   "Qimu": {
-    "gyro": [1e-5, 1e-5, 1e-5],
+    "gyro": [1e-9, 1e-9, 1e-9],
     "gyro_bias": [0.00, 0.00, 0.00],
-    "accel": [1e-4, 1e-4, 1e-4],
+    "accel": [1e-9, 1e-9, 1e-9],
     "accel_bias": [0.00, 0.00, 0.00]
   },
 
 
   // Feature initialization parameters
-  "initial_z": 2.5, // initial subfilter depth value (meter)
-  "initial_std_x": 1.5, // initial std on subfilter state (pixel)
-  "initial_std_y": 1.5, // initial std on subfilter state (pixel)
-  "initial_std_z": 2.0,  // initial std on subfilter state (meter)
+  "initial_z": 10.0, // initial subfilter depth value (meter)
+  "initial_std_x": 0.5, // initial std on subfilter state (pixel)
+  "initial_std_y": 0.5, // initial std on subfilter state (pixel)
+  "initial_std_z": 0.1,  // initial std on subfilter state (meter)
+  "initial_std_x_badtri": 0.5, // initial std on subfilter state when triangulation is bad
+  "initial_std_y_badtri": 0.5,
+  "initial_std_z_badtri": 0.1,
   "max_subfilter_outlier": 0.01, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a
@@ -129,10 +135,10 @@
                                   // the state
   "comparison_score_type": "DepthUncertainty",
 
-  "visual_meas_std":  1.5, // std of visual measurement for x and y (pixel)
+  "visual_meas_std":  4.5, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
-  "max_depth": 8.0,
+  "max_depth": 60.0,
   "min_depth": 0.05,
 
   // Adaptive initial depth
@@ -153,9 +159,9 @@
 
   // pre-subfilter triangulation options
   "triangulation": {
-    "method": "l1_angular",
+    "method": "direct_linear_transform_avg",
     "zmin": 0.05,
-    "zmax": 15.0,
+    "zmax": 60.0,
     "max_theta_thresh": 0.1, // in degrees
     "beta_thesh": 0.25 // in degrees
   },
@@ -185,7 +191,6 @@
 
   "camera_cfg": {
     "model": "pinhole",
-    "max_iter": 25,
 
     "rows": 480,
     "cols": 640,
@@ -196,9 +201,9 @@
     "cy": 240
   },
 
-  "min_inliers": 5, // minimum number of inlier measurements
+  "min_inliers": 15, // minimum number of inlier measurements
 
-  "MH_thresh": 5.991, // 8.991
+  "MH_thresh": 100, //8.991,
   "MH_adjust_factor": 1.15,
 
   "1pt_RANSAC_thresh": 1.5,
@@ -207,16 +212,16 @@
 
   // "Correct" means 3 XY gauge features. But sometimes the filter works better
   // with fewer fixed degrees of freedom.
-  "num_gauge_xy_features": 3,
+  "num_gauge_xy_features": 0,
   "collinear_cross_prod_thresh": 0.001,
 
   "tracker_cfg": {
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 45,
-    "num_features_max": 60,
-    "max_pixel_displacement": 64,
+    "num_features_min": 150,
+    "num_features_max": 200,
+    "max_pixel_displacement": 500,
     "normalize": false,
     "do_outlier_rejection": false,
 

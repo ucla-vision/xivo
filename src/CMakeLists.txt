@@ -11,7 +11,7 @@ project(estimator)
 
 # if set, perform online temporal calibration
 #add_definitions(-DUSE_ONLINE_IMU_CALIB)
-add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
+#add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
 #add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 
 # if set, enables the mapper object (and loop closure)
@@ -24,8 +24,8 @@ add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
 
 # Sets the maximum number of features and groups in the EKF. Otherwise
 # use the default values in core.h
-add_definitions(-DEKF_MAX_FEATURES=125)
-add_definitions(-DEKF_MAX_GROUPS=75)
+#add_definitions(-DEKF_MAX_FEATURES=125)
+#add_definitions(-DEKF_MAX_GROUPS=75)
 
 # Sets the frequency at which to project rotation matrices to SO(3) to get
 # rid of accumulated numeric error
@@ -34,7 +34,7 @@ add_definitions(-DEKF_MAX_GROUPS=75)
 # Sets the size of the message buffer heap; this is the number of messages stored
 # before they are processed. A bigger size can accommodate a more-negative value
 # of td, but will be slower.
-add_definitions(-DMESSAGE_BUFFER_SIZE=100)
+#add_definitions(-DMESSAGE_BUFFER_SIZE=100)
 
 include_directories(
   ${PROJECT_SOURCE_DIR}

@@ -87,9 +87,12 @@ def main(args):
     elif args.dataset == 'cosyvio':
         img_dir = os.path.join(args.root, 'data', args.sen, args.seq, 'frames')
         imu_path = os.path.join(args.root, 'data', args.sen, args.seq, 'data.csv')
-    elif args.dataset in ['xivo', 'carla', 'void']:
+    elif args.dataset in ['xivo', 'void']:
         img_dir = os.path.join(args.root, args.seq, 'cam0', 'data')
         imu_path = os.path.join(args.root, args.seq, 'imu0', 'data.csv')
+    elif args.dataset == 'carla':
+        img_dir = os.path.join(args.root, args.seq, 'rgb')
+        imu_path = os.path.join(args.root, args.seq, 'imu', 'data.csv')
     else:
         raise ValueError('unknown dataset argument; choose from tumvi, xivo, cosyvio, carla')
 

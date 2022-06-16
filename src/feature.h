@@ -162,6 +162,8 @@ public:
   // P: the covariance matrix of the estimator
   void FillCovarianceBlock(MatX &P);
 
+  bool TriangulationSuccessful() { return triangulation_successful_; }
+
   const Eigen::Matrix<number_t, 2, kFullSize> &J() const { return J_; }
   const Vec2 &inn() const { return inn_; }
 
@@ -304,6 +306,9 @@ private:
   /** id of a past feature this feature was loop-closed to. */
   int lc_match_;
 
+  /** whether or not triangulation was successful */
+  bool triangulation_successful_;
+
 #ifdef APPROXIMATE_INIT_COVARIANCE
   // correlation block between local feature state (x) and group pose
   std::unordered_map<int, Eigen::Matrix<number_t, kFeatureSize, kGroupSize>> cov_;
@@ -315,6 +320,9 @@ private:
 
 public:
   // simulation
+  static int num_good_triangulations_;
+  static int num_bad_triangulations_;
+
   struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Vec3 Xs;

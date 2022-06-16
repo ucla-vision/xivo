@@ -179,6 +179,9 @@
   "initial_std_x": 1.5, // initial std on subfilter state (pixel)
   "initial_std_y": 1.5, // initial std on subfilter state (pixel)
   "initial_std_z": 0.50,  // initial std on subfilter state (meter)
+  "initial_std_x_badtri": 1.5, // initial std on subfilter state when triangulation is bad
+  "initial_std_y_badtri": 1.5,
+  "initial_std_z_badtri": 0.50,
   "max_subfilter_outlier": 1.0, // maximum outlier counter in subfilter allowed
                                  // for feature to be in main filter
   "strict_criteria_timesteps": 5, // before this many RGB frames, we will use a

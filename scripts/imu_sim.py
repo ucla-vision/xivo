@@ -1,11 +1,15 @@
 from typing import Tuple
+import sys
 
 import numpy as np
 from numpy.random import default_rng
 from scipy.spatial.transform import Rotation
 from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d
 
-import pdb
+import matplotlib.pyplot as plt
+
+from pltutils import time_three_plots
 
 
 D2R = np.pi / 180.0
@@ -33,9 +37,14 @@ def q2m(q):
   return Rotation.from_quat(q).as_matrix()
 
 
+def q2w(q):
+  return Rotation.from_quat(q).as_rotvec()
+
+
 class IMUSim:
   def __init__(self,
                type: str,
+               T: float=100.0,
                noise_accel: float=1e-4,
                noise_gyro: float=1e-5,
                bias_accel: np.ndarray=np.zeros(3),
@@ -44,7 +53,7 @@ class IMUSim:
                grav_s: np.ndarray=np.array([0, 0, -9.8]),
                init_Vsb: np.ndarray=np.zeros(3),
   ) -> None:
-    assert(type in ["sinusoid", "straight", "VR", "box"])
+    assert(type in ["sinusoid", "trefoil", "lissajous", "box"])
     self.type = type
     self.noise_accel = noise_accel
     self.noise_gyro = noise_gyro
@@ -52,51 +61,92 @@ class IMUSim:
     self.bias_gyro = bias_gyro
     self.rng = default_rng(seed)
     self.grav_s = grav_s
+    self.T = T
 
-    # ground-truth values
-    self.curr_t = 0.0
-    self.qsb = np.array([0, 0, 0, 1])
-    self.Tsb = np.zeros(3,)
-    self.Vsb = init_Vsb
+    # solve for ground-truth values
+    init_qsb = np.array([0, 0, 0, 1])
+    init_Tsb = np.zeros(3,)
+    ic = np.hstack((init_qsb, init_Tsb, init_Vsb))
+
+    output = solve_ivp(self.dX_dt, [0, self.T], ic, t_eval=np.arange(0.0, T, 0.001))
+    self.t = output.t
+    self.qsb = output.y[:4,:]
+    self.Tsb = output.y[4:7,:]
+    self.Vsb = output.y[7:10,:]
+    self.interpolator = interp1d(self.t, output.y)
+
 
   def sinusoid_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    accel_x = 2*np.sin(0.2 * t)
-    accel_y = np.cos(0.25 * t)
-    accel_z = np.sin(0.5 * t)
+    accel_x = 0.2 * np.cos(0.3 * t)
+    accel_y = 0.1 * np.cos(0.4 * t)
+    accel_z = 0.2 * np.cos(0.5 * t)
     accel = np.array([accel_x, accel_y, accel_z])
-    gyro_x = 5 * D2R * np.sin(0.3 * t)
-    gyro_y = 3 * D2R * np.cos(0.3 * t)
-    gyro_z = 10 * D2R * np.sin(0.3 * t)
+    gyro_x = -0.5 * D2R * np.sin(0.3 * t)
+    gyro_y = 0.5 * D2R * np.cos(0.1 * t)
+    gyro_z = 0.3 * D2R * np.sin(0.1 * t)
     gyro = np.array([gyro_x, gyro_y, gyro_z])
     return (accel, gyro)
 
-  def straight_line_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    raise NotImplementedError
+  def trefoil_meas(self,
+                   t: float,
+                   Rsb: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    accel_x_s = 12*np.sin(2*t)*np.sin(3*t) - 9*np.cos(2*t)*np.cos(3*t) - 4*np.cos(2*t)*(np.cos(3*t)+4)
+    accel_y_s = -4*np.sin(2*t)*(np.cos(3*t)+4) - 12*np.cos(2*t)*np.sin(3*t) - 9*np.cos(3*t)*np.sin(2*t)
+    accel_z_s = -9.0 * np.sin(3*t)
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
 
-  def VR_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    raise NotImplementedError
+    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
+    accel_b = accel_b.flatten()
+
+    #gyro_x = np.sin(0.3*t)
+    #gyro_y = np.cos(0.4*t)
+    #gyro_z = np.sin(0.1*t)
+    #gyro = np.array([gyro_x, gyro_y, gyro_z])
+    gyro = np.zeros(3)
+
+    return (accel_b, gyro)
+
+
+  def lissajous_meas(self,
+                     t: float,
+                     Rsb: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    accel_x_s = -36*np.cos(3*t)
+    accel_z_s = -16*np.sin(2*t)
+    accel_y_s = -49*np.sin(7*t) / 10
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
+
+    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
+    accel_b = accel_b.flatten()
+
+    gyro = np.zeros(3)
+    return (accel_b, gyro)
+
 
   def box_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     raise NotImplementedError
 
-  def real_accel_gyro(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
+  def real_accel_gyro(self,
+                      t: float,
+                      X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    Rsb = q2m(X[0:4])
     if self.type == "sinusoid":
       accel, gyro = self.sinusoid_meas(t)
-    elif self.type == "straight":
-      accel, gyro = self.straight_line_meas(t)
-    elif self.type == "VR":
-      accel, gyro = self.VR_meas(t)
+    elif self.type == "trefoil":
+      accel, gyro = self.trefoil_meas(t, Rsb)
+    elif self.type == "lissajous":
+      accel, gyro = self.lissajous_meas(t, Rsb)
     elif self.type == "box":
       accel, gyro = self.box_meas(t)
     return accel, gyro
 
   def meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    self.update_state(t)
     Rsb, _ = self.gsb(t)
-    accel, gyro = self.real_accel_gyro(t)
+    accel, gyro = self.real_accel_gyro(t, self.X(t))
     noise_a = self.noise_accel * self.rng.standard_normal(3)
     noise_g = self.noise_gyro * self.rng.standard_normal(3)  
-    meas_a = accel + noise_a + self.bias_accel + np.squeeze(Rsb @ self.grav_s)
+    meas_a = accel + noise_a + self.bias_accel - np.squeeze(Rsb @ self.grav_s)
     meas_g = gyro + noise_g + self.bias_gyro
     return meas_a, meas_g
 
@@ -106,7 +156,7 @@ class IMUSim:
     curr_Vsb = X[7:10]
 
     # these are alpha_sb_b and omega_sb_b
-    alpha_sb_b, omega_sb_b = self.real_accel_gyro(t)
+    alpha_sb_b, omega_sb_b = self.real_accel_gyro(t, X)
     alpha_sb_b_col = np.reshape(alpha_sb_b, (3,1))
 
     Xdot = np.zeros(10)
@@ -115,30 +165,47 @@ class IMUSim:
     Xdot[7:10] = np.squeeze(curr_Rsb @ alpha_sb_b_col)
     return Xdot
 
-  def update_state(self, t):
-    dt = t - self.curr_t
-    if dt > np.finfo(float).eps:
-      ic = np.hstack((self.qsb, self.Tsb, self.Vsb))
-      output = solve_ivp(self.dX_dt, [0, dt], ic)
-      all_X = output.y
-      self.qsb = all_X[0:4, -1]
-      self.Tsb = all_X[4:7, -1]
-      self.Vsb = all_X[7:10, -1]
-      self.curr_t = t
-    elif dt < 0:
-      raise ValueError("requesting state at a time in the past")
-    else: #  dt is tiny so we just don't update the state
-      pass
-
   def gsb(self, t):
-    self.update_state(t) 
-    return (q2m(self.qsb), self.Tsb)
+    X_t = self.interpolator(t)
+    qsb = X_t[:4]
+    Tsb = X_t[4:7]
+    return (q2m(qsb), Tsb)
+
+  def X(self, t):
+    return self.interpolator(t)
+
+  def plt_ground_truth(self):
+    Wsb = q2w(self.qsb.transpose()).transpose()
+    time_three_plots(self.t, self.Tsb, "Ground truth Tsb (m)")
+    time_three_plots(self.t, Wsb, "Ground truth Wsb (rad?)")
+
 
 
 if __name__ == "__main__":
-  imu = IMUSim("sinusoid")
+
+  traj_type = sys.argv[1]
+
+  t = 0
+
+  # trefoil initial velocity
+  if traj_type == "trefoil":
+    xd = -2*np.sin(2*t)*(np.cos(3*t) + 4) - 3*np.cos(2*t) * np.sin(3*t)
+    yd = 2*np.cos(2*t)*(np.cos(3*t) + 4) - 3*np.sin(2*t) * np.sin(3*t)
+    zd = 3 * np.cos(3*t)
+
+  # lissajous initial velocity
+  elif traj_type == "lissajous":
+    xd = -12*np.sin(3*t)
+    zd = 8*np.cos(2*t)
+    yd = 7*np.cos(7*t) / 10
+
+  imu = IMUSim(traj_type, init_Vsb=np.array([xd, yd, zd]))
+
+  # Test retrieval
   Rsb, Tsb = imu.gsb(10)
+  accel, gyro = imu.meas(20.0)
 
-  accel, gyro = imu.meas(20)
+  # Test plotting
+  imu.plt_ground_truth()
 
-  pdb.set_trace()
+  plt.show()

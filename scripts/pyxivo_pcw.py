@@ -6,6 +6,8 @@ import os, glob
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+import matplotlib.pyplot as plt
+
 import sys
 sys.path.insert(0, 'lib')
 import pyxivo
@@ -20,6 +22,7 @@ parser.add_argument("-npts", default=1000, type=int)
 parser.add_argument("-xlim", default=[-10, 10], nargs=2, type=float)
 parser.add_argument("-ylim", default=[-10, 10], nargs=2, type=float)
 parser.add_argument("-zlim", default=[-5, 5], nargs=2, type=float)
+parser.add_argument("-init_Vsb", default=[0, 0, 0], nargs=3, type=float)
 parser.add_argument("-pcw_seed", default=0, type=int)
 parser.add_argument("-imu_seed", default=1, type=int)
 parser.add_argument("-noise_accel", default=1e-4, type=float)
@@ -55,7 +58,7 @@ def read_cfg_data(cfg_json: str):
   cy = camera_cfg["cy"]
   K = np.array([[fx, 0, cx],
                 [0, fy, cy],
-                [0,  0,  1]])
+                [0,  0,  1]], dtype=np.float64)
   imw = camera_cfg["cols"]
   imh = camera_cfg["rows"]
 
@@ -72,12 +75,14 @@ def main(args):
   Rbc, Tbc, K, imw, imh, grav_s = read_cfg_data(args.cfg)
 
   imu = IMUSim(args.motion_type,
+               T=args.total_time,
                noise_accel=args.noise_accel,
                noise_gyro=args.noise_gyro,
                seed=args.imu_seed,
+               init_Vsb=np.array(args.init_Vsb),
                grav_s=grav_s)
   vision = RandomPCW(args.xlim, args.ylim, args.zlim, seed=args.pcw_seed)
-  vision.addNPts(10000)
+  vision.addNPts(args.npts)
 
   # Assemble IMU and vision packets in order of arrival. If two packets have the
   # same timestamp, then the IMU packet arrives first
@@ -87,7 +92,6 @@ def main(args):
   vision_meas = np.vstack((vision_meas_times, np.ones(vision_meas_times.size))) # (2, NT)
   all_packets = np.hstack((imu_meas, vision_meas))  # (2, 2*NT)
   all_packets = all_packets[:,all_packets[0,:].argsort()]
-  #all_packets = np.sort(all_packets, axis=1)
 
   # Lambda function: whether or not a packet is IMU 
   is_imu = lambda x: (x[1] < 0.5)
@@ -107,7 +111,8 @@ def main(args):
       Tsc = Rsb @ Tbc + Tsb
       gsc = np.hstack((Rsc, Tsc))
       (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh)
-      estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
+      if len(feature_ids) > 0:
+        estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
       estimator.Visualize()
 
 

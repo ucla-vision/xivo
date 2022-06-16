@@ -333,6 +333,9 @@ Estimator::Estimator(const Json::Value &cfg)
   init_std_z_ = cfg_["initial_std_z"].asDouble();
   min_z_ = cfg_["min_depth"].asDouble();
   max_z_ = cfg_["max_depth"].asDouble();
+  init_std_x_badtri_ = cfg_["initial_std_x_badtri"].asDouble();
+  init_std_y_badtri_ = cfg_["initial_std_y_badtri"].asDouble();
+  init_std_z_badtri_ = cfg_["initial_std_z_badtri"].asDouble();
   LOG(INFO) << "Initial covariance for features loaded";
 
   MeasurementUpdateInitialized_ = false;
@@ -366,7 +369,7 @@ Estimator::Estimator(const Json::Value &cfg)
     gravity_init_counter_ = cfg_.get("gravity_init_counter", 20).asInt();
     gravity_initialized_ = false;
   }
-    vision_initialized_ = false;
+  vision_initialized_ = false;
   // reset measurement counter
   imu_counter_ = 0;
   vision_counter_ = 0;
@@ -523,7 +526,9 @@ void Estimator::Propagate(bool visual_meas) {
 
   dt = std::chrono::duration<number_t>(curr_time_ - last_time_).count();
   if (dt == 0) {
-    LOG(WARNING) << "measurement timestamps coincide?";
+    if (!simulation_) {
+      LOG(WARNING) << "measurement timestamps coincide?";
+    }
     return;
   }
 
@@ -545,7 +550,6 @@ void Estimator::Propagate(bool visual_meas) {
     last_accel_ = accel0 + slope_accel_ * dt;
     last_gyro_ = gyro0 + slope_gyro_ * dt;
   }
-  // std::cout << slope_accel_.transpose() << std::endl;
 
   if (dt > 0.030) {
     LOG(WARNING) << "dt=" << dt << "  > 30 ms";
@@ -560,7 +564,7 @@ void Estimator::Propagate(bool visual_meas) {
     LOG(FATAL) << "Unknown integration method";
   }
 
-  // P_.block<kMotionSize, kMotionSize>(0, 0).noalias() += Qmodel_;
+  P_.block<kMotionSize, kMotionSize>(0, 0).noalias() += Qmodel_;
   timer_.Tock("propagation");
 }
 
@@ -1129,6 +1133,14 @@ void Estimator::VisualMeasPointCloudInternal(
     }
   }
   timer_.Tock("visual-meas");
+
+  /*
+  static int print_tri_counter{0};
+  if (++print_tri_counter % 5 == 0) {
+    std::cout << "good/bad triangulations: " << Feature::num_good_triangulations_ << "/" << Feature::num_bad_triangulations_ << std::endl;
+  }
+  */
+
 }
 
 

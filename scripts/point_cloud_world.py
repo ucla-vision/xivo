@@ -4,6 +4,7 @@ import numpy as np
 from numpy.random import default_rng
 from scipy.spatial.transform import Rotation
 
+import matplotlib.pyplot as plt
 
 def pinhole_project(Xc: np.ndarray,
             K: np.ndarray,
@@ -48,6 +49,14 @@ class PointCloudWorld:
   def addPt(self, Xs):
     self.points.append(Point(Xs))
 
+  def writeMeasToFile(self, feature_ids, Xc_vals, xp_vals):
+    with open("curr_measurements.txt", "w") as debug_file:
+      for i,fid in enumerate(feature_ids):
+        debug_file.write("{}: {} {} {} {} {}\n".format(
+          fid, Xc_vals[i][0], Xc_vals[i][1], Xc_vals[i][2],
+          xp_vals[i][0], xp_vals[i][1]
+        ))
+
   def generateMeasurements(self,
                            gsc: np.ndarray,
                            K: np.ndarray,
@@ -55,6 +64,7 @@ class PointCloudWorld:
                            imh: float):
     feature_ids = []
     xp_vals = []
+    Xc_vals = []
 
     Rsc = gsc[:,:3]
     Tsc = gsc[:,3]
@@ -69,14 +79,32 @@ class PointCloudWorld:
           self.next_pt_id += 1
         xp_vals.append(xp)
         feature_ids.append(pt.id)
-
+        Xc_vals.append(Xc)
       else:
         if pt.id_set():
           pt.unset_id()
 
     feature_ids = np.array(feature_ids)
     xp_vals = np.array(xp_vals)
+    #self.writeMeasToFile(feature_ids, Xc_vals, xp_vals)
     return (feature_ids, xp_vals)
+
+  def plot_world(self):
+    xs = np.zeros(len(self.points))
+    ys = np.zeros(len(self.points))
+    zs = np.zeros(len(self.points))
+    for i,pt in enumerate(self.points):
+      xs[i] = pt.Xs[0]
+      ys[i] = pt.Xs[1]
+      zs[i] = pt.Xs[2]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.scatter(xs, ys, zs)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    plt.show()
 
 
 class RandomPCW(PointCloudWorld):
