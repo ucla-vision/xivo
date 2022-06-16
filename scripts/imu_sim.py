@@ -1,4 +1,5 @@
 from typing import Tuple
+import sys
 
 import numpy as np
 from numpy.random import default_rng
@@ -52,7 +53,7 @@ class IMUSim:
                grav_s: np.ndarray=np.array([0, 0, -9.8]),
                init_Vsb: np.ndarray=np.zeros(3),
   ) -> None:
-    assert(type in ["sinusoid", "trefoil", "VR", "box"])
+    assert(type in ["sinusoid", "trefoil", "lissajous", "box"])
     self.type = type
     self.noise_accel = noise_accel
     self.noise_gyro = noise_gyro
@@ -98,15 +99,30 @@ class IMUSim:
     accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
     accel_b = accel_b.flatten()
 
-    gyro_x = np.sin(0.3*t)
-    gyro_y = np.cos(0.4*t)
-    gyro_z = np.sin(0.1*t)
-    gyro = np.array([gyro_x, gyro_y, gyro_z])
+    #gyro_x = np.sin(0.3*t)
+    #gyro_y = np.cos(0.4*t)
+    #gyro_z = np.sin(0.1*t)
+    #gyro = np.array([gyro_x, gyro_y, gyro_z])
+    gyro = np.zeros(3)
 
     return (accel_b, gyro)
 
-  def VR_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    raise NotImplementedError
+
+  def lissajous_meas(self,
+                     t: float,
+                     Rsb: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    accel_x_s = -36*np.cos(3*t)
+    accel_z_s = -16*np.sin(2*t)
+    accel_y_s = -49*np.sin(7*t) / 10
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
+
+    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
+    accel_b = accel_b.flatten()
+
+    gyro = np.zeros(3)
+    return (accel_b, gyro)
+
 
   def box_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     raise NotImplementedError
@@ -119,8 +135,8 @@ class IMUSim:
       accel, gyro = self.sinusoid_meas(t)
     elif self.type == "trefoil":
       accel, gyro = self.trefoil_meas(t, Rsb)
-    elif self.type == "VR":
-      accel, gyro = self.VR_meas(t)
+    elif self.type == "lissajous":
+      accel, gyro = self.lissajous_meas(t, Rsb)
     elif self.type == "box":
       accel, gyro = self.box_meas(t)
     return accel, gyro
@@ -167,12 +183,23 @@ class IMUSim:
 
 if __name__ == "__main__":
 
-  t = 0
-  xd = -2*np.sin(2*t)*(np.cos(3*t) + 4) - 3*np.cos(2*t) * np.sin(3*t)
-  yd = 2*np.cos(2*t)*(np.cos(3*t) + 4) - 3*np.sin(2*t) * np.sin(3*t)
-  zd = 3 * np.cos(3*t)
+  traj_type = sys.argv[1]
 
-  imu = IMUSim("trefoil", init_Vsb=np.array([xd, yd, zd]))
+  t = 0
+
+  # trefoil initial velocity
+  if traj_type == "trefoil":
+    xd = -2*np.sin(2*t)*(np.cos(3*t) + 4) - 3*np.cos(2*t) * np.sin(3*t)
+    yd = 2*np.cos(2*t)*(np.cos(3*t) + 4) - 3*np.sin(2*t) * np.sin(3*t)
+    zd = 3 * np.cos(3*t)
+
+  # lissajous initial velocity
+  elif traj_type == "lissajous":
+    xd = -12*np.sin(3*t)
+    zd = 8*np.cos(2*t)
+    yd = 7*np.cos(7*t) / 10
+
+  imu = IMUSim(traj_type, init_Vsb=np.array([xd, yd, zd]))
 
   # Test retrieval
   Rsb, Tsb = imu.gsb(10)

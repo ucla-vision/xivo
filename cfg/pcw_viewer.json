@@ -7,17 +7,17 @@
   "viewport": {
     "width": 640,
     "height": 480,
-    "fx": 400,
-    "fy": 400,
+    "fx": 200,
+    "fy": 200,
     "cx": 320,
     "cy": 240,
     "znear": 0.1,
-    "zfar": 10
+    "zfar": 20
   },
 
   "ModelViewMatrix": {
     "x": 0.0,
-    "y": -2.0,
+    "y": -10.0,
     "z": 0.0,
     "upVector": [ 0, 0, 1 ]
   },
