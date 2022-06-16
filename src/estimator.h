@@ -360,15 +360,24 @@ private:
    *  updated at every frame to be (almost) equal to the median depth of all the
    *  features currently in the state. (i.e. `init_z = 0.01*init_z + 0.99*median_depth`) */
   number_t init_z_;
-  /** Default subfilter covariance for each feature for x-coordinate at initialization.
+  /** Default subfilter covariance for each feature's (X/Z)-coordinate at initialization.
    *  (Subfilter covariance is initialized as a diagonal.) */
   number_t init_std_x_;
-  /** Default subfilter covariance for each feature for y-coordinate at initialization.
+  /** Default subfilter covariance for each feature's (Y/Z)-coordinate at initialization.
    *  (Subfilter covariance is initialized as a diagonal.) */
   number_t init_std_y_;
-  /** Default subfilter covariance for each feature for z-coordinate at initialization.
+  /** Default subfilter covariance for each feature's (1/Z)-coordinate at initialization.
    *  (Subfilter covariance is initialized as a diagonal.) */
   number_t init_std_z_;
+  /** Default subfilter covariance for each feature's (X/Z)-coordinate at
+   *  initialization when triangulation is poor.*/
+  number_t init_std_x_badtri_;
+  /** Default subfilter covariance for each feature's (Y/Z)-coordinate at
+   *  initialization when triangulation is poor.*/
+  number_t init_std_y_badtri_;
+  /** Default subfilter covariance for each feature's (1/Z)-coordinate at
+   *  initialization when triangulation is poor.*/
+  number_t init_std_z_badtri_;
 
   /** The minimum depth that a feature can be given when it is first
    *  created. (i.e. minimum value of `init_z_`) */

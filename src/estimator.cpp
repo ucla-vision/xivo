@@ -333,6 +333,9 @@ Estimator::Estimator(const Json::Value &cfg)
   init_std_z_ = cfg_["initial_std_z"].asDouble();
   min_z_ = cfg_["min_depth"].asDouble();
   max_z_ = cfg_["max_depth"].asDouble();
+  init_std_x_badtri_ = cfg_["initial_std_x_badtri"].asDouble();
+  init_std_y_badtri_ = cfg_["initial_std_y_badtri"].asDouble();
+  init_std_z_badtri_ = cfg_["initial_std_z_badtri"].asDouble();
   LOG(INFO) << "Initial covariance for features loaded";
 
   MeasurementUpdateInitialized_ = false;

@@ -77,6 +77,7 @@ void Feature::Reset(number_t x, number_t y) {
   inn_ << 0, 0;
   outlier_counter_ = 0;
   lc_match_ = -1;
+  triangulation_successful_ = false;
 
   sim_.Xs << -1, -1, -1;
   sim_.xp << -1, -1;
@@ -764,6 +765,7 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
       x_(2) = log(z);
     #endif
     num_good_triangulations_++;
+    triangulation_successful_ = true;
   }
 
   return;

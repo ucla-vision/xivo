@@ -316,7 +316,12 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     CHECK(f->ref() == nullptr);
 #endif
     f->SetRef(g);
-    f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
+    if (triangulate_pre_subfilter_ && !f->TriangulationSuccessful()) {
+      f->Initialize(init_z_, {init_std_x_badtri_, init_std_y_badtri_, init_std_z_badtri_});
+    } else {
+      f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
+    }
+    //std::cout << "feature id: " << f->id() << ", Xc" << f->Xc().transpose() << std::endl;
 
     graph.AddFeature(f);
     graph.AddFeatureToGroup(f, g);

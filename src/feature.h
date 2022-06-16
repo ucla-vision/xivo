@@ -162,6 +162,8 @@ public:
   // P: the covariance matrix of the estimator
   void FillCovarianceBlock(MatX &P);
 
+  bool TriangulationSuccessful() { return triangulation_successful_; }
+
   const Eigen::Matrix<number_t, 2, kFullSize> &J() const { return J_; }
   const Vec2 &inn() const { return inn_; }
 
@@ -303,6 +305,9 @@ private:
 
   /** id of a past feature this feature was loop-closed to. */
   int lc_match_;
+
+  /** whether or not triangulation was successful */
+  bool triangulation_successful_;
 
 #ifdef APPROXIMATE_INIT_COVARIANCE
   // correlation block between local feature state (x) and group pose
