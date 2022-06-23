@@ -169,9 +169,8 @@ def q2w(q):
   return Rotation.from_quat(q).as_rotvec()
 
 
-class IMUSim:
+class IMUSimBase:
   def __init__(self,
-               type: str,
                T: float=100.0,
                noise_accel: float=1e-4,
                noise_gyro: float=1e-5,
@@ -181,8 +180,6 @@ class IMUSim:
                grav_s: np.ndarray=np.array([0, 0, -9.8]),
                init_Vsb: np.ndarray=np.zeros(3),
   ) -> None:
-    assert(type in ["sinusoid", "trefoil", "lissajous", "box"])
-    self.type = type
     self.noise_accel = noise_accel
     self.noise_gyro = noise_gyro
     self.bias_accel = bias_accel
@@ -203,71 +200,11 @@ class IMUSim:
     self.Vsb = output.y[7:10,:]
     self.interpolator = interp1d(self.t, output.y)
 
-
-  def sinusoid_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    accel_x = 0.2 * np.cos(0.3 * t)
-    accel_y = 0.1 * np.cos(0.4 * t)
-    accel_z = 0.2 * np.cos(0.5 * t)
-    accel = np.array([accel_x, accel_y, accel_z])
-    gyro_x = -0.5 * D2R * np.sin(0.3 * t)
-    gyro_y = 0.5 * D2R * np.cos(0.1 * t)
-    gyro_z = 0.3 * D2R * np.sin(0.1 * t)
-    gyro = np.array([gyro_x, gyro_y, gyro_z])
-    return (accel, gyro)
-
-  def trefoil_meas(self,
-                   t: float,
-                   Rsb: np.ndarray
-  ) -> Tuple[np.ndarray, np.ndarray]:
-    accel_x_s = 12*np.sin(2*t)*np.sin(3*t) - 9*np.cos(2*t)*np.cos(3*t) - 4*np.cos(2*t)*(np.cos(3*t)+4)
-    accel_y_s = -4*np.sin(2*t)*(np.cos(3*t)+4) - 12*np.cos(2*t)*np.sin(3*t) - 9*np.cos(3*t)*np.sin(2*t)
-    accel_z_s = -9.0 * np.sin(3*t)
-    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
-
-    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
-    accel_b = accel_b.flatten()
-
-    #gyro_x = np.sin(0.3*t)
-    #gyro_y = np.cos(0.4*t)
-    #gyro_z = np.sin(0.1*t)
-    #gyro = np.array([gyro_x, gyro_y, gyro_z])
-    gyro = np.zeros(3)
-
-    return (accel_b, gyro)
-
-
-  def lissajous_meas(self,
-                     t: float,
-                     Rsb: np.ndarray
-  ) -> Tuple[np.ndarray, np.ndarray]:
-    accel_x_s = -36*np.cos(3*t)
-    accel_z_s = -16*np.sin(2*t)
-    accel_y_s = -49*np.sin(7*t) / 10
-    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
-
-    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
-    accel_b = accel_b.flatten()
-
-    gyro = np.zeros(3)
-    return (accel_b, gyro)
-
-
-  def box_meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
-    raise NotImplementedError
-
   def real_accel_gyro(self,
                       t: float,
-                      X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    Rsb = q2m(X[0:4])
-    if self.type == "sinusoid":
-      accel, gyro = self.sinusoid_meas(t)
-    elif self.type == "trefoil":
-      accel, gyro = self.trefoil_meas(t, Rsb)
-    elif self.type == "lissajous":
-      accel, gyro = self.lissajous_meas(t, Rsb)
-    elif self.type == "box":
-      accel, gyro = self.box_meas(t)
-    return accel, gyro
+                      X: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    raise NotImplementedError
 
   def meas(self, t: float) -> Tuple[np.ndarray, np.ndarray]:
     Rsb, _ = self.gsb(t)
@@ -309,25 +246,85 @@ class IMUSim:
 
 
 
+class LissajousSim(IMUSimBase):
+  def __init__(self, **kwargs) -> None:
+    IMUSimBase.__init__(self, **kwargs)
+
+  def real_accel_gyro(self,
+                      t: float,
+                      X: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    Rsb = q2m(X[0:4])
+
+    accel_x_s = -36*np.cos(3*t)
+    accel_z_s = -16*np.sin(2*t)
+    accel_y_s = -49*np.sin(7*t) / 10
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
+
+    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
+    accel_b = accel_b.flatten()
+
+    gyro = np.zeros(3)
+    return (accel_b, gyro)
+
+
+class TrefoilSim(IMUSimBase):
+  def __init__(self, **kwargs) -> None:
+    IMUSimBase.__init__(self, **kwargs)
+
+  def real_accel_gyro(self,
+                      t: float,
+                      X: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    Rsb = q2m(X[0:4])
+
+    accel_x_s = 12*np.sin(2*t)*np.sin(3*t) - 9*np.cos(2*t)*np.cos(3*t) - 4*np.cos(2*t)*(np.cos(3*t)+4)
+    accel_y_s = -4*np.sin(2*t)*(np.cos(3*t)+4) - 12*np.cos(2*t)*np.sin(3*t) - 9*np.cos(3*t)*np.sin(2*t)
+    accel_z_s = -9.0 * np.sin(3*t)
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
+
+    accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
+    accel_b = accel_b.flatten()
+
+    #gyro_x = np.sin(0.3*t)
+    #gyro_y = np.cos(0.4*t)
+    #gyro_z = np.sin(0.1*t)
+    #gyro = np.array([gyro_x, gyro_y, gyro_z])
+    gyro = np.zeros(3)
+
+    return (accel_b, gyro)
+
+
+def get_imu_sim(motion_type: str,
+                T: float=100.0,
+                noise_accel: float=1e-4,
+                noise_gyro: float=1e-5,
+                bias_accel: np.ndarray=np.zeros(3),
+                bias_gyro: np.ndarray=np.zeros(3),
+                seed: int=None,
+                grav_s: np.ndarray=np.array([0, 0, -9.8])
+) -> IMUSimBase:
+  if motion_type == "trefoil":
+    return TrefoilSim(T=T, noise_accel=noise_accel, noise_gyro=noise_gyro,
+                      bias_accel=bias_accel, bias_gyro=bias_gyro, seed=seed,
+                      grav_s=grav_s, init_Vsb=np.array([0.0, 10.0, 3.0]))
+  elif motion_type == "lissajous":
+    return LissajousSim(T=T, noise_accel=noise_accel, noise_gyro=noise_gyro,
+                        bias_accel=bias_accel, bias_gyro=bias_gyro, seed=seed,
+                        grav_s=grav_s, init_Vsb=np.array([0.0, 0.7, 8]))
+  else:
+    print("Unrecognized motion type, executing default IMU motion")
+    return IMUSimBase(T=T, noise_accel=noise_accel, noise_gyro=noise_gyro,
+                      bias_accel=bias_accel, bias_gyro=bias_gyro, seed=seed,
+                      grav_s=grav_s, init_Vsb=np.zeros(3))
+
+
+
 if __name__ == "__main__":
 
   traj_type = sys.argv[1]
 
-  t = 0
-
-  # trefoil initial velocity
-  if traj_type == "trefoil":
-    xd = -2*np.sin(2*t)*(np.cos(3*t) + 4) - 3*np.cos(2*t) * np.sin(3*t)
-    yd = 2*np.cos(2*t)*(np.cos(3*t) + 4) - 3*np.sin(2*t) * np.sin(3*t)
-    zd = 3 * np.cos(3*t)
-
-  # lissajous initial velocity
-  elif traj_type == "lissajous":
-    xd = -12*np.sin(3*t)
-    zd = 8*np.cos(2*t)
-    yd = 7*np.cos(7*t) / 10
-
-  imu = IMUSim(traj_type, init_Vsb=np.array([xd, yd, zd]))
+  imu = get_imu_sim(traj_type)
 
   # Test retrieval
   Rsb, Tsb = imu.gsb(10)

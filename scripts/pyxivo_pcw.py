@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, 'lib')
 import pyxivo
 from point_cloud_world import RandomPCW
-from imu_sim import IMUSim
+from imu_sim import get_imu_sim
 from utils import cleanup_and_load_json
 
 import pdb
@@ -22,7 +22,6 @@ parser.add_argument("-npts", default=1000, type=int)
 parser.add_argument("-xlim", default=[-10, 10], nargs=2, type=float)
 parser.add_argument("-ylim", default=[-10, 10], nargs=2, type=float)
 parser.add_argument("-zlim", default=[-5, 5], nargs=2, type=float)
-parser.add_argument("-init_Vsb", default=[0, 0, 0], nargs=3, type=float)
 parser.add_argument("-pcw_seed", default=0, type=int)
 parser.add_argument("-imu_seed", default=1, type=int)
 parser.add_argument("-noise_accel", default=1e-4, type=float)
@@ -74,13 +73,12 @@ def main(args):
   # Read Wbc, Tbc from .cfg file
   Rbc, Tbc, K, imw, imh, grav_s = read_cfg_data(args.cfg)
 
-  imu = IMUSim(args.motion_type,
-               T=args.total_time,
-               noise_accel=args.noise_accel,
-               noise_gyro=args.noise_gyro,
-               seed=args.imu_seed,
-               init_Vsb=np.array(args.init_Vsb),
-               grav_s=grav_s)
+  imu = get_imu_sim(args.motion_type,
+                    T=args.total_time,
+                    noise_accel=args.noise_accel,
+                    noise_gyro=args.noise_gyro,
+                    seed=args.imu_seed,
+                    grav_s=grav_s)
   vision = RandomPCW(args.xlim, args.ylim, args.zlim, seed=args.pcw_seed)
   vision.addNPts(args.npts)
 
