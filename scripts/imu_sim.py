@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 from numpy.random import default_rng
-from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation, Slerp
 from scipy.integrate import solve_ivp
 from scipy.interpolate import interp1d
 
@@ -14,6 +14,9 @@ from pltutils import time_three_plots
 
 D2R = np.pi / 180.0
 
+
+
+# All quaternions use XYZW convention (same as scipy's quaternion library)
 
 
 def havertrig_accel_1d(curr_t: float,
@@ -41,6 +44,103 @@ def havertrig_accel_1d(curr_t: float,
 
 
 
+class QuaternionSlew:
+  def __init__(self, q0: np.ndarray, q1: np.ndarray, T: float) -> None:
+    self.q0 = np.reshape(q0, 4)
+    self.q1 = np.reshape(q1, 4)
+    self.R = Rotation.from_quat(np.vstack([self.q0, self.q1]))
+    self.T = T
+    self.slerper = Slerp([0.0, self.T], self.R)
+
+    q0x = self.q0[0]
+    q0y = self.q0[1]
+    q0z = self.q0[2]
+    q0w = self.q0[3]
+
+    q1x = self.q1[0]
+    q1y = self.q1[1]
+    q1z = self.q1[2]
+    q1w = self.q1[3]
+
+    # save some constants that came out of MATLAB symbolic toolbox
+    self.sigma1 = np.arccos(q0w*q1w + q0x*q1x + q0y*q1y + q0z*q1z)
+    self.sigma3 = q0w*q1y - q1w*q0y - q0x*q1z + q1x*q0z
+    self.sigma4 = q0w*q1x - q0x*q1w + q0y*q1z - q0z*q1y
+    self.sigma5 = q0w*q1z + q0x*q1y - q1w*q0z - q0y*q1x
+    self.sigma2 = np.sqrt(self.sigma4**2 + self.sigma3**2 + self.sigma5**2)
+
+
+  def slerp(self, t: float):
+    return self.slerper(t).as_quat()
+
+  def slerp_dot(self, t: float):
+    tau = t / self.T
+
+    q0x = self.q0[0]
+    q0y = self.q0[1]
+    q0z = self.q0[2]
+    q0w = self.q0[3]
+
+    q1x = self.q1[0]
+    q1y = self.q1[1]
+    q1z = self.q1[2]
+    q1w = self.q1[3]
+
+    # Symbolic expression generated using MATLAB Symbolic toolbox
+    s1cos = self.sigma1 * np.cos(tau*self.sigma1)
+    s1sin = np.sin(tau*self.sigma1) * self.sigma1
+
+    dX = (q0w * s1cos * self.sigma4 / self.sigma2) \
+         - (q0x * s1sin) \
+         - (q0y * s1cos * self.sigma5 / self.sigma2) \
+         + (q0z * s1cos * self.sigma3 / self.sigma2)
+
+    dY = (q0w * s1cos * self.sigma3 / self.sigma2) \
+         - (q0y * s1sin) \
+         + (q0x * s1cos * self.sigma5 / self.sigma2) \
+         - (q0z * s1cos * self.sigma4 / self.sigma2) \
+
+    dZ = (q0w * s1cos * self.sigma5 / self.sigma2) \
+         - (q0z * s1sin) \
+         - (q0x * s1cos * self.sigma3 / self.sigma2) \
+         + (q0y * s1cos * self.sigma4 / self.sigma2)
+
+    dW = -(q0w * s1sin) \
+         - (q0x * s1cos * self.sigma4 / self.sigma2) \
+         - (q0y * s1cos * self.sigma3 / self.sigma2) \
+         - (q0z * s1cos * self.sigma5 / self.sigma2)
+
+    # time-scaled output
+    slerp_dot = np.array([dX, dY, dZ, dW]) / self.T
+    return slerp_dot
+
+
+  def omega(self, t: float):
+    q_t = self.slerp(t)
+    qdot_t = self.slerp_dot(t)
+
+    qx = q_t[0]
+    qy = q_t[1]
+    qz = q_t[2]
+    qw = q_t[3]
+
+    coeffMat = 0.5 * np.array([
+      [  qw,  -qz,   qy ],
+      [  qz,   qw,  -qx ],
+      [ -qy,   qx,   qw ],
+      #[ -qx,  -qy,  -qz ]
+    ])
+    #qdot_t = np.reshape(qdot_t, (4,1))
+    #omega = np.linalg.pinv(coeffMat) @ qdot_t
+    omega = np.linalg.solve(coeffMat, qdot_t[:3])
+    omega = np.reshape(omega, 3)
+
+    test_qdot = qdot(q_t, omega)
+
+    return omega
+
+
+
 def cx(x: np.ndarray) -> np.ndarray:
   xhat = np.array([
     [     0,  x[2], -x[1]],
@@ -51,12 +151,17 @@ def cx(x: np.ndarray) -> np.ndarray:
 
 
 def qdot(q, omega):
+  q = np.reshape(q, (4,1))
+
   omega_hat = cx(omega)
   omega_col = np.reshape(omega, (3,1))
-  Omega0 = np.hstack((0, -omega))
-  Omega1 = np.hstack((omega_col, omega_hat))
+  Omega0 = np.hstack((omega_hat, omega_col))
+  Omega1 = np.hstack((-omega, 0))
   Omega = np.vstack((Omega0, Omega1))
-  return 0.5 * Omega @ q
+  qdot = 0.5 * Omega @ q
+
+  qdot = np.reshape(qdot, 4)
+  return qdot
 
 
 def q2m(q):
