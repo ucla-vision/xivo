@@ -43,7 +43,6 @@ class Point:
 class PointCloudWorld:
   def __init__(self):
     self.points = []
-    self.points_visible = []
     self.next_pt_id = 10000   # constant `counter0` in src/feature.h
 
   def addPt(self, Xs):
@@ -127,6 +126,66 @@ class RandomPCW(PointCloudWorld):
       self.addPt()
 
 
+def letter_to_idx(letter: str):
+  if letter == "x":
+    idx = 0
+  elif letter == "y":
+    idx = 1
+  else: # letter == "z"
+    idx = 2
+  return idx
+
+
+class Checkerboard(PointCloudWorld):
+  def __init__(self,
+               square_width: float=0.05,
+               dim_squares: Tuple[int, int]=(10,8),
+               bot_right_coord: Tuple[float, float, float]=(10.0,10.0,10.0),
+               plane: str="xz",
+  ) -> None:
+    PointCloudWorld.__init__(self)
+
+    assert(plane in ["xz", "xy", "yz", "zx", "yx", "zy"])
+    width_plane_idx = letter_to_idx(plane[0])
+    height_plane_idx = letter_to_idx(plane[1])
+
+    self.square_width = square_width
+    self.dim_squares = dim_squares
+    self.corner_pts_idx = []
+
+    counter = 0
+    for i in range(dim_squares[0]+1):
+      for j in range(dim_squares[1]+1):
+        Xs = np.array(bot_right_coord)
+        Xs[width_plane_idx] += square_width*i
+        Xs[height_plane_idx] += square_width*j
+        self.addPt(Xs)
+
+        if ((i==0) and (j==0)) or \
+           ((i==0) and (j==dim_squares[1])) or \
+           ((i==dim_squares[0]) and (j==0)) or \
+           ((i==dim_squares[0]) and (j==dim_squares[1])):
+          self.corner_pts_idx.append(counter) 
+        counter += 1
+
+
+  def allCornersVisible(self, gsc: np.ndarray, K: np.ndarray,
+                        imw: float, imh: float
+  ) -> List[ Tuple[bool, np.ndarray] ]:
+    Rsc = gsc[:3,:3]
+    Tsc = gsc[:3,3]
+
+    output = []
+
+    for idx in self.corner_pts_idx:
+      pt = self.points[idx]
+      Xc = pt.Xc(Rsc, Tsc)
+      (is_visible, _) = pinhole_project(Xc, K, imw, imh)
+      output.append((is_visible, pt.Xs, Xc))
+
+    return output
+
+
 if __name__ == "__main__":
   PCW = PointCloudWorld()
   PCW.addPt([10, 10, 1])
@@ -134,6 +193,8 @@ if __name__ == "__main__":
 
   RPCW = RandomPCW((-10, 10), (-10, 10), (-5, 5))
   RPCW.addNPts(100000)
+
+  CPCW = Checkerboard(plane="xz", bot_right_coord=(9.75, 12.0, 0.80))
 
   Rsc = Rotation.from_euler('XYZ', [-np.pi/2, 0, 0]).as_matrix()
   Tsc = np.reshape(np.array([ 10, 8, 1 ]), (3, 1))
@@ -145,6 +206,9 @@ if __name__ == "__main__":
   (feature_ids0, xp0) = PCW.generateMeasurements(gsc, K, 640, 480)
 
   (feature_ids1, xp1) = RPCW.generateMeasurements(gsc, K, 640, 480)
+
+  (feature_ids2, xp2) = CPCW.generateMeasurements(gsc, K, 640, 480)
+  visible_corners = CPCW.allCornersVisible(gsc, K, 640, 480)
 
   import pdb
   pdb.set_trace()
