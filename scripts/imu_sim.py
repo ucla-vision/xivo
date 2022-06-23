@@ -19,28 +19,25 @@ D2R = np.pi / 180.0
 # All quaternions use XYZW convention (same as scipy's quaternion library)
 
 
-def havertrig_accel_1d(curr_t: float,
-                       x0: float,
-                       xf: float,
-                       total_t: float,
-                       thresh: float=0.001):
-  # if initial and final positions are close enough together, then we shouldn't
-  # have to move
-  if np.abs(xf - x0) < thresh:
-    return 0.0
+class Havertrig1d:
+  def __init__(self, x0: float, x1: float, T: float) -> None:
+    self.x0 = x0
+    self.x1 = x1
+    self.T = T
 
-  theta = curr_t / total_t * np.pi
+  def accel(self, t: float) -> np.ndarray:
+    theta = t / self.T * np.pi
 
-  # Haversine
-  if (xf > x0):
-    accel = 0.5 * np.cos(theta) * (xf - x0)
-  # Havercosine
-  else:
-    accel = -0.5 * np.cos(theta) * (x0 - xf)
+    # Haversine
+    if (self.x1 > self.x0):
+      accel = 0.5 * np.cos(theta) * (self.x1 - self.x0)
+    # Havercosine
+    else:
+      accel = -0.5 * np.cos(theta) * (self.x0 - self.x1)
 
-  # time-scale the acceleration
-  accel_scaled = accel * (np.pi / total_t)**2
-  return accel_scaled
+    # time-scale the acceleration
+    accel_scaled = accel * (np.pi / self.T)**2
+    return accel_scaled
 
 
 

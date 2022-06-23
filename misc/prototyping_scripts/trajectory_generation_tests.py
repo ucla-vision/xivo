@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 import sys
 sys.path.append("scripts")
-from imu_sim import havertrig_accel_1d, QuaternionSlew, qdot
+from imu_sim import Havertrig1d, QuaternionSlew, qdot
 from pltutils import time_n_plots
 
 
@@ -20,8 +20,8 @@ def havertrig_deriv(t: float, state: np.ndarray, accel_func):
 
 def test_havertrig(x0: float, xf: float, T: float):
     all_t = np.arange(0.0, T, 0.01)
-    accel_func = lambda t: havertrig_accel_1d(t, x0, xf, T)
-    deriv_func = lambda t,x: havertrig_deriv(t, x, accel_func)
+    slewer = Havertrig1d(x0, xf, T)
+    deriv_func = lambda t,x: havertrig_deriv(t, x, slewer.accel)
     output = solve_ivp(deriv_func, [0.0, T], [x0, 0.0], t_eval=all_t)
     t_int = output.t
     position_vals = output.y[0,:]
@@ -43,8 +43,7 @@ def test_qslew(q0: np.ndarray, q1: np.ndarray, T: float):
     all_t = np.arange(0.0, T, 0.001)
     slewer = QuaternionSlew(q0, q1, T)
 
-    omega_func = lambda t: slewer.omega(t)
-    deriv_func = lambda t,q: quat_deriv(t, q, omega_func)
+    deriv_func = lambda t,q: quat_deriv(t, q, slewer.omega)
     output = solve_ivp(deriv_func, [0.0, T], q0, t_eval=all_t)
     t_int = output.t
     q_vals = output.y
