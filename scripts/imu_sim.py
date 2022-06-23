@@ -15,6 +15,32 @@ from pltutils import time_three_plots
 D2R = np.pi / 180.0
 
 
+
+def havertrig_accel_1d(curr_t: float,
+                       x0: float,
+                       xf: float,
+                       total_t: float,
+                       thresh: float=0.001):
+  # if initial and final positions are close enough together, then we shouldn't
+  # have to move
+  if np.abs(xf - x0) < thresh:
+    return 0.0
+
+  theta = curr_t / total_t * np.pi
+
+  # Haversine
+  if (xf > x0):
+    accel = 0.5 * np.cos(theta) * (xf - x0)
+  # Havercosine
+  else:
+    accel = -0.5 * np.cos(theta) * (x0 - xf)
+
+  # time-scale the acceleration
+  accel_scaled = accel * (np.pi / total_t)**2
+  return accel_scaled
+
+
+
 def cx(x: np.ndarray) -> np.ndarray:
   xhat = np.array([
     [     0,  x[2], -x[1]],
