@@ -24,13 +24,28 @@ def test_havertrig(x0: float, xf: float, T: float):
     deriv_func = lambda t,x: havertrig_deriv(t, x, slewer.accel)
     output = solve_ivp(deriv_func, [0.0, T], [x0, 0.0], t_eval=all_t)
     t_int = output.t
-    position_vals = output.y[0,:]
+    position_ivps = output.y[0,:]
+    velocity_ivps = output.y[1,:]
+
+    # Check that we properly interpolate position and velocity as well
+    position_interp = np.zeros(t_int.size)
+    velocity_interp = np.zeros(t_int.size)
+    for i,t in enumerate(t_int):
+        position_interp[i] = slewer.pos(t)
+        velocity_interp[i] = slewer.vel(t)
 
     plt.figure()
-    plt.plot(t_int, position_vals)
-    plt.xlabel("Time (s)")
-    plt.ylabel("Position (s)")
+    plt.subplot(2,1,1)
+    plt.plot(t_int, position_ivps)
+    plt.plot(t_int, position_interp)
+    plt.ylabel("Position (m)")
+    plt.legend(("integrated", "interpolated"))
     plt.title("{:.1f} -> {:.1f} in {:.1f} sec".format(x0, xf, T))
+    plt.subplot(2,1,2)
+    plt.plot(t_int, velocity_ivps)
+    plt.plot(t_int, velocity_interp)
+    plt.ylabel("Velocity (m/s)")
+    plt.xlabel("Time (s)")
 
 
 def quat_deriv(t: float, q: np.ndarray, omega_func):

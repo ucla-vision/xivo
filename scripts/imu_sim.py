@@ -39,6 +39,27 @@ class Havertrig1d:
     accel_scaled = accel * (np.pi / self.T)**2
     return accel_scaled
 
+  def vel(self, t: float) -> np.ndarray:
+    theta = t / self.T * np.pi
+    # Haversine
+    if (self.x1 > self.x0):
+      vel = 0.5 * np.sin(theta) * (self.x1 - self.x0)
+    # Havercosine
+    else:
+      vel = -0.5 * np.sin(theta) * (self.x0 - self.x1)
+    vel_scaled = vel * (np.pi / self.T)
+    return vel_scaled
+
+  def pos(self, t: float) -> np.ndarray:
+    theta = t / self.T * np.pi
+    # Haversine
+    if (self.x1 > self.x0):
+      pos = self.x0 + (self.x1 - self.x0)*(1 - np.cos(theta)) / 2
+    # Havercosine
+    else:
+      pos = self.x1 + (self.x0 - self.x1)*(1 + np.cos(theta)) / 2
+    return pos
+
 
 
 class QuaternionSlew:
@@ -298,7 +319,15 @@ class PoseInterpolationSim(IMUSimBase):
                t_list: np.ndarray,
                qsb_vals: np.ndarray,
                Tsb_vals: np.ndarray,
-               **kwargs) -> None:
+               T: float=100.0,
+               noise_accel: float=1e-4,
+               noise_gyro: float=1e-5,
+               bias_accel: np.ndarray=np.zeros(3),
+               bias_gyro: np.ndarray=np.zeros(3),
+               seed: int=None,
+               grav_s: np.ndarray=np.array([0, 0, -9.8]),
+               init_Vsb: np.ndarray=np.zeros(3)
+  ) -> None:
     """Simulator that moves the IMU from pose to pose. It slerps between
     orientations and haversines between positions. At each pose in `qsb_list`
     and `Tsb_list`, the IMU will be at rest (no angular velocity or linear
@@ -309,6 +338,15 @@ class PoseInterpolationSim(IMUSimBase):
     - qsb_vals: (4, N)
     - Tsb_vals: (3, N)
     """
+    # Save simulation parameters
+    self.noise_accel = noise_accel
+    self.noise_gyro = noise_gyro
+    self.bias_accel = bias_accel
+    self.bias_gyro = bias_gyro
+    self.rng = default_rng(seed)
+    self.grav_s = grav_s
+    self.T = T
+
     # sanity checks on input
     N = len(t_list)
     assert(t_list.shape == (N,))
@@ -343,8 +381,17 @@ class PoseInterpolationSim(IMUSimBase):
       self.haversines_y.append(yslew)
       self.haversines_z.append(zslew)
 
-    # The rest of initialization
-    IMUSimBase.__init__(self, **kwargs)
+    # Get pose without integration
+    #output = solve_ivp(self.dX_dt, [0, self.T], ic, t_eval=np.arange(0.0, T, 0.001))
+    self.t = np.arange(0.0, T, 0.001)
+    self.qsb = np.zeros((4, self.t.size))
+    self.Tsb = np.zeros((3, self.t.size))
+    self.Vsb = np.zeros((3, self.t.size))
+    for i,t in enumerate(self.t):
+      X = self.X(t)
+      self.qsb[:,i] = X[:4]
+      self.Tsb[:,i] = X[4:7]
+      self.Vsb[:,i] = X[7:10]
 
 
   def find_interval(self, t: float) -> int:
@@ -377,6 +424,36 @@ class PoseInterpolationSim(IMUSimBase):
     return (accel_b, gyro)
 
 
+  def gsb(self, t):
+    idx = self.find_interval(t)
+    time_into_interval = t - self.t_list[idx]
+
+    qsb = self.slerpers[idx].slerp(time_into_interval)
+    Tsb_x = self.haversines_x[idx].pos(time_into_interval)
+    Tsb_y = self.haversines_y[idx].pos(time_into_interval)
+    Tsb_z = self.haversines_z[idx].pos(time_into_interval)
+    return (q2m(qsb), np.array([Tsb_x, Tsb_y, Tsb_z]))
+
+
+  def X(self, t):
+    idx = self.find_interval(t)
+    time_into_interval = t - self.t_list[idx]
+
+    qsb = self.slerpers[idx].slerp(time_into_interval)
+
+    Tsb_x = self.haversines_x[idx].pos(time_into_interval)
+    Tsb_y = self.haversines_y[idx].pos(time_into_interval)
+    Tsb_z = self.haversines_z[idx].pos(time_into_interval)
+    Tsb = np.array([Tsb_x, Tsb_y, Tsb_z])
+
+    Vsb_x = self.haversines_x[idx].vel(time_into_interval)
+    Vsb_y = self.haversines_y[idx].vel(time_into_interval)
+    Vsb_z = self.haversines_z[idx].vel(time_into_interval)
+    Vsb = np.array([Vsb_x, Vsb_y, Vsb_z])
+
+    return np.hstack((qsb, Tsb, Vsb))
+
+
 def checkerboard_traj_poses():
   t_list = np.array([0.0, 5.0, 10.0])
 
@@ -388,12 +465,15 @@ def checkerboard_traj_poses():
   half_height = square_width * nsquares_height / 2
   board_y = 0.25
 
+  # Start
   qsb0 = np.array([0.0, 0.0, 0.0, 1.0])
   Tsb0 = np.zeros(3)
 
+  # Center, top
   qsb1 = Rotation.from_euler('XYZ', [np.pi/2, 0, np.pi]).as_quat()
   Tsb1 = np.array([0, board_y, half_height+0.175])
 
+  # Start with 90 degrees cyclorotation
   qsb2 = Rotation.from_euler('XYZ', [0.0, np.pi, 0.0]).as_quat()
   Tsb2 = np.zeros(3)
 
