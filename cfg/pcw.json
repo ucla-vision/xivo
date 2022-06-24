@@ -65,8 +65,9 @@
   "X" : {
     "Wsb"   : [0, 0, 0],
     "Tsb"   : [0, 0, 0],
-    "Vsb"   : [0, 0.7, 8],   // lissajous init velocity
+    // "Vsb"   : [0, 0.7, 8],   // lissajous init velocity
     // "Vsb"    : [ 0, 10, 3], // trefoil init velocity
+    "Vsb" : [0, 0, 0],         // checkerboard trajectory
     "bg"  : [0, 0, 0],
     "ba"  : [0, 0, 0],
     "Wbc" : [ -1.57079633, 0, 0 ],

@@ -132,8 +132,6 @@ class QuaternionSlew:
     omega = np.linalg.solve(coeffMat, qdot_t[:3])
     omega = np.reshape(omega, 3)
 
-    test_qdot = qdot(q_t, omega)
-
     return omega
 
 
@@ -295,6 +293,117 @@ class TrefoilSim(IMUSimBase):
     return (accel_b, gyro)
 
 
+class PoseInterpolationSim(IMUSimBase):
+  def __init__(self,
+               t_list: np.ndarray,
+               qsb_vals: np.ndarray,
+               Tsb_vals: np.ndarray,
+               **kwargs) -> None:
+    """Simulator that moves the IMU from pose to pose. It slerps between
+    orientations and haversines between positions. At each pose in `qsb_list`
+    and `Tsb_list`, the IMU will be at rest (no angular velocity or linear
+    acceleration). `t_list` is the absolute time for each pose.
+
+    Dimensions of input numpy arrays are:
+    - t_list: N
+    - qsb_vals: (4, N)
+    - Tsb_vals: (3, N)
+    """
+    # sanity checks on input
+    N = len(t_list)
+    assert(t_list.shape == (N,))
+    assert(qsb_vals.shape == (4,N))
+    assert(Tsb_vals.shape == (3,N))
+    self.t_list = t_list
+    self.qsb_vals = qsb_vals
+    self.Tsb_vals = Tsb_vals
+
+    # Add initial pose to the input list if it's not there
+    if self.t_list[0] > 1e-6:
+      self.t_list = np.hstack((0.0, t_list))
+      init_qsb = np.reshape(np.array([0.0, 0.0, 0.0, 1.0]), (4,1))
+      init_Tsb = np.zeros((3,1))
+      self.qsb_vals = np.hstack((init_qsb, self.qsb_vals))
+      self.Tsb_vals = np.hstack((init_Tsb, self.Tsb_vals))
+      N += 1
+
+    # set up pose interpolaters for each segment
+    self.slerpers = []
+    self.haversines_x = []
+    self.haversines_y = []
+    self.haversines_z = []
+    for i in range(N-1):
+      dT = self.t_list[i+1] - self.t_list[i]
+      qslew = QuaternionSlew(self.qsb_vals[:,i], self.qsb_vals[:,i+1], dT)
+      xslew = Havertrig1d(self.Tsb_vals[0,i], self.Tsb_vals[0,i+1], dT)
+      yslew = Havertrig1d(self.Tsb_vals[1,i], self.Tsb_vals[1,i+1], dT)
+      zslew = Havertrig1d(self.Tsb_vals[2,i], self.Tsb_vals[2,i+1], dT)
+      self.slerpers.append(qslew)
+      self.haversines_x.append(xslew)
+      self.haversines_y.append(yslew)
+      self.haversines_z.append(zslew)
+
+    # The rest of initialization
+    IMUSimBase.__init__(self, **kwargs)
+
+
+  def find_interval(self, t: float) -> int:
+    if t == self.t_list[0]:
+      return 0
+    for i in range(self.t_list.size):
+      if (self.t_list[i] < t) and (t <= self.t_list[i+1]):
+        return i
+    raise ValueError("PoseInterpolationSim: time {} is out of range".format(t))
+
+
+  def real_accel_gyro(self,
+                      t: float,
+                      X: np.ndarray
+  ) -> Tuple[np.ndarray, np.ndarray]:
+    idx = self.find_interval(t)
+    Rsb = q2m(X[0:4])
+
+    time_into_interval = t - self.t_list[idx]
+
+    accel_x_s = self.haversines_x[idx].accel(time_into_interval)
+    accel_y_s = self.haversines_y[idx].accel(time_into_interval)
+    accel_z_s = self.haversines_z[idx].accel(time_into_interval)
+    accel_s = np.array([accel_x_s, accel_y_s, accel_z_s])
+
+    accel_b = Rsb.transpose() @ accel_s
+
+    gyro = self.slerpers[idx].omega(time_into_interval)
+
+    return (accel_b, gyro)
+
+
+def checkerboard_traj_poses():
+  t_list = np.array([0.0, 5.0, 10.0])
+
+  # properties of checkerboard
+  nsquares_width = 7
+  nsquares_height = 6
+  square_width = 0.05
+  half_width = square_width * nsquares_width / 2
+  half_height = square_width * nsquares_height / 2
+  board_y = 0.25
+
+  qsb0 = np.array([0.0, 0.0, 0.0, 1.0])
+  Tsb0 = np.zeros(3)
+
+  qsb1 = Rotation.from_euler('XYZ', [np.pi/2, 0, np.pi]).as_quat()
+  Tsb1 = np.array([0, board_y, half_height+0.175])
+
+  qsb2 = Rotation.from_euler('XYZ', [0.0, np.pi, 0.0]).as_quat()
+  Tsb2 = np.zeros(3)
+
+  qsb_vals = np.vstack((qsb0, qsb1, qsb2)).transpose()
+  Tsb_vals = np.vstack((Tsb0, Tsb1, Tsb2)).transpose()
+
+  return (t_list, qsb_vals, Tsb_vals)
+
+
+
 def get_imu_sim(motion_type: str,
                 T: float=100.0,
                 noise_accel: float=1e-4,
@@ -312,6 +421,13 @@ def get_imu_sim(motion_type: str,
     return LissajousSim(T=T, noise_accel=noise_accel, noise_gyro=noise_gyro,
                         bias_accel=bias_accel, bias_gyro=bias_gyro, seed=seed,
                         grav_s=grav_s, init_Vsb=np.array([0.0, 0.7, 8]))
+  elif motion_type == "checkerboard_traj":
+    (t_list, qsb_vals, Tsb_vals) = checkerboard_traj_poses()
+    return PoseInterpolationSim(t_list, qsb_vals, Tsb_vals, T=t_list[-1],
+                                noise_accel=noise_accel, noise_gyro=noise_gyro,
+                                bias_accel=bias_accel, bias_gyro=bias_gyro,
+                                seed=seed,
+                                grav_s=grav_s, init_Vsb=np.zeros(3))
   else:
     print("Unrecognized motion type, executing default IMU motion")
     return IMUSimBase(T=T, noise_accel=noise_accel, noise_gyro=noise_gyro,
@@ -327,8 +443,12 @@ if __name__ == "__main__":
   imu = get_imu_sim(traj_type)
 
   # Test retrieval
-  Rsb, Tsb = imu.gsb(10)
-  accel, gyro = imu.meas(20.0)
+  if traj_type == "checkerboard_traj":
+    Rsb, Tsb = imu.gsb(1.0)
+    accel, gyro = imu.meas(0.5)
+  else:
+    Rsb, Tsb = imu.gsb(10)
+    accel, gyro = imu.meas(20.0)
 
   # Test plotting
   imu.plt_ground_truth()

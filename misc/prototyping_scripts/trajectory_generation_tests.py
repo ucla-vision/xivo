@@ -90,7 +90,7 @@ if __name__ == "__main__":
     test_havertrig(10.0, 20.0, 5.0)
     test_havertrig(30.0, 5.0, 25.0)
 
-    q0a = np.array([0, 0, 0, 1])
+    q0a = np.array([0.0, 0.0, 0.0, 1.0])
     q1a = Rotation.from_euler('XYZ', [np.pi/2, 0, 0]).as_quat()
     test_qslew(q0a, q1a, 10.0)
 

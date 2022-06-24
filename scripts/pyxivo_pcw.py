@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, 'lib')
 import pyxivo
-from point_cloud_world import RandomPCW
+from point_cloud_world import RandomPCW, Checkerboard
 from imu_sim import get_imu_sim
 from utils import cleanup_and_load_json
 
@@ -79,8 +79,21 @@ def main(args):
                     noise_gyro=args.noise_gyro,
                     seed=args.imu_seed,
                     grav_s=grav_s)
-  vision = RandomPCW(args.xlim, args.ylim, args.zlim, seed=args.pcw_seed)
-  vision.addNPts(args.npts)
+  if args.motion_type == "checkerboard_traj":
+    nsquares_width = 7
+    nsquares_height = 6
+    square_width = 0.05
+    half_width = square_width * nsquares_width / 2
+    half_height = square_width * nsquares_height / 2
+    board_y = 0.25
+    vision = \
+      Checkerboard(square_width=square_width,
+                   dim_squares=(nsquares_width, nsquares_height),
+                   bot_right_coord=(-half_width, board_y, -half_height),
+                   plane="xz")
+  else:
+    vision = RandomPCW(args.xlim, args.ylim, args.zlim, seed=args.pcw_seed)
+    vision.addNPts(args.npts)
 
   # Assemble IMU and vision packets in order of arrival. If two packets have the
   # same timestamp, then the IMU packet arrives first
