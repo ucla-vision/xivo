@@ -83,6 +83,21 @@ private:
   MatX2 xp_vals_;
 };
 
+class VisualPointCloudTrackerOnly : public Message {
+public:
+  VisualPointCloudTrackerOnly(const timestamp_t &ts,
+                              const VecXi &feature_ids,
+                              const MatX2 &xp_vals) :
+    Message{ts},
+    feature_ids_{feature_ids},
+    xp_vals_{xp_vals}
+    {}
+  void Execute(EstimatorPtr est);
+
+private:
+  VecXi feature_ids_;
+  MatX2 xp_vals_;
+};
 
 class Inertial : public Message {
 public:
@@ -101,6 +116,7 @@ class Estimator : public Component<Estimator, State> {
   friend class internal::Visual;
   friend class internal::VisualTrackerOnly;
   friend class internal::VisualPointCloud;
+  friend class internal::VisualPointCloudTrackerOnly;
   friend class internal::Inertial;
 
 public:
@@ -124,6 +140,10 @@ public:
   void VisualMeasPointCloud(const timestamp_t &ts,
                             const VecXi &feature_ids,
                             const MatX2 &xps);
+  void VisualMeasPointCloudTrackerOnly(const timestamp_t &ts,
+                                       const VecXi &feature_ids,
+                                       const MatX2 &xps);
+
 
   /** Loop Closure Measurement Update - older features, newer group. */
   void CloseLoop();
@@ -209,6 +229,8 @@ private:
   void VisualMeasPointCloudInternal(const timestamp_t &ts,
                                     const VecXi &feature_ids,
                                     const MatX2 &xps);
+  void VisualMeasPointCloudInternalTrackerOnly(
+    const timestamp_t &ts, const VecXi &feature_ids, const MatX2 &xps);
 
   // initialize gravity with initial stationary samples
   bool InitializeGravity();

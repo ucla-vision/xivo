@@ -397,7 +397,7 @@ class PoseInterpolationSim(IMUSimBase):
   def find_interval(self, t: float) -> int:
     if t == self.t_list[0]:
       return 0
-    for i in range(self.t_list.size):
+    for i in range(self.t_list.size-1):
       if (self.t_list[i] < t) and (t <= self.t_list[i+1]):
         return i
     raise ValueError("PoseInterpolationSim: time {} is out of range".format(t))

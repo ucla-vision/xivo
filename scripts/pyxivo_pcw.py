@@ -33,6 +33,7 @@ parser.add_argument("-vision_dt", default=0.04, type=float)
 parser.add_argument('-cfg', type=str, default="cfg/pcw.json")
 parser.add_argument('-viewer_cfg', type=str, default="cfg/pcw_viewer.json")
 parser.add_argument('-use_viewer', default=False, action="store_true")
+parser.add_argument('-tracker_only', default=False, action="store_true")
 
 
 def read_cfg_data(cfg_json: str):
@@ -97,8 +98,12 @@ def main(args):
 
   # Assemble IMU and vision packets in order of arrival. If two packets have the
   # same timestamp, then the IMU packet arrives first
-  imu_meas_times = np.arange(0, args.total_time, args.imu_dt) # (NT,)
-  imu_meas = np.vstack((imu_meas_times, np.zeros(imu_meas_times.size))) # (2, NT)
+  if args.tracker_only:
+    imu_meas_times = np.zeros(0)
+    imu_meas = np.zeros((2,0))
+  else:
+    imu_meas_times = np.arange(0, args.total_time, args.imu_dt) # (NT,)
+    imu_meas = np.vstack((imu_meas_times, np.zeros(imu_meas_times.size))) # (2, NT)
   vision_meas_times = np.arange(0, args.total_time, args.vision_dt) # (NT,)
   vision_meas = np.vstack((vision_meas_times, np.ones(vision_meas_times.size))) # (2, NT)
   all_packets = np.hstack((imu_meas, vision_meas))  # (2, 2*NT)
@@ -108,7 +113,8 @@ def main(args):
   is_imu = lambda x: (x[1] < 0.5)
 
   # estimator object
-  estimator = pyxivo.Estimator(args.cfg, args.viewer_cfg, args.motion_type, False)
+  estimator = pyxivo.Estimator(args.cfg, args.viewer_cfg, args.motion_type,
+                               args.tracker_only)
   for i in range(all_packets.shape[1]):
     packet = all_packets[:,i]
     t = all_packets[0,i]
@@ -123,7 +129,10 @@ def main(args):
       gsc = np.hstack((Rsc, Tsc))
       (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh)
       if len(feature_ids) > 0:
-        estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
+        if args.tracker_only:
+          estimator.VisualMeasPointCloudTrackerOnly(int(t*1e9), feature_ids, xp_vals)
+        else:
+          estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
       estimator.Visualize()
 
 

@@ -64,6 +64,19 @@ public:
     }
   }
 
+  void VisualMeasPointCloudTrackerOnly(uint64_t ts,
+                            const Eigen::Ref<const VecXi> &feature_ids,
+                            const Eigen::Ref<const MatX2> &xps) {
+    estimator_->VisualMeasPointCloudTrackerOnly(timestamp_t{ts}, feature_ids, xps);
+    if (viewer_) {
+      auto disp = Canvas::instance()->display();
+      if (!disp.empty()) {
+        LOG(INFO) << "Display image is ready";
+        viewer_->Update(disp);
+      }
+    }
+  }
+
 
   void VisualMeas(uint64_t ts, std::string &image_path) {
 
@@ -277,6 +290,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("VisualMeasTrackerOnly", py::overload_cast<uint64_t, std::string &>(&EstimatorWrapper::VisualMeasTrackerOnly))
       .def("VisualMeasTrackerOnly", py::overload_cast<uint64_t, py::array_t<unsigned char, py::array::c_style | py::array::forcecast>>(&EstimatorWrapper::VisualMeasTrackerOnly))
       .def("VisualMeasPointCloud", &EstimatorWrapper::VisualMeasPointCloud)
+      .def("VisualMeasPointCloudTrackerOnly", &EstimatorWrapper::VisualMeasPointCloudTrackerOnly)
       .def("CloseLoop", &EstimatorWrapper::CloseLoop)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)

@@ -63,6 +63,11 @@ void VisualTrackerOnly::Execute(Estimator *est) { est->VisualMeasInternalTracker
 void VisualPointCloud::Execute(Estimator *est) {
   est->VisualMeasPointCloudInternal(ts_, feature_ids_, xp_vals_);
 }
+
+void VisualPointCloudTrackerOnly::Execute(Estimator *est) {
+  est->VisualMeasPointCloudInternalTrackerOnly(ts_, feature_ids_, xp_vals_);
+}
+
 } // namespace internal
 
 // destructor
@@ -982,6 +987,34 @@ void Estimator::VisualMeasPointCloud(
 }
 
 
+void Estimator::VisualMeasPointCloudTrackerOnly(
+  const timestamp_t &ts_raw, 
+  const VecXi &feature_ids,
+  const MatX2 &xp_vals)
+{
+  timestamp_t ts{ts_raw};
+#ifdef USE_ONLINE_TEMPORAL_CALIB
+  if (X_.td >= 0) {
+    ts += timestamp_t(uint64_t(X_.td * 1e9)); // seconds -> nanoseconds
+  } else {
+    ts -= timestamp_t(uint64_t(-X_.td * 1e9)); // seconds -> nanoseconds
+  }
+#endif
+  if (async_run_) {
+    std::scoped_lock lck(buf_.mtx);
+    buf_.push_back(std::make_unique<internal::VisualPointCloudTrackerOnly>(
+      ts, feature_ids, xp_vals));
+    MaintainBuffer();
+  } else {
+    buf_.push_back(std::make_unique<internal::VisualPointCloudTrackerOnly>(
+      ts, feature_ids, xp_vals));
+    MaintainBuffer();
+  }
+
+}
+
+
+
 void Estimator::InertialMeas(const timestamp_t &ts, const Vec3 &gyro,
                              const Vec3 &accel) {
   if (async_run_) {
@@ -1011,7 +1044,6 @@ void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::M
   if (use_canvas_) {
     Canvas::instance()->Update(img);
   }
-  // measurement prediction for feature tracking
   auto tracker = Tracker::instance();
 
   // track features
@@ -1133,14 +1165,61 @@ void Estimator::VisualMeasPointCloudInternal(
     }
   }
   timer_.Tock("visual-meas");
+}
 
-  /*
-  static int print_tri_counter{0};
-  if (++print_tri_counter % 5 == 0) {
-    std::cout << "good/bad triangulations: " << Feature::num_good_triangulations_ << "/" << Feature::num_bad_triangulations_ << std::endl;
+
+void Estimator::VisualMeasPointCloudInternalTrackerOnly(
+  const timestamp_t &ts,
+  const VecXi &feature_ids,
+  const MatX2 &xps)
+{
+  if (!GoodTimestamp(ts))
+    return;
+
+  if (!simulation_) {
+    throw std::invalid_argument(
+        "function VisualMeasPointCloud is only for simulation");
   }
-  */
 
+  ++vision_counter_;
+  timer_.Tick("visual-meas-tracker-only");
+  UpdateSystemClock(ts);
+
+  if (use_canvas_) {
+    Canvas::instance()->UpdatePointCloud(xps);
+  }
+
+  auto tracker = Tracker::instance();
+  // track features
+  timer_.Tick("track");
+  tracker->UpdatePointCloud(feature_ids, xps);
+  timer_.Tock("track");
+
+  if (use_canvas_) {
+    for (auto f: tracker->features_)
+      Canvas::instance()->Draw(f);
+  }
+
+  for (auto it = tracker->features_.begin(); it != tracker->features_.end();) {
+    auto f = *it;
+    if (f->track_status() == TrackStatus::REJECTED ||
+        f->track_status() == TrackStatus::DROPPED)
+    {
+      it = tracker->features_.erase(it);
+      Feature::Destroy(f);
+    } else {
+      ++it;
+    }
+  }
+
+  // Save the frame (only if set to true in json file)
+  Canvas::instance()->SaveFrame();
+
+  if (gauge_group_ == -1) {
+    SwitchRefGroup();
+  }
+
+  timer_.Tock("visual-meas-tracker-only");
 }
 
 
