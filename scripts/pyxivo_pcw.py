@@ -15,7 +15,6 @@ from point_cloud_world import RandomPCW, Checkerboard
 from imu_sim import get_imu_sim
 from utils import cleanup_and_load_json
 
-import pdb
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-npts", default=1000, type=int)
@@ -125,7 +124,7 @@ def main(args):
     else:
       Rsb, Tsb = imu.gsb(t)
       Rsc = Rsb @ Rbc
-      Tsc = Rsb @ Tbc + Tsb
+      Tsc = Rsb @ Tbc + np.reshape(Tsb, (3,1))
       gsc = np.hstack((Rsc, Tsc))
       (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh)
       if len(feature_ids) > 0:

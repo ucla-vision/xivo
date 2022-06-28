@@ -9,7 +9,7 @@ from scipy.interpolate import interp1d
 
 import matplotlib.pyplot as plt
 
-from pltutils import time_three_plots
+from pltutils import time_three_plots, time_n_plots
 
 
 D2R = np.pi / 180.0
@@ -259,9 +259,9 @@ class IMUSimBase:
     return self.interpolator(t)
 
   def plt_ground_truth(self):
-    Wsb = q2w(self.qsb.transpose()).transpose()
     time_three_plots(self.t, self.Tsb, "Ground truth Tsb (m)")
-    time_three_plots(self.t, Wsb, "Ground truth Wsb (rad?)")
+    time_n_plots(self.t, self.qsb, "Ground truth Quaternion",
+                 xlabel="Time (s)", ylabels=["x", "y", "z", "w"])
 
 
 
