@@ -115,4 +115,6 @@ if __name__ == "__main__":
     q1b = q1b / np.linalg.norm(q1b)
     test_qslew(q0b, q1b, 15.0)
 
+    test_qslew(q0b, q0b, 10.0) # no movement case
+
     plt.show()
