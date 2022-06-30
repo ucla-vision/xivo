@@ -18,8 +18,6 @@ python scripts/pyxivo_pcw.py \
     -noise_accel 1e-9 \
     -noise_gyro 1e-9 \
     -cfg cfg/pcw.json \
-    -use_viewer \
-    -total_time 10.0 \
-    -use_viewer \
     -tracker_only \
-    -viewer_cfg cfg/pcw_viewer_tracker_only.json
+    -viewer_cfg cfg/pcw_viewer_tracker_only.json \
+    -use_viewer
