@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, 'lib')
 import pyxivo
 from point_cloud_world import RandomPCW, Checkerboard
-from imu_sim import get_imu_sim
+from imu_trajectories import get_imu_sim
 from utils import cleanup_and_load_json
 
 
