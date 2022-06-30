@@ -65,6 +65,12 @@ class QuaternionSlew:
   def __init__(self, q0: np.ndarray, q1: np.ndarray, T: float) -> None:
     self.q0 = np.reshape(q0, 4)
     self.q1 = np.reshape(q1, 4)
+
+    # Make sure that we're always going the "short" way
+    arc_ang = np.arccos(np.dot(self.q0, self.q1))
+    if (arc_ang > np.pi):
+      self.q1 = -1.0 * self.q1
+
     self.R = Rotation.from_quat(np.vstack([self.q0, self.q1]))
     self.T = T
     self.slerper = Slerp([0.0, self.T], self.R)
@@ -88,7 +94,7 @@ class QuaternionSlew:
 
     # Calculate how much we're actually moving
     qdiff = (self.R[0].inv() * self.R[1]).as_quat()
-    self.qang = np.mod(2*np.arccos(qdiff[3]), np.pi)
+    self.qang = np.mod(2*np.arccos(qdiff[3]), 2*np.pi)
 
 
   def slerp(self, t: float):
@@ -152,11 +158,11 @@ class QuaternionSlew:
       [  qw,  -qz,   qy ],
       [  qz,   qw,  -qx ],
       [ -qy,   qx,   qw ],
-      #[ -qx,  -qy,  -qz ]
+      [ -qx,  -qy,  -qz ]
     ])
-    #qdot_t = np.reshape(qdot_t, (4,1))
-    #omega = np.linalg.pinv(coeffMat) @ qdot_t
-    omega = np.linalg.solve(coeffMat, qdot_t[:3])
+    qdot_t = np.reshape(qdot_t, (4,1))
+    omega = np.linalg.pinv(coeffMat) @ qdot_t
+    #omega = np.linalg.solve(coeffMat, qdot_t[:3])
     omega = np.reshape(omega, 3)
 
     return omega

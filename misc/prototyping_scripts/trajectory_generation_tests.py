@@ -74,22 +74,28 @@ def test_qslew(q0: np.ndarray, q1: np.ndarray, T: float):
     """
     omega_vals = np.zeros((3, len(t_int)))
     for i,t in enumerate(t_int):
-        omega_vals[:,i] = omega_func(t)
-    time_n_plots(t_int, omega_vals, "Angular velocity", xlabel="Time (s)",
+        omega_vals[:,i] = slewer.omega(t)
+    time_n_plots(t_int, omega_vals,
+                 "Angular velocity: {}".format(suptitle_str),
+                 xlabel="Time (s)",
                  ylabels=[ "x", "y", "z"])
 
     # Slerp results
     q_slerped = np.zeros((4, len(t_int)))
     for i,t in enumerate(t_int):
         q_slerped[:,i] = slewer.slerp(t)
-    time_n_plots(t_int, q_slerped, "debug quaternions", xlabel="Time (s)",
+    time_n_plots(t_int, q_slerped,
+                 "debug quaternions: {}".format(suptitle_str),
+                 xlabel="Time (s)",
                  ylabels=[ "x", "y", "z", "w"])
 
     # slerpdot output
     slerpdot_output = np.zeros((4, len(t_int)))
     for i,t in enumerate(t_int):
         slerpdot_output[:,i] = slewer.slerp_dot(t)
-    time_n_plots(t_int, slerpdot_output, "debug slerp dot", xlabel="Time (s)",
+    time_n_plots(t_int, slerpdot_output,
+                 "debug slerp dot: {}".format(suptitle_str),
+                 xlabel="Time (s)",
                  ylabels=["x", "y", "z", "w"])
 
     # integrate the area under the curve of qdot
@@ -116,5 +122,9 @@ if __name__ == "__main__":
     test_qslew(q0b, q1b, 15.0)
 
     test_qslew(q0b, q0b, 10.0) # no movement case
+
+    qsb_halfway_center_top = \
+        Rotation.from_euler('YXZ', [np.pi, np.pi/4, 0.0]).as_quat()
+    test_qslew(q0a, qsb_halfway_center_top, 5.0)
 
     plt.show()
