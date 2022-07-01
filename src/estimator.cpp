@@ -74,14 +74,16 @@ void VisualPointCloudTrackerOnly::Execute(Estimator *est) {
 Estimator::~Estimator() {
   if (cfg_.get("print_calibration", false).asBool()) {
     std::cout << "===== Auto-Calibration =====\n";
-    std::cout << "Rbc=\n" << X_.Rbc << std::endl;
-    std::cout << "Wbc=" << SO3::log(X_.Rbc).transpose() << std::endl;
+    std::cout << "Rbc=\n" << X_.Rbc.matrix() << std::endl;
+    auto Wbc = X_.Rbc.log();
+    std::cout << "Wbc=" << Wbc.transpose() << std::endl;
     std::cout << "Tbc=" << X_.Tbc.transpose() << std::endl;
     std::cout << "td=" << X_.td << std::endl;
     std::cout << "gyro.bias=" << X_.bg.transpose() << std::endl;
     std::cout << "accel.bias=" << X_.ba.transpose() << std::endl;
-    std::cout << "Rsg=" << X_.Rsg << std::endl;
-    std::cout << "Wsg=" << SO3::log(X_.Rsg).transpose() << std::endl;
+    std::cout << "Rsg=" << X_.Rsg.matrix() << std::endl;
+    auto Wsg = X_.Rsg.log();
+    std::cout << "Wsg=" << Wsg.transpose() << std::endl;
     std::cout << "===== IMU intrinsics =====\n";
     std::cout << "Ca=\n" << imu_.Ca() << std::endl;
     std::cout << "Cg=\n" << imu_.Cg() << std::endl;
@@ -465,7 +467,7 @@ void Estimator::InertialMeasInternal(const timestamp_t &ts, const Vec3 &gyro,
   Vec3 accel_new;
 
   Vec3 grav_s = X_.Rsg * g_;
-  Vec3 grav_b = X_.Rsb.inv() * grav_s;
+  Vec3 grav_b = X_.Rsb.inverse() * grav_s;
 
   if (clamp_signals_) {
 
@@ -591,7 +593,7 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
   X.Vsb += (X.Rsb * accel_calib + X.Rsg * g_) * dt;
   X.Rsb *= SO3::exp(gyro_calib * dt);
 
-  X.Rsb = SO3::project(X.Rsb.matrix());
+  X.Rsb = SO3::fitToSO3(X.Rsb.matrix());
 }
 
 void Estimator::ComputeMotionJacobianAt(

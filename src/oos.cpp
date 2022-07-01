@@ -45,7 +45,7 @@ void Feature::ComputeOOSJacobianInternal(const Observation &obs,
   CHECK(g->sind() != -1);
 
   int goff = kGroupBegin + 6 * obs.g->sind();
-  Mat3 Rsb = g->Rsb();
+  Mat3 Rsb = g->Rsb().matrix();
   Mat3 Rsb_t = Rsb.transpose();
   Vec3 Tsb = g->Tsb();
   Mat3 Rbc_t = Rbc.transpose();
@@ -108,7 +108,7 @@ void Feature::ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc,
   auto g = obs.g;
 
   int goff = kGroupBegin + 6 * obs.g->sind();
-  Mat3 Rsb = g->Rsb();
+  Mat3 Rsb = g->Rsb().matrix();
   Mat3 Rsb_t = Rsb.transpose();
   Vec3 Tsb = g->Tsb();
   Mat3 Rbc_t = Rbc.transpose();

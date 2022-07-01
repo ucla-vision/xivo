@@ -107,10 +107,10 @@ std::tuple<number_t, number_t> ComputeRPE(const std::vector<msg::Pose> &est,
       if (!found)
         continue;
 
-      auto dgX = gX.inv() * gX2;
-      auto dgY = gY.inv() * gY2;
-      rpe_pos += (dgX.inv() * dgY).translation().squaredNorm();
-      rpe_rot += (dgX.inv() * dgY).so3().log().squaredNorm();
+      auto dgX = gX.inverse() * gX2;
+      auto dgY = gY.inverse() * gY2;
+      rpe_pos += (dgX.inverse() * dgY).translation().squaredNorm();
+      rpe_rot += (dgX.inverse() * dgY).so3().log().squaredNorm();
       ++counter;
     } else if (it_est->ts_ < it_gt->ts_) {
       ++it_est;

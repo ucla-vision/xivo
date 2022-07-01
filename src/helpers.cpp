@@ -101,8 +101,8 @@ int QR(VecX &x, MatX &Hx, int effective_rows) {
 }
 
 bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X) {
-  Vec3 t12{g12.T()};
-  Mat3 R12{g12.R()};
+  Vec3 t12{g12.translation()};
+  Mat3 R12{g12.so3().matrix()};
   Mat34 P1;
   P1.block<3, 3>(0, 0).setIdentity();
   Mat34 P2;
@@ -129,8 +129,8 @@ bool DirectLinearTransformSVD(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
 }
 
 bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, Vec3 &X) {
-  Vec3 t12{g12.T()};
-  Mat3 R12{g12.R()};
+  Vec3 t12{g12.translation()};
+  Mat3 R12{g12.so3().matrix()};
 
   Vec3 f1{xc1(0), xc1(1), 1.0};
   f1.normalize();
@@ -157,8 +157,8 @@ bool DirectLinearTransformAvg(const SE3 &g12, const Vec2 &xc1, const Vec2 &xc2, 
 bool L1Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
-  Vec3 t01{g01.T()};
-  Mat3 R01{g01.R()};
+  Vec3 t01{g01.translation()};
+  Mat3 R01{g01.so3().matrix()};
   Mat3 R10{R01.transpose()};
   Vec3 t10{-1 * R01.transpose() * t01};
 
@@ -218,8 +218,8 @@ bool L1Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 bool L2Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
-  Vec3 t01{g01.T()};
-  Mat3 R01{g01.R()};
+  Vec3 t01{g01.translation()};
+  Mat3 R01{g01.so3().matrix()};
   Mat3 R10{R01.transpose()};
   Vec3 t10{-1 * R01.transpose() * t01};
 
@@ -277,8 +277,8 @@ bool L2Angular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float 
 bool LinfAngular(const SE3 &g01, const Vec2 &xc0, const Vec2 &xc1, Vec3 &X, float max_theta_thresh, float beta_thresh) {
 
   // Initalize the Rotation and Translation Matricies
-  Vec3 t01{g01.T()};
-  Mat3 R01{g01.R()};
+  Vec3 t01{g01.translation()};
+  Mat3 R01{g01.so3().matrix()};
   Mat3 R10{R01.transpose()};
   Vec3 t10{-1 * R01.transpose() * t01};
 

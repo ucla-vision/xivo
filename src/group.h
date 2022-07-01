@@ -67,7 +67,7 @@ public:
   SE3 gsb() const { return SE3{X_.Rsb, X_.Tsb}; }
   const SO3 &Rsb() const { return X_.Rsb; }
   const Vec3 &Tsb() const { return X_.Tsb; }
-  void SetState(const SE3 &gsb) { SetState(gsb.R(), gsb.T()); }
+  void SetState(const SE3 &gsb) { SetState(gsb.so3(), gsb.translation()); }
   void SetState(const SO3 &Rsb, const Vec3 &Tsb) {
     X_.Rsb = Rsb;
     X_.Tsb = Tsb;

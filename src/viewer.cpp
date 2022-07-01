@@ -167,7 +167,7 @@ void Viewer::Refresh() {
 
     // draw frustrum for camera frame
     glColor3f(kGreen(0), kGreen(1), kGreen(2));
-    pangolin::glDrawFrustum(Kinv_, width_, height_, gsc_.matrix4x4(), 0.2);
+    pangolin::glDrawFrustum(Kinv_, width_, height_, gsc_.matrix(), 0.2);
 
      // tracker view
     if (texture_) {

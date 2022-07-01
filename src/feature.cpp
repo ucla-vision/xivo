@@ -112,7 +112,7 @@ Vec3 Feature::Xs(const SE3 &gbc, Mat3 *J) {
   SE3 gsc = ref_->gsb() * gbc;
   Xs_ = gsc * Xc(J); // J = dXc_dx, where x is the local parametrization
   if (J) {
-    *J = gsc.R().matrix() * (*J);
+    *J = gsc.so3().matrix() * (*J);
   }
   return Xs_;
 }
@@ -212,11 +212,11 @@ bool Feature::ChangeOwner(GroupPtr nref, const SE3 &gbc) {
   // now transfer
   SE3 g_cn_s =
       (nref->gsb() * gbc)
-          .inv(); // spatial (s) to camera of the new reference (cn)
+          .inverse(); // spatial (s) to camera of the new reference (cn)
   Mat3 dXs_dx;
   Vec3 Xcn = g_cn_s * Xs(gbc, &dXs_dx);
   // Mat3 dXcn_dXs = gcb.R() * gbs.R();
-  Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
+  Mat3 dXcn_dx = g_cn_s.so3().matrix() * dXs_dx;
   Mat3 dxn_dXcn;
 
   if (Xcn(2) < 0) {
@@ -256,9 +256,9 @@ void Feature::SubfilterUpdate(const SE3 &gsb, const SE3 &gbc,
   // depth sub-filter update
   Mat3 dXc_dx;
   Vec3 Xc = this->Xc(&dXc_dx);
-  SE3 gtot = (gsb * gbc).inv() * ref()->gsb() * gbc; // g(curr cam <- ref cam)
+  SE3 gtot = (gsb * gbc).inverse() * ref()->gsb() * gbc; // g(curr cam <- ref cam)
   Vec3 Xcn = gtot * Xc;                              // predicted Xc
-  Mat3 dXcn_dXc = gtot.rotation();
+  Mat3 dXcn_dXc = gtot.so3().matrix();
   Mat23 dxcn_dXcn;
   Vec2 xcn = project(Xcn, &dxcn_dXcn);
 
@@ -337,10 +337,10 @@ bool Feature::RefineDepth(const SE3 &gbc,
       if (obs.g->id() == ref_->id())
         continue;
 
-      SE3 g_cn_s = (obs.g->gsb() * gbc).inv(); // spatial -> camera new
+      SE3 g_cn_s = (obs.g->gsb() * gbc).inverse(); // spatial -> camera new
       Vec3 Xcn = g_cn_s * Xs;
       // Mat3 dXc_dXs = gcs.rotation();
-      Mat3 dXcn_dx = g_cn_s.R().matrix() * dXs_dx;
+      Mat3 dXcn_dx = g_cn_s.so3().matrix() * dXs_dx;
 
       Mat23 dxcn_dXcn;
       Vec2 xcn = project(Xcn, &dxcn_dXcn);
@@ -547,7 +547,7 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   Mat3 Rsb_t = Rsb.transpose();
   Mat3 Rbc_t = Rbc.transpose();
 
-  Mat3 Rsbr = ref_->Rsb();
+  Mat3 Rsbr = ref_->Rsb().matrix();
   Vec3 Tsbr = ref_->Tsb();
 
   cache_.Xc = Xc(&cache_.dXc_dx);
@@ -711,7 +711,7 @@ void Feature::Triangulate(const SE3 &gsb, const SE3 &gbc,
 #endif
   Vec2 xc1 = CameraManager::instance()->UnProject(front());
   Vec2 xc2 = CameraManager::instance()->UnProject(back());
-  SE3 g12 = (ref_->gsb() * gbc).inv() * (gsb * gbc);
+  SE3 g12 = (ref_->gsb() * gbc).inverse() * (gsb * gbc);
 
   Vec3 Xc1;
   bool return_output;

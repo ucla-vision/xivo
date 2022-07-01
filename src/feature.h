@@ -175,7 +175,7 @@ public:
   /** Computes a new predicted measurement (in pixels) given transformations
    *  `gsb` and `gbc` */
   const Vec2 &Predict(const SE3 &gsb, const SE3 &gbc) {
-    Vec3 Xc = (gsb * gbc).inv() * this->Xs(gbc);
+    Vec3 Xc = (gsb * gbc).inverse() * this->Xs(gbc);
     pred_ = Camera::instance()->Project(project(Xc));
     return pred_;
   }

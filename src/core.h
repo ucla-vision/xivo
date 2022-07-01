@@ -12,11 +12,12 @@
 #include <memory>
 #include <type_traits>
 
+#include "sophus/se3.hpp"
+
 #include "alias.h"
 #include "camera_manager.h"
 #include "helpers.h"
 #include "rodrigues.h"
-#include "se3.h"
 #include "utils.h"
 
 namespace xivo {
@@ -148,10 +149,10 @@ struct State {
 
     if constexpr(kEnforceSO3Freq > 0) {
       if (++counter % kEnforceSO3Freq == 0) {
-        Rsb = SO3::project(Rsb.matrix());
-        Rbc = SO3::project(Rbc.matrix());
-        auto Wsg = SO3::log(Rsg);
-        Wsg(2) = 0;
+        Rsb.normalize();
+        Rbc.normalize();
+        auto Wsg = Rsg.log();
+        Wsg(2) = 0.0;
         Rsg = SO3::exp(Wsg);
       }
     }

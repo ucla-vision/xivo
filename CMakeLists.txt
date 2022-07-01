@@ -74,6 +74,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW2/include
         ${PROJECT_SOURCE_DIR}/thirdparty/pnp
+        ${PROJECT_SOURCE_DIR}/thirdparty/sophus
         ${JSONCPP_INCLUDE_DIRS}
         /usr/include/suitesparse
         /usr/include

@@ -99,9 +99,11 @@ int main(int argc, char **argv) {
       }
 
       traj_est.emplace_back(est->ts(), est->gsb());
+      Vec3 Tsb = (Vec3)est->gsb().translation();
+      Vec3 Wsb = (Vec3)est->gsb().so3().log();
       ostream << StrFormat("%ld", est->ts().count()) << " "
-        << est->gsb().translation().transpose() << " "
-        << est->gsb().rotation().log().transpose() << std::endl;
+        << Tsb.transpose() << " "
+        << Wsb.transpose() << std::endl;
 
       // std::this_thread::sleep_for(std::chrono::milliseconds(3));
     }

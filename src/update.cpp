@@ -36,7 +36,7 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
 
   timer_.Tick("jacobian");
   for (auto f : instate_features_) {
-    f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
+    f->ComputeJacobian(X_.Rsb.matrix(), X_.Tsb, X_.Rbc.matrix(), X_.Tbc, last_gyro_, imu_.Cg(),
                        X_.bg, X_.Vsb, X_.td, err_);
     const auto &J = f->J();
     const auto &res = f->inn();
@@ -112,7 +112,7 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
     // parametrization
     for (auto f : oos_features_) {
       auto vobs = Graph::instance()->GetObservationsOf(f);
-      int oos_jac_size = f->ComputeOOSJacobian(vobs, X_.Rbc, X_.Tbc, err_);
+      int oos_jac_size = f->ComputeOOSJacobian(vobs, X_.Rbc.matrix(), X_.Tbc, err_);
       if (oos_jac_size > 0) {
         total_oos_jac_size += oos_jac_size;
         active_oos_features.push_back(f);
@@ -375,7 +375,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers,
         // potentially a high-innovation inlier
         auto f = mh_inliers[i];
 
-        f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_,
+        f->ComputeJacobian(X_.Rsb.matrix(), X_.Tsb, X_.Rbc.matrix(), X_.Tbc, last_gyro_,
                            imu_.Cg(), X_.bg, X_.Vsb, X_.td, err_);
         auto J = f->J();
         auto res = f->inn();
@@ -406,7 +406,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers,
   // restore state (need to re-compute jacobians at original state)
   RestoreState(active_features, active_groups);
   for (auto f : active_features) {
-    f->ComputeJacobian(X_.Rsb, X_.Tsb, X_.Rbc, X_.Tbc, last_gyro_, imu_.Cg(),
+    f->ComputeJacobian(X_.Rsb.matrix(), X_.Tsb, X_.Rbc.matrix(), X_.Tbc, last_gyro_, imu_.Cg(),
                        X_.bg, X_.Vsb, X_.td, err_);
   }
 

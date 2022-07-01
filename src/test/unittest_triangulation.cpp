@@ -50,7 +50,7 @@ TEST_F(Triangulation, Normal_Inputs) {
           pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
           pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
 
-  SE3 g12{pose};
+  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
 
   Vec3 Xc1;
 
@@ -98,7 +98,7 @@ TEST_F(Triangulation, Parallax) {
           pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
           pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
 
-  SE3 g12{pose};
+  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
 
   Vec3 Xc1;
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
@@ -141,7 +141,7 @@ TEST_F(Triangulation, Cheirality) {
           pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
           pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
 
-  SE3 g12{pose};
+  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
 
   Vec3 Xc1;
 
@@ -186,7 +186,7 @@ TEST_F(Triangulation, Angular_Reprojection_Error) {
           pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
           pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
 
-  SE3 g12{pose};
+  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
 
   Vec3 Xc1;
 
@@ -236,7 +236,7 @@ TEST_F(Triangulation, Vanishing_Point) {
           pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
           pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
 
-  SE3 g12{pose};
+  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
 
   Vec3 Xc1;
 

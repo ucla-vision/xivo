@@ -43,13 +43,14 @@ SO3 HandEyeCalibration(const std::vector<SO3> &A, const std::vector<SO3> &B) {
   for (int i = 0; i < 3; ++i) {
     X.row(i) = xstack.segment<3>(i * 3).transpose();
   }
-  auto R = SO3::project(X);
+  auto R = SO3::fitToSO3(X);
 
   // compute residuals
   number_t res(0);
   for (int i = 0; i < n; ++i) {
     // AR=RB
-    Vec3 r = SO3::log(A[i] * R * (R * B[i]).inv());
+    SO3 tmp = A[i] * R * (R * B[i]).inverse();
+    auto r = tmp.log();
     res += r.norm();
   }
   res = (res / n) / M_PI * 180;
@@ -109,7 +110,7 @@ SE3 TrajectoryAlignment(const std::vector<Vec3> &Y,
   for (int i = 0; i < 3; ++i) {
     Xmat.row(i) = xstack.segment<3>(i * 3).transpose();
   }
-  auto R = SO3::project(Xmat);
+  auto R = SO3::fitToSO3(Xmat);
 
   LOG(INFO) << "computing T";
   // compute translation

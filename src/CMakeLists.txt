@@ -64,6 +64,7 @@ list(APPEND deps
         cholmod
         lapack
         blas
+        fmt
         )
 if (IS_LINUX)
   list(APPEND deps GL)
