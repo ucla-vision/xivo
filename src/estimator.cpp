@@ -200,8 +200,13 @@ Estimator::Estimator(const Json::Value &cfg)
   try {
     X_.Rsb = SO3::exp(GetVectorFromJson<number_t, 3>(X, "Wsb"));
   } catch (const Json::LogicError &e) {
-    X_.Rsb =
-        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wsb", JsonMatLayout::RowMajor));
+    Mat3 Rsb_tmp = GetMatrixFromJson<number_t, 3, 3>(X, "Wsb", JsonMatLayout::RowMajor);
+    if (Sophus::isOrthogonal(Rsb_tmp) && (Rsb_tmp.determinant() > 0.0)) {
+      X_.Rsb = SO3(Rsb_tmp);
+    } else {
+      LOG(WARNING) << "Input value of Rsb is not orthogonal or its determinant is negative. Projecting to SO(3) group";
+      X_.Rsb = SO3::fitToSO3(Rsb_tmp);
+    }
   }
   X_.Tsb = GetVectorFromJson<number_t, 3>(X, "Tsb");
   X_.Vsb = GetVectorFromJson<number_t, 3>(X, "Vsb");
@@ -220,8 +225,13 @@ Estimator::Estimator(const Json::Value &cfg)
   try {
     X_.Rbc = SO3::exp(GetVectorFromJson<number_t, 3>(X, "Wbc"));
   } catch (const Json::LogicError &e) {
-    X_.Rbc =
-        SO3(GetMatrixFromJson<number_t, 3, 3>(X, "Wbc", JsonMatLayout::RowMajor));
+    Mat3 Rbc_tmp = GetMatrixFromJson<number_t, 3, 3>(X, "Wbc", JsonMatLayout::RowMajor);
+    if (Sophus::isOrthogonal(Rbc_tmp) && (Rbc_tmp.determinant() > 0.0)) {
+      X_.Rbc = SO3(Rbc_tmp);
+    } else {
+      LOG(WARNING) << "Input value of Rbc is not orthogonal or its determinant is negative. Projecting to SO(3) group";
+      X_.Rbc = SO3::fitToSO3(Rbc_tmp);
+    }
   }
   X_.Tbc = GetVectorFromJson<number_t, 3>(X, "Tbc");
   Vec3 Wsg;

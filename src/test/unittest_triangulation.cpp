@@ -40,17 +40,8 @@ TEST_F(Triangulation, Normal_Inputs) {
 
   Vec2 xc2{Xc2_homo[0]/Xc2_homo[2], Xc2_homo[1]/Xc2_homo[2]};
 
-  Mat4 pose_homo;
-
-  pose_homo = g21.inverse();
-
-  Mat34 pose;
-
-  pose << pose_homo.coeff(0,0),pose_homo.coeff(0,1),pose_homo.coeff(0,2),pose_homo.coeff(0,3),
-          pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
-          pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
-
-  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
+  Mat4 pose_homo = g21.inverse();
+  SE3 g12 = SE3::fitToSE3(pose_homo);
 
   Vec3 Xc1;
 
@@ -88,17 +79,8 @@ TEST_F(Triangulation, Parallax) {
 
   Vec2 xc2{Xc2_homo[0]/Xc2_homo[2], Xc2_homo[1]/Xc2_homo[2]};
 
-  Mat4 pose_homo;
-
-  pose_homo = g21.inverse();
-
-  Mat34 pose;
-
-  pose << pose_homo.coeff(0,0),pose_homo.coeff(0,1),pose_homo.coeff(0,2),pose_homo.coeff(0,3),
-          pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
-          pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
-
-  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
+  Mat4 pose_homo = g21.inverse();
+  SE3 g12 = SE3::fitToSE3(pose_homo);
 
   Vec3 Xc1;
   bool return_output = L1Angular(g12, xc1, xc2, Xc1, max_theta_thresh, beta_thresh);
@@ -131,17 +113,8 @@ TEST_F(Triangulation, Cheirality) {
 
   Vec2 xc2{Xc2_homo[0]/Xc2_homo[2], Xc2_homo[1]/Xc2_homo[2]};
 
-  Mat4 pose_homo;
-
-  pose_homo = g21.inverse();
-
-  Mat34 pose;
-
-  pose << pose_homo.coeff(0,0),pose_homo.coeff(0,1),pose_homo.coeff(0,2),pose_homo.coeff(0,3),
-          pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
-          pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
-
-  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
+  Mat4 pose_homo = g21.inverse();
+  SE3 g12 = SE3::fitToSE3(pose_homo);
 
   Vec3 Xc1;
 
@@ -176,17 +149,8 @@ TEST_F(Triangulation, Angular_Reprojection_Error) {
 
   Vec2 xc2{Xc2_homo[0]/Xc2_homo[2] + noise, Xc2_homo[1]/Xc2_homo[2] + noise};
 
-  Mat4 pose_homo;
-
-  pose_homo = g21.inverse();
-
-  Mat34 pose;
-
-  pose << pose_homo.coeff(0,0),pose_homo.coeff(0,1),pose_homo.coeff(0,2),pose_homo.coeff(0,3),
-          pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
-          pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
-
-  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
+  Mat4 pose_homo = g21.inverse();
+  SE3 g12 = SE3::fitToSE3(pose_homo);
 
   Vec3 Xc1;
 
@@ -226,17 +190,8 @@ TEST_F(Triangulation, Vanishing_Point) {
 
   Vec2 xc2{Xc2_homo[0]/Xc2_homo[2], Xc2_homo[1]/Xc2_homo[2]};
 
-  Mat4 pose_homo;
-
-  pose_homo = g21.inverse();
-
-  Mat34 pose;
-
-  pose << pose_homo.coeff(0,0),pose_homo.coeff(0,1),pose_homo.coeff(0,2),pose_homo.coeff(0,3),
-          pose_homo.coeff(1,0),pose_homo.coeff(1,1),pose_homo.coeff(1,2),pose_homo.coeff(1,3),
-          pose_homo.coeff(2,0),pose_homo.coeff(2,1),pose_homo.coeff(2,2),pose_homo.coeff(2,3);
-
-  SE3 g12(pose.block<3,3>(0,0), pose.col(3));
+  Mat4 pose_homo = g21.inverse();
+  SE3 g12 = SE3::fitToSE3(pose_homo);
 
   Vec3 Xc1;
 
