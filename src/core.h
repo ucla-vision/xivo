@@ -133,16 +133,20 @@ struct State {
   using Tangent = Eigen::Matrix<number_t, kMotionSize, 1>;
 
   State &operator+=(const Tangent &dX) {
-    Rsb *= SO3::exp(dX.segment<3>(Index::Wsb));
+
+    SO3 dRsb = SO3_from_rotvec(dX.segment<3>(Index::Wsb));
+    SO3 dRbc = SO3_from_rotvec(dX.segment<3>(Index::Wbc));
+    Vec3 Wsg{dX(Index::Wsg), dX(Index::Wsg+1), 0.0};
+    SO3 dRsg = SO3_from_rotvec(Wsg);
+
+    Rsb *= dRsb;
     Tsb += dX.segment<3>(Index::Tsb);
     Vsb += dX.segment<3>(Index::Vsb);
     bg += dX.segment<3>(Index::bg);
     ba += dX.segment<3>(Index::ba);
-    Rbc *= SO3::exp(dX.segment<3>(Index::Wbc));
+    Rbc *= dRbc;
     Tbc += dX.segment<3>(Index::Tbc);
-    Rsg *= SO3::exp(Vec3{dX(Index::Wsg), dX(Index::Wsg + 1), 0.0});
-    // Rg *= SO3::exp(dX.segment<3>(Index::Wg));
-// std::cout << "Wg=" << dX.segment<3>(Index::Wg).transpose() << std::endl;
+    Rsg *= dRsg;
 #ifdef USE_ONLINE_TEMPORAL_CALIB
     td += dX(Index::td);
 #endif
@@ -153,7 +157,7 @@ struct State {
         Rbc.normalize();
         auto Wsg = Rsg.log();
         Wsg(2) = 0.0;
-        Rsg = SO3::exp(Wsg);
+        Rsg = SO3_from_rotvec(Wsg);
       }
     }
 

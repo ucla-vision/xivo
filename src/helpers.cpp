@@ -370,4 +370,11 @@ bool check_parallax(const Vec3 &Rf0_prime, const Vec3 &f1_prime, float beta_thre
   return true;
 }
 
+
+SO3 SO3_from_rotvec(const Vec3 w) {
+  AngleAxis aa(w.norm(), w.normalized());
+  Quat q(aa);
+  return SO3(q);
+}
+
 } // namespace xivo

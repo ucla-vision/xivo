@@ -74,6 +74,7 @@ using SO3f = Sophus::SO3<float>;
 using SE3d = Sophus::SE3<double>;
 using SO3d = Sophus::SO3<double>;
 
+using AngleAxis = Eigen::AngleAxisd;
 using Quat = Eigen::Quaternion<double, Eigen::AutoAlign>;
 
 static const number_t eps = 1e-4f;
