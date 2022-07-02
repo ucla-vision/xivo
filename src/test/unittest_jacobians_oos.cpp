@@ -27,12 +27,9 @@ class OOSJacobiansTest : public::testing::Test {
         tol = 1e-6;
 
         // Set nominal and error variables to random values
-        //Rr_nom = RandomTransformationMatrix();
-        //Tr_nom = Vec3::Random();
-        Rsb_nom = RandomTransformationMatrix();
-        Tsb_nom = Vec3::Random();
-        Rbc_nom = RandomTransformationMatrix();
-        Tbc_nom = Vec3::Random();
+        std::default_random_engine generator;
+        gsb_nom = SE3::sampleUniform(generator);
+        gbc_nom = SE3::sampleUniform(generator);
 
         Wsb_err = Vec3::Zero();
         Tsb_err = Vec3::Zero();
@@ -50,8 +47,7 @@ class OOSJacobiansTest : public::testing::Test {
         Vec2 xc = Camera::instance()->UnProject(xp);
         f->x_(0) = xc(0);
         f->x_(1) = xc(1);
-        group = Group::Create(SO3(Rsb_nom), Tsb_nom);
-        //group->sind_ = 0;
+        group = Group::Create(gsb_nom.so3(), gsb_nom.translation());
         group->SetSind(0);
         f->ref_ = group;
         f->SetSind(0);
@@ -66,30 +62,30 @@ class OOSJacobiansTest : public::testing::Test {
 
         // Compute nominal Jacobian
         f->cache_.Xs = Xs_nom;
-        f->ComputeOOSJacobianInternal(obs, Rbc_nom, Tbc_nom, err_state);
+        f->ComputeOOSJacobianInternal(obs, gbc_nom.so3().matrix(),
+                                      gbc_nom.translation(), err_state);
     }
 
     Vec3 ComputeXcn() {
-        Rsb = Rsb_nom*rodrigues(Wsb_err);
-        Tsb = Tsb_nom + Tsb_err;
-        Rbc = Rbc_nom*rodrigues(Wbc_err);
-        Tbc = Tbc_nom + Tbc_err;
+        Rsb = gsb_nom.so3() * SO3::exp(Wsb_err);
+        Tsb = gsb_nom.translation() + Tsb_err;
+        Rbc = gbc_nom.so3() * SO3::exp(Wbc_err);
+        Tbc = gbc_nom.translation() + Tbc_err;
         Xs = Xs_nom + Xs_err;
 
-        Mat3 Rbc_t = Rbc.transpose();
-        Mat3 Rsb_t = Rsb.transpose();
-        Vec3 Xcn = Rbc_t*(Rsb_t*(Xs - Tsb) - Tbc);
+        SE3 gcb = SE3(Rbc, Tbc).inverse();
+        SE3 gbs = SE3(Rsb, Tsb).inverse();
+        Vec3 Xcn = gcb * gbs * Xs;
 
         return Xcn;
     }
 
     void ComputeNominalStates() {
-        Mat3 Rsb_nom_t = Rsb_nom.transpose();
-        Mat3 Rbc_nom_t = Rbc_nom.transpose();
-
         Xc_nom = f->Xc(nullptr);
-        Xs_nom = f->Xs(SE3{SO3{Rbc_nom}, Tbc_nom});
-        Xcn_nom = Rbc_nom_t*(Rsb_nom_t*(Xs_nom - Tsb_nom) - Tbc_nom);
+        Xs_nom = f->Xs(gbc_nom);
+        SE3 gcb_nom = gbc_nom.inverse();
+        SE3 gbs_nom = gsb_nom.inverse();
+        Xcn_nom = gcb_nom * gbs_nom * Xs_nom;
     }
 
     // Feature Object and Memory Manager
@@ -102,17 +98,15 @@ class OOSJacobiansTest : public::testing::Test {
     number_t tol;
 
     // Real values (= nominal + error)
-    Mat3 Rsb;
+    SO3 Rsb;
     Vec3 Tsb;
-    Mat3 Rbc;
+    SO3 Rbc;
     Vec3 Tbc;
     Vec3 Xs;
 
     // Nominal state variables containing placeholder values
-    Mat3 Rsb_nom;
-    Vec3 Tsb_nom;
-    Mat3 Rbc_nom;
-    Vec3 Tbc_nom;
+    SE3 gsb_nom;
+    SE3 gbc_nom;
     Vec3 Xs_nom;
 
     // Error variables containing placeholder values

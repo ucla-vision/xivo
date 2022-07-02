@@ -33,12 +33,10 @@ class InstateJacobiansTest : public ::testing::Test {
 
 
         // Set nominal and error variables to random values
-        Rsbr_nom = RandomTransformationMatrix();
-        Tsbr_nom = Vec3::Random();
-        Rsb_nom = RandomTransformationMatrix();
-        Tsb_nom = Vec3::Random();
-        Rbc_nom = RandomTransformationMatrix();
-        Tbc_nom = Vec3::Random();
+        std::default_random_engine generator;
+        gsbr_nom = SE3::sampleUniform(generator);
+        gsb_nom = SE3::sampleUniform(generator);
+        gbc_nom = SE3::sampleUniform(generator);
         Cg_nom = Mat3::Identity();
         bg_nom << 0, 0, 0;
         td_nom = 0.005;
@@ -66,21 +64,23 @@ class InstateJacobiansTest : public ::testing::Test {
         Vec2 xc = Camera::instance()->UnProject(xp);
         f->x_(0) = xc(0);
         f->x_(1) = xc(1);
-        // f->x_(2) = 2.0;
-        group = Group::Create(SO3(Rsbr_nom), Tsbr_nom);
+        group = Group::Create(gsbr_nom.so3(), gsbr_nom.translation());
         group->SetSind(0);
         f->ref_ = group;
         f->SetSind(0);
 
         // Compute the analytic Jacobians and nominal states
         ComputeNominalStates();
-        f->ComputeJacobian(Rsb_nom, Tsb_nom, Rbc_nom, Tbc_nom, gyro, 
-                           Cg_nom, bg_nom, Vsb_nom, td_nom, err_state);
+        f->ComputeJacobian(gsb_nom.so3().matrix(), gsb_nom.translation(),
+                           gbc_nom.so3().matrix(), gbc_nom.translation(),
+                           gyro, Cg_nom, bg_nom, Vsb_nom, td_nom, err_state);
     }
 
     Vec3 ComputeXcn() {
-        Rsbr = Rsbr_nom*rodrigues(Wsbr_err);
-        Tsbr = Tsbr_nom + Tsbr_err;
+        SO3 Rsbr_err = SO3::exp(Wsbr_err);
+
+        SO3 Rsbr = gsbr_nom.so3() * Rsbr_err;
+        Vec3 Tsbr = gsbr_nom.translation() + Tsbr_err;
         
         Cg = Cg_nom + Cg_err;
         bg = bg_nom + bg_err;
@@ -88,36 +88,33 @@ class InstateJacobiansTest : public ::testing::Test {
 #ifdef USE_ONLINE_TEMPORAL_CALIB
         Vec3 angvel_nom = Cg*gyro - bg;
         Vec3 angvel_err = Cg_err*gyro - bg_err;
-        Vec3 delta_rot = angvel_nom*td_err + angvel_err*(td_nom + td_err);
-        Rsb = Rsb_nom*rodrigues(Wsb_err)*rodrigues(delta_rot);
-        Tsb = Tsb_nom + Tsb_err + Vsb_nom*td_err;
+        SO3 delta_rot = SO3::exp(angvel_nom*td_err + angvel_err*(td_nom + td_err));
+        Rsb = gsb_nom.so3() * SO3::exp(Wsb_err) * delta_rot;
+        Tsb = gsb_nom.translation() + Tsb_err + Vsb_nom*td_err;
 #else
-        Rsb = Rsb_nom*rodrigues(Wsb_err);
-        Tsb = Tsb_nom + Tsb_err;
+        Rsb = gsb_nom.so3() * SO3::exp(Wsb_err);
+        Tsb = gsb_nom.translation() + Tsb_err;
 #endif
 
-        Rbc = Rbc_nom*rodrigues(Wbc_err);
-        Tbc = Tbc_nom + Tbc_err;
+        Rbc = gbc_nom.so3() * SO3::exp(Wbc_err);
+        Tbc = gbc_nom.translation() + Tbc_err;
         td = td_nom + td_err;
 
 
         Vec3 Xc = f->Xc();
         Vec3 Xs = Rsbr*(Rbc*Xc + Tbc) + Tsbr;
 
-        Mat3 Rbc_t = Rbc.transpose();
-        Mat3 Rsb_t = Rsb.transpose();
-        Vec3 Xcn = Rbc_t*(Rsb_t*(Xs - Tsb) - Tbc);
+        SE3 gcb = SE3(Rbc, Tbc).inverse();
+        SE3 gbs = SE3(Rsb, Tsb).inverse();
+        Vec3 Xcn = gcb * gbs * Xs;
 
         return Xcn;
     }
 
     void ComputeNominalStates() {
-        Mat3 Rsb_nom_t = Rsb_nom.transpose();
-        Mat3 Rbc_nom_t = Rbc_nom.transpose();
-
         Xc_nom = f->Xc(nullptr);
-        Xs_nom = Rsbr_nom * (Rbc_nom * Xc_nom + Tbc_nom) + Tsbr_nom;
-        Xcn_nom = Rbc_nom_t*(Rsb_nom_t*(Xs_nom - Tsb_nom) - Tbc_nom);
+        Xs_nom = gsbr_nom * gbc_nom * Xc_nom;
+        Xcn_nom = gbc_nom.inverse() * gsb_nom.inverse() * Xs_nom;
     }
 
     // Feature Object and Memory Manager
@@ -133,23 +130,20 @@ class InstateJacobiansTest : public ::testing::Test {
     number_t tol;
 
     // Real values (= nominal + error)
-    Mat3 Rsbr;
+    SO3 Rsbr;
     Vec3 Tsbr;
-    Mat3 Rsb;
+    SO3 Rsb;
     Vec3 Tsb;
-    Mat3 Rbc;
+    SO3 Rbc;
     Vec3 Tbc;
     Mat3 Cg;
     Vec3 bg;
     number_t td;
 
     // Nominal state variables containing placeholder values
-    Mat3 Rsbr_nom;
-    Vec3 Tsbr_nom;
-    Mat3 Rsb_nom;
-    Vec3 Tsb_nom;
-    Mat3 Rbc_nom;
-    Vec3 Tbc_nom;
+    SE3 gsbr_nom;
+    SE3 gsb_nom;
+    SE3 gbc_nom;
     Mat3 Cg_nom;
     Vec3 bg_nom;
     number_t td_nom;

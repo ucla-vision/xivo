@@ -152,12 +152,6 @@ add_executable(unitTests_Jacobians
 target_link_libraries(unitTests_Jacobians ${libxivo} ${deps} gtest gtest_main)
 add_test(NAME Jacobians COMMAND unitTests_Jacobians)
 
-add_executable(unitTests_Rodrigues
-               test/unittest_rodrigues.cpp
-               test/test_rodrigues.cpp)
-target_link_libraries(unitTests_Rodrigues xest ${deps} gtest gtest_main)
-add_test(NAME Rodrigues COMMAND unitTests_Rodrigues)
-
 add_executable(unitTests_pinhole
                test/unittest_camera_pinhole.cpp)
 target_link_libraries(unitTests_pinhole xest ${deps} gtest gtest_main)
