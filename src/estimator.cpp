@@ -630,15 +630,15 @@ void Estimator::ComputeMotionJacobianAt(
   Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
   Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
 
-  Mat3 dWsb_dWsb = -hat(gyro_calib);
+  Mat3 dWsb_dWsb = -SO3::hat(gyro_calib);
   // static Mat3 dW_dbg = -I3;
 
   // static Mat3 dT_dV = I3;
 
-  Mat3 dV_dWsb = -Rsb * hat(accel_calib);
+  Mat3 dV_dWsb = -Rsb * SO3::hat(accel_calib);
   Mat3 dV_dba = -Rsb;
 
-  Mat3 dV_dWsg = -Rsb * hat(g_); // effective dimension: 3x2, since Wg is 2-dim
+  Mat3 dV_dWsg = -Rsb * SO3::hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step

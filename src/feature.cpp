@@ -613,11 +613,11 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Vec3 gyro_calib = Cg * gyro - bg;
   cache_.dXcn_dtd =
-      -Rbc_t * (hat(gyro_calib) * Rsb_t * (cache_.Xs - Tsb) + Rsb_t * Vsb);
+      -Rbc_t * (SO3::hat(gyro_calib) * Rsb_t * (cache_.Xs - Tsb) + Rsb_t * Vsb);
 
   // since imu.Cg is used here, also need to compute jacobian block w.r.t. Cg
   auto dXcn_dW =
-      dAB_dB<3, 1>(Rbc_t * hat(Rsb_t * (cache_.Xs - Tsb)) * td); // W=Cg * Wm
+      dAB_dB<3, 1>(Rbc_t * SO3::hat(Rsb_t * (cache_.Xs - Tsb)) * td); // W=Cg * Wm
 #ifdef USE_ONLINE_IMU_CALIB
   Eigen::Matrix<number_t, 3, 9> dW_dCg;
   for (int i = 0; i < 3; ++i) {

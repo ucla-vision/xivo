@@ -132,7 +132,7 @@ SE3 TrajectoryAlignment(const std::vector<Vec3> &Y,
     for (int i = 0; i < X.size(); ++i) {
       int offset = i * 3;
       rhs.segment<3>(offset) = Y[i] - (R * X[i] + T);
-      auto block = -R.matrix() * hat(X[i]);
+      auto block = -R.matrix() * SO3::hat(X[i]);
       for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 3; ++col) {
           M.coeffRef(offset + row, col) = block(row, col);
