@@ -133,8 +133,7 @@ public:
   /** Computes the Jacobian for the in-state (EKF) measurement model. */
   void ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                        const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
-                       const Vec3 &bg, const Vec3 &Vsb, number_t td,
-                       const VecX &error_state);
+                       const Vec3 &bg, const Vec3 &Vsb, number_t td);
 
   void inflate_cov(number_t factor) { P_ *= factor; }
 
@@ -142,17 +141,16 @@ public:
 
   /** Computes the Jacobian for the out-of-state (MSCKF) measurement model. */
   int ComputeOOSJacobian(const std::vector<Obs> &obs, const Mat3 &Rbc,
-                         const Vec3 &Tbc, const VecX &error_state);
+                         const Vec3 &Tbc);
   /** Contains the equations used in `Feature::ComputeOOSJacobian` for each
    *  observation.
    *  \todo make the following private */
   void ComputeOOSJacobianInternal(const Obs &obs, const Mat3 &Rbc,
-                                  const Vec3 &Tbc, const VecX &error_state);
+                                  const Vec3 &Tbc);
 
   /** Compute Jacobians for Loop Closure measurement update. */
   void ComputeLCJacobian(const Obs &obs, const Mat3 &Rbc, const Vec3 &Tbc,
-                         const VecX &error_state, int match_counter,
-                         MatX &H, VecX &inn);
+                         int match_counter, MatX &H, VecX &inn);
 
   // fill-in the corresponding jacobian block
   // H: the big jacobian matrix of all measurements

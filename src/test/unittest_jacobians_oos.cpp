@@ -63,7 +63,7 @@ class OOSJacobiansTest : public::testing::Test {
         // Compute nominal Jacobian
         f->cache_.Xs = Xs_nom;
         f->ComputeOOSJacobianInternal(obs, gbc_nom.so3().matrix(),
-                                      gbc_nom.translation(), err_state);
+                                      gbc_nom.translation());
     }
 
     Vec3 ComputeXcn() {

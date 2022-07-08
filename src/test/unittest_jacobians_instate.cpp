@@ -26,7 +26,7 @@ class InstateJacobiansTest : public ::testing::Test {
         auto cfg_ = LoadJson("src/test/camera_configs.json");
         Camera::Create(cfg_["perfect_pinhole"]);
         delta = 1e-6;
-        tol = 1e-5;
+        tol = 9e-4;
 
         // IMU measurement
         gyro = Vec3::Random();
@@ -52,9 +52,6 @@ class InstateJacobiansTest : public ::testing::Test {
         Cg_err = Mat3::Zero();
         bg_err = Vec3::Zero();
         td_err = 0.0;
-        err_state.resize(kFullSize);
-        err_state.setZero();
-
 
         // Set reference Rr and Tr for the feature
         Vec2 xp(25, 46);
@@ -73,7 +70,7 @@ class InstateJacobiansTest : public ::testing::Test {
         ComputeNominalStates();
         f->ComputeJacobian(gsb_nom.so3().matrix(), gsb_nom.translation(),
                            gbc_nom.so3().matrix(), gbc_nom.translation(),
-                           gyro, Cg_nom, bg_nom, Vsb_nom, td_nom, err_state);
+                           gyro, Cg_nom, bg_nom, Vsb_nom, td_nom);
     }
 
     Vec3 ComputeXcn() {
@@ -150,7 +147,6 @@ class InstateJacobiansTest : public ::testing::Test {
     Vec3 Vsb_nom;
 
     // Error variables containing placeholder values
-    VecX err_state;
     Vec3 Wsbr_err;
     Vec3 Tsbr_err;
     Vec3 Wsb_err;

@@ -26,18 +26,27 @@ struct JacobianCache {
   Vec3 Xc;     // 3D point in camera frame of the reference group
   Mat3 dXc_dx; // 3D point in reference camera frame w.r.t. local state
 
+  Vec3 Xbr;
+  Mat3 dXbr_dTbc, dXbr_dWbc;
+  Mat3 dXbr_dXc;
+
   Vec3 Xs;                 // 3D point in spatial frame
-  Mat3 dXs_dXc;            // 3D point in spatial frame w.r.t. Xc
   Mat3 dXs_dTsbr, dXs_dWsbr;   // w.r.t. body2spatial pose of the reference group
-  Mat3 dXs_dTbc, dXs_dWbc; // w.r.t. cam2body alignment
-  Mat3 dXs_dx;
+  Mat3 dXs_dXbr;            // 3D point in spatial frame w.r.t. Xc
+
+  Vec3 Xb;
+  Mat3 dXb_dTsb, dXb_dWsb;
+  Mat3 dXb_dXs;
 
   Vec3 Xcn;      // 3D point in camera frame of the "new" (current) group
-  Mat3 dXcn_dXs; // Xc in "new" (current) camera frame w.r.t. Xs
-  Mat3 dXcn_dTsbr, dXcn_dWsbr;   // w.r.t. body2spatial pose of the reference group
-  Mat3 dXcn_dTsb, dXcn_dWsb; // w.r.t. body2spatial pose
   Mat3 dXcn_dTbc, dXcn_dWbc; // w.r.t. cam2body alignment
-  Mat3 dXcn_dx;
+  Mat3 dXcn_dXb;
+
+  // Chain rule values
+  Mat3 dXcn_dTsb, dXcn_dWsb;
+  Mat3 dXcn_dTsbr, dXcn_dWsbr;
+  Mat3 dXcn_dXs, dXcn_dx;
+
   Vec3 dXcn_dtd;                       // w.r.t. temporal offset
   Eigen::Matrix<number_t, 3, 9> dXcn_dCg; // w.r.t. gyroscope intrinsics
   Mat3 dXcn_dbg;

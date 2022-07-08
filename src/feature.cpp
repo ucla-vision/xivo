@@ -541,8 +541,7 @@ bool Feature::RefineDepth(const SE3 &gbc,
 
 void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
                               const Vec3 &Tbc, const Vec3 &gyro, const Mat3 &Cg,
-                              const Vec3 &bg, const Vec3 &Vsb, number_t td,
-                              const VecX &error_state) {
+                              const Vec3 &bg, const Vec3 &Vsb, number_t td) {
 
   Mat3 Rsb_t = Rsb.transpose();
   Mat3 Rbc_t = Rbc.transpose();
@@ -550,65 +549,45 @@ void Feature::ComputeJacobian(const Mat3 &Rsb, const Vec3 &Tsb, const Mat3 &Rbc,
   Mat3 Rsbr = ref_->Rsb().matrix();
   Vec3 Tsbr = ref_->Tsb();
 
-  cache_.Xc = Xc(&cache_.dXc_dx);
-
-  // Get components of the error state
+  // Index of feature in the whole group
   int offset = kGroupBegin + kGroupSize*(ref_->sind());
-  Vec3 Wsb_err = error_state.segment<3>(Index::Wsb);
-  Vec3 Tsb_err = error_state.segment<3>(Index::Tsb);
-  Vec3 Wbc_err = error_state.segment<3>(Index::Wbc);
-  Vec3 Tbc_err = error_state.segment<3>(Index::Tbc);
-  Vec3 Wsbr_err  = error_state.segment<3>(offset);
-  Vec3 Tsbr_err  = error_state.segment<3>(offset+3);
 
-  // Get derivatives of error state matrix exponentials w.r.t vector.
-  Mat93 dRsb_dWsb_err, dRbc_dWbc_err, dRsbr_dWsbr_err;
-  Mat3 Rsb_Wsb_err = rodrigues(Wsb_err, &dRsb_dWsb_err);
-  Mat3 Rbc_Wbc_err = rodrigues(Wbc_err, &dRbc_dWbc_err);
-  Mat3 Rsb_Wsbr_err  = rodrigues(Wsbr_err, &dRsbr_dWsbr_err);
+  // Compute position of feature in multiple coordinate frames
+  cache_.Xc = Xc(&cache_.dXc_dx);
+  cache_.Xbr = Rbc * cache_.Xc + Tbc;
+  cache_.Xs = Rsbr * cache_.Xbr + Tsbr;
+  cache_.Xb = Rsb_t * (cache_.Xs - Tsb);
+  cache_.Xcn = Rbc_t * (cache_.Xb - Tbc);
 
-  // Xc(ref) to Xs
-  cache_.Xs = Rsbr * Rbc * cache_.Xc + Rsbr * Tbc + Tsbr;
-  cache_.dXs_dx = Rsbr * Rbc * cache_.dXc_dx;
-  cache_.dXs_dTbc = Rsbr;
+  // Xbr to Xc
+  cache_.dXbr_dXc = Rbc;
+  cache_.dXbr_dTbc = Mat3::Identity();
+  cache_.dXbr_dWbc = -Rbc * SO3::hat(cache_.Xc);
+
+  // Xs to Xbr
+  cache_.dXs_dXbr = Rsbr;
   cache_.dXs_dTsbr = Mat3::Identity();
-  for (int i=0; i<3; i++) {
-    Mat3 dRsbr_dWsbr_err_i  = unstack(dRsbr_dWsbr_err.block<9,1>(0,i));
-    Mat3 dRbc_dWbc_err_i = unstack(dRbc_dWbc_err.block<9,1>(0,i));
-    // Compute derivatives
-    Vec3 dXs_dWsbri = Rsbr * dRsbr_dWsbr_err_i * (Rbc * cache_.Xc + Tbc);
-    Vec3 dXs_dWbci = Rsbr * Rbc * dRbc_dWbc_err_i * cache_.Xc;
-    // Fill in columns in cache_
-    cache_.dXs_dWsbr.block<3,1>(0,i) = dXs_dWsbri;
-    cache_.dXs_dWbc.block<3,1>(0,i) = dXs_dWbci;
-  }
+  cache_.dXs_dWsbr = -Rsbr * SO3::hat(cache_.Xbr);
 
-  // Xs back to Xc(new)
-  cache_.Xcn = Rbc_t * Rsb_t * (cache_.Xs - Tsb) - Rbc_t * Tbc;
-  cache_.dXcn_dXs = Rbc_t * Rsb_t;
-  //cache_.dXcn_dTsb = -Rbc_t * Rsb_t;
-  cache_.dXcn_dTsb = -cache_.dXcn_dXs;
-  cache_.dXcn_dTbc = -Rbc_t + (cache_.dXcn_dXs * cache_.dXs_dTbc);
-  for (int i=0; i<3; i++) {
-    // Reshape columns of output of rodrigues()
-    Mat3 dRbc_dWbc_err_i = unstack(dRbc_dWbc_err.block<9,1>(0,i));
-    Mat3 dRsb_dWsb_err_i = unstack(dRsb_dWsb_err.block<9,1>(0,i));
-    Mat3 dRbc_dWbc_err_i_t = dRbc_dWbc_err_i.transpose();
-    Mat3 dRsb_dWsb_err_i_t = dRsb_dWsb_err_i.transpose();
-    // Compute derivatives
-    Vec3 dXcn_dWsb_err_i = Rbc_t * dRsb_dWsb_err_i_t * Rsb_t * (cache_.Xs - Tsb);
-    Vec3 dXcn_dWbc_err_i = (dRbc_dWbc_err_i_t * Rbc_t * Rsb_t * cache_.Xs)
-      + (Rbc_Wbc_err.transpose() * Rbc_t * Rsb_t * cache_.dXs_dWbc.block<3,1>(0,i))
-      - (dRbc_dWbc_err_i_t * Rbc_t * (Rsb_t*Tsb + Tbc));
-    // Fill in columns in cache_
-    cache_.dXcn_dWsb.block<3,1>(0,i) = dXcn_dWsb_err_i;
-    cache_.dXcn_dWbc.block<3,1>(0,i) = dXcn_dWbc_err_i;
-  }
+  // Xb to Xs
+  cache_.dXb_dXs = Rsb_t;
+  cache_.dXb_dTsb = -Rsb_t;
+  cache_.dXb_dWsb = SO3::hat(cache_.Xb);
 
-  cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dx;
-  cache_.dXcn_dWsbr = cache_.dXcn_dXs * cache_.dXs_dWsbr;
-  cache_.dXcn_dTsbr = cache_.dXcn_dXs * cache_.dXs_dTsbr;
+  // Xcn to Xb
+  cache_.dXcn_dXb = Rbc_t;
+  cache_.dXcn_dTbc = -Rbc_t +
+    cache_.dXcn_dXb * cache_.dXb_dXs * cache_.dXs_dXbr * cache_.dXbr_dTbc;
+  cache_.dXcn_dWbc = SO3::hat(cache_.Xcn) +
+    cache_.dXcn_dXb * cache_.dXb_dXs * cache_.dXs_dXbr * cache_.dXbr_dWbc;
 
+  // Chain rule values
+  cache_.dXcn_dTsb = cache_.dXcn_dXb * cache_.dXb_dTsb;
+  cache_.dXcn_dWsb = cache_.dXcn_dXb * cache_.dXb_dWsb;
+  cache_.dXcn_dTsbr = cache_.dXcn_dXb * cache_.dXb_dXs * cache_.dXs_dTsbr;
+  cache_.dXcn_dWsbr = cache_.dXcn_dXb * cache_.dXb_dXs * cache_.dXs_dWsbr;
+  cache_.dXcn_dXs = cache_.dXcn_dXb * cache_.dXb_dXs;
+  cache_.dXcn_dx = cache_.dXcn_dXs * cache_.dXs_dXbr * cache_.dXbr_dXc * cache_.dXc_dx;
 
 #ifdef USE_ONLINE_TEMPORAL_CALIB
   Vec3 gyro_calib = Cg * gyro - bg;
