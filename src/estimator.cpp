@@ -642,6 +642,11 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 dV_dWsg = -Rsg * SO3::hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
+
+  Mat39 dWsb_dRsb;
+  invrodrigues(Rsb, &dWsb_dRsb);
+
+
   F_.setZero(); // wipe out the delta added to F in the previous step
 
   for (int j = 0; j < 3; ++j) {
@@ -686,14 +691,21 @@ void Estimator::ComputeMotionJacobianAt(
 
   // jacobian w.r.t. noise
   G_.setZero();
-  for (int j = 0; j < 3; ++j) {
+  for (int i = 0; i < 3; ++i) {
 
-    G_.coeffRef(Index::Wsb + j, j) = -1;  // dWsb_dng
-    G_.coeffRef(Index::bg + j, 6 + j) = 1;  // dbg_dnbg
-    G_.coeffRef(Index::ba + j, 9 + j) = 1;  // dba_dnba
+    //G_.coeffRef(Index::Wsb + i, i) = -1;  // dWsb_dng
+    G_.coeffRef(Index::bg + i, 6 + i) = 1;  // dbg_dnbg
+    G_.coeffRef(Index::ba + i, 9 + i) = 1;  // dba_dnba
 
-    for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
       G_.coeffRef(Index::Vsb + i, 3 + j) = -Rsb(i, j);  // dV_dna
+    }
+
+    for (int j = 0; j < 3; j++) {
+      Mat3 dhatj = unstack( dhat<number_t>().col(j) );
+      Mat3 R_dhatj = Rsb * dhatj;
+      Vec9 minus_R_dhatj_vec = Eigen::Map<Vec9> (R_dhatj.transpose().data()) * -1.0;
+      G_.coeffRef(Index::Wsb+i, j) = dWsb_dRsb.row(i) * minus_R_dhatj_vec; // dW_dng
     }
   }
 }
