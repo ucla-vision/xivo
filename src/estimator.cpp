@@ -626,10 +626,10 @@ void Estimator::ComputeMotionJacobianAt(
     dWsb_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
 
-  Eigen::Matrix<number_t, 3, 9> dV_dRCa = dAB_dA<3, 3>(accel);
-  Eigen::Matrix<number_t, 9, 9> dRCa_dCafm = dAB_dB<3, 3>(Rsb); // fm: full matrix
-  Eigen::Matrix<number_t, 9, 6> dCafm_dCa = dA_dAu<number_t, 3>(); // full matrix w.r.t. upper triangle
-  Eigen::Matrix<number_t, 3, 6> dV_dCa = dV_dRCa * dRCa_dCafm * dCafm_dCa;
+  Mat3 dV_dCaA = dAB_dB<3, 1>(Rsb);
+  Eigen::Matrix<number_t, 3, 9> dCaA_dCa = dAB_dA<3, 3>(accel);
+  Eigen::Matrix<number_t, 9, 6> dCa_dCau = dA_dAu<number_t, 3>();
+  Eigen::Matrix<number_t, 3, 6> dV_dCau = dV_dCaA * dCaA_dCa * dCa_dCau;
 
   Mat3 dWsb_dWsb = -SO3::hat(gyro_calib);
   // static Mat3 dW_dbg = -I3;
@@ -674,7 +674,7 @@ void Estimator::ComputeMotionJacobianAt(
   }
   for (int j = 0; j < 6; ++j) {
     for (int i = 0; i < 3; ++i) {
-      F_.coeffRef(Index::Vsb + i, Index::Ca + j) = dV_dCa(i, j);
+      F_.coeffRef(Index::Vsb + i, Index::Ca + j) = dV_dCau(i, j);
     }
   }
 #endif
