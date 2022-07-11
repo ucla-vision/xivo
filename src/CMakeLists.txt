@@ -10,9 +10,9 @@ project(estimator)
 # add_definitions(-DUSE_INVDEPTH)
 
 # if set, perform online temporal calibration
-#add_definitions(-DUSE_ONLINE_IMU_CALIB)
-#add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
-#add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
+add_definitions(-DUSE_ONLINE_IMU_CALIB)
+add_definitions(-DUSE_ONLINE_TEMPORAL_CALIB)
+add_definitions(-DUSE_ONLINE_CAMERA_CALIB)
 
 # if set, enables the mapper object (and loop closure)
 #add_definitions(-DUSE_MAPPER)
@@ -148,6 +148,7 @@ add_test(NAME NumericalAlgorithms COMMAND unitTests_NumericalAlgorithms)
 add_executable(unitTests_Jacobians
                test/unittest_jacobians_instate.cpp
                test/unittest_jacobians_oos.cpp
+               test/unittest_jacobians_dyn.cpp
                test/unittest_helpers.cpp)
 target_link_libraries(unitTests_Jacobians ${libxivo} ${deps} gtest gtest_main)
 add_test(NAME Jacobians COMMAND unitTests_Jacobians)

@@ -617,6 +617,7 @@ void Estimator::ComputeMotionJacobianAt(
 
   // jacobian w.r.t. error state
   Mat3 Rsb = X.Rsb.matrix();
+  Mat3 Rsg = X.Rsg.matrix();
 
   Eigen::Matrix<number_t, 3, 9> dWsb_dCg;
   for (int i = 0; i < 3; ++i) {
@@ -638,7 +639,7 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 dV_dWsb = -Rsb * SO3::hat(accel_calib);
   Mat3 dV_dba = -Rsb;
 
-  Mat3 dV_dWsg = -Rsb * SO3::hat(g_); // effective dimension: 3x2, since Wg is 2-dim
+  Mat3 dV_dWsg = -Rsg * SO3::hat(g_); // effective dimension: 3x2, since Wg is 2-dim
   // Mat2 dWg_dWg = Mat2::Identity();
 
   F_.setZero(); // wipe out the delta added to F in the previous step
