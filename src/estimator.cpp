@@ -649,11 +649,21 @@ void Estimator::ComputeMotionJacobianAt(
 
   F_.setZero(); // wipe out the delta added to F in the previous step
 
-  for (int j = 0; j < 3; ++j) {
-    F_.coeffRef(Index::Wsb + j, Index::bg + j) = -1;  // dW_dbg
-    F_.coeffRef(Index::Tsb + j, Index::Vsb + j) = 1;  // dT_dV
+  // dW_dbg
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      Mat3 Rhatj = Rsb * unstack(dhat<number_t>().col(j)) * -1.0;
+      Vec9 Rhatj_flat = Eigen::Map<Vec9> (Rhatj.transpose().data());
+      F_.coeffRef(Index::Wsb + i, Index::bg + j) = dWsb_dRsb.row(i) * Rhatj_flat;
+    }
+  }
 
-    for (int i = 0; i < 3; ++i) {
+
+  for (int i = 0; i < 3; ++i) {
+    //F_.coeffRef(Index::Wsb + j, Index::bg + j) = -1;  // dW_dbg
+    F_.coeffRef(Index::Tsb + i, Index::Vsb + i) = 1;  // dT_dV
+
+    for (int j = 0; j < 3; ++j) {
       // W
       F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dWsb(i, j);
       // F_.coeffRef(Index::W + i, Index::bg + j) = dW_dbg(i, j);
