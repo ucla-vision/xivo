@@ -633,7 +633,7 @@ void Estimator::ComputeMotionJacobianAt(
   Eigen::Matrix<number_t, 9, 6> dCa_dCau = dA_dAu<number_t, 3>();
   Eigen::Matrix<number_t, 3, 6> dV_dCau = dV_dCaA * dCaA_dCa * dCa_dCau;
 
-  Mat3 dWsb_dWsb = -SO3::hat(gyro_calib);
+  //Mat3 dWsb_dWsb = -SO3::hat(gyro_calib);
   // static Mat3 dW_dbg = -I3;
 
   // static Mat3 dT_dV = I3;
@@ -661,13 +661,22 @@ void Estimator::ComputeMotionJacobianAt(
   }
 
 
+  // dW_dW
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      Mat3 coeff1 = -Rsb * hat(gyro_calib) * unstack(dhat<number_t>().col(j));
+      Vec9 coeff1_flat = Eigen::Map<Vec9> (coeff1.transpose().data());
+      F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dRsb.row(i) * coeff1_flat;
+    }
+  }
+
   for (int i = 0; i < 3; ++i) {
     //F_.coeffRef(Index::Wsb + j, Index::bg + j) = -1;  // dW_dbg
     F_.coeffRef(Index::Tsb + i, Index::Vsb + i) = 1;  // dT_dV
 
     for (int j = 0; j < 3; ++j) {
       // W
-      F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dWsb(i, j);
+      //F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dWsb(i, j);
       // F_.coeffRef(Index::W + i, Index::bg + j) = dW_dbg(i, j);
       // T
       // F_.coeffRef(Index::T + i, Index::V + j) = dT_dV(i, j);
