@@ -619,12 +619,14 @@ void Estimator::ComputeMotionJacobianAt(
   Mat3 Rsb = X.Rsb.matrix();
   Mat3 Rsg = X.Rsg.matrix();
 
+  /*
   Eigen::Matrix<number_t, 3, 9> dWsb_dCg;
   for (int i = 0; i < 3; ++i) {
     // NOTE: use the raw measurement (gyro) here. NOT the calibrated one
     // (gyro_calib)!!!
     dWsb_dCg.block<1, 3>(i, 3 * i) = gyro;
   }
+  */
 
   Mat3 dV_dCaA = dAB_dB<3, 1>(Rsb);
   Eigen::Matrix<number_t, 3, 9> dCaA_dCa = dAB_dA<3, 3>(accel);
@@ -682,9 +684,23 @@ void Estimator::ComputeMotionJacobianAt(
   }
 
 #ifdef USE_ONLINE_IMU_CALIB
+  /*
   for (int j = 0; j < 9; ++j) {
     for (int i = 0 ; i < 3; ++i) {
       F_.coeffRef(Index::Wsb + i, Index::Cg + j) = dWsb_dCg(i, j);
+    }
+  }
+  */
+  // dW_dCg (dWk_dCgij)
+  for (int k = 0; k < 3; k++) {
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        Mat3 prod = Rsb * unstack(dhat<number_t>().col(i)) * gyro(j);
+        Vec9 prod_flat = Eigen::Map<Vec9> (prod.transpose().data());
+        int offset = 3*i + j;
+        F_.coeffRef(Index::Wsb + k, Index::Cg + offset) =
+          dWsb_dRsb.row(k) * prod_flat;
+      }
     }
   }
   for (int j = 0; j < 6; ++j) {
