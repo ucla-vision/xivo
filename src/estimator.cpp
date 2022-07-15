@@ -662,6 +662,13 @@ void Estimator::ComputeMotionJacobianAt(
 
 
   // dW_dW
+  Mat93 dRsbdot_dWsb = dAB_dB<3, 3>(Rsb) * dAB_dA<3, 3>(hat(gyro_calib)) * dhat<number_t>();
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dRsb.row(i) * dRsbdot_dWsb.col(j);
+    }
+  }
+  /*
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       Mat3 coeff1 = -Rsb * hat(gyro_calib) * unstack(dhat<number_t>().col(j));
@@ -669,6 +676,7 @@ void Estimator::ComputeMotionJacobianAt(
       F_.coeffRef(Index::Wsb + i, Index::Wsb + j) = dWsb_dRsb.row(i) * coeff1_flat;
     }
   }
+  */
 
   for (int i = 0; i < 3; ++i) {
     //F_.coeffRef(Index::Wsb + j, Index::bg + j) = -1;  // dW_dbg
