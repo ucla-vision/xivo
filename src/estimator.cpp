@@ -117,6 +117,9 @@ Estimator::Estimator(const Json::Value &cfg)
       cfg_.get("compression_trigger_ratio", 1.5).asDouble();
   OOS_update_min_observations_ =
       cfg_.get("OOS_update_min_observations", 5).asInt();
+  if (use_OOS_) {
+    LOG(FATAL) << "MSCKF not implemented";
+  }
 
   // IMU clamping
   Vec3 _vec_;

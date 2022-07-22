@@ -18,7 +18,6 @@ namespace xivo {
 void Estimator::ProcessTracks(const timestamp_t &ts,
                               std::list<FeaturePtr> &tracks) {
   instate_features_.clear();
-  oos_features_.clear();
   instate_groups_.clear();
 
   // retrieve the visibility graph
@@ -71,15 +70,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       Feature::Deactivate(f);
       it = tracks.erase(it);
     } else if (!f->instate() && f->track_status() == TrackStatus::DROPPED) {
-      if (use_OOS_) {
-        // use OOS features for update
-        f->SetStatus(FeatureStatus::DROPPED);
-        oos_features_.push_back(f);
-      } else {
-        // just remove
-        graph.RemoveFeature(f);
-        Feature::Destroy(f);
-      }
+      graph.RemoveFeature(f);
+      Feature::Destroy(f);
       it = tracks.erase(it);
     } else {
 #ifndef NDEBUG
@@ -176,26 +168,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     DestroyFeatures(bad_features);
   }
 
-  // Perform depth refinement before using oos features
-  if (!oos_features_.empty() && use_depth_opt_) {
-    std::vector<FeaturePtr> bad_features;
-    for (auto it = oos_features_.begin(); it != oos_features_.end();) {
-      auto f = *it;
-      auto obs = graph.GetObservationsOf(f);
-      if (obs.size() > 1 && f->RefineDepth(gbc(), obs, refinement_options_)) {
-        ++it;
-      } else {
-        // remove those failed to be optimized in depth refinement
-        bad_features.push_back(f);
-        it = oos_features_.erase(it);
-      }
-    }
-    DestroyFeatures(bad_features);
-  }
-
   // Once we have enough instate features, perform state update
-  if (!instate_features_.empty() || !oos_features_.empty()) {
-    MakePtrVectorUnique(oos_features_);
+  if (!instate_features_.empty()) {
     MakePtrVectorUnique(instate_features_);
 
     instate_groups_ =
@@ -203,15 +177,6 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     Update(needs_new_gauge_features);
 
     MeasurementUpdateInitialized_ = true;
-  }
-
-  // remove oos features
-  for (auto f : oos_features_) {
-#ifndef NDEBUG
-    CHECK(!f->instate());
-#endif
-    graph.RemoveFeature(f);
-    Feature::Destroy(f);
   }
 
   // Post-update feature management
@@ -242,49 +207,17 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     Feature::Destroy(f);
   }
 
-  // different strategies to discard groups w & w/o OOS update
+  // We need to remove floating groups (with no instate features) and
+  // floating features (not instate and reference group is floating)
   std::vector<GroupPtr> discards;
-  if (!use_OOS_) {
-    // If OOS update is NOT used, we need to
-    // remove floating groups (with no instate features) and
-    // floating features (not instate and reference group is floating)
-    for (auto g : affected_groups) {
-      const auto &adj_f = graph.GetFeaturesOf(g);
-      if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
-            return f->ref() == g && f->instate();
-          })) {
-        discards.push_back(g);
-      }
+  for (auto g : affected_groups) {
+    const auto &adj_f = graph.GetFeaturesOf(g);
+    if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
+          return f->ref() == g && f->instate();
+        })) {
+      discards.push_back(g);
     }
-
-  } else {
-    // if not enough slots, remove old instate groups and recycle some spaces
-    std::vector<GroupPtr> groups =
-        graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
-    if (groups.size() == kMaxGroup) {
-      int oos_discard_step = cfg_.get("oos_discard_step", 3).asInt();
-      // sort such that oldest groups are at the front of the vector
-      std::sort(groups.begin(), groups.end(),
-                [](GroupPtr g1, GroupPtr g2) { return g1->id() < g2->id(); });
-      // NOTE: start with 1 is NOT a mistake, since the oldest (index 0) one
-      // should be kept
-      // (0), 1, 2, (3), 4, 5 ...
-      // bracketed indices are those to keep
-      for (int i = 1; i < groups.size(); ++i) {
-        if (i % oos_discard_step != 0) {
-          // if the group does not have instate features referring back to
-          // itself,
-          auto g = groups[i];
-          auto adj_f = graph.GetFeaturesOf(g);
-          if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
-                return f->instate() && f->ref() == g;
-              })) {
-            discards.push_back(g);
-          }
-        }
-      }
-    } // instate group size == kMaxGroup
-  }   // use_OOS
+  }
 
   // for the to-be-discarded groups, transfer ownership of features owned by
   // them. `nullref_features` contains references to features that couldn't be
@@ -300,10 +233,6 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // create a new group and associate newly detected features to the new group
   GroupPtr g = Group::Create(X_.Rsb, X_.Tsb);
   graph.AddGroup(g);
-  if (use_OOS_) {
-    // In OOS mode, always try to add groups to state.
-    AddGroupToState(g);
-  }
 
   tracks.clear(); // clear to prepare for re-assemble the feature list
   for (auto f : new_features) {
@@ -369,28 +298,26 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     }
   }
 
-  if (!use_OOS_) {
-    // remove non-reference groups
-    auto all_groups = graph.GetGroups();
-    int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
-    for (auto g : all_groups) {
-      if (g->lifetime() > max_group_lifetime) {
-        const auto &adj = graph.GetGroupAdj(g);
-        if (std::none_of(adj.begin(), adj.end(), [&graph, g](int fid) {
-              return graph.GetFeature(fid)->ref() == g;
-            })) {
-          // for groups which have no reference features, they cannot be instate
-          // anyway
+  // remove old non-reference groups
+  auto all_groups = graph.GetGroups();
+  int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
+  for (auto g : all_groups) {
+    if (g->lifetime() > max_group_lifetime) {
+      const auto &adj = graph.GetGroupAdj(g);
+      if (std::none_of(adj.begin(), adj.end(), [&graph, g](int fid) {
+            return graph.GetFeature(fid)->ref() == g;
+          })) {
+        // for groups which have no reference features, they cannot be instate
+        // anyway
 #ifndef NDEBUG
-          CHECK(!g->instate());
+        CHECK(!g->instate());
 #endif
 
 #ifdef USE_MAPPER
-          Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
+        Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
 #endif
-          graph.RemoveGroup(g);
-          Group::Deactivate(g);
-        }
+        graph.RemoveGroup(g);
+        Group::Deactivate(g);
       }
     }
   }

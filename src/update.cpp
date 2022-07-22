@@ -26,7 +26,7 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
   ProfilerStart(__PRETTY_FUNCTION__);
 #endif
 
-  if (instate_features_.empty() && oos_features_.empty())
+  if (instate_features_.empty())
     return;
 
   timer_.Tick("update");
@@ -105,29 +105,11 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
     }
   }
 
-  std::vector<FeaturePtr> active_oos_features;
-  int total_oos_jac_size{0};
-  if (use_OOS_) {
-    // std::vector<OOSJacobian> oos_jacs; // jacobians w.r.t. feature
-    // parametrization
-    for (auto f : oos_features_) {
-      auto vobs = Graph::instance()->GetObservationsOf(f);
-      int oos_jac_size = f->ComputeOOSJacobian(vobs, X_.Rbc.matrix(), X_.Tbc);
-      if (oos_jac_size > 0) {
-        total_oos_jac_size += oos_jac_size;
-        active_oos_features.push_back(f);
-      }
-    }
-    if (total_oos_jac_size > 0) {
-      LOG(INFO) << "#total_oos_jac=" << total_oos_jac_size << std::endl;
-    }
-  }
-
-  if (inliers.empty() && (!use_OOS_ || !total_oos_jac_size)) {
+  if (inliers.empty()) {
     return;
   }
 
-  int total_size = 2 * inliers.size() + total_oos_jac_size;
+  int total_size = 2 * inliers.size();
   H_.setZero(total_size, err_.size());
   inn_.setZero(total_size);
   diagR_.resize(total_size);
@@ -135,39 +117,7 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
   for (int i = 0; i < inliers.size(); ++i) {
     inliers[i]->FillJacobianBlock(H_, 2 * i); 
     inn_.segment<2>(2 * i) = inliers[i]->inn();
-    // if (outlier_thresh_ > 1.0) {
-    //   auto [robust_R, is_outlier] = HuberOnInnovation(inliers[i]->inn(), R_);
-    //   diagR_.segment<2>(2 * i) << robust_R, robust_R;
-    // } else {
-    //   diagR_.segment<2>(2 * i) << R_, R_;
-    // }
     diagR_.segment<2>(2 * i) << R_, R_;
-  }
-
-  if (total_oos_jac_size) {
-    int oos_offset = 2 * inliers.size();
-
-    for (auto f : active_oos_features) {
-      int size = f->oos_inn_size();
-      H_.block(oos_offset, 0, size, err_.size()) = f->Ho();
-      inn_.segment(oos_offset, size) = f->ro();
-      for (int i = 0; i < size; ++i) {
-        // FIXME (xfei): how to perform huber on innovation for OOS features?
-        diagR_(oos_offset + i) = Roos_;
-      }
-      oos_offset += size;
-    }
-  }
-
-  if (use_OOS_) {
-    if (use_compression_ &&
-        H_.rows() > H_.cols() * compression_trigger_ratio_) {
-      // prform measurement compression
-      int rows = QR(inn_, H_);
-      inn_ = inn_.head(rows);
-      H_ = H_.topRows(rows);
-      diagR_ = diagR_.head(rows); // FIXME: this does not seem right
-    }
   }
 
   timer_.Tick("actual-update");
