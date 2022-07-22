@@ -263,10 +263,16 @@ private:
 
   void ProcessTracks(const timestamp_t &ts, std::list<FeaturePtr> &features);
 
+  /** Computes measurement jacobians for all features in the EKF state. */
+  void ComputeInstateJacobians();
+
   /** Function that contains logic for outlier rejection, filter EKF update, and
    *  filter MSCKF update. It will mark features for removal from the state, but
    *  does not do the actual removing and does not update the graph. */
-  void Update(std::vector<GroupPtr>& needs_new_gauge_features);
+  void Update();
+
+  /** Main (simple) tool for outlier rejection */
+  std::vector<FeaturePtr> MHGating();
 
   /** Outlier rejection on `Tracker` matches. Always occurs after MH-gating. */
   std::vector<FeaturePtr>
@@ -316,6 +322,11 @@ private:
   std::vector<FeaturePtr> instate_features_; ///< in-state features
   std::vector<FeaturePtr> oos_features_;     ///< out-of-state features
   std::vector<GroupPtr> instate_groups_;     ///< in-state groups
+
+  // For feature and group management
+  std::unordered_set<GroupPtr> affected_groups_; // lost a feature and might need to be tossed
+  std::vector<GroupPtr> needs_new_gauge_features_;
+  std::vector<FeaturePtr> new_features_;
 
   /** Index of the current gauge group. It is set to -1 when we lose the current
    *  gauge group while calling `ProcessTracks`. */

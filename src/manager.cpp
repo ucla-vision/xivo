@@ -19,6 +19,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
                               std::list<FeaturePtr> &tracks) {
   instate_features_.clear();
   instate_groups_.clear();
+  affected_groups_.clear();
+  needs_new_gauge_features_.clear();
+  new_features_.clear();
 
   // retrieve the visibility graph
   Graph& graph{*Graph::instance()};
@@ -31,15 +34,6 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     g->IncrementLifetime();
   }
 
-  // which lost at least one feature and might be a floating group
-  std::unordered_set<GroupPtr> affected_groups;
-
-  // which lost a guage feature and will need new gauge features this update
-  std::vector<GroupPtr> needs_new_gauge_features;
-
-  // process instate but failed-to-be-tracked features
-  std::vector<FeaturePtr> new_features;
-  ;
   for (auto it = tracks.begin(); it != tracks.end();) {
     auto f = *it;
 
@@ -49,7 +43,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     if (f->track_status() == TrackStatus::CREATED) {
       // just created, must not included in the graph yet
-      new_features.push_back(f);
+      new_features_.push_back(f);
       it = tracks.erase(it);
     } else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
                f->track_status() == TrackStatus::REJECTED) {
@@ -61,11 +55,11 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       if (f->instate()) {
         LOG(INFO) << "Tracker rejected feature #" << f->id();
         if (f->status() == FeatureStatus::GAUGE) {
-          needs_new_gauge_features.push_back(affected_group);
+          needs_new_gauge_features_.push_back(affected_group);
           LOG(INFO) << "Group # " << affected_group->id() << " just lost a gauge feature rejected by tracker.";
         }
         RemoveFeatureFromState(f);
-        affected_groups.insert(affected_group);
+        affected_groups_.insert(affected_group);
       }
       Feature::Deactivate(f);
       it = tracks.erase(it);
@@ -160,7 +154,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #endif
         // need to add reference group to state if it's not yet instate
         AddGroupToState(f->ref());
-        needs_new_gauge_features.push_back(f->ref());
+        needs_new_gauge_features_.push_back(f->ref());
         // use up one more free slot
         --free_slots;
       }
@@ -174,7 +168,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     instate_groups_ =
         graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
-    Update(needs_new_gauge_features);
+    Update();
 
     MeasurementUpdateInitialized_ = true;
   }
@@ -199,7 +193,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifndef NDEBUG
     CHECK(f->ref() != nullptr);
 #endif
-    affected_groups.insert(f->ref());
+    affected_groups_.insert(f->ref());
   }
   graph.RemoveFeatures(rejected_features);
   for (auto f : rejected_features) {
@@ -210,7 +204,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // We need to remove floating groups (with no instate features) and
   // floating features (not instate and reference group is floating)
   std::vector<GroupPtr> discards;
-  for (auto g : affected_groups) {
+  for (auto g : affected_groups_) {
     const auto &adj_f = graph.GetFeaturesOf(g);
     if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
           return f->ref() == g && f->instate();
@@ -235,7 +229,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   graph.AddGroup(g);
 
   tracks.clear(); // clear to prepare for re-assemble the feature list
-  for (auto f : new_features) {
+  for (auto f : new_features_) {
     // distinguish two cases:
     // 1) feature is truely just created
     // 2) feature just lost its reference

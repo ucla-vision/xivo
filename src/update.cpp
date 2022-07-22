@@ -20,24 +20,27 @@
 
 namespace xivo {
 
-void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
 
-#ifdef USE_GPERFTOOLS
-  ProfilerStart(__PRETTY_FUNCTION__);
-#endif
-
-  if (instate_features_.empty())
-    return;
-
-  timer_.Tick("update");
-  std::vector<FeaturePtr> inliers; // individually compatible matches
-  std::vector<number_t> dist,
-      inlier_dist; // MH distance of features & inlier features
-
+void Estimator::ComputeInstateJacobians() {
   timer_.Tick("jacobian");
   for (auto f : instate_features_) {
-    f->ComputeJacobian(X_.Rsb.matrix(), X_.Tsb, X_.Rbc.matrix(), X_.Tbc, last_gyro_, imu_.Cg(),
-                       X_.bg, X_.Vsb, X_.td);
+    f->ComputeJacobian(X_.Rsb.matrix(), X_.Tsb, X_.Rbc.matrix(), X_.Tbc,
+                       last_gyro_, imu_.Cg(), X_.bg, X_.Vsb, X_.td);
+  }
+  timer_.Tock("jacobian");
+
+}
+
+std::vector<FeaturePtr> Estimator::MHGating() {
+
+  timer_.Tick("MH-gating");
+
+  std::vector<FeaturePtr> inliers; // individually compatible matches
+  std::vector<number_t> dist, inlier_dist; // MH distance of features & inlier features
+  int num_mh_rejected = 0;
+
+  // Compute Mahalanobis distance
+  for (auto f: instate_features_) {
     const auto &J = f->J();
     const auto &res = f->inn();
 
@@ -48,56 +51,74 @@ void Estimator::Update(std::vector<GroupPtr>& needs_new_gauge_features) {
     number_t mh_dist = res.dot(S.llt().solve(res));
     dist.push_back(mh_dist);
   }
-  timer_.Tock("jacobian");
 
-  timer_.Tick("MH-gating");
-
-  int num_mh_rejected = 0;
-  if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
-
-    number_t mh_thresh = MH_thresh_;
-    while (inliers.size() < min_required_inliers_) {
-      // reset states
-      for (auto f : instate_features_) {
-        if (f->status() != FeatureStatus::GAUGE) {
-          f->SetStatus(FeatureStatus::INSTATE);
-        }
+  // The actual gating
+  number_t mh_thresh = MH_thresh_;
+  while (inliers.size() < min_required_inliers_) {
+    // reset states
+    for (auto f : instate_features_) {
+      if (f->status() != FeatureStatus::GAUGE) {
+        f->SetStatus(FeatureStatus::INSTATE);
       }
-      inliers.clear();
-      // mark inliers
-      for (int i = 0; i < instate_features_.size(); ++i) {
-        auto f = instate_features_[i];
-        if (dist[i] < mh_thresh) {
-          inliers.push_back(f);
-        } else {
-          num_mh_rejected++;
-          if (f->status() == FeatureStatus::GAUGE) {
-            needs_new_gauge_features.push_back(f->ref());
-            LOG(INFO) << "Group # " << f->ref()->id() << " just lost a gauge feature rejected by MH-gating";
-          }
-          f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
-          LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
-        }
-      }
-      // relax the threshold
-      mh_thresh *= MH_thresh_multipler_;
     }
+    inliers.clear();
+    // mark inliers
+    for (int i = 0; i < instate_features_.size(); ++i) {
+      auto f = instate_features_[i];
+      if (dist[i] < mh_thresh) {
+        inliers.push_back(f);
+      } else {
+        num_mh_rejected++;
+        if (f->status() == FeatureStatus::GAUGE) {
+          needs_new_gauge_features_.push_back(f->ref());
+          LOG(INFO) << "Group # " << f->ref()->id() << " just lost a gauge feature rejected by MH-gating";
+        }
+        f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+        LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
+      }
+    }
+    // relax the threshold
+    mh_thresh *= MH_thresh_multipler_;
+  }
+  
+  timer_.Tock("MH-gating");
+  LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
+
+  return inliers;
+}
+
+
+
+void Estimator::Update() {
+
+#ifdef USE_GPERFTOOLS
+  ProfilerStart(__PRETTY_FUNCTION__);
+#endif
+
+  if (instate_features_.empty())
+    return;
+
+  timer_.Tick("update");
+
+
+  ComputeInstateJacobians();
+
+  // Outlier Rejection -
+  std::vector<FeaturePtr> inliers;
+  if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
+    inliers = MHGating();
   } else {
     inliers.resize(instate_features_.size());
     std::copy(instate_features_.begin(), instate_features_.end(),
               inliers.begin());
   }
-  timer_.Tock("MH-gating");
-
-  LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
-
   if (use_1pt_RANSAC_) {
-    inliers = OnePointRANSAC(inliers, needs_new_gauge_features);
+    inliers = OnePointRANSAC(inliers, needs_new_gauge_features_);
   }
 
   // find new gauge features (includes newly added groups and groups that lost
   // an existing gauge feature)
-  for (auto g: needs_new_gauge_features) {
+  for (auto g: needs_new_gauge_features_) {
     std::vector<FeaturePtr> new_gauge_feats =
       Graph::instance()->FindNewGaugeFeatures(g);
     for (auto f: new_gauge_feats) {
