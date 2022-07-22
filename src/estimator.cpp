@@ -603,7 +603,7 @@ void Estimator::ComposeMotion(State &X, const Vec3 &V,
   X.Vsb += (X.Rsb * accel_calib + X.Rsg * g_) * dt;
   X.Rsb *= SO3::exp(gyro_calib * dt);
 
-  X.Rsb = SO3::fitToSO3(X.Rsb.matrix());
+  X.Rsb.normalize();
 }
 
 void Estimator::ComputeMotionJacobianAt(

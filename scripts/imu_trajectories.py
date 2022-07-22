@@ -167,6 +167,11 @@ class LissajousSim(IMUSimBase):
     accel_b = accel_b.flatten()
 
     gyro = np.zeros(3)
+    gyro_x = 0.1*np.sin(0.3*t)
+    gyro_y = 0.1*np.cos(0.4*t)
+    gyro_z = 0.1*np.sin(0.1*t)
+    gyro = np.array([gyro_x, gyro_y, gyro_z])
+
     return (accel_b, gyro)
 
 

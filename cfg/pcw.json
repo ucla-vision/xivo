@@ -65,9 +65,9 @@
   "X" : {
     "Wsb"   : [0, 0, 0],
     "Tsb"   : [0, 0, 0],
-    // "Vsb"   : [0, 0.7, 8],   // lissajous init velocity
-    // "Vsb"    : [ 0, 10, 3], // trefoil init velocity
-    "Vsb" : [0, 0, 0],         // checkerboard trajectory
+    "Vsb"   : [0, 0.7, 8],   // lissajous init velocity
+    //"Vsb"    : [ 0, 10, 3], // trefoil init velocity
+    //"Vsb" : [0, 0, 0],         // checkerboard trajectory
     "bg"  : [0, 0, 0],
     "ba"  : [0, 0, 0],
     "Wbc" : [ -1.57079633, 0, 0 ],
@@ -77,7 +77,7 @@
   },
 
   "P" : {
-    "Wsb"   : 0.000001,
+    "Wsb"   : 0.00001,
     "Tsb"   : 0.0001,
     "Vsb"   : 0.0001,
     "bg"  : 1e-10,
@@ -114,9 +114,9 @@
   // },
 
   "Qimu": {
-    "gyro": [1e-9, 1e-9, 1e-9],
+    "gyro": [1e-3, 1e-3, 1e-3],
     "gyro_bias": [0.00, 0.00, 0.00],
-    "accel": [1e-9, 1e-9, 1e-9],
+    "accel": [1e-3, 1e-3, 1e-3],
     "accel_bias": [0.00, 0.00, 0.00]
   },
 
