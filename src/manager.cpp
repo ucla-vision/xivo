@@ -322,8 +322,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     }
 
     // Track is in the EKF state and just dropped by the tracker
-    else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
-              f->track_status() == TrackStatus::REJECTED) {
+    else if (f->instate() && f->track_status() == TrackStatus::DROPPED) {
       GroupPtr affected_group = f->ref();
 #ifdef USE_MAPPER
       Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());

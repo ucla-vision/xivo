@@ -185,8 +185,7 @@ struct State {
 enum class TrackStatus : int {
   CREATED = 0,  // feature just been detected
   TRACKED = 1,  // feature being tracked well
-  REJECTED = 2, // rejected by the tracker
-  DROPPED = 3   // out of view?
+  DROPPED = 2   // no longer in view
 };
 enum class FeatureStatus : int {
   CREATED = 0,

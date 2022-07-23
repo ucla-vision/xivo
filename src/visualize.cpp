@@ -127,8 +127,7 @@ void Canvas::Draw(const FeaturePtr f) {
     } else {
       cv::circle(disp_, cv::Point2d(pos[0], pos[1]), 2, kColorRed, -1);
     }
-  } else if (f->track_status() == TrackStatus::REJECTED ||
-             f->track_status() == TrackStatus::DROPPED) {
+  } else if (f->track_status() == TrackStatus::DROPPED) {
 
     if (use_debug_view) {
       cv::drawMarker(disp_, cv::Point2d(pos[0], pos[1]), kColorPink,

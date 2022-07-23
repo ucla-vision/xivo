@@ -759,8 +759,7 @@ void Estimator::RemoveGroupFromState(GroupPtr g) {
 void Estimator::RemoveFeatureFromState(FeaturePtr f) {
 
 #ifndef NDEBUG
-  CHECK((f->instate() && (f->track_status() == TrackStatus::REJECTED ||
-                          f->track_status() == TrackStatus::DROPPED)) ||
+  CHECK((f->instate() && (f->track_status() == TrackStatus::DROPPED)) ||
         f->status() == FeatureStatus::REJECTED_BY_FILTER);
   CHECK(f->sind() != -1) << "invalid state index";
   CHECK(fsel_[f->sind()]) << "Feature not in state?!";
@@ -1075,8 +1074,7 @@ void Estimator::VisualMeasInternalTrackerOnly(const timestamp_t &ts, const cv::M
 
   for (auto it = tracker->features_.begin(); it != tracker->features_.end();) {
     auto f = *it;
-    if (f->track_status() == TrackStatus::REJECTED ||
-        f->track_status() == TrackStatus::DROPPED)
+    if (f->track_status() == TrackStatus::DROPPED)
     {
       it = tracker->features_.erase(it);
       Feature::Destroy(f);
@@ -1217,8 +1215,7 @@ void Estimator::VisualMeasPointCloudInternalTrackerOnly(
 
   for (auto it = tracker->features_.begin(); it != tracker->features_.end();) {
     auto f = *it;
-    if (f->track_status() == TrackStatus::REJECTED ||
-        f->track_status() == TrackStatus::DROPPED)
+    if (f->track_status() == TrackStatus::DROPPED)
     {
       it = tracker->features_.erase(it);
       Feature::Destroy(f);
