@@ -44,64 +44,9 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   instate_features_ = graph.GetInstateFeatures();
 
 
-  // remaining in tracks: just created (not in graph yet) and being tracked well
-  // (may or may not be in graph, for those in graph, may or may not in state)
+  // Potentially add new features to the EKF state.
   if (instate_features_.size() < kMaxFeature) {
-    int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
-
-    // choose the instate-candidate criterion
-    auto criterion =
-      vision_counter_ < strict_criteria_timesteps_ ? Criteria::Candidate
-                                                   : Criteria::CandidateStrict;
-    auto candidates = graph.GetFeaturesIf(criterion);
-
-    MakePtrVectorUnique(candidates);
-    std::sort(candidates.begin(), candidates.end(),
-        Criteria::CandidateComparison);
-
-    std::vector<FeaturePtr> bad_features;
-
-    for (auto it = candidates.begin();
-         it != candidates.end() && instate_features_.size() < kMaxFeature;
-         ++it) {
-
-      auto f = *it;
-
-      if (use_depth_opt_) {
-        auto obs = graph.GetObservationsOf(f);
-        if (obs.size() > 1) {
-          if (!f->RefineDepth(gbc(), obs, refinement_options_)) {
-            bad_features.push_back(f);
-            continue;
-          }
-        }
-        else if (obs.size() == 0) {
-          LOG(ERROR) << "A feature with no observations should not be a candidate";
-        }
-      }
-
-      if (!f->ref()->instate() && free_slots <= 0) {
-        // If we turn this feature to instate, its reference group should
-        // also be instate, which out-number the available group slots ...
-        continue;
-      }
-
-      instate_features_.push_back(f);
-      AddFeatureToState(f); // insert f to state vector and covariance
-      if (!f->ref()->instate()) {
-#ifndef NDEBUG
-        CHECK(graph.HasGroup(f->ref()));
-        CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
-        CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
-#endif
-        // need to add reference group to state if it's not yet instate
-        AddGroupToState(f->ref());
-        needs_new_gauge_features_.push_back(f->ref());
-        // use up one more free slot
-        --free_slots;
-      }
-    }
-    DestroyFeatures(bad_features);
+    SelectAndAddNewFeatures(graph);
   }
 
   // Perform outlier rejection and EKF update with instate features.
@@ -140,7 +85,6 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   auto rejected_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
     return f->status() == FeatureStatus::REJECTED_BY_FILTER;
   });
-  // std::cout << "#rejected=" << rejected_features.size() << std::endl;
   if (use_canvas_) {
     for (auto f : rejected_features) {
       Canvas::instance()->Draw(f);
@@ -161,72 +105,18 @@ void Estimator::UpdateStep(const timestamp_t &ts,
 
   // We need to remove floating groups (with no instate features) and
   // floating features (not instate and reference group is floating)
-  std::vector<GroupPtr> discards;
-  for (auto g : affected_groups_) {
-    const auto &adj_f = graph.GetFeaturesOf(g);
-    if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
-          return f->ref() == g && f->instate();
-        })) {
-      discards.push_back(g);
-    }
-  }
+  DiscardAffectedGroups(graph);
 
-  // for the to-be-discarded groups, transfer ownership of features owned by
-  // them. `nullref_features` contains references to features that couldn't be
-  // assigned to a new group without errors.
-  std::vector<FeaturePtr> nullref_features = FindNewOwnersForFeaturesOf(discards);
-  DiscardFeatures(nullref_features);
-  DiscardGroups(discards);
-  for (auto nf: nullref_features) {
-    LOG(INFO) << "Removed nullref feature " << nf->id();
-  }
-
-  // initialize those newly detected featuers
-  // create a new group and associate newly detected features to the new group
+  // Create a new group for this pose. Initialize with the newly updated
+  // value of Rsb and Tsb
   GroupPtr g = Group::Create(X_.Rsb, X_.Tsb);
   graph.AddGroup(g);
 
-  tracks.clear(); // clear to prepare for re-assemble the feature list
-  for (auto f : new_features_) {
-    // distinguish two cases:
-    // 1) feature is truely just created
-    // 2) feature just lost its reference
-#ifndef NDEBUG
-    CHECK(f->track_status() == TrackStatus::CREATED &&
-          f->status() == FeatureStatus::CREATED);
-    CHECK(f->ref() == nullptr);
-#endif
-    f->SetRef(g);
-    if (triangulate_pre_subfilter_ && !f->TriangulationSuccessful()) {
-      f->Initialize(init_z_, {init_std_x_badtri_, init_std_y_badtri_, init_std_z_badtri_});
-    } else {
-      f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
-    }
-    //std::cout << "feature id: " << f->id() << ", Xc" << f->Xc().transpose() << std::endl;
-
-    graph.AddFeature(f);
-    graph.AddFeatureToGroup(f, g);
-    graph.AddGroupToFeature(g, f);
-
-    // put back the detected feature
-    tracks.push_back(f);
-  }
-
-  auto tracked_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
-    return f->track_status() == TrackStatus::TRACKED;
-  });
-  for (auto f : tracked_features) {
-#ifndef NDEBUG
-    CHECK(f->ref() != nullptr);
-#endif
-
-    // attach the new group to all the features being tracked
-    graph.AddFeatureToGroup(f, g);
-    graph.AddGroupToFeature(g, f);
-
-    // put back the tracked feature
-    tracks.push_back(f);
-  }
+  // reassemble the tracker's feature list with newly created features and
+  // currently tracked features
+  tracks.clear();
+  InitializeJustCreatedTracks(graph, g, tracks);
+  AssociateTrackedFeaturesWithGroup(graph, g, tracks);
 
   // adapt initial depth to average depth of features currently visible
   AdaptInitialDepth(graph);
@@ -400,5 +290,147 @@ void Estimator::EnforceMaxGroupLifetime(Graph &graph) {
     }
   }
 }
+
+
+
+void Estimator::DiscardAffectedGroups(Graph &graph) {
+  std::vector<GroupPtr> discards;
+  for (auto g : affected_groups_) {
+    const auto &adj_f = graph.GetFeaturesOf(g);
+    if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
+          return f->ref() == g && f->instate();
+        })) {
+      discards.push_back(g);
+    }
+  }
+
+  // for the to-be-discarded groups, transfer ownership of features owned by
+  // them. `nullref_features` contains references to features that couldn't be
+  // assigned to a new group without errors.
+  std::vector<FeaturePtr> nullref_features = FindNewOwnersForFeaturesOf(discards);
+  DiscardFeatures(nullref_features);
+  DiscardGroups(discards);
+  for (auto nf: nullref_features) {
+    LOG(INFO) << "Removed nullref feature " << nf->id();
+  }
+}
+
+
+
+void Estimator::SelectAndAddNewFeatures(Graph &graph) {
+  int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
+
+  // choose the instate-candidate criterion
+  auto criterion =
+    vision_counter_ < strict_criteria_timesteps_ ? Criteria::Candidate
+                                                  : Criteria::CandidateStrict;
+  auto candidates = graph.GetFeaturesIf(criterion);
+
+  MakePtrVectorUnique(candidates);
+  std::sort(candidates.begin(), candidates.end(),
+      Criteria::CandidateComparison);
+
+  std::vector<FeaturePtr> bad_features;
+
+  for (auto it = candidates.begin();
+        it != candidates.end() && instate_features_.size() < kMaxFeature;
+        ++it) {
+
+    auto f = *it;
+
+    if (use_depth_opt_) {
+      auto obs = graph.GetObservationsOf(f);
+      if (obs.size() > 1) {
+        if (!f->RefineDepth(gbc(), obs, refinement_options_)) {
+          bad_features.push_back(f);
+          continue;
+        }
+      }
+      else if (obs.size() == 0) {
+        LOG(ERROR) << "A feature with no observations should not be a candidate";
+      }
+    }
+
+    if (!f->ref()->instate() && free_slots <= 0) {
+      // If we turn this feature to instate, its reference group should
+      // also be instate, which out-number the available group slots ...
+      continue;
+    }
+
+    instate_features_.push_back(f);
+    AddFeatureToState(f); // insert f to state vector and covariance
+    if (!f->ref()->instate()) {
+#ifndef NDEBUG
+      CHECK(graph.HasGroup(f->ref()));
+      CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
+      CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
+#endif
+      // need to add reference group to state if it's not yet instate
+      AddGroupToState(f->ref());
+      needs_new_gauge_features_.push_back(f->ref());
+      // use up one more free slot
+      --free_slots;
+    }
+  }
+  DestroyFeatures(bad_features);
+}
+
+
+
+void Estimator::InitializeJustCreatedTracks(Graph &graph,
+                                            GroupPtr g,
+                                            std::list<FeaturePtr> &tracks)
+{
+  for (auto f : new_features_) {
+    // distinguish two cases:
+    // 1) feature is truely just created
+    // 2) feature just lost its reference
+#ifndef NDEBUG
+    CHECK(f->track_status() == TrackStatus::CREATED &&
+          f->status() == FeatureStatus::CREATED);
+    CHECK(f->ref() == nullptr);
+#endif
+    f->SetRef(g);
+    if (triangulate_pre_subfilter_ && !f->TriangulationSuccessful()) {
+      f->Initialize(init_z_, {init_std_x_badtri_, init_std_y_badtri_, init_std_z_badtri_});
+    } else {
+      f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
+    }
+    //std::cout << "feature id: " << f->id() << ", Xc" << f->Xc().transpose() << std::endl;
+
+    graph.AddFeature(f);
+    graph.AddFeatureToGroup(f, g);
+    graph.AddGroupToFeature(g, f);
+
+    // put back the detected feature
+    tracks.push_back(f);
+  }
+
+}
+
+
+
+void Estimator::AssociateTrackedFeaturesWithGroup(Graph &graph,
+                                                  GroupPtr g,
+                                                  std::list<FeaturePtr> &tracks)
+{
+  auto tracked_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
+    return f->track_status() == TrackStatus::TRACKED;
+  });
+  for (auto f : tracked_features) {
+#ifndef NDEBUG
+    CHECK(f->ref() != nullptr);
+#endif
+
+    // attach the new group to all the features being tracked
+    graph.AddFeatureToGroup(f, g);
+    graph.AddGroupToFeature(g, f);
+
+    // put back the tracked feature
+    tracks.push_back(f);
+  }
+
+}
+
 
 } // namespace xivo

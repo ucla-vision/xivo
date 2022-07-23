@@ -268,6 +268,14 @@ private:
   void ProcessTracks(const timestamp_t &ts, std::list<FeaturePtr> &features);
   void AdaptInitialDepth(Graph &graph);
   void EnforceMaxGroupLifetime(Graph &graph);
+  void DiscardAffectedGroups(Graph &graph);
+  void SelectAndAddNewFeatures(Graph &graph);
+  void InitializeJustCreatedTracks(Graph &graph,
+                                   GroupPtr g,
+                                   std::list<FeaturePtr> &tracks);
+  void AssociateTrackedFeaturesWithGroup(Graph &graph,
+                                         GroupPtr g,
+                                         std::list<FeaturePtr> &tracks);
 
   /** Computes measurement jacobians for all features in the EKF state. */
   void ComputeInstateJacobians();
