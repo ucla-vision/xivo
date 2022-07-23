@@ -24,3 +24,5 @@ doc/latex/
 *.out
 *.pdf
 *.synctex.gz
+
+tumvi_*

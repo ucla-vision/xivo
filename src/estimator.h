@@ -266,6 +266,8 @@ private:
   void UpdateStep(const timestamp_t &ts, std::list<FeaturePtr> &features);
 
   void ProcessTracks(const timestamp_t &ts, std::list<FeaturePtr> &features);
+  void AdaptInitialDepth(Graph &graph);
+  void EnforceMaxGroupLifetime(Graph &graph);
 
   /** Computes measurement jacobians for all features in the EKF state. */
   void ComputeInstateJacobians();
@@ -273,7 +275,7 @@ private:
   /** Function that contains logic for outlier rejection, filter EKF update, and
    *  filter MSCKF update. It will mark features for removal from the state, but
    *  does not do the actual removing and does not update the graph. */
-  void Update();
+  void FilterUpdate();
 
   /** Main (simple) tool for outlier rejection */
   std::vector<FeaturePtr> MHGating();

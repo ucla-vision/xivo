@@ -89,7 +89,7 @@ std::vector<FeaturePtr> Estimator::MHGating() {
 
 
 
-void Estimator::Update() {
+void Estimator::FilterUpdate() {
 
 #ifdef USE_GPERFTOOLS
   ProfilerStart(__PRETTY_FUNCTION__);

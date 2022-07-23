@@ -38,14 +38,14 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     g->IncrementLifetime();
   }
 
-  // Based on 
+  // Based on feature's TrackStatus and FeatureStatus, will delete feature,
+  // update subfilter, etc.
   ProcessTracks(ts, tracks);
+  instate_features_ = graph.GetInstateFeatures();
 
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)
-  instate_features_ = graph.GetInstateFeatures();
-
   if (instate_features_.size() < kMaxFeature) {
     int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
 
@@ -125,7 +125,7 @@ void Estimator::UpdateStep(const timestamp_t &ts,
 
     if (!inliers_.empty()) {
       instate_groups_ = graph.GetInstateGroups();
-      Update();
+      FilterUpdate();
     }
 
     MeasurementUpdateInitialized_ = true;
@@ -229,50 +229,10 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   }
 
   // adapt initial depth to average depth of features currently visible
-  auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
-    return f->instate() ||
-           (f->status() == FeatureStatus::READY &&
-            f->lifetime() > adaptive_initial_depth_options_.min_feature_lifetime);
-  });
-  if (!depth_features.empty()) {
-    std::vector<number_t> depth(depth_features.size());
-    std::transform(depth_features.begin(), depth_features.end(), depth.begin(),
-                   [](FeaturePtr f) { return f->z(); });
-    number_t median_depth = depth[depth.size() >> 1];
-
-    if (median_depth < min_z_ || median_depth > max_z_) {
-      VLOG(0) << "Median depth out of bounds: " << median_depth;
-      VLOG(0) << "Reuse the old one: " << init_z_;
-    } else {
-      number_t beta = adaptive_initial_depth_options_.median_weight;
-      init_z_ = (1.0-beta) * init_z_ + beta * median_depth;
-      VLOG(0) << "Update aptive initial depth: " << init_z_;
-    }
-  }
+  AdaptInitialDepth(graph);
 
   // remove old non-reference groups
-  auto all_groups = graph.GetGroups();
-  int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
-  for (auto g : all_groups) {
-    if (g->lifetime() > max_group_lifetime) {
-      const auto &adj = graph.GetGroupAdj(g);
-      if (std::none_of(adj.begin(), adj.end(), [&graph, g](int fid) {
-            return graph.GetFeature(fid)->ref() == g;
-          })) {
-        // for groups which have no reference features, they cannot be instate
-        // anyway
-#ifndef NDEBUG
-        CHECK(!g->instate());
-#endif
-
-#ifdef USE_MAPPER
-        Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
-#endif
-        graph.RemoveGroup(g);
-        Group::Deactivate(g);
-      }
-    }
-  }
+  EnforceMaxGroupLifetime(graph);
 
   // std::cout << "#groups=" << graph.GetGroups().size() << std::endl;
   // check & clean graph
@@ -287,12 +247,14 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   //   Group::Delete(g);
   // }
 
+  // Update Visualization
   if (use_canvas_) {
-    for (auto f : tracks) 
+    for (auto f : tracks) {
       Canvas::instance()->Draw(f);
-
-    Canvas::instance()->OverlayStateInfo(X_, imu_.State(),
-      CameraManager::instance()->GetIntrinsics());
+    }
+    Canvas::instance()->OverlayStateInfo(
+      X_, imu_.State(), CameraManager::instance()->GetIntrinsics()
+    );
   }
 
   static int print_counter{0};
@@ -323,20 +285,19 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     // Track is in the EKF state and just dropped by the tracker
     else if (f->instate() && f->track_status() == TrackStatus::DROPPED) {
-      GroupPtr affected_group = f->ref();
 #ifdef USE_MAPPER
       Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
 #endif
       graph.RemoveFeature(f);
-      if (f->instate()) {
-        LOG(INFO) << "Tracker rejected feature #" << f->id();
-        if (f->status() == FeatureStatus::GAUGE) {
-          needs_new_gauge_features_.push_back(affected_group);
-          LOG(INFO) << "Group # " << affected_group->id() << " just lost a gauge feature rejected by tracker.";
-        }
-        RemoveFeatureFromState(f);
-        affected_groups_.insert(affected_group);
+
+      LOG(INFO) << "Tracker rejected feature #" << f->id();
+      if (f->status() == FeatureStatus::GAUGE) {
+        needs_new_gauge_features_.push_back(f->ref());
+        LOG(INFO) << "Group # " << f->ref()->id() << " just lost a gauge feature rejected by tracker.";
       }
+      RemoveFeatureFromState(f);
+      affected_groups_.insert(f->ref());
+
       Feature::Deactivate(f);
       it = tracks.erase(it);
     }
@@ -348,44 +309,96 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
       it = tracks.erase(it);
     }
 
+    // instate feature being tracked -- use in measurement update later on
+    else if (f->instate() && f->track_status() == TrackStatus::TRACKED) {
+      ++it;
+    }
+
     // Track is an "initializing" feature that has been tracked - update the
     // Subfilter. Feature will be removed if Mahalanobis gating in the
     // subfilter determines that it is an outlier.
     else {
 #ifndef NDEBUG
       CHECK(f->track_status() == TrackStatus::TRACKED);
+      CHECK(!f->instate());
 #endif
-      if (f->instate()) {
-        // instate feature being tracked -- use in measurement update later on
-        ++it;
-      } else {
-#ifndef NDEBUG
-        CHECK(!f->instate());
-#endif
-
-        // perform triangulation before
-        if (triangulate_pre_subfilter_ && f->size() == 2) {
-          // got a second view, triangulate!
-          f->Triangulate(gsb(), gbc(), triangulate_options_);
-        }
-
-        // out-of-state feature, run depth subfilter to improve depth ...
-        f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
-
-        if (f->outlier_counter() > remove_outlier_counter_) {
-          graph.RemoveFeature(f);
-          Feature::Destroy(f);
-          it = tracks.erase(it);
-        } else {
-          ++it;
-        }
+      // perform triangulation if we've observed the feature exactly twice
+      // so far 
+      if (triangulate_pre_subfilter_ && f->size() == 2) {
+        f->Triangulate(gsb(), gbc(), triangulate_options_);
       }
+
+      // run depth subfilter to improve depth ...
+      f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
+
+      // Mark feature as outlier if its total MH distance (calculated using
+      // subfilter covariance) is too high
+      if (f->outlier_counter() > remove_outlier_counter_) {
+        graph.RemoveFeature(f);
+        Feature::Destroy(f);
+        it = tracks.erase(it);
+      } else {
+        ++it;
+      }
+
     } // end track status
 
   } // end for loop
 
+} // end ProcessTracks
+
+
+
+
+void Estimator::AdaptInitialDepth(Graph &graph) {
+  auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
+    return f->instate() ||
+           (f->status() == FeatureStatus::READY &&
+            f->lifetime() > adaptive_initial_depth_options_.min_feature_lifetime);
+  });
+  if (!depth_features.empty()) {
+    std::vector<number_t> depth(depth_features.size());
+    std::transform(depth_features.begin(), depth_features.end(), depth.begin(),
+                   [](FeaturePtr f) { return f->z(); });
+    number_t median_depth = depth[depth.size() >> 1];
+
+    if (median_depth < min_z_ || median_depth > max_z_) {
+      VLOG(0) << "Median depth out of bounds: " << median_depth;
+      VLOG(0) << "Reuse the old one: " << init_z_;
+    } else {
+      number_t beta = adaptive_initial_depth_options_.median_weight;
+      init_z_ = (1.0-beta) * init_z_ + beta * median_depth;
+      VLOG(0) << "Update aptive initial depth: " << init_z_;
+    }
+  }
+
 }
 
 
+
+void Estimator::EnforceMaxGroupLifetime(Graph &graph) {
+  auto all_groups = graph.GetGroups();
+  int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
+  for (auto g : all_groups) {
+    if (g->lifetime() > max_group_lifetime) {
+      const auto &adj = graph.GetGroupAdj(g);
+      if (std::none_of(adj.begin(), adj.end(), [&graph, g](int fid) {
+            return graph.GetFeature(fid)->ref() == g;
+          })) {
+        // for groups which have no reference features, they cannot be instate
+        // anyway
+#ifndef NDEBUG
+        CHECK(!g->instate());
+#endif
+
+#ifdef USE_MAPPER
+        Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
+#endif
+        graph.RemoveGroup(g);
+        Group::Deactivate(g);
+      }
+    }
+  }
+}
 
 } // namespace xivo
