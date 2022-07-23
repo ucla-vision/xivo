@@ -261,6 +261,10 @@ private:
   /** perform one-step in RK4 integration (4 inner steps) */
   void RK4Step(const Vec3 &gyro0, const Vec3 &accel0, number_t dt);
 
+  /** Top-level function for EKF update phase. Calls ProcessTracks, outlier
+   *  rejection, EKF measurement update, and bookkeeps features and groups. */
+  void UpdateStep(const timestamp_t &ts, std::list<FeaturePtr> &features);
+
   void ProcessTracks(const timestamp_t &ts, std::list<FeaturePtr> &features);
 
   /** Computes measurement jacobians for all features in the EKF state. */
@@ -276,8 +280,7 @@ private:
 
   /** Outlier rejection on `Tracker` matches. Always occurs after MH-gating. */
   std::vector<FeaturePtr>
-  OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches,
-                 std::vector<GroupPtr> &needs_new_gauge_features);
+  OnePointRANSAC(const std::vector<FeaturePtr> &ic_matches);
   std::tuple<number_t, bool> HuberOnInnovation(const Vec2 &inn, number_t Rviz);
 
   void UpdateSystemClock(const timestamp_t &now);
@@ -327,9 +330,10 @@ private:
   std::unordered_set<GroupPtr> affected_groups_; // lost a feature and might need to be tossed
   std::vector<GroupPtr> needs_new_gauge_features_;
   std::vector<FeaturePtr> new_features_;
+  std::vector<FeaturePtr> inliers_;
 
   /** Index of the current gauge group. It is set to -1 when we lose the current
-   *  gauge group while calling `ProcessTracks`. */
+   *  gauge group while calling `UpdateStep`. */
   int gauge_group_;
   GroupPtr gauge_group_ptr_;
 

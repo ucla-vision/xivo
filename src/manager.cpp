@@ -15,13 +15,17 @@
 
 namespace xivo {
 
-void Estimator::ProcessTracks(const timestamp_t &ts,
-                              std::list<FeaturePtr> &tracks) {
+void Estimator::UpdateStep(const timestamp_t &ts,
+                           std::list<FeaturePtr> &tracks) {
+
+  // Data structures for bookkeeping features and groups as we add and remove
+  // them from the state.
   instate_features_.clear();
   instate_groups_.clear();
   affected_groups_.clear();
   needs_new_gauge_features_.clear();
   new_features_.clear();
+  inliers_.clear();
 
   // retrieve the visibility graph
   Graph& graph{*Graph::instance()};
@@ -34,71 +38,9 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     g->IncrementLifetime();
   }
 
-  for (auto it = tracks.begin(); it != tracks.end();) {
-    auto f = *it;
+  // Based on 
+  ProcessTracks(ts, tracks);
 
-    // if (use_canvas_) {
-    //   Canvas::instance()->Draw(f);
-    // }
-
-    if (f->track_status() == TrackStatus::CREATED) {
-      // just created, must not included in the graph yet
-      new_features_.push_back(f);
-      it = tracks.erase(it);
-    } else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
-               f->track_status() == TrackStatus::REJECTED) {
-      GroupPtr affected_group = f->ref();
-#ifdef USE_MAPPER
-      Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
-#endif
-      graph.RemoveFeature(f);
-      if (f->instate()) {
-        LOG(INFO) << "Tracker rejected feature #" << f->id();
-        if (f->status() == FeatureStatus::GAUGE) {
-          needs_new_gauge_features_.push_back(affected_group);
-          LOG(INFO) << "Group # " << affected_group->id() << " just lost a gauge feature rejected by tracker.";
-        }
-        RemoveFeatureFromState(f);
-        affected_groups_.insert(affected_group);
-      }
-      Feature::Deactivate(f);
-      it = tracks.erase(it);
-    } else if (!f->instate() && f->track_status() == TrackStatus::DROPPED) {
-      graph.RemoveFeature(f);
-      Feature::Destroy(f);
-      it = tracks.erase(it);
-    } else {
-#ifndef NDEBUG
-      CHECK(f->track_status() == TrackStatus::TRACKED);
-#endif
-      if (f->instate()) {
-        // instate feature being tracked -- use in measurement update later on
-        ++it;
-      } else {
-#ifndef NDEBUG
-        CHECK(!f->instate());
-#endif
-
-        // perform triangulation before
-        if (triangulate_pre_subfilter_ && f->size() == 2) {
-          // got a second view, triangulate!
-          f->Triangulate(gsb(), gbc(), triangulate_options_);
-        }
-
-        // out-of-state feature, run depth subfilter to improve depth ...
-        f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
-        // std::cout << "outlier score=" << f->outlier_counter() << std::endl;
-
-        if (f->outlier_counter() > remove_outlier_counter_) {
-          graph.RemoveFeature(f);
-          Feature::Destroy(f);
-          it = tracks.erase(it);
-        } else {
-          ++it;
-        }
-      }
-    }
-  }
 
   // remaining in tracks: just created (not in graph yet) and being tracked well
   // (may or may not be in graph, for those in graph, may or may not in state)
@@ -162,13 +104,29 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
     DestroyFeatures(bad_features);
   }
 
-  // Once we have enough instate features, perform state update
+  // Perform outlier rejection and EKF update with instate features.
   if (!instate_features_.empty()) {
     MakePtrVectorUnique(instate_features_);
 
-    instate_groups_ =
-        graph.GetGroupsIf([](GroupPtr g) { return g->instate(); });
-    Update();
+    // Compute Jacobians
+    ComputeInstateJacobians();
+
+    // Outlier Rejection -
+    if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
+      inliers_ = MHGating();
+    } else {
+      inliers_.resize(instate_features_.size());
+      std::copy(instate_features_.begin(), instate_features_.end(),
+                inliers_.begin());
+    }
+    if (use_1pt_RANSAC_) {
+      inliers_ = OnePointRANSAC(inliers_);
+    }
+
+    if (!inliers_.empty()) {
+      instate_groups_ = graph.GetInstateGroups();
+      Update();
+    }
 
     MeasurementUpdateInitialized_ = true;
   }
@@ -346,5 +304,89 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
   // Save the frame (only if set to true in json file)
   Canvas::instance()->SaveFrame();
 }
+
+
+
+void Estimator::ProcessTracks(const timestamp_t &ts,
+                              std::list<FeaturePtr> &tracks) 
+{
+  Graph& graph{*Graph::instance()};
+
+  for (auto it = tracks.begin(); it != tracks.end();) {
+    auto f = *it;
+
+    // Track just created, must not included in the graph yet
+    if (f->track_status() == TrackStatus::CREATED) {
+      new_features_.push_back(f);
+      it = tracks.erase(it);
+    }
+
+    // Track is in the EKF state and just dropped by the tracker
+    else if ((f->instate() && f->track_status() == TrackStatus::DROPPED) ||
+              f->track_status() == TrackStatus::REJECTED) {
+      GroupPtr affected_group = f->ref();
+#ifdef USE_MAPPER
+      Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
+#endif
+      graph.RemoveFeature(f);
+      if (f->instate()) {
+        LOG(INFO) << "Tracker rejected feature #" << f->id();
+        if (f->status() == FeatureStatus::GAUGE) {
+          needs_new_gauge_features_.push_back(affected_group);
+          LOG(INFO) << "Group # " << affected_group->id() << " just lost a gauge feature rejected by tracker.";
+        }
+        RemoveFeatureFromState(f);
+        affected_groups_.insert(affected_group);
+      }
+      Feature::Deactivate(f);
+      it = tracks.erase(it);
+    }
+
+    // Track is not in the EKF state and just dropped by tracker
+    else if (!f->instate() && f->track_status() == TrackStatus::DROPPED) {
+      graph.RemoveFeature(f);
+      Feature::Destroy(f);
+      it = tracks.erase(it);
+    }
+
+    // Track is an "initializing" feature that has been tracked - update the
+    // Subfilter. Feature will be removed if Mahalanobis gating in the
+    // subfilter determines that it is an outlier.
+    else {
+#ifndef NDEBUG
+      CHECK(f->track_status() == TrackStatus::TRACKED);
+#endif
+      if (f->instate()) {
+        // instate feature being tracked -- use in measurement update later on
+        ++it;
+      } else {
+#ifndef NDEBUG
+        CHECK(!f->instate());
+#endif
+
+        // perform triangulation before
+        if (triangulate_pre_subfilter_ && f->size() == 2) {
+          // got a second view, triangulate!
+          f->Triangulate(gsb(), gbc(), triangulate_options_);
+        }
+
+        // out-of-state feature, run depth subfilter to improve depth ...
+        f->SubfilterUpdate(gsb(), gbc(), subfilter_options_);
+
+        if (f->outlier_counter() > remove_outlier_counter_) {
+          graph.RemoveFeature(f);
+          Feature::Destroy(f);
+          it = tracks.erase(it);
+        } else {
+          ++it;
+        }
+      }
+    } // end track status
+
+  } // end for loop
+
+}
+
+
 
 } // namespace xivo

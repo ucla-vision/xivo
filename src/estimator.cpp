@@ -1130,7 +1130,7 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
     timer_.Tock("track");
     // process features
     timer_.Tick("process-tracks");
-    ProcessTracks(ts, tracker->features_);
+    UpdateStep(ts, tracker->features_);
     timer_.Tock("process-tracks");
 
     if (gauge_group_ == -1) {
@@ -1172,7 +1172,7 @@ void Estimator::VisualMeasPointCloudInternal(
     timer_.Tock("track");
     // process features
     timer_.Tick("process-tracks");
-    ProcessTracks(ts, tracker->features_);
+    UpdateStep(ts, tracker->features_);
     timer_.Tock("process-tracks");
 
     if (gauge_group_ == -1) {

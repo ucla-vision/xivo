@@ -95,26 +95,7 @@ void Estimator::Update() {
   ProfilerStart(__PRETTY_FUNCTION__);
 #endif
 
-  if (instate_features_.empty())
-    return;
-
   timer_.Tick("update");
-
-
-  ComputeInstateJacobians();
-
-  // Outlier Rejection -
-  std::vector<FeaturePtr> inliers;
-  if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
-    inliers = MHGating();
-  } else {
-    inliers.resize(instate_features_.size());
-    std::copy(instate_features_.begin(), instate_features_.end(),
-              inliers.begin());
-  }
-  if (use_1pt_RANSAC_) {
-    inliers = OnePointRANSAC(inliers, needs_new_gauge_features_);
-  }
 
   // find new gauge features (includes newly added groups and groups that lost
   // an existing gauge feature)
@@ -125,19 +106,15 @@ void Estimator::Update() {
       FixFeatureXY(f);
     }
   }
-
-  if (inliers.empty()) {
-    return;
-  }
-
-  int total_size = 2 * inliers.size();
+ 
+  int total_size = 2 * inliers_.size();
   H_.setZero(total_size, err_.size());
   inn_.setZero(total_size);
   diagR_.resize(total_size);
 
-  for (int i = 0; i < inliers.size(); ++i) {
-    inliers[i]->FillJacobianBlock(H_, 2 * i); 
-    inn_.segment<2>(2 * i) = inliers[i]->inn();
+  for (int i = 0; i < inliers_.size(); ++i) {
+    inliers_[i]->FillJacobianBlock(H_, 2 * i); 
+    inn_.segment<2>(2 * i) = inliers_[i]->inn();
     diagR_.segment<2>(2 * i) << R_, R_;
   }
 
@@ -215,8 +192,7 @@ void Estimator::CloseLoopInternal(GroupPtr g, std::vector<LCMatch>& matched_feat
 
 
 std::vector<FeaturePtr>
-Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers,
-                          std::vector<GroupPtr> &needs_new_gauge_features) {
+Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   if (mh_inliers.empty())
     return mh_inliers;
   // Reference:
@@ -358,7 +334,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers,
           hi_inliers.push_back(f);
         } else {
           if (f->status() == FeatureStatus::GAUGE) {
-            needs_new_gauge_features.push_back(f->ref());
+            needs_new_gauge_features_.push_back(f->ref());
             LOG(INFO) << "Group # " << f->ref()->id() << " just lost a guage feature rejected by one-pt ransac";
           }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
