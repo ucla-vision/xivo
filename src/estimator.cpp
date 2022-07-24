@@ -902,7 +902,7 @@ void Estimator::AbsorbError(const VecX &err) {
     //   std::endl;
     // }
   }
-  for (auto f : instate_features_) {
+  for (auto f : inliers_) {
 #ifndef NDEBUG
     CHECK(f->sind() != -1);
 #endif

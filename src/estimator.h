@@ -276,6 +276,7 @@ private:
   void AssociateTrackedFeaturesWithGroup(Graph &graph,
                                          GroupPtr g,
                                          std::list<FeaturePtr> &tracks);
+  void OutlierRejection(Graph &graph);
 
   /** Computes measurement jacobians for all features in the EKF state. */
   void ComputeInstateJacobians();

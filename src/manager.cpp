@@ -49,59 +49,28 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     SelectAndAddNewFeatures(graph);
   }
 
+  // Compute Jacobians of all instate features, including those just added
+  ComputeInstateJacobians();
+
   // Perform outlier rejection and EKF update with instate features.
+  // This edits the vector `inliers_`.
   if (!instate_features_.empty()) {
     MakePtrVectorUnique(instate_features_);
-
-    // Compute Jacobians
-    ComputeInstateJacobians();
-
-    // Outlier Rejection -
-    if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
-      inliers_ = MHGating();
-    } else {
-      inliers_.resize(instate_features_.size());
-      std::copy(instate_features_.begin(), instate_features_.end(),
-                inliers_.begin());
-    }
-    if (use_1pt_RANSAC_) {
-      inliers_ = OnePointRANSAC(inliers_);
-    }
-
-    if (!inliers_.empty()) {
-      instate_groups_ = graph.GetInstateGroups();
-      FilterUpdate();
-    }
-
-    MeasurementUpdateInitialized_ = true;
+    OutlierRejection(graph);
   }
+
+  if (!inliers_.empty()) {
+    instate_groups_ = graph.GetInstateGroups();
+    FilterUpdate();
+  }
+
+  MeasurementUpdateInitialized_ = true;
 
   // Post-update feature management
   // For instate features rejected by the filter,
   // 1) remove the fetaure from features_ and free state & covariance
   // 2) detach the feature from the reference group
   // 3) remove the group if it lost all the instate features
-
-  auto rejected_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
-    return f->status() == FeatureStatus::REJECTED_BY_FILTER;
-  });
-  if (use_canvas_) {
-    for (auto f : rejected_features) {
-      Canvas::instance()->Draw(f);
-    }
-  }
-  LOG(INFO) << "Removed " << rejected_features.size() << " rejected features";
-  for (auto f : rejected_features) {
-#ifndef NDEBUG
-    CHECK(f->ref() != nullptr);
-#endif
-    affected_groups_.insert(f->ref());
-  }
-  graph.RemoveFeatures(rejected_features);
-  for (auto f : rejected_features) {
-    RemoveFeatureFromState(f);
-    Feature::Destroy(f);
-  }
 
   // We need to remove floating groups (with no instate features) and
   // floating features (not instate and reference group is floating)
@@ -431,6 +400,46 @@ void Estimator::AssociateTrackedFeaturesWithGroup(Graph &graph,
   }
 
 }
+
+
+
+void Estimator::OutlierRejection(Graph &graph) {
+  // Call outlier rejection algorithms
+  if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
+    inliers_ = MHGating();
+  } else {
+    inliers_.resize(instate_features_.size());
+    std::copy(instate_features_.begin(), instate_features_.end(),
+              inliers_.begin());
+  }
+  if (use_1pt_RANSAC_) {
+    inliers_ = OnePointRANSAC(inliers_);
+  }
+
+  // Remove rejected features from the state
+  auto rejected_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
+    return f->status() == FeatureStatus::REJECTED_BY_FILTER;
+  });
+  if (use_canvas_) {
+    for (auto f : rejected_features) {
+      Canvas::instance()->Draw(f);
+    }
+  }
+  LOG(INFO) << "Removed " << rejected_features.size() << " rejected features";
+  for (auto f : rejected_features) {
+#ifndef NDEBUG
+    CHECK(f->ref() != nullptr);
+#endif
+    affected_groups_.insert(f->ref());
+  }
+  graph.RemoveFeatures(rejected_features);
+  for (auto f : rejected_features) {
+    RemoveFeatureFromState(f);
+    Feature::Destroy(f);
+  }
+
+}
+
 
 
 } // namespace xivo
