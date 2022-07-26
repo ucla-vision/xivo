@@ -263,27 +263,15 @@ void Estimator::EnforceMaxGroupLifetime(Graph &graph) {
 
 
 void Estimator::DiscardAffectedGroups(Graph &graph) {
-  std::vector<GroupPtr> discards;
   for (auto g : affected_groups_) {
     const auto &adj_f = graph.GetFeaturesOf(g);
     int num_instate_features_of_g = std::count_if(adj_f.begin(), adj_f.end(),
         [g](FeaturePtr f) { return ((f->ref() == g) && f->instate()); } );
-    //if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
-    //      return f->ref() == g && f->instate();
-    //    })) {
     if (num_instate_features_of_g < num_gauge_xy_features_) {
-      discards.push_back(g);
+      std::vector<FeaturePtr> nullrefs = FindNewOwnersForFeaturesOf(g);
+      DiscardFeatures(nullrefs);
+      DiscardGroup(g);
     }
-  }
-
-  // for the to-be-discarded groups, transfer ownership of features owned by
-  // them. `nullref_features` contains references to features that couldn't be
-  // assigned to a new group without errors.
-  std::vector<FeaturePtr> nullref_features = FindNewOwnersForFeaturesOf(discards);
-  DiscardFeatures(nullref_features);
-  DiscardGroups(discards);
-  for (auto nf: nullref_features) {
-    LOG(INFO) << "Removed nullref feature " << nf->id();
   }
 }
 

@@ -1293,39 +1293,31 @@ std::tuple<number_t, bool> Estimator::HuberOnInnovation(const Vec2 &inn,
   return std::make_tuple(robust_Rviz, outlier);
 }
 
-std::vector<FeaturePtr>
-Estimator::FindNewOwnersForFeaturesOf(const std::vector<GroupPtr> &discards) {
-  std::vector<FeaturePtr> nullref_features;
-  Graph& graph{*Graph::instance()};
-  for (auto g : discards) {
-    // transfer ownership of the remaining features whose reference is this one
-    auto failed = graph.TransferFeatureOwnership(
-      g, gbc(), feature_owner_change_cov_factor_);
-    nullref_features.insert(nullref_features.end(), failed.begin(),
-                            failed.end());
 
-  }
-  MakePtrVectorUnique(nullref_features);
+std::vector<FeaturePtr> Estimator::FindNewOwnersForFeaturesOf(const GroupPtr g) {
+  Graph& graph{*Graph::instance()};
+  std::vector<FeaturePtr> nullref_features;
+  auto failed =
+    graph.TransferFeatureOwnership(g, gbc(), feature_owner_change_cov_factor_);
+  nullref_features.insert(nullref_features.end(), failed.begin(), failed.end());
   return nullref_features;
 }
 
 
-void Estimator::DiscardGroups(const std::vector<GroupPtr> &discards) {
+void Estimator::DiscardGroup(const GroupPtr g) {
   Graph& graph{*Graph::instance()};
-  for (auto g: discards) {
-    if (g->id() == gauge_group_) {
-      // just lost the gauge group
-      gauge_group_ = -1;
-    }
-#ifdef USE_MAPPER
-    Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
-#endif
-    graph.RemoveGroup(g);
-    if (g->instate()) {
-      RemoveGroupFromState(g);
-    }
-    Group::Deactivate(g);
+  if (g->id() == gauge_group_) {
+    // just lost the gauge group
+    gauge_group_ = -1;
   }
+#ifdef USE_MAPPER
+  Mapper::instance()->AddGroup(g, graph.GetGroupAdj(g));
+#endif
+  graph.RemoveGroup(g);
+  if (g->instate()) {
+    RemoveGroupFromState(g);
+  }
+  Group::Deactivate(g);
 }
 
 
