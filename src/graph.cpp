@@ -112,6 +112,35 @@ std::vector<FeaturePtr> Graph::GetGaugeFeatureCandidates(GroupPtr owner) {
 }
 
 
+std::vector<FeaturePtr> Graph::GetFeaturesOwnedBy(GroupPtr g) {
+  return GetFeaturesIf([g](FeaturePtr f) -> bool {
+    return (f->ref() == g);
+  });
+}
+
+
+std::vector<FeaturePtr> Graph::GetFeatureCandidatesOwnedBy(GroupPtr g) {
+  return GetFeaturesIf([g](FeaturePtr f) -> bool {
+    return ((f->ref() == g) && (f->status() == FeatureStatus::READY));
+  });
+}
+
+
+int Graph::NumFeaturesOwnedBy(GroupPtr g) {
+  return GetFeaturesOwnedBy(g).size();
+}
+
+
+std::vector<GroupPtr> Graph::GetInstateGroupCandidates(int degrees_fixed) {
+  return GetGroupsIf(
+    [degrees_fixed, this](GroupPtr g) -> bool {
+      return ((g->status() == GroupStatus::CREATED) &&
+              (NumFeaturesOwnedBy(g) >= degrees_fixed));
+    }
+  );
+}
+
+
 void Graph::SanityCheck() {
   for (auto p : features_) {
     int fid = p.first;
@@ -186,11 +215,12 @@ GroupPtr Graph::FindNewOwner(FeaturePtr f) {
   auto old_gid = f->ref()->id();
   for (const auto &obs : feature_adj_.at(fid)) {
     int gid = obs.first;
-    if (gid != old_gid) {
+    GroupPtr g = groups_.at(gid);
+    if ((gid != old_gid) && (g->status() == GroupStatus::INSTATE)) {
       // TODO: can have fancy measure on which group should be the best to be
       // the new owner
       // For now, just pick the first one met.
-      return groups_.at(gid);
+      return g;
     }
   }
   return nullptr;

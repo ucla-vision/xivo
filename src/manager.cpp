@@ -266,9 +266,12 @@ void Estimator::DiscardAffectedGroups(Graph &graph) {
   std::vector<GroupPtr> discards;
   for (auto g : affected_groups_) {
     const auto &adj_f = graph.GetFeaturesOf(g);
-    if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
-          return f->ref() == g && f->instate();
-        })) {
+    int num_instate_features_of_g = std::count_if(adj_f.begin(), adj_f.end(),
+        [g](FeaturePtr f) { return ((f->ref() == g) && f->instate()); } );
+    //if (std::none_of(adj_f.begin(), adj_f.end(), [g](FeaturePtr f) {
+    //      return f->ref() == g && f->instate();
+    //    })) {
+    if (num_instate_features_of_g < num_gauge_xy_features_) {
       discards.push_back(g);
     }
   }
@@ -287,23 +290,51 @@ void Estimator::DiscardAffectedGroups(Graph &graph) {
 
 
 void Estimator::SelectAndAddNewFeatures(Graph &graph) {
-  int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
+  // First, try to add features that are already owned by an existing group.
+  // Then, try to add an entire new group at once.
 
-  // choose the instate-candidate criterion
-  auto criterion =
+  int free_group_slots = std::count(gsel_.begin(), gsel_.end(), false);
+  int free_feature_slots = kMaxFeature - instate_features_.size();
+
+  if (free_feature_slots < num_gauge_xy_features_) {
+    AddFeaturesWithInGroups(graph);
+  }
+  else if (free_group_slots == 0) {
+    AddFeaturesWithInGroups(graph);
+  }
+  else {
+    AddGroupOfFeatures(graph, free_group_slots);
+    AddFeaturesWithInGroups(graph);
+  }
+
+}
+
+
+void Estimator::AddFeaturesWithInGroups(Graph &graph) {
+
+  // choose the candidates
+  auto vision_counter_criterion =
     vision_counter_ < strict_criteria_timesteps_ ? Criteria::Candidate
                                                   : Criteria::CandidateStrict;
-  auto candidates = graph.GetFeaturesIf(criterion);
+  auto criterion = vision_counter_criterion;
+  auto ref_group_is_instate = [](FeaturePtr f) { return f->ref()->instate(); };
+  auto candidates = graph.GetFeaturesIf(
+      [criterion, ref_group_is_instate](FeaturePtr f) {
+        return (criterion(f) && ref_group_is_instate(f));
+      }
+    );
 
+  // Sort candidates by metric (default: DepthUncertainty)
   MakePtrVectorUnique(candidates);
   std::sort(candidates.begin(), candidates.end(),
       Criteria::CandidateComparison);
 
+  // For depth refinement
   std::vector<FeaturePtr> bad_features;
 
   for (auto it = candidates.begin();
-        it != candidates.end() && instate_features_.size() < kMaxFeature;
-        ++it) {
+       it != candidates.end() && instate_features_.size() < kMaxFeature;
+       ++it) {
 
     auto f = *it;
 
@@ -320,28 +351,75 @@ void Estimator::SelectAndAddNewFeatures(Graph &graph) {
       }
     }
 
-    if (!f->ref()->instate() && free_slots <= 0) {
-      // If we turn this feature to instate, its reference group should
-      // also be instate, which out-number the available group slots ...
-      continue;
-    }
-
     instate_features_.push_back(f);
     AddFeatureToState(f); // insert f to state vector and covariance
-    if (!f->ref()->instate()) {
-#ifndef NDEBUG
-      CHECK(graph.HasGroup(f->ref()));
-      CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
-      CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
-#endif
-      // need to add reference group to state if it's not yet instate
-      AddGroupToState(f->ref());
-      needs_new_gauge_features_.push_back(f->ref());
-      // use up one more free slot
-      --free_slots;
-    }
+
   }
   DestroyFeatures(bad_features);
+}
+
+
+void Estimator::AddGroupOfFeatures(Graph &graph, int free_group_slots) {
+#ifndef NDEBUG
+  CHECK(instate_features_.size() <= (kMaxFeature - num_gauge_xy_features_));
+  CHECK(free_group_slots > 0);
+#endif
+
+  // total number of features we need to add
+  int num_features_to_add = kMaxFeature - instate_features_.size();
+
+  // Get all candidate groups
+  auto candidates = graph.GetInstateGroupCandidates(num_gauge_xy_features_);
+
+  // Sort groups by the number of features that they own (none of these
+  // features should be instate). Comparison function returns True when g1 is
+  // better than g2
+  auto comp_fun = [&](GroupPtr g1, GroupPtr g2) {
+    int nf1 = graph.NumFeaturesOwnedBy(g1);
+    int nf2 = graph.NumFeaturesOwnedBy(g2);
+    return (nf1 > nf2);
+  };
+  std::sort(candidates.begin(), candidates.end(), comp_fun);
+
+  // For each group add all the features.
+  for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+    auto g = *it;
+
+    // Add group of features
+    std::vector<FeaturePtr> features_of_group = graph.GetFeatureCandidatesOwnedBy(g);
+    std::sort(features_of_group.begin(), features_of_group.end(),
+              Criteria::CandidateComparison);
+    for (auto f: features_of_group) {
+      AddFeatureToState(f);
+      instate_features_.push_back(f);
+
+      num_features_to_add--;
+      if (num_features_to_add == 0) {
+        break;
+      }
+    }
+
+    // Add group
+    AddGroupToState(g);
+    needs_new_gauge_features_.push_back(g);
+
+    // Check whether or not we're done
+    free_group_slots--;
+    if ((num_features_to_add==0) || (free_group_slots==0)) {
+      break;
+    }
+  }
+
+//    if (!f->ref()->instate()) {
+//#ifndef NDEBUG
+//      CHECK(graph.HasGroup(f->ref()));
+//      CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
+//      CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
+//#endif
+//      // need to add reference group to state if it's not yet instate
+//      AddGroupToState(f->ref());
+//      needs_new_gauge_features_.push_back(f->ref());
+//    }
 }
 
 

@@ -270,6 +270,8 @@ private:
   void EnforceMaxGroupLifetime(Graph &graph);
   void DiscardAffectedGroups(Graph &graph);
   void SelectAndAddNewFeatures(Graph &graph);
+  void AddFeaturesWithInGroups(Graph &graph);
+  void AddGroupOfFeatures(Graph &graph, int free_group_slots);
   void InitializeJustCreatedTracks(Graph &graph,
                                    GroupPtr g,
                                    std::list<FeaturePtr> &tracks);
@@ -354,6 +356,10 @@ private:
    *  bit of wiggle room. (Corvis always fixes 4 no matter what.)
   */
   int group_degrees_fixed_;
+
+  /** Number of features to hold as gauge features in each group.
+   *  3 = "correct" */
+  int num_gauge_xy_features_;
 
 private:
   Config cfg_;        // this is just a reference of the global parameter server

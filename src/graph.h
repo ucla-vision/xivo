@@ -66,6 +66,10 @@ public:
   std::vector<FeaturePtr> GetInstateFeatures();
   std::vector<GroupPtr> GetInstateGroups();
   std::vector<FeaturePtr> GetGaugeFeatureCandidates(GroupPtr owner);
+  std::vector<GroupPtr> GetInstateGroupCandidates(int degrees_fixed);
+  std::vector<FeaturePtr> GetFeaturesOwnedBy(GroupPtr g);
+  int NumFeaturesOwnedBy(GroupPtr g);
+  std::vector<FeaturePtr> GetFeatureCandidatesOwnedBy(GroupPtr g);
 
   GroupPtr LastAddedGroup() const { return last_added_group_; }
 

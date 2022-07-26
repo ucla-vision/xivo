@@ -373,11 +373,11 @@ Estimator::Estimator(const Json::Value &cfg)
     cfg_.get("filter_owner_change_cov_factor", 1.5).asDouble();
   strict_criteria_timesteps_ = cfg_.get("strict_criteria_timesteps", 5).asInt();
 
-  // Feature Gauge Options (just checks)
-  int num_gauge_xy_features = cfg_.get("num_gauge_xy_features", 3).asInt();
+  // Feature Gauge Options
+  num_gauge_xy_features_ = cfg_.get("num_gauge_xy_features", 3).asInt();
   number_t collinear_cross_prod_thresh =
     cfg_.get("collinear_cross_prod_thresh", 1e-3).asDouble();
-  if ((num_gauge_xy_features < 0) || (num_gauge_xy_features > 3)) {
+  if ((num_gauge_xy_features_ < 0) || (num_gauge_xy_features_ > 3)) {
     LOG(FATAL) << "Number of XY Gauge Features must be between 0 and 3";
   }
 
@@ -760,7 +760,8 @@ void Estimator::RemoveFeatureFromState(FeaturePtr f) {
 
 #ifndef NDEBUG
   CHECK((f->instate() && (f->track_status() == TrackStatus::DROPPED)) ||
-        f->status() == FeatureStatus::REJECTED_BY_FILTER);
+        (f->status() == FeatureStatus::REJECTED_BY_FILTER) ||
+        (std::count(affected_groups_.begin(), affected_groups_.end(), f->ref()) > 0));
   CHECK(f->sind() != -1) << "invalid state index";
   CHECK(fsel_[f->sind()]) << "Feature not in state?!";
 #endif

@@ -13,7 +13,7 @@
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
-  "use_depth_opt": true,  // depth optimization
+  "use_depth_opt": false,  // depth optimization
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,
   "use_compression": false,  // measurement compression
@@ -204,7 +204,7 @@
 
   // "Correct" means 3 XY gauge features. But sometimes the filter works better
   // with fewer fixed degrees of freedom.
-  "num_gauge_xy_features": 0,
+  "num_gauge_xy_features": 3,
   "collinear_cross_prod_thresh": 0.001,
 
   "tracker_cfg": {
