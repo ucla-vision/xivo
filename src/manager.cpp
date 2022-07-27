@@ -23,7 +23,6 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   instate_features_.clear();
   instate_groups_.clear();
   affected_groups_.clear();
-  needs_new_gauge_features_.clear();
   new_features_.clear();
   inliers_.clear();
 
@@ -59,6 +58,11 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     OutlierRejection();
   }
 
+  // We need to remove floating groups (with no instate features) and
+  // floating features (not instate and reference group is floating)
+  DiscardAffectedGroups();
+  FindNewGaugeFeatures();
+
   if (!inliers_.empty()) {
     instate_groups_ = graph.GetInstateGroups();
     FilterUpdate();
@@ -72,9 +76,6 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   // 2) detach the feature from the reference group
   // 3) remove the group if it lost all the instate features
 
-  // We need to remove floating groups (with no instate features) and
-  // floating features (not instate and reference group is floating)
-  DiscardAffectedGroups();
 
   // Create a new group for this pose. Initialize with the newly updated
   // value of Rsb and Tsb
@@ -590,6 +591,10 @@ void Estimator::OutlierRejection() {
               inliers_.begin());
   }
   if (use_1pt_RANSAC_) {
+    // Since One-Pt RANSAC is a global measurement update, we need to make sure it's observable.
+    DiscardAffectedGroups();
+    FindNewGaugeFeatures();
+
     inliers_ = OnePointRANSAC(inliers_);
   }
 

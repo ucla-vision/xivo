@@ -13,7 +13,7 @@
   // algorithmic-level knobs
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
-  "use_depth_opt": true,  // depth optimization
+  "use_depth_opt": false,  // depth optimization
   "use_MH_gating": true,
   "use_1pt_RANSAC": false,
   "use_compression": false,  // measurement compression

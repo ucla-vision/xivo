@@ -31,6 +31,22 @@ void Estimator::ComputeInstateJacobians() {
 
 }
 
+
+void Estimator::FindNewGaugeFeatures() {
+  // find new gauge features (includes newly added groups and groups that lost
+  // an existing gauge feature)
+  for (auto g: needs_new_gauge_features_) {
+    std::vector<FeaturePtr> new_gauge_feats =
+      Graph::instance()->FindNewGaugeFeatures(g);
+    for (auto f: new_gauge_feats) {
+      FixFeatureXY(f);
+    }
+  }
+
+  needs_new_gauge_features_.clear();
+}
+
+
 std::vector<FeaturePtr> Estimator::MHGating() {
 
   timer_.Tick("MH-gating");
@@ -97,15 +113,6 @@ void Estimator::FilterUpdate() {
 
   timer_.Tick("update");
 
-  // find new gauge features (includes newly added groups and groups that lost
-  // an existing gauge feature)
-  for (auto g: needs_new_gauge_features_) {
-    std::vector<FeaturePtr> new_gauge_feats =
-      Graph::instance()->FindNewGaugeFeatures(g);
-    for (auto f: new_gauge_feats) {
-      FixFeatureXY(f);
-    }
-  }
  
   int total_size = 2 * inliers_.size();
   H_.setZero(total_size, err_.size());
@@ -338,6 +345,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
             LOG(INFO) << "Group # " << f->ref()->id() << " just lost a guage feature rejected by one-pt ransac";
           }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+          affected_groups_.insert(f->ref());
           LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";
         }
       }

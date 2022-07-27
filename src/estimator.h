@@ -278,6 +278,7 @@ private:
   void AssociateTrackedFeaturesWithGroup(GroupPtr g,
                                          std::list<FeaturePtr> &tracks);
   void OutlierRejection();
+  void FindNewGaugeFeatures();
 
   /** Computes measurement jacobians for all features in the EKF state. */
   void ComputeInstateJacobians();
