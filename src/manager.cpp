@@ -435,9 +435,9 @@ void Estimator::AddGroupOfFeatures(int free_group_slots) {
   // Sort groups by the number of features that they own (none of these
   // features should be instate). Comparison function returns True when g1 is
   // better than g2
-  auto comp_fun = [&](GroupPtr g1, GroupPtr g2) {
-    int nf1 = graph.NumFeaturesOwnedBy(g1);
-    int nf2 = graph.NumFeaturesOwnedBy(g2);
+  auto comp_fun = [&graph](GroupPtr g1, GroupPtr g2) {
+    int nf1 = graph.NumFeatureCandidatesOwnedBy(g1);
+    int nf2 = graph.NumFeatureCandidatesOwnedBy(g2);
     return (nf1 > nf2);
   };
   std::sort(candidates.begin(), candidates.end(), comp_fun);
@@ -463,24 +463,14 @@ void Estimator::AddGroupOfFeatures(int free_group_slots) {
     // Add group
     AddGroupToState(g);
     needs_new_gauge_features_.push_back(g);
+    LOG(INFO) << "group #" << g->id() << " added to EKF state" << std::endl;
 
     // Check whether or not we're done
     free_group_slots--;
-    if ((num_features_to_add==0) || (free_group_slots==0)) {
+    if ((num_features_to_add < num_gauge_xy_features_) || (free_group_slots==0)) {
       break;
     }
   }
-
-//    if (!f->ref()->instate()) {
-//#ifndef NDEBUG
-//      CHECK(graph.HasGroup(f->ref()));
-//      CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
-//      CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
-//#endif
-//      // need to add reference group to state if it's not yet instate
-//      AddGroupToState(f->ref());
-//      needs_new_gauge_features_.push_back(f->ref());
-//    }
 }
 
 

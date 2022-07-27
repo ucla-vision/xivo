@@ -126,6 +126,11 @@ std::vector<FeaturePtr> Graph::GetFeatureCandidatesOwnedBy(GroupPtr g) {
 }
 
 
+int Graph::NumFeatureCandidatesOwnedBy(GroupPtr g) {
+  return GetFeatureCandidatesOwnedBy(g).size();
+}
+
+
 int Graph::NumFeaturesOwnedBy(GroupPtr g) {
   return GetFeaturesOwnedBy(g).size();
 }
@@ -135,7 +140,7 @@ std::vector<GroupPtr> Graph::GetInstateGroupCandidates(int degrees_fixed) {
   return GetGroupsIf(
     [degrees_fixed, this](GroupPtr g) -> bool {
       return ((g->status() == GroupStatus::CREATED) &&
-              (NumFeaturesOwnedBy(g) >= degrees_fixed));
+              (NumFeatureCandidatesOwnedBy(g) >= degrees_fixed));
     }
   );
 }
