@@ -450,14 +450,58 @@ void Estimator::AddGroupOfFeatures(int free_group_slots) {
     std::vector<FeaturePtr> features_of_group = graph.GetFeatureCandidatesOwnedBy(g);
     std::sort(features_of_group.begin(), features_of_group.end(),
               Criteria::CandidateComparison);
-    for (auto f: features_of_group) {
-      AddFeatureToState(f);
-      instate_features_.push_back(f);
 
-      num_features_to_add--;
-      if (num_features_to_add == 0) {
-        break;
+    // case 1: we're using depth optimization -- which means that we'll only add
+    // the group if enough features optimize well.
+    if (use_depth_opt_) {
+      std::vector<FeaturePtr> good_features;
+      std::vector<FeaturePtr> bad_features;
+      for (auto f: features_of_group) {
+        auto obs = graph.GetObservationsOf(f);
+        if (obs.size() > 1) {
+          if (!f->RefineDepth(gbc(), obs, refinement_options_)) {
+            bad_features.push_back(f);
+            continue;
+          } else {
+            good_features.push_back(f);
+          }
+        }
+        else {
+          LOG(ERROR) << "A feature with no observations should not be a candidate";
+        }
       }
+      if (good_features.size() >= num_gauge_xy_features_) {
+        int num_features_added = 0;
+        for (auto f: good_features) {
+          AddFeatureToState(f);
+          instate_features_.push_back(f);
+          num_features_to_add--;
+          num_features_added++;
+          if (num_features_to_add == 0) {
+            break;
+          }
+        }
+        LOG(INFO) << "Added " << num_features_added << " features from group " << g->id();
+      }
+      else {
+        DestroyFeatures(bad_features);
+        affected_groups_.insert(g);
+      }
+    }
+
+    // No depth optimization = the simple case.
+    else {
+      int num_features_added = 0;
+      for (auto f: features_of_group) {
+        AddFeatureToState(f);
+        instate_features_.push_back(f);
+        num_features_added++;
+        num_features_to_add--;
+        if (num_features_to_add == 0) {
+          break;
+        }
+      }
+      LOG(INFO) << "Added " << num_features_added << " features from group " << g->id();
     }
 
     // Add group
