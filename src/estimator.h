@@ -266,19 +266,18 @@ private:
   void UpdateStep(const timestamp_t &ts, std::list<FeaturePtr> &features);
 
   void ProcessTracks(const timestamp_t &ts, std::list<FeaturePtr> &features);
-  void AdaptInitialDepth(Graph &graph);
-  void EnforceMaxGroupLifetime(Graph &graph);
-  void DiscardAffectedGroups(Graph &graph);
-  void SelectAndAddNewFeatures(Graph &graph);
-  void AddFeaturesWithInGroups(Graph &graph);
-  void AddGroupOfFeatures(Graph &graph, int free_group_slots);
-  void InitializeJustCreatedTracks(Graph &graph,
-                                   GroupPtr g,
+  void AdaptInitialDepth();
+  void EnforceMaxGroupLifetime();
+  void DiscardAffectedGroups();
+  void SelectAndAddNewFeatures();
+  void ZeroGaugeXYAddFeatures();
+  void AddFeaturesWithInGroups();
+  void AddGroupOfFeatures(int free_group_slots);
+  void InitializeJustCreatedTracks(GroupPtr g,
                                    std::list<FeaturePtr> &tracks);
-  void AssociateTrackedFeaturesWithGroup(Graph &graph,
-                                         GroupPtr g,
+  void AssociateTrackedFeaturesWithGroup(GroupPtr g,
                                          std::list<FeaturePtr> &tracks);
-  void OutlierRejection(Graph &graph);
+  void OutlierRejection();
 
   /** Computes measurement jacobians for all features in the EKF state. */
   void ComputeInstateJacobians();

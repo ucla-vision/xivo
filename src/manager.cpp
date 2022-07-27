@@ -46,7 +46,7 @@ void Estimator::UpdateStep(const timestamp_t &ts,
 
   // Potentially add new features to the EKF state.
   if (instate_features_.size() < kMaxFeature) {
-    SelectAndAddNewFeatures(graph);
+    SelectAndAddNewFeatures();
   }
 
   // Compute Jacobians of all instate features, including those just added
@@ -56,7 +56,7 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   // This edits the vector `inliers_`.
   if (!instate_features_.empty()) {
     MakePtrVectorUnique(instate_features_);
-    OutlierRejection(graph);
+    OutlierRejection();
   }
 
   if (!inliers_.empty()) {
@@ -74,7 +74,7 @@ void Estimator::UpdateStep(const timestamp_t &ts,
 
   // We need to remove floating groups (with no instate features) and
   // floating features (not instate and reference group is floating)
-  DiscardAffectedGroups(graph);
+  DiscardAffectedGroups();
 
   // Create a new group for this pose. Initialize with the newly updated
   // value of Rsb and Tsb
@@ -84,14 +84,14 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   // reassemble the tracker's feature list with newly created features and
   // currently tracked features
   tracks.clear();
-  InitializeJustCreatedTracks(graph, g, tracks);
-  AssociateTrackedFeaturesWithGroup(graph, g, tracks);
+  InitializeJustCreatedTracks(g, tracks);
+  AssociateTrackedFeaturesWithGroup(g, tracks);
 
   // adapt initial depth to average depth of features currently visible
-  AdaptInitialDepth(graph);
+  AdaptInitialDepth();
 
   // remove old non-reference groups
-  EnforceMaxGroupLifetime(graph);
+  EnforceMaxGroupLifetime();
 
   // std::cout << "#groups=" << graph.GetGroups().size() << std::endl;
   // check & clean graph
@@ -209,7 +209,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
 
 
-void Estimator::AdaptInitialDepth(Graph &graph) {
+void Estimator::AdaptInitialDepth() {
+  Graph& graph{*Graph::instance()};
   auto depth_features = graph.GetFeaturesIf([this](FeaturePtr f) -> bool {
     return f->instate() ||
            (f->status() == FeatureStatus::READY &&
@@ -235,7 +236,8 @@ void Estimator::AdaptInitialDepth(Graph &graph) {
 
 
 
-void Estimator::EnforceMaxGroupLifetime(Graph &graph) {
+void Estimator::EnforceMaxGroupLifetime() {
+  Graph& graph{*Graph::instance()};
   auto all_groups = graph.GetGroups();
   int max_group_lifetime = cfg_.get("max_group_lifetime", 1).asInt();
   for (auto g : all_groups) {
@@ -262,12 +264,14 @@ void Estimator::EnforceMaxGroupLifetime(Graph &graph) {
 
 
 
-void Estimator::DiscardAffectedGroups(Graph &graph) {
+void Estimator::DiscardAffectedGroups() {
+  Graph& graph{*Graph::instance()};
   for (auto g : affected_groups_) {
     const auto &adj_f = graph.GetFeaturesOf(g);
     int num_instate_features_of_g = std::count_if(adj_f.begin(), adj_f.end(),
         [g](FeaturePtr f) { return ((f->ref() == g) && f->instate()); } );
-    if (num_instate_features_of_g < num_gauge_xy_features_) {
+    if ((num_instate_features_of_g < num_gauge_xy_features_) ||
+        ((num_gauge_xy_features_ == 0) && (num_instate_features_of_g == 0))) {
       std::vector<FeaturePtr> nullrefs = FindNewOwnersForFeaturesOf(g);
       DiscardFeatures(nullrefs);
       DiscardGroup(g);
@@ -277,28 +281,34 @@ void Estimator::DiscardAffectedGroups(Graph &graph) {
 
 
 
-void Estimator::SelectAndAddNewFeatures(Graph &graph) {
+void Estimator::SelectAndAddNewFeatures() {
+  Graph& graph{*Graph::instance()};
+
   // First, try to add features that are already owned by an existing group.
   // Then, try to add an entire new group at once.
 
   int free_group_slots = std::count(gsel_.begin(), gsel_.end(), false);
   int free_feature_slots = kMaxFeature - instate_features_.size();
 
-  if (free_feature_slots < num_gauge_xy_features_) {
-    AddFeaturesWithInGroups(graph);
+  if (num_gauge_xy_features_ == 0) {
+    ZeroGaugeXYAddFeatures();
+  }
+  else if (free_feature_slots < num_gauge_xy_features_) {
+    AddFeaturesWithInGroups();
   }
   else if (free_group_slots == 0) {
-    AddFeaturesWithInGroups(graph);
+    AddFeaturesWithInGroups();
   }
   else {
-    AddGroupOfFeatures(graph, free_group_slots);
-    AddFeaturesWithInGroups(graph);
+    AddGroupOfFeatures(free_group_slots);
+    AddFeaturesWithInGroups();
   }
 
 }
 
 
-void Estimator::AddFeaturesWithInGroups(Graph &graph) {
+void Estimator::AddFeaturesWithInGroups() {
+  Graph& graph{*Graph::instance()};
 
   // choose the candidates
   auto vision_counter_criterion =
@@ -347,7 +357,70 @@ void Estimator::AddFeaturesWithInGroups(Graph &graph) {
 }
 
 
-void Estimator::AddGroupOfFeatures(Graph &graph, int free_group_slots) {
+void Estimator::ZeroGaugeXYAddFeatures() {
+  Graph& graph{*Graph::instance()};
+
+  int free_slots = std::count(gsel_.begin(), gsel_.end(), false);
+
+  // choose the instate-candidate criterion
+  auto criterion =
+    vision_counter_ < strict_criteria_timesteps_ ? Criteria::Candidate
+                                                  : Criteria::CandidateStrict;
+  auto candidates = graph.GetFeaturesIf(criterion);
+
+  MakePtrVectorUnique(candidates);
+  std::sort(candidates.begin(), candidates.end(),
+      Criteria::CandidateComparison);
+
+  std::vector<FeaturePtr> bad_features;
+
+  for (auto it = candidates.begin();
+        it != candidates.end() && instate_features_.size() < kMaxFeature;
+        ++it) {
+
+    auto f = *it;
+
+    if (use_depth_opt_) {
+      auto obs = graph.GetObservationsOf(f);
+      if (obs.size() > 1) {
+        if (!f->RefineDepth(gbc(), obs, refinement_options_)) {
+          bad_features.push_back(f);
+          continue;
+        }
+      }
+      else if (obs.size() == 0) {
+        LOG(ERROR) << "A feature with no observations should not be a candidate";
+      }
+    }
+
+    if (!f->ref()->instate() && free_slots <= 0) {
+      // If we turn this feature to instate, its reference group should
+      // also be instate, which out-number the available group slots ...
+      continue;
+    }
+
+    instate_features_.push_back(f);
+    AddFeatureToState(f); // insert f to state vector and covariance
+    if (!f->ref()->instate()) {
+#ifndef NDEBUG
+      CHECK(graph.HasGroup(f->ref()));
+      CHECK(graph.GetGroupAdj(f->ref()).count(f->id()));
+      CHECK(graph.GetFeatureAdj(f).count(f->ref()->id()));
+#endif
+      // need to add reference group to state if it's not yet instate
+      AddGroupToState(f->ref());
+      needs_new_gauge_features_.push_back(f->ref());
+      // use up one more free slot
+      --free_slots;
+    }
+  }
+  DestroyFeatures(bad_features);
+}
+
+
+void Estimator::AddGroupOfFeatures(int free_group_slots) {
+  Graph& graph{*Graph::instance()};
+
 #ifndef NDEBUG
   CHECK(instate_features_.size() <= (kMaxFeature - num_gauge_xy_features_));
   CHECK(free_group_slots > 0);
@@ -412,10 +485,11 @@ void Estimator::AddGroupOfFeatures(Graph &graph, int free_group_slots) {
 
 
 
-void Estimator::InitializeJustCreatedTracks(Graph &graph,
-                                            GroupPtr g,
+void Estimator::InitializeJustCreatedTracks(GroupPtr g,
                                             std::list<FeaturePtr> &tracks)
 {
+  Graph& graph{*Graph::instance()};
+
   for (auto f : new_features_) {
     // distinguish two cases:
     // 1) feature is truely just created
@@ -445,10 +519,11 @@ void Estimator::InitializeJustCreatedTracks(Graph &graph,
 
 
 
-void Estimator::AssociateTrackedFeaturesWithGroup(Graph &graph,
-                                                  GroupPtr g,
+void Estimator::AssociateTrackedFeaturesWithGroup(GroupPtr g,
                                                   std::list<FeaturePtr> &tracks)
 {
+  Graph& graph{*Graph::instance()};
+
   auto tracked_features = graph.GetFeaturesIf([](FeaturePtr f) -> bool {
     return f->track_status() == TrackStatus::TRACKED;
   });
@@ -469,7 +544,9 @@ void Estimator::AssociateTrackedFeaturesWithGroup(Graph &graph,
 
 
 
-void Estimator::OutlierRejection(Graph &graph) {
+void Estimator::OutlierRejection() {
+  Graph& graph{*Graph::instance()};
+
   // Call outlier rejection algorithms
   if (use_MH_gating_ && instate_features_.size() > min_required_inliers_) {
     inliers_ = MHGating();
