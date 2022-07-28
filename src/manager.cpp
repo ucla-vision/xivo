@@ -25,6 +25,7 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   affected_groups_.clear();
   new_features_.clear();
   inliers_.clear();
+  in_current_ekf_update_.clear();
 
   // retrieve the visibility graph
   Graph& graph{*Graph::instance()};
@@ -63,7 +64,15 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   DiscardAffectedGroups();
   FindNewGaugeFeatures();
 
-  if (!inliers_.empty()) {
+  // Final step before update: make sure NULLREFED features aren't used
+  // in EKF update
+  for (auto f: inliers_) {
+    if (f->instate()) {
+      in_current_ekf_update_.push_back(f);
+    }
+  }
+
+  if (!in_current_ekf_update_.empty()) {
     instate_groups_ = graph.GetInstateGroups();
     FilterUpdate();
   }
@@ -275,6 +284,9 @@ void Estimator::DiscardAffectedGroups() {
         ((num_gauge_xy_features_ == 0) && (num_instate_features_of_g == 0))) {
       std::vector<FeaturePtr> nullrefs = FindNewOwnersForFeaturesOf(g);
       DiscardFeatures(nullrefs);
+      for (auto f: nullrefs) {
+        f->SetStatus(FeatureStatus::NULLREFED);
+      }
       DiscardGroup(g);
     }
   }

@@ -344,6 +344,7 @@ private:
   std::vector<GroupPtr> needs_new_gauge_features_;
   std::vector<FeaturePtr> new_features_;
   std::vector<FeaturePtr> inliers_;
+  std::vector<FeaturePtr> in_current_ekf_update_;
 
   /** Index of the current gauge group. It is set to -1 when we lose the current
    *  gauge group while calling `UpdateStep`. */

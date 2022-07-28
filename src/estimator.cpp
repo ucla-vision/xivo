@@ -903,7 +903,7 @@ void Estimator::AbsorbError(const VecX &err) {
     //   std::endl;
     // }
   }
-  for (auto f : inliers_) {
+  for (auto f : in_current_ekf_update_) {
 #ifndef NDEBUG
     CHECK(f->sind() != -1);
 #endif

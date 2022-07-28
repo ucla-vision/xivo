@@ -114,14 +114,14 @@ void Estimator::FilterUpdate() {
   timer_.Tick("update");
 
  
-  int total_size = 2 * inliers_.size();
+  int total_size = 2 * in_current_ekf_update_.size();
   H_.setZero(total_size, err_.size());
   inn_.setZero(total_size);
   diagR_.resize(total_size);
 
-  for (int i = 0; i < inliers_.size(); ++i) {
-    inliers_[i]->FillJacobianBlock(H_, 2 * i); 
-    inn_.segment<2>(2 * i) = inliers_[i]->inn();
+  for (int i = 0; i < in_current_ekf_update_.size(); ++i) {
+    in_current_ekf_update_[i]->FillJacobianBlock(H_, 2 * i);
+    inn_.segment<2>(2 * i) = in_current_ekf_update_[i]->inn();
     diagR_.segment<2>(2 * i) << R_, R_;
   }
 
