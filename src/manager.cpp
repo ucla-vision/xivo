@@ -43,10 +43,24 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   ProcessTracks(ts, tracks);
   instate_features_ = graph.GetInstateFeatures();
 
+  auto sum = [](std::array<bool, kMaxFeature> ff) {
+    int cnt = 0;
+    for (auto d: ff) {
+      if (d)
+        cnt += 1;
+    }
+    return cnt;
+  };
+  if (sum(fsel_) != instate_features_.size()) {
+    std::cout << "hurrrrr " << sum(fsel_) << "/" << instate_features_.size() << std::endl;
+  }
 
   // Potentially add new features to the EKF state.
   if (instate_features_.size() < kMaxFeature) {
     SelectAndAddNewFeatures();
+  }
+  if (sum(fsel_) != instate_features_.size()) {
+    std::cout << "durrrrr " << sum(fsel_) << "/" << instate_features_.size() << std::endl;
   }
 
   // Compute Jacobians of all instate features, including those just added
@@ -58,7 +72,9 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     MakePtrVectorUnique(instate_features_);
     OutlierRejection();
   }
-
+  if (sum(fsel_) != inliers_.size()) {
+    std::cout << "grrrr " << sum(fsel_) << "/" << inliers_.size() << std::endl;
+  }
   // We need to remove floating groups (with no instate features) and
   // floating features (not instate and reference group is floating)
   DiscardAffectedGroups();
@@ -70,6 +86,10 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     if (f->instate()) {
       in_current_ekf_update_.push_back(f);
     }
+  }
+
+  if (sum(fsel_) != in_current_ekf_update_.size()) {
+    std::cout << "waaaaaaa " << sum(fsel_) << "/" << in_current_ekf_update_.size() << std::endl;
   }
 
   if (!in_current_ekf_update_.empty()) {

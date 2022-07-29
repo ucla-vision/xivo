@@ -26,7 +26,7 @@
   "integration_method": "PrinceDormand", // "PrinceDormand", "RK4", //, Fehlberg
   "use_OOS": false, // update with Out-Of-State features
   "use_depth_opt": false,  // depth optimization
-  "use_MH_gating": false,
+  "use_MH_gating": true,
   "use_1pt_RANSAC": true,
   "use_compression": false,  // measurement compression
   "triangulate_pre_subfilter": true,
@@ -53,11 +53,11 @@
   // memory
   "memory": {
     // Values if mapper is not enabled
-    //"max_features": 1000,
-    //"max_groups": 900
+    "max_features": 200,
+    "max_groups": 100
     // Values if mapper is enabled
-    "max_features": 30000,
-    "max_groups": 5000
+    //"max_features": 30000,
+    //"max_groups": 5000
   },
 
   // gravity constant
@@ -77,7 +77,7 @@
   },
 
   "P" : {
-    "W"   : 3.0,
+    "W"   : 5.0,
     "T"   : 0.001,
     "V"   : 1.0,
     "bg"  : 1e-05,
@@ -294,8 +294,8 @@
     "use_prediction": false,
     "mask_size": 15,
     "margin": 8, // image boundary to mask out
-    "num_features_min": 150,
-    "num_features_max": 200,
+    "num_features_min": 45,
+    "num_features_max": 60,
     "max_pixel_displacement": 64,
     "normalize": false,
     "match_dropped_tracks": true,

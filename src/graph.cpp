@@ -289,10 +289,10 @@ std::vector<FeaturePtr> Graph::FindNewGaugeFeatures(GroupPtr g) {
 
   // Candidates that could be gauge features
   std::vector<FeaturePtr> candidates = GetGaugeFeatureCandidates(g);
-  std::sort(candidates.begin(), candidates.end(),
-            [est](FeaturePtr f1, FeaturePtr f2) -> bool {
-              return est->FeatureCovXYComparison(f1, f2);
-            });
+  //std::sort(candidates.begin(), candidates.end(),
+  //          [est](FeaturePtr f1, FeaturePtr f2) -> bool {
+  //            return est->FeatureCovXYComparison(f1, f2);
+  //          });
   std::vector<FeaturePtr> candidates_backup = candidates;
 
   // Lambda function that checks whether or not features are collinear
