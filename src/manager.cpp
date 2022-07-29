@@ -277,9 +277,10 @@ void Estimator::EnforceMaxGroupLifetime() {
 void Estimator::DiscardAffectedGroups() {
   Graph& graph{*Graph::instance()};
   for (auto g : affected_groups_) {
-    const auto &adj_f = graph.GetFeaturesOf(g);
-    int num_instate_features_of_g = std::count_if(adj_f.begin(), adj_f.end(),
-        [g](FeaturePtr f) { return ((f->ref() == g) && f->instate()); } );
+    std::vector<FeaturePtr> instate_features_of_g = graph.GetFeaturesIf(
+      [g](FeaturePtr f) { return (f->ref() == g) && (f->instate()); }
+    );
+    int num_instate_features_of_g = instate_features_of_g.size();
     if ((num_instate_features_of_g < num_gauge_xy_features_) ||
         ((num_gauge_xy_features_ == 0) && (num_instate_features_of_g == 0))) {
       std::vector<FeaturePtr> nullrefs = FindNewOwnersForFeaturesOf(g);
@@ -290,6 +291,7 @@ void Estimator::DiscardAffectedGroups() {
       DiscardGroup(g);
     }
   }
+  affected_groups_.clear();
 }
 
 
