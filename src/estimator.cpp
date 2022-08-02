@@ -1339,7 +1339,7 @@ void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
 void Estimator::DestroyFeatures(const std::vector<FeaturePtr> &destroys) {
   Graph::instance()->RemoveFeatures(destroys);
   for (auto f : destroys) {
-    if (f->instate()) {
+    if (f->instate() || (f->status() == FeatureStatus::REJECTED_BY_FILTER)) {
       RemoveFeatureFromState(f);
     }
     Feature::Destroy(f);

@@ -54,6 +54,7 @@ std::vector<FeaturePtr> Estimator::MHGating() {
   std::vector<FeaturePtr> inliers; // individually compatible matches
   std::vector<number_t> dist, inlier_dist; // MH distance of features & inlier features
   int num_mh_rejected = 0;
+  std::vector<FeaturePtr> to_destroy;
 
   // Compute Mahalanobis distance
   for (auto f: instate_features_) {
@@ -78,6 +79,7 @@ std::vector<FeaturePtr> Estimator::MHGating() {
       }
     }
     inliers.clear();
+    to_destroy.clear();
     // mark inliers
     for (int i = 0; i < instate_features_.size(); ++i) {
       auto f = instate_features_[i];
@@ -85,20 +87,30 @@ std::vector<FeaturePtr> Estimator::MHGating() {
         inliers.push_back(f);
       } else {
         num_mh_rejected++;
-        if (f->status() == FeatureStatus::GAUGE) {
-          needs_new_gauge_features_.push_back(f->ref());
-          LOG(INFO) << "Group # " << f->ref()->id() << " just lost a gauge feature rejected by MH-gating";
-        }
-        f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+        to_destroy.push_back(f);
         LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
       }
     }
     // relax the threshold
     mh_thresh *= MH_thresh_multipler_;
   }
-  
+
+#ifndef NDEBUG
+  CHECK(inliers.size() + to_destroy.size() == instate_features_.size());
+#endif
+
   timer_.Tock("MH-gating");
   LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
+
+  for (auto f: to_destroy) {
+    if (f->status() == FeatureStatus::GAUGE) {
+      needs_new_gauge_features_.push_back(f->ref());
+      LOG(INFO) << "Group # " << f->ref()->id() << " just lost a gauge feature rejected by MH-gating";
+    }
+    f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+    affected_groups_.insert(f->ref());
+  }
+  DestroyFeatures(to_destroy);
 
   return inliers;
 }
@@ -324,6 +336,10 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
   if (max_inliers.size() < mh_inliers.size()) {
     // rescue high-innovation measurements
     std::vector<FeaturePtr> hi_inliers; // high-innovation inlier set
+    std::vector<FeaturePtr> to_destroy;
+    
+    int num_rejected = 0;
+
     for (int i = 0; i < mh_inliers.size(); ++i) {
       if (!is_low_innovation_inlier[i]) {
         // potentially a high-innovation inlier
@@ -345,11 +361,16 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
             LOG(INFO) << "Group # " << f->ref()->id() << " just lost a guage feature rejected by one-pt ransac";
           }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
+          to_destroy.push_back(f);
+          num_rejected++;
           affected_groups_.insert(f->ref());
           LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";
         }
       }
     }
+
+    DestroyFeatures(to_destroy);
+
     if (!hi_inliers.empty()) {
       max_inliers.insert(hi_inliers.begin(), hi_inliers.end());
       LOG(INFO) << "rescued " << hi_inliers.size() << " high-innovation inliers"

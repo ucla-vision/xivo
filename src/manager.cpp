@@ -625,9 +625,17 @@ void Estimator::OutlierRejection() {
               inliers_.begin());
   }
   if (use_1pt_RANSAC_) {
-    // Since One-Pt RANSAC is a global measurement update, we need to make sure it's observable.
+
+    // Since One-Pt RANSAC is a global measurement update, we need to make sure it's observable -- remove features and groups that are unobservable.
     DiscardAffectedGroups();
     FindNewGaugeFeatures();
+    std::vector<FeaturePtr> inliers_backup = inliers_;
+    inliers_.clear();
+    for (auto f: inliers_backup) {
+      if (f->instate()) {
+        inliers_.push_back(f);
+      }
+    }
 
     inliers_ = OnePointRANSAC(inliers_);
   }
