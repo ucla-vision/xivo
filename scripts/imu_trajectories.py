@@ -193,11 +193,11 @@ class TrefoilSim(IMUSimBase):
     accel_b = Rsb.transpose() @ np.reshape(accel_s, (3,1))
     accel_b = accel_b.flatten()
 
-    #gyro_x = np.sin(0.3*t)
-    #gyro_y = np.cos(0.4*t)
-    #gyro_z = np.sin(0.1*t)
-    #gyro = np.array([gyro_x, gyro_y, gyro_z])
-    gyro = np.zeros(3)
+    gyro_x = 0.01*np.sin(0.3*t)
+    gyro_y = 0.01*np.cos(0.4*t)
+    gyro_z = 0.01*np.sin(0.1*t)
+    gyro = np.array([gyro_x, gyro_y, gyro_z])
+    #gyro = np.zeros(3)
 
     return (accel_b, gyro)
 
