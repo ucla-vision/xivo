@@ -80,7 +80,7 @@ def main(args):
                     noise_gyro=args.noise_gyro,
                     seed=args.imu_seed,
                     grav_s=grav_s)
-  if args.motion_type == "checkerboard_traj":
+  if args.motion_type in [ "checkerboard_traj", "calib_traj" ]:
     nsquares_width = 7
     nsquares_height = 6
     square_width = 0.05
