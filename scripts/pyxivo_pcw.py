@@ -26,6 +26,7 @@ parser.add_argument("-imu_seed", default=1, type=int)
 parser.add_argument("-noise_accel", default=1e-4, type=float)
 parser.add_argument("-noise_gyro", default=1e-5, type=float)
 parser.add_argument("-motion_type", default="sinusoid", type=str)
+parser.add_argument("-noise_vision_std", default="1.0", type=float)
 parser.add_argument("-total_time", default=100.0, type=float)
 parser.add_argument("-imu_dt", default=0.0025, type=float)
 parser.add_argument("-vision_dt", default=0.04, type=float)
@@ -126,7 +127,8 @@ def main(args):
       Rsc = Rsb @ Rbc
       Tsc = Rsb @ Tbc + np.reshape(Tsb, (3,1))
       gsc = np.hstack((Rsc, Tsc))
-      (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh)
+      (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh,
+                                                           args.noise_vision_std)
       if len(feature_ids) > 0:
         if args.tracker_only:
           estimator.VisualMeasPointCloudTrackerOnly(int(t*1e9), feature_ids, xp_vals)

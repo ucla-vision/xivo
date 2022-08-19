@@ -77,9 +77,9 @@
   },
 
   "P" : {
-    "Wsb"   : 0.00001,
-    "Tsb"   : 0.0001,
-    "Vsb"   : 0.0001,
+    "Wsb"   : 0.001,
+    "Tsb"   : 0.001,
+    "Vsb"   : 0.01,
     "bg"  : 1e-10,
     "ba"  : 1e-10,
     "Wbc" : 1e-10,
@@ -114,9 +114,9 @@
   // },
 
   "Qimu": {
-    "gyro": [1e-3, 1e-3, 1e-3],
+    "gyro": [1e-2, 1e-2, 1e-2],
     "gyro_bias": [0.00, 0.00, 0.00],
-    "accel": [1e-3, 1e-3, 1e-3],
+    "accel": [1e-2, 1e-2, 1e-2],
     "accel_bias": [0.00, 0.00, 0.00]
   },
 
@@ -136,7 +136,7 @@
                                   // the state
   "comparison_score_type": "DepthUncertainty",
 
-  "visual_meas_std":  4.5, // std of visual measurement for x and y (pixel)
+  "visual_meas_std":  1.0, // std of visual measurement for x and y (pixel)
   "outlier_thresh": 1.1,
   "oos_meas_std": 3.5,
   "max_depth": 60.0,

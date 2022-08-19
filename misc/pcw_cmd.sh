@@ -7,8 +7,9 @@ python scripts/pyxivo_pcw.py \
     -ylim -20 20 \
     -zlim -20 20 \
     -vision_dt 0.01 \
-    -noise_accel 1e-9 \
-    -noise_gyro 1e-9 \
+    -noise_vision 1.0 \
+    -noise_accel 1e-5 \
+    -noise_gyro 1e-5 \
     -cfg cfg/pcw.json \
     -use_viewer
 

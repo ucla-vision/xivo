@@ -41,9 +41,10 @@ class Point:
 
 
 class PointCloudWorld:
-  def __init__(self):
+  def __init__(self, seed=None):
     self.points = []
     self.next_pt_id = 10000   # constant `counter0` in src/feature.h
+    self.rng = default_rng(seed)
 
   def addPt(self, Xs):
     self.points.append(Point(Xs))
@@ -60,7 +61,8 @@ class PointCloudWorld:
                            gsc: np.ndarray,
                            K: np.ndarray,
                            imw: float,
-                           imh: float):
+                           imh: float,
+                           noise_px_std: float):
     feature_ids = []
     xp_vals = []
     Xc_vals = []
@@ -71,6 +73,8 @@ class PointCloudWorld:
     for pt in self.points:
       Xc = pt.Xc(Rsc, Tsc)
       (is_visible, xp) = pinhole_project(Xc, K, imw, imh)
+      if np.all(xp > 0):
+        xp += noise_px_std * self.rng.standard_normal(2)
       if is_visible:
         # set the point's id if it wasn't set before
         if not pt.id_set():
@@ -108,11 +112,10 @@ class PointCloudWorld:
 
 class RandomPCW(PointCloudWorld):
   def __init__(self, xlim, ylim, zlim, seed=None):
-    PointCloudWorld.__init__(self)
+    PointCloudWorld.__init__(self, seed)
     self.xlim = xlim
     self.ylim = ylim
     self.zlim = zlim
-    self.rng = default_rng(seed)
 
   def addPt(self):
     x = self.rng.uniform(low=self.xlim[0], high=self.xlim[1])
