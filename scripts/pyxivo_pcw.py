@@ -14,9 +14,11 @@ import pyxivo
 from point_cloud_world import RandomPCW, Checkerboard
 from imu_trajectories import get_imu_sim
 from utils import cleanup_and_load_json
+import savers
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-dump", default=".", type=str)
 parser.add_argument("-npts", default=1000, type=int)
 parser.add_argument("-xlim", default=[-10, 10], nargs=2, type=float)
 parser.add_argument("-ylim", default=[-10, 10], nargs=2, type=float)
@@ -34,6 +36,7 @@ parser.add_argument('-cfg', type=str, default="cfg/pcw.json")
 parser.add_argument('-viewer_cfg', type=str, default="cfg/pcw_viewer.json")
 parser.add_argument('-use_viewer', default=False, action="store_true")
 parser.add_argument('-tracker_only', default=False, action="store_true")
+parser.add_argument('-mode', default='runOnly', type=str)
 
 
 def read_cfg_data(cfg_json: str):
@@ -74,6 +77,7 @@ def main(args):
   # Read Wbc, Tbc from .cfg file
   Rbc, Tbc, K, imw, imh, grav_s = read_cfg_data(args.cfg)
 
+  # Get simulation
   imu = get_imu_sim(args.motion_type,
                     T=args.total_time,
                     noise_accel=args.noise_accel,
@@ -112,29 +116,49 @@ def main(args):
   # Lambda function: whether or not a packet is IMU 
   is_imu = lambda x: (x[1] < 0.5)
 
-  # estimator object
-  estimator = pyxivo.Estimator(args.cfg, args.viewer_cfg, args.motion_type,
-                               args.tracker_only)
-  for i in range(all_packets.shape[1]):
-    packet = all_packets[:,i]
-    t = all_packets[0,i]
-    if is_imu(packet):
-      accel, gyro = imu.meas(t)
-      estimator.InertialMeas(int(t*1e9), gyro[0], gyro[1], gyro[2], accel[0],
-                             accel[1], accel[2])
-    else:
-      Rsb, Tsb = imu.gsb(t)
-      Rsc = Rsb @ Rbc
-      Tsc = Rsb @ Tbc + np.reshape(Tsb, (3,1))
-      gsc = np.hstack((Rsc, Tsc))
-      (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh,
-                                                           args.noise_vision_std)
-      if len(feature_ids) > 0:
-        if args.tracker_only:
-          estimator.VisualMeasPointCloudTrackerOnly(int(t*1e9), feature_ids, xp_vals)
-        else:
-          estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
-      estimator.Visualize()
+  # Get saver
+  if args.mode == 'eval':
+    print("hello")
+    saver = savers.PCWEvalModeSaver(imu, args)
+  elif args.mode == 'dump':
+    saver = savers.PCWDumpModeSaver(imu, args)
+  elif args.mode == 'dumpCov':
+    saver = savers.PCWCovDumpModeSaver(imu, args)
+  elif args.mode == 'runOnly':
+    pass
+  else:
+    raise ValueError('mode=[eval|dump|dumpCov|runOnly]')
+
+  # Run estimator and save data
+  try:
+    estimator = pyxivo.Estimator(args.cfg, args.viewer_cfg, args.motion_type,
+                                args.tracker_only)
+    for i in range(all_packets.shape[1]):
+      packet = all_packets[:,i]
+      t = all_packets[0,i]
+      if is_imu(packet):
+        accel, gyro = imu.meas(t)
+        estimator.InertialMeas(int(t*1e9), gyro[0], gyro[1], gyro[2], accel[0],
+                              accel[1], accel[2])
+      else:
+        Rsb, Tsb = imu.gsb(t)
+        Rsc = Rsb @ Rbc
+        Tsc = Rsb @ Tbc + np.reshape(Tsb, (3,1))
+        gsc = np.hstack((Rsc, Tsc))
+        (feature_ids, xp_vals) = vision.generateMeasurements(gsc, K, imw, imh,
+                                                            args.noise_vision_std)
+        if len(feature_ids) > 0:
+          if args.tracker_only:
+            estimator.VisualMeasPointCloudTrackerOnly(int(t*1e9), feature_ids, xp_vals)
+          else:
+            estimator.VisualMeasPointCloud(int(t*1e9), feature_ids, xp_vals)
+        estimator.Visualize()
+        if (args.mode != 'runOnly') and (estimator.VisionInitialized()):
+          saver.onVisionUpdate(estimator, datum=(int(t*1e9), 'simulation pts'))
+
+  finally:
+    if args.mode != "runOnly":
+      saver.onResultsReady()
 
 
 if __name__ == "__main__":

@@ -67,6 +67,32 @@ class VOIDSaver:
         os.system("cp {} {}".format(posenetPath, output_path))
 
 
+class PCWSaver:
+    def __init__(self, imu_traj, args):
+        gt_path = os.path.join(args.dump, "pcw_{}_gt".format(args.motion_type))
+        self.save_gt(imu_traj, gt_path)
+
+    def save_gt(self, imu_traj, gt_path):
+        gt = []
+        nt = len(imu_traj.t)
+        for i in range(nt):
+            ts = imu_traj.t[i]
+            qsb_xyzw = imu_traj.qsb[:,i]
+            Tsb = imu_traj.Tsb[:,i]
+            Vsb = imu_traj.Vsb[:,i]
+
+            # quaternions are wxyz here
+            gt.append([
+                ts, Tsb[0], Tsb[1], Tsb[2],
+                qsb_xyzw[3], qsb_xyzw[0], qsb_xyzw[1], qsb_xyzw[2],
+                Vsb[0], Vsb[1], Vsb[2]
+            ])
+
+        np.savetxt(gt_path, gt,
+                   fmt='%f %f %f %f %f %f %f %f %f %f %f')
+
+
+
 class EvalModeSaver(BaseSaver):
     """ Callback functions used in eval mode of pyxivo.
     """
@@ -258,6 +284,7 @@ class CovDumpModeSaver(BaseSaver):
             output = { "data": self.results }
             fid.write(to_json(output))
 
+
 class TrackerDumpModeSaver(BaseSaver):
     """ Callback functions used by tracker dump mode of pyxivo.
     """
@@ -291,6 +318,7 @@ class TrackerDumpModeSaver(BaseSaver):
     def onResultsReady(self):
         pass
 
+
 class TUMVIEvalModeSaver(EvalModeSaver, TUMVISaver):
     def __init__(self, args):
         EvalModeSaver.__init__(self, args)
@@ -315,7 +343,6 @@ class TUMVITrackerDumpModeSaver(TrackerDumpModeSaver, TUMVISaver):
         TUMVISaver.__init__(self, args)
 
 
-
 class CarlaEvalModeSaver(EvalModeSaver, CarlaSaver):
     def __init__(self, args):
         EvalModeSaver.__init__(self, args)
@@ -332,6 +359,7 @@ class CarlaCovDumpModeSaver(CovDumpModeSaver, CarlaSaver):
     def __init__(self, args):
         CovDumpModeSaver.__init__(self, args)
         CarlaSaver.__init__(self, args)
+
 
 class CarlaTrackerDumpModeSaver(TrackerDumpModeSaver, CarlaSaver):
     def __init__(self, args):
@@ -379,7 +407,35 @@ class VOIDCovDumpModeSaver(CovDumpModeSaver, VOIDSaver):
         CovDumpModeSaver.__init__(self, args)
         VOIDSaver.__init__(self, args)
 
+
 class VOIDTrackerDumpModeSaver(TrackerDumpModeSaver, VOIDSaver):
     def __init__(self, args):
         TrackerDumpModeSaver.__init__(self, args)
         VOIDSaver.__init__(self, args)
+
+
+class PCWEvalModeSaver(EvalModeSaver, PCWSaver):
+    def __init__(self, imu_traj, args):
+        args.dataset = "pcw"
+        args.cam_id = 0
+        args.seq = args.motion_type
+        EvalModeSaver.__init__(self, args)
+        PCWSaver.__init__(self, imu_traj, args)
+
+
+class PCWDumpModeSaver(DumpModeSaver, PCWSaver):
+    def __init__(self, imu_traj, args):
+        args.dataset = "pcw"
+        args.cam_id = 0
+        args.seq = args.motion_type
+        DumpModeSaver.__init__(self, args)
+        PCWSaver.__init__(self, imu_traj, args)
+
+
+class PCWCovDumpModeSaver(CovDumpModeSaver, PCWSaver):
+    def __init__(self, imu_traj, args):
+        args.dataset = "pcw"
+        args.cam_id = 0
+        args.seq = args.motion_type
+        CovDumpModeSaver.__init__(self, args)
+        PCWSaver.__init__(self, imu_traj, args)

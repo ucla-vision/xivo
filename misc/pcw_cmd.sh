@@ -25,4 +25,5 @@ python scripts/pyxivo_pcw.py \
     -noise_gyro 1e-4 \
     -cfg cfg/pcw.json \
     -use_viewer \
-    -viewer_cfg cfg/pcw_viewer.json
+    -viewer_cfg cfg/pcw_viewer.json \
+    -mode runOnly
