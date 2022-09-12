@@ -663,6 +663,7 @@ void Tracker::UpdatePointCloud(const VecXi &feature_ids, const MatX2 &xps)
     if (!measurement_marked[fid]) {
       Vec2 xp = measurements[fid];
       FeaturePtr f = Feature::PointCloudWorldCreate(fid, xp(0), xp(1));
+      f->SetKeypoint(cv::KeyPoint(xp(0), xp(1), 0.0));
       features_.push_back(f);
     }
     num_to_add--;

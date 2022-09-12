@@ -161,6 +161,9 @@ public:
   std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features() {
     return estimator_->tracked_features();
   }
+  std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor() {
+    return estimator_->tracked_features_no_descriptor();
+  }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
@@ -331,5 +334,6 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("CameraIntrinsics", &EstimatorWrapper::CameraIntrinsics)
       .def("CameraDistortionType", &EstimatorWrapper::CameraDistortionType)
       .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized)
-      .def("tracked_features", &EstimatorWrapper::tracked_features);
+      .def("tracked_features", &EstimatorWrapper::tracked_features)
+      .def("tracked_features_no_descriptor", &EstimatorWrapper::tracked_features_no_descriptor);
 }

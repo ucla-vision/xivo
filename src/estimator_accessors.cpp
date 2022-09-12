@@ -476,4 +476,26 @@ std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
 }
 
 
+std::vector<std::tuple<int, Vec2f>> Estimator::tracked_features_no_descriptor() {
+
+  auto tracker = Tracker::instance();
+
+  // store tracked feature information
+  std::vector<std::tuple<int, Vec2f>> tracked_features_info;
+
+  for (auto f : tracker->features_)
+  {
+    int id = f->id();
+    cv::KeyPoint kp = f->keypoint();
+
+    // Convert cv::Keypoint to vector
+    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+
+    tracked_features_info.push_back(std::tuple(id, kp_vector));
+  }
+
+  return tracked_features_info;
+}
+
+
 }

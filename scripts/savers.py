@@ -439,3 +439,37 @@ class PCWCovDumpModeSaver(CovDumpModeSaver, PCWSaver):
         args.seq = args.motion_type
         CovDumpModeSaver.__init__(self, args)
         PCWSaver.__init__(self, imu_traj, args)
+
+
+class PCWTrackerDumpModeSaver(PCWSaver, BaseSaver):
+    def __init__(self, imu_traj, args):
+        args.dataset = "pcw"
+        args.cam_id = 0
+        args.seq = args.motion_type
+        PCWSaver.__init__(self, imu_traj, args)
+        BaseSaver.__init__(self, args)
+
+    def onVisionUpdate(self, estimator, datum):
+        ts, content = datum
+
+        tracked_features = estimator.tracked_features_no_descriptor()
+
+        for f in tracked_features:
+            id, kp = f
+
+            # Convert timestamp to seconds from nanoseconds
+            ts_and_id = np.array([ts*1e-9, id]).reshape(1,2)
+            kp = np.reshape(kp, (1, 2))
+
+            feature_info = np.concatenate((ts_and_id, kp), axis=1)
+
+            with open(self.resultsPath, "a") as f:
+                np.savetxt(
+                    f,
+                    feature_info,
+                    delimiter=',',
+                    fmt=','.join(['%f'] + ['%d'] + ['%f'] * 2))
+
+    def onResultsReady(self):
+        pass
+

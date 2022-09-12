@@ -117,13 +117,15 @@ def main(args):
   is_imu = lambda x: (x[1] < 0.5)
 
   # Get saver
+  assert((not args.tracker_only) or (args.mode == 'dumpTracker'))
   if args.mode == 'eval':
-    print("hello")
     saver = savers.PCWEvalModeSaver(imu, args)
   elif args.mode == 'dump':
     saver = savers.PCWDumpModeSaver(imu, args)
   elif args.mode == 'dumpCov':
     saver = savers.PCWCovDumpModeSaver(imu, args)
+  elif args.mode == 'dumpTracker':
+    saver = savers.PCWTrackerDumpModeSaver(imu, args)
   elif args.mode == 'runOnly':
     pass
   else:

@@ -207,6 +207,7 @@ public:
 
   // returns vector to information about tracked features per instance
   std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features();
+  std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor();
 
   
 private:
