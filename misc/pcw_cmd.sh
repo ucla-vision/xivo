@@ -18,11 +18,10 @@
 python scripts/pyxivo_pcw.py \
     -motion_type calib_traj \
     -noise_accel 1e-4 \
-    -noise_gyro 1e-4 \
+    -noise_gyro 1e-5 \
     -vision_dt 0.01 \
-    -noise_vision 0.5 \
-    -noise_accel 1e-4 \
-    -noise_gyro 1e-4 \
+    -noise_vision 0.25 \
+    -total_time 66.0 \
     -cfg cfg/pcw.json \
     -use_viewer \
     -viewer_cfg cfg/pcw_viewer.json \

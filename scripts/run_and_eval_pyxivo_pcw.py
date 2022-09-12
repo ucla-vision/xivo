@@ -106,7 +106,7 @@ if __name__ == '__main__':
     cmd = 'python3 scripts/tum_rgbd_benchmark_tools/evaluate_rpe.py \
 --fixed_delta \
 --delta_unit s \
---delta 1.0 \
+--delta 0.25 \
 {groundtruth_file:} \
 {result_file:} {write_to:}'.format(
         groundtruth_file=groundtruth_file,
