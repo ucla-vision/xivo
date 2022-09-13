@@ -173,9 +173,6 @@ public:
   number_t td() const { return X_.td; }
   Mat3 Ca() const { return imu_.Ca(); }
   Mat3 Cg() const { return imu_.Cg(); }
-  Vec3 inn_Wsb() const { return inn_.segment(Index::Wsb,3); }
-  Vec3 inn_Tsb() const { return inn_.segment(Index::Tsb,3); }
-  Vec3 inn_Vsb() const { return inn_.segment(Index::Vsb,3); }
   bool MeasurementUpdateInitialized() const { return MeasurementUpdateInitialized_; }
   int gauge_group() const { return gauge_group_; }
   int num_instate_features() const { return instate_features_.size(); };
@@ -186,6 +183,12 @@ public:
   MatX6 InstateFeatureCovs() const;
   MatX3 InstateFeatureXc(int n_output) const;
   MatX3 InstateFeatureXc() const;
+  MatX3 InstateFeaturexc() const;
+  MatX3 InstateFeaturexc(int n_output) const;
+  MatX2 InstateFeaturePreds() const;
+  MatX2 InstateFeaturePreds(int n_output) const;
+  MatX2 InstateFeatureMeas() const;
+  MatX2 InstateFeatureMeas(int n_output) const;
   void InstateFeaturePositionsAndCovs(int max_output, int &npts,
     MatX3 &positions, MatX6 &covs, MatX2 &pixels, VecXi &feature_ids);
   VecXi InstateFeatureIDs(int n_output) const;

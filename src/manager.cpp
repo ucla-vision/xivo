@@ -97,6 +97,9 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     FilterUpdate();
   }
 
+  // Make accessors work.
+  instate_features_ = in_current_ekf_update_;
+
   MeasurementUpdateInitialized_ = true;
 
   // Post-update feature management

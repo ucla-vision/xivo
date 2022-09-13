@@ -195,16 +195,6 @@ class CovDumpModeSaver(BaseSaver):
         # Group ID
         GaugeGroup = estimator.gauge_group()
 
-        # Get filter innovations
-        if not estimator.MeasurementUpdateInitialized():
-            inn_Tsb = np.zeros((3,))
-            inn_Wsb = np.zeros((3,))
-            inn_Vsb = np.zeros((3,))
-        else:
-            inn_Tsb = np.array(estimator.inn_Tsb())
-            inn_Wsb = np.array(estimator.inn_Wsb())
-            inn_Vsb = np.array(estimator.inn_Vsb())
-
         # Get features
         num_instate_features = estimator.num_instate_features()
         if num_instate_features > 0:
@@ -249,11 +239,6 @@ class CovDumpModeSaver(BaseSaver):
 
         # Related to broken interface above
         #entry['Pstate'] = upper_triangular_list(Pstate)
-
-        entry['MeasurementUpdateInitialized'] = estimator.MeasurementUpdateInitialized()
-        entry['inn_Tsb'] = inn_Tsb.tolist()
-        entry['inn_Wsb'] = inn_Wsb.tolist()
-        entry['inn_Vsb'] = inn_Vsb.tolist()
 
         entry['bg'] = bg.tolist()
         entry['ba'] = ba.tolist()

@@ -181,9 +181,6 @@ public:
   bool MeasurementUpdateInitialized() {
     return estimator_->MeasurementUpdateInitialized();
   }
-  Vec3 inn_Wsb() { return estimator_->inn_Wsb(); }
-  Vec3 inn_Tsb() { return estimator_->inn_Tsb(); }
-  Vec3 inn_Vsb() { return estimator_->inn_Vsb(); }
 
   uint64_t now() const { return estimator_->ts().count(); }
 
@@ -223,6 +220,30 @@ public:
 
   MatX3 InstateFeatureXc() {
     return estimator_->InstateFeatureXc();
+  }
+
+  MatX3 InstateFeaturexc(int n_output) {
+    return estimator_->InstateFeaturexc(n_output);
+  }
+
+  MatX3 InstateFeaturexc() {
+    return estimator_->InstateFeaturexc();
+  }
+
+  MatX2 InstateFeaturePreds(int n_output) {
+    return estimator_->InstateFeaturePreds(n_output);
+  }
+
+  MatX2 InstateFeaturePreds() {
+    return estimator_->InstateFeaturePreds();
+  }
+
+  MatX2 InstateFeatureMeas() {
+    return estimator_->InstateFeatureMeas();  
+  }
+
+  MatX2 InstateFeatureMeas(int n_output) {
+    return estimator_->InstateFeatureMeas(n_output);
   }
 
   VecXi InstateFeatureSinds() {
@@ -299,9 +320,6 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)
       .def("Vsb", &EstimatorWrapper::Vsb)
-      .def("inn_Tsb", &EstimatorWrapper::inn_Tsb)
-      .def("inn_Wsb", &EstimatorWrapper::inn_Wsb)
-      .def("inn_Vsb", &EstimatorWrapper::inn_Vsb)
       .def("Pstate", &EstimatorWrapper::Pstate)
       .def("P", &EstimatorWrapper::P)
       .def("bg", &EstimatorWrapper::bg)
@@ -320,6 +338,12 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("InstateFeatureSinds", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureSinds))
       .def("InstateFeatureXc", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureXc))
       .def("InstateFeatureXc", py::overload_cast<>(&EstimatorWrapper::InstateFeatureXc))
+      .def("InstateFeaturexc", py::overload_cast<int>(&EstimatorWrapper::InstateFeaturexc))
+      .def("InstateFeaturexc", py::overload_cast<>(&EstimatorWrapper::InstateFeaturexc))
+      .def("InstateFeaturePreds", py::overload_cast<int>(&EstimatorWrapper::InstateFeaturePreds))
+      .def("InstateFeaturePreds", py::overload_cast<>(&EstimatorWrapper::InstateFeaturePreds))
+      .def("InstateFeatureMeas", py::overload_cast<int>(&EstimatorWrapper::InstateFeatureMeas))
+      .def("InstateFeatureMeas", py::overload_cast<>(&EstimatorWrapper::InstateFeatureMeas))
       .def("InstateGroupIDs", &EstimatorWrapper::InstateGroupIDs)
       .def("InstateGroupSinds", &EstimatorWrapper::InstateGroupSinds)
       .def("InstateGroupPoses", &EstimatorWrapper::InstateGroupPoses)

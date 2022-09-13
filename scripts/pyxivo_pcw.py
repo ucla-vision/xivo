@@ -129,7 +129,7 @@ def main(args):
   elif args.mode == 'runOnly':
     pass
   else:
-    raise ValueError('mode=[eval|dump|dumpCov|runOnly]')
+    raise ValueError('mode=[eval|dump|dumpCov|runOnly|dumpTracker]')
 
   # Run estimator and save data
   try:

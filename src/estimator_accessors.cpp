@@ -136,6 +136,106 @@ MatX3 Estimator::InstateFeatureXc(int n_output) const {
 }
 
 
+MatX3 Estimator::InstateFeaturexc(int n_output) const {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by uncertainty
+  std::sort(instate_features.begin(), instate_features.end(),
+            [this](FeaturePtr f1, FeaturePtr f2) {
+              return FeatureCovComparison(f1, f2);
+            });
+
+  MatX3 feature_xc(npts,3);
+
+  int i = 0;
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 xc = f->x();
+    feature_xc(i,0) = xc(0);
+    feature_xc(i,1) = xc(1);
+    feature_xc(i,2) = xc(2);
+    ++i;
+    ++it;
+  }
+  return feature_xc;
+}
+
+
+MatX2 Estimator::InstateFeaturePreds(int n_output) const {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by uncertainty
+  std::sort(instate_features.begin(), instate_features.end(),
+            [this](FeaturePtr f1, FeaturePtr f2) {
+              return FeatureCovComparison(f1, f2);
+            });
+
+  MatX2 feature_xp(npts,2);
+
+  int i = 0;
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
+       ) {
+    FeaturePtr f = *it;
+    Vec2 xp = f->pred();
+    feature_xp(i,0) = xp(0);
+    feature_xp(i,1) = xp(1);
+    ++i;
+    ++it;
+  }
+  return feature_xp;
+}
+
+
+MatX2 Estimator::InstateFeatureMeas(int n_output) const {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by uncertainty
+  std::sort(instate_features.begin(), instate_features.end(),
+            [this](FeaturePtr f1, FeaturePtr f2) {
+              return FeatureCovComparison(f1, f2);
+            });
+
+  MatX2 feature_xp(npts,2);
+
+  int i = 0;
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
+       ) {
+    FeaturePtr f = *it;
+    Vec2 xp = f->xp();
+    feature_xp(i,0) = xp(0);
+    feature_xp(i,1) = xp(1);
+    ++i;
+    ++it;
+  }
+  return feature_xp;
+}
+
+
 MatX6 Estimator::InstateFeatureCovs(int n_output) const {
   // Retrieve visibility graph
   Graph& graph{*Graph::instance()};
@@ -330,6 +430,70 @@ MatX6 Estimator::InstateFeatureCovs() const {
   }
 
   return feature_covs;
+}
+
+
+MatX3 Estimator::InstateFeaturexc() const
+{
+  int num_features = instate_features_.size();
+
+  MatX3 feature_xc(num_features,3);
+
+  int i = 0;
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_features;
+       ) {
+    FeaturePtr f = *it;
+    Vec3 xc = f->x();
+    feature_xc(i,0) = xc(0);
+    feature_xc(i,1) = xc(1);
+    feature_xc(i,2) = xc(2);
+    ++i;
+    ++it;
+  }
+  return feature_xc;
+}
+
+
+MatX2 Estimator::InstateFeaturePreds() const
+{
+  int num_features = instate_features_.size();
+
+  MatX2 feature_xp(num_features,2);
+
+  int i = 0;
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_features;
+       ) {
+    FeaturePtr f = *it;
+    Vec2 xp = f->pred();
+    feature_xp(i,0) = xp(0);
+    feature_xp(i,1) = xp(1);
+    ++i;
+    ++it;
+  }
+  return feature_xp;
+}
+
+
+MatX2 Estimator::InstateFeatureMeas() const
+{
+  int num_features = instate_features_.size();
+
+  MatX2 feature_xp(num_features,2);
+
+  int i = 0;
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_features;
+       ) {
+    FeaturePtr f = *it;
+    Vec2 xp = f->xp();
+    feature_xp(i,0) = xp(0);
+    feature_xp(i,1) = xp(1);
+    ++i;
+    ++it;
+  }
+  return feature_xp;
 }
 
 

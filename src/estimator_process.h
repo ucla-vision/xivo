@@ -27,9 +27,7 @@ public:
     const VecXi &feature_ids) {}
   virtual void Publish(const timestamp_t &ts, const State &X,
     const Mat3 &Ca, const Mat3 &Cg, const MatX &Cov,
-    const bool MeasurementsInitialized, const Vec3 &inn_Wsb,
-    const Vec3 &inn_Tsb, const Vec3 &inn_Vsb, const int gauge_group,
-    const SE3 &gsc, const MatX &CameraCov) {}
+    const int gauge_group, const SE3 &gsc, const MatX &CameraCov) {}
   virtual void Publish(const timestamp_t &ts, const SE3 &gsb, const Vec3 &Vsb,
     const SO3 &Rg, const MatX &Cov) {}
 };
