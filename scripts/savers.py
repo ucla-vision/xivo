@@ -84,7 +84,7 @@ class PCWSaver:
             # quaternions are wxyz here
             gt.append([
                 ts, Tsb[0], Tsb[1], Tsb[2],
-                qsb_xyzw[3], qsb_xyzw[0], qsb_xyzw[1], qsb_xyzw[2],
+                qsb_xyzw[0], qsb_xyzw[1], qsb_xyzw[2], qsb_xyzw[3],
                 Vsb[0], Vsb[1], Vsb[2]
             ])
 
