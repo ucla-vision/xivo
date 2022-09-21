@@ -61,11 +61,11 @@ void Visual::Execute(Estimator *est) { est->VisualMeasInternal(ts_, img_); }
 void VisualTrackerOnly::Execute(Estimator *est) { est->VisualMeasInternalTrackerOnly(ts_, img_); }
 
 void VisualPointCloud::Execute(Estimator *est) {
-  est->VisualMeasPointCloudInternal(ts_, feature_ids_, xp_vals_);
+  est->VisualMeasPointCloudInternal(ts_, feature_ids_, xp_and_depths_);
 }
 
 void VisualPointCloudTrackerOnly::Execute(Estimator *est) {
-  est->VisualMeasPointCloudInternalTrackerOnly(ts_, feature_ids_, xp_vals_);
+  est->VisualMeasPointCloudInternalTrackerOnly(ts_, feature_ids_, xp_and_depths_);
 }
 
 } // namespace internal
@@ -380,6 +380,9 @@ Estimator::Estimator(const Json::Value &cfg)
   if ((num_gauge_xy_features_ < 0) || (num_gauge_xy_features_ > 3)) {
     LOG(FATAL) << "Number of XY Gauge Features must be between 0 and 3";
   }
+
+  // simulation options
+  sim_initialize_depths_ = false;
 
   // reset initialization status
   if (simulation_) {
@@ -979,7 +982,7 @@ void Estimator::VisualMeasTrackerOnly(const timestamp_t &ts_raw, const cv::Mat &
 void Estimator::VisualMeasPointCloud(
   const timestamp_t &ts_raw,
   const VecXi &feature_ids,
-  const MatX2 &xp_vals)
+  const MatX3 &xp_and_depths)
 {
   timestamp_t ts{ts_raw};
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -992,11 +995,11 @@ void Estimator::VisualMeasPointCloud(
   if (async_run_) {
     std::scoped_lock lck(buf_.mtx);
     buf_.push_back(std::make_unique<internal::VisualPointCloud>(
-      ts, feature_ids, xp_vals));
+      ts, feature_ids, xp_and_depths));
     MaintainBuffer();
   } else {
     buf_.push_back(std::make_unique<internal::VisualPointCloud>(
-      ts, feature_ids, xp_vals));
+      ts, feature_ids, xp_and_depths));
     MaintainBuffer();
   }
 }
@@ -1005,7 +1008,7 @@ void Estimator::VisualMeasPointCloud(
 void Estimator::VisualMeasPointCloudTrackerOnly(
   const timestamp_t &ts_raw, 
   const VecXi &feature_ids,
-  const MatX2 &xp_vals)
+  const MatX3 &xp_and_depths)
 {
   timestamp_t ts{ts_raw};
 #ifdef USE_ONLINE_TEMPORAL_CALIB
@@ -1018,11 +1021,11 @@ void Estimator::VisualMeasPointCloudTrackerOnly(
   if (async_run_) {
     std::scoped_lock lck(buf_.mtx);
     buf_.push_back(std::make_unique<internal::VisualPointCloudTrackerOnly>(
-      ts, feature_ids, xp_vals));
+      ts, feature_ids, xp_and_depths));
     MaintainBuffer();
   } else {
     buf_.push_back(std::make_unique<internal::VisualPointCloudTrackerOnly>(
-      ts, feature_ids, xp_vals));
+      ts, feature_ids, xp_and_depths));
     MaintainBuffer();
   }
 
@@ -1143,7 +1146,7 @@ void Estimator::VisualMeasInternal(const timestamp_t &ts, const cv::Mat &img) {
 void Estimator::VisualMeasPointCloudInternal(
   const timestamp_t &ts,
   const VecXi &feature_ids,
-  const MatX2 &xps)
+  const MatX3 &xp_and_depths)
 {
   if (!GoodTimestamp(ts))
     return;
@@ -1157,6 +1160,13 @@ void Estimator::VisualMeasPointCloudInternal(
   timer_.Tick("visual-meas");
   UpdateSystemClock(ts);
   if (vision_initialized_) {
+    MatX2 xps = xp_and_depths.leftCols(2);
+
+    // Create a map from feature ids to depths
+    for (int i=0; i<feature_ids.rows(); i++) {
+      ids_to_depths_.insert({feature_ids[i], xp_and_depths(i,2)});
+    }
+
     // propagate state upto current timestamp
     Propagate(true);
     if (use_canvas_) {
@@ -1185,7 +1195,7 @@ void Estimator::VisualMeasPointCloudInternal(
 void Estimator::VisualMeasPointCloudInternalTrackerOnly(
   const timestamp_t &ts,
   const VecXi &feature_ids,
-  const MatX2 &xps)
+  const MatX3 &xp_and_depths)
 {
   if (!GoodTimestamp(ts))
     return;
@@ -1198,6 +1208,8 @@ void Estimator::VisualMeasPointCloudInternalTrackerOnly(
   ++vision_counter_;
   timer_.Tick("visual-meas-tracker-only");
   UpdateSystemClock(ts);
+
+  MatX2 xps = xp_and_depths.leftCols(2);
 
   if (use_canvas_) {
     Canvas::instance()->UpdatePointCloud(xps);

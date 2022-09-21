@@ -64,7 +64,7 @@ class PointCloudWorld:
                            imh: float,
                            noise_px_std: float):
     feature_ids = []
-    xp_vals = []
+    xp_and_depths = []
     Xc_vals = []
 
     Rsc = gsc[:,:3]
@@ -80,7 +80,7 @@ class PointCloudWorld:
         if not pt.id_set():
           pt.set_id(self.next_pt_id)
           self.next_pt_id += 1
-        xp_vals.append(xp)
+        xp_and_depths.append(np.array([xp[0], xp[1], Xc[2]]))
         feature_ids.append(pt.id)
         Xc_vals.append(Xc)
       else:
@@ -88,9 +88,9 @@ class PointCloudWorld:
           pt.unset_id()
 
     feature_ids = np.array(feature_ids)
-    xp_vals = np.array(xp_vals)
+    xp_and_depths = np.array(xp_and_depths)
     #self.writeMeasToFile(feature_ids, Xc_vals, xp_vals)
-    return (feature_ids, xp_vals)
+    return (feature_ids, xp_and_depths)
 
   def plot_world(self):
     xs = np.zeros(len(self.points))

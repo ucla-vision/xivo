@@ -574,6 +574,8 @@ void Estimator::InitializeJustCreatedTracks(GroupPtr g,
     f->SetRef(g);
     if (triangulate_pre_subfilter_ && !f->TriangulationSuccessful()) {
       f->Initialize(init_z_, {init_std_x_badtri_, init_std_y_badtri_, init_std_z_badtri_});
+    } else if (sim_initialize_depths_) {
+      f->Initialize(ids_to_depths_[f->id()], {init_std_x_, init_std_y_, init_std_z_});
     } else {
       f->Initialize(init_z_, {init_std_x_, init_std_y_, init_std_z_});
     }

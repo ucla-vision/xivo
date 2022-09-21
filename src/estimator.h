@@ -71,32 +71,32 @@ class VisualPointCloud : public Message {
 public:
   VisualPointCloud(const timestamp_t &ts,
                    const VecXi &feature_ids,
-                   const MatX2 &xp_vals) :
+                   const MatX3 &xp_and_depths) :
     Message{ts},
     feature_ids_{feature_ids},
-    xp_vals_{xp_vals}
+    xp_and_depths_{xp_and_depths}
     {}
   void Execute(EstimatorPtr est);
 
 private:
   VecXi feature_ids_;
-  MatX2 xp_vals_;
+  MatX3 xp_and_depths_;
 };
 
 class VisualPointCloudTrackerOnly : public Message {
 public:
   VisualPointCloudTrackerOnly(const timestamp_t &ts,
                               const VecXi &feature_ids,
-                              const MatX2 &xp_vals) :
+                              const MatX3 &xp_and_depths) :
     Message{ts},
     feature_ids_{feature_ids},
-    xp_vals_{xp_vals}
+    xp_and_depths_{xp_and_depths}
     {}
   void Execute(EstimatorPtr est);
 
 private:
   VecXi feature_ids_;
-  MatX2 xp_vals_;
+  MatX3 xp_and_depths_;
 };
 
 class Inertial : public Message {
@@ -139,10 +139,10 @@ public:
   // Perform tracking in Point Cloud World (no images, only features)
   void VisualMeasPointCloud(const timestamp_t &ts,
                             const VecXi &feature_ids,
-                            const MatX2 &xps);
+                            const MatX3 &xp_and_depths);
   void VisualMeasPointCloudTrackerOnly(const timestamp_t &ts,
                                        const VecXi &feature_ids,
-                                       const MatX2 &xps);
+                                       const MatX3 &xp_and_depths);
 
 
   /** Loop Closure Measurement Update - older features, newer group. */
@@ -212,6 +212,8 @@ public:
   std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features();
   std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor();
 
+  // depth option for simulation
+  void InitWithSimDepths() { sim_initialize_depths_ = true; }
   
 private:
   void UpdateState(const State::Tangent &dX) { X_ += dX; }
@@ -232,9 +234,9 @@ private:
   /** top-level function for update when we receive an update from point-cloud world */
   void VisualMeasPointCloudInternal(const timestamp_t &ts,
                                     const VecXi &feature_ids,
-                                    const MatX2 &xps);
+                                    const MatX3 &xp_and_depths);
   void VisualMeasPointCloudInternalTrackerOnly(
-    const timestamp_t &ts, const VecXi &feature_ids, const MatX2 &xps);
+    const timestamp_t &ts, const VecXi &feature_ids, const MatX3 &xp_and_depths);
 
   // initialize gravity with initial stationary samples
   bool InitializeGravity();
@@ -522,6 +524,10 @@ private:
   bool gravity_initialized_, vision_initialized_;
   int imu_counter_, vision_counter_;
   int strict_criteria_timesteps_;
+
+  // For simulation
+  bool sim_initialize_depths_;
+  std::unordered_map<int, number_t> ids_to_depths_;
 
   // How much to inflate covariance of features after a group ownership change
   number_t feature_owner_change_cov_factor_;

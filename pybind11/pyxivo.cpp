@@ -53,8 +53,8 @@ public:
 
   void VisualMeasPointCloud(uint64_t ts,
                             const Eigen::Ref<const VecXi> &feature_ids,
-                            const Eigen::Ref<const MatX2> &xps) {
-    estimator_->VisualMeasPointCloud(timestamp_t{ts}, feature_ids, xps);
+                            const Eigen::Ref<const MatX3> &xp_with_depths) {
+    estimator_->VisualMeasPointCloud(timestamp_t{ts}, feature_ids, xp_with_depths);
     if (viewer_) {
       auto disp = Canvas::instance()->display();
       if (!disp.empty()) {
@@ -66,8 +66,8 @@ public:
 
   void VisualMeasPointCloudTrackerOnly(uint64_t ts,
                             const Eigen::Ref<const VecXi> &feature_ids,
-                            const Eigen::Ref<const MatX2> &xps) {
-    estimator_->VisualMeasPointCloudTrackerOnly(timestamp_t{ts}, feature_ids, xps);
+                            const Eigen::Ref<const MatX3> &xp_with_depths) {
+    estimator_->VisualMeasPointCloudTrackerOnly(timestamp_t{ts}, feature_ids, xp_with_depths);
     if (viewer_) {
       auto disp = Canvas::instance()->display();
       if (!disp.empty()) {
@@ -164,6 +164,8 @@ public:
   std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor() {
     return estimator_->tracked_features_no_descriptor();
   }
+
+  void InitWithSimDepths() { estimator_->InitWithSimDepths(); }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
@@ -316,6 +318,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("VisualMeasPointCloud", &EstimatorWrapper::VisualMeasPointCloud)
       .def("VisualMeasPointCloudTrackerOnly", &EstimatorWrapper::VisualMeasPointCloudTrackerOnly)
       .def("CloseLoop", &EstimatorWrapper::CloseLoop)
+      .def("InitWithSimDepths", &EstimatorWrapper::InitWithSimDepths)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)
