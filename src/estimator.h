@@ -156,7 +156,7 @@ public:
   const State& X() const { return X_; }
   const timestamp_t &ts() const { return curr_time_; }
   MatX P() const { return P_; }
-  MatX Pstate() const { return P_.block<kMotionSize,kMotionSize>(0,0); }
+  MatX Pstate() const { return P_.block<9,9>(0,0); }
   MatX CameraCov() const {
 #ifdef USE_ONLINE_CAMERA_CALIB
     return P_.block<kMaxCameraIntrinsics,kMaxCameraIntrinsics>(kCameraBegin,
