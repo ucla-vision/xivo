@@ -195,6 +195,8 @@ public:
   VecXi InstateFeatureIDs() const;
   VecXi InstateFeatureSinds(int n_output) const;
   VecXi InstateFeatureSinds() const;
+  VecXi InstateFeatureRefGroups(int n_output) const;
+  VecXi InstateFeatureRefGroups() const;
   VecXi InstateGroupIDs() const;
   MatX7 InstateGroupPoses() const;
   MatX InstateGroupCovs() const;

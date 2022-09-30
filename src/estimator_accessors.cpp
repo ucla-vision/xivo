@@ -36,6 +36,39 @@ VecXi Estimator::InstateFeatureSinds(int n_output) const {
   return FeatureSinds;
 }
 
+
+VecXi Estimator::InstateFeatureRefGroups(int n_output) const {
+
+  // Retrieve visibility graph
+  Graph& graph{*Graph::instance()};
+
+  // Get vectors of instate features and all features
+  std::vector<xivo::FeaturePtr> instate_features = graph.GetInstateFeatures();
+  MakePtrVectorUnique(instate_features);
+  int npts = std::max((int) instate_features.size(), n_output);
+
+  // Sort features by uncertainty
+  std::sort(instate_features.begin(), instate_features.end(),
+            [this](FeaturePtr f1, FeaturePtr f2) -> bool {
+              return FeatureCovComparison(f1, f2);
+            });
+
+  //std::vector<int> FeatureIDs;
+  VecXi FeatureRefGroups(npts);
+
+  int i = 0;
+  for (auto it = instate_features.begin();
+       it != instate_features.end() && i < n_output;
+       ) {
+    FeaturePtr f = *it;
+    FeatureRefGroups(i,0) = f->ref()->id();
+    ++i;
+    ++it;
+  }
+  return FeatureRefGroups;
+}
+
+
 VecXi Estimator::InstateFeatureIDs(int n_output) const {
 
   // Retrieve visibility graph
@@ -361,6 +394,26 @@ VecXi Estimator::InstateFeatureSinds() const
     ++it;
   }
   return FeatureSinds;
+}
+
+
+VecXi Estimator::InstateFeatureRefGroups() const
+{
+  int num_instate_features = instate_features_.size();
+
+  // Get all features
+  VecXi FeatureRefGroups(num_instate_features);
+
+  int i = 0;
+  for (auto it = instate_features_.begin();
+       it != instate_features_.end() && i < num_instate_features;
+       ) {
+    FeaturePtr f = *it;
+    FeatureRefGroups(i) = f->ref()->id();
+    ++i;
+    ++it;
+  }
+  return FeatureRefGroups;
 }
 
 
