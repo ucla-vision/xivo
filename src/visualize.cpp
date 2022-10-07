@@ -210,10 +210,13 @@ void Canvas::OverlayStateInfo(const State &X, const IMUState &IMU,
         kColorLakeBlue, thickness);
   }
 
+#ifdef USE_ONLINE_TEMPORAL_CALIB
   cv::putText(disp_, StrFormat("td=%0.4f", X.td),
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
       kColorLakeBlue, thickness);
+#endif
 
+#ifdef USE_ONLINE_IMU_CALIB
   cv::putText(disp_, StrFormat("Ca=[[%0.4f, %0.4f, %0.4f]", IMU.Ca(0,0),
                                IMU.Ca(0,1), IMU.Ca(0,2)),
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
@@ -243,7 +246,9 @@ void Canvas::OverlayStateInfo(const State &X, const IMUState &IMU,
                                IMU.Cg(2,1), IMU.Cg(2,2)),
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
       kColorLakeBlue, thickness);
+#endif
 
+#ifdef USE_ONLINE_CAMERA_CALIB
   cv::putText(disp_, StrFormat("Cam=[[%0.4f, %0.4f, %0.4f, %0.4f]",
                                Cam(0), Cam(1), Cam(2), Cam(3)),
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
@@ -253,6 +258,7 @@ void Canvas::OverlayStateInfo(const State &X, const IMUState &IMU,
                                Cam(4), Cam(5), Cam(6), Cam(7), Cam(8)),
       cv::Point(hspace, vspace * ++line_counter), CV_FONT_HERSHEY_PLAIN, font_scale,
       kColorLakeBlue, thickness);
+#endif
 
 }
 
