@@ -1339,6 +1339,7 @@ void Estimator::DiscardFeatures(const std::vector<FeaturePtr> &discards) {
 #ifdef USE_MAPPER
     Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
 #endif
+    just_dropped_feature_ids_.push_back(f->id());
     graph.RemoveFeature(f);
     if (f->instate()) {
       RemoveFeatureFromState(f);

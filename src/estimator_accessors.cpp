@@ -715,4 +715,16 @@ std::vector<std::tuple<int, Vec2f>> Estimator::tracked_features_no_descriptor() 
 }
 
 
+VecXi Estimator::JustDroppedFeatureIDs() const {
+  int num_just_dropped = just_dropped_feature_ids_.size();
+  VecXi output(num_just_dropped);
+
+  for (int i=0; i < num_just_dropped; i++) {
+    output[i] = just_dropped_feature_ids_[i];
+  }
+
+  return output;
+}
+
+
 }

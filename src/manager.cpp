@@ -27,6 +27,9 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   inliers_.clear();
   in_current_ekf_update_.clear();
 
+  // only used for data collection.
+  just_dropped_feature_ids_.clear();
+
   // retrieve the visibility graph
   Graph& graph{*Graph::instance()};
 
@@ -184,6 +187,7 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 #ifdef USE_MAPPER
       Mapper::instance()->AddFeature(f, graph.GetFeatureAdj(f), gbc());
 #endif
+      just_dropped_feature_ids_.push_back(f->id());
       graph.RemoveFeature(f);
 
       LOG(INFO) << "Tracker rejected feature #" << f->id();
@@ -200,6 +204,8 @@ void Estimator::ProcessTracks(const timestamp_t &ts,
 
     // Track is not in the EKF state and just dropped by tracker
     else if (!f->instate() && f->track_status() == TrackStatus::DROPPED) {
+      just_dropped_feature_ids_.push_back(f->id());
+
       graph.RemoveFeature(f);
       Feature::Destroy(f);
       it = tracks.erase(it);

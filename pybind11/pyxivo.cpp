@@ -165,6 +165,10 @@ public:
     return estimator_->tracked_features_no_descriptor();
   }
 
+  VecXi JustDroppedFeatureIDs() {
+    return estimator_->JustDroppedFeatureIDs();
+  }
+
   void InitWithSimDepths() { estimator_->InitWithSimDepths(); }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
@@ -371,6 +375,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("CameraIntrinsics", &EstimatorWrapper::CameraIntrinsics)
       .def("CameraDistortionType", &EstimatorWrapper::CameraDistortionType)
       .def("MeasurementUpdateInitialized", &EstimatorWrapper::MeasurementUpdateInitialized)
+      .def("JustDroppedFeatureIDs", &EstimatorWrapper::JustDroppedFeatureIDs)
       .def("tracked_features", &EstimatorWrapper::tracked_features)
       .def("tracked_features_no_descriptor", &EstimatorWrapper::tracked_features_no_descriptor);
 }

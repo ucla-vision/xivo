@@ -207,6 +207,7 @@ public:
   bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
   bool FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const;
   bool VisionInitialized() const { return vision_initialized_; };
+  VecXi JustDroppedFeatureIDs() const;
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
@@ -561,13 +562,11 @@ private:
   Timer timer_;
   std::unique_ptr<std::default_random_engine> rng_;
 
-  /** store tracked feature information -
-   * id
-   * keypoint
-   * descriptor
-  */
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_;
 
+  /** Ids of features that were just dropped by the tracker or thrown out by
+   * outlier rejection.
+  */
+  std::vector<int> just_dropped_feature_ids_;
 };
 
 } // xivo
