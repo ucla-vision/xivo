@@ -167,6 +167,8 @@ public:
 
   void InitWithSimDepths() { estimator_->InitWithSimDepths(); }
 
+  void ScaleInitVelocity(double scale) { estimator_->ScaleInitVelocity(scale); }
+
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gbc() { return estimator_->gbc().matrix3x4(); }
@@ -327,6 +329,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("VisualMeasPointCloudTrackerOnly", &EstimatorWrapper::VisualMeasPointCloudTrackerOnly)
       .def("CloseLoop", &EstimatorWrapper::CloseLoop)
       .def("InitWithSimDepths", &EstimatorWrapper::InitWithSimDepths)
+      .def("ScaleInitVelocity", &EstimatorWrapper::ScaleInitVelocity)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)

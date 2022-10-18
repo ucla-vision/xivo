@@ -207,6 +207,7 @@ public:
   bool FeatureCovComparison(FeaturePtr f1, FeaturePtr f2) const;
   bool FeatureCovXYComparison(FeaturePtr f1, FeaturePtr f2) const;
   bool VisionInitialized() const { return vision_initialized_; };
+  void ScaleInitVelocity(number_t scale) { X_.Vsb /= scale; };
 
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
