@@ -158,10 +158,10 @@ public:
     estimator_->CloseLoop();
   }
 
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features() {
+  std::vector<std::tuple<int, Vec2, MatXf>> tracked_features() {
     return estimator_->tracked_features();
   }
-  std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor() {
+  std::vector<std::tuple<int, Vec2>> tracked_features_no_descriptor() {
     return estimator_->tracked_features_no_descriptor();
   }
 
@@ -170,6 +170,8 @@ public:
   }
 
   void InitWithSimDepths() { estimator_->InitWithSimDepths(); }
+
+  void ScaleInitVelocity(double scale) { estimator_->ScaleInitVelocity(scale); }
 
   Eigen::Matrix<double, 3, 4> gsb() { return estimator_->gsb().matrix3x4(); }
   Eigen::Matrix<double, 3, 4> gsc() { return estimator_->gsc().matrix3x4(); }
@@ -331,6 +333,7 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("VisualMeasPointCloudTrackerOnly", &EstimatorWrapper::VisualMeasPointCloudTrackerOnly)
       .def("CloseLoop", &EstimatorWrapper::CloseLoop)
       .def("InitWithSimDepths", &EstimatorWrapper::InitWithSimDepths)
+      .def("ScaleInitVelocity", &EstimatorWrapper::ScaleInitVelocity)
       .def("gbc", &EstimatorWrapper::gbc)
       .def("gsb", &EstimatorWrapper::gsb)
       .def("gsc", &EstimatorWrapper::gsc)

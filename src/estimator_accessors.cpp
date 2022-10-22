@@ -666,25 +666,23 @@ Mat6 Estimator::InstateGroupCov(GroupPtr g) const {
 }
 
 
-std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
+std::vector<std::tuple<int, Vec2, MatXf>> Estimator::tracked_features() {
 
   auto tracker = Tracker::instance();
 
   // store tracked feature information
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features_info;
+  std::vector<std::tuple<int, Vec2, MatXf>> tracked_features_info;
 
   for (auto f : tracker->features_)
   {
     int id = f->id();
-    cv::KeyPoint kp = f->keypoint();
     cv::Mat descriptor = f->descriptor();
 
     // Convert from cv::Mat to matrix
     MatXf descriptor_eigen;
     cv2eigen(descriptor, descriptor_eigen);
 
-    // Convert cv::Keypoint to vector
-    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+    Vec2 kp_vector = f->xp();
 
     tracked_features_info.push_back(std::tuple(id, kp_vector, descriptor_eigen));
   }
@@ -693,20 +691,18 @@ std::vector<std::tuple<int, Vec2f, MatXf>> Estimator::tracked_features() {
 }
 
 
-std::vector<std::tuple<int, Vec2f>> Estimator::tracked_features_no_descriptor() {
+std::vector<std::tuple<int, Vec2>> Estimator::tracked_features_no_descriptor() {
 
   auto tracker = Tracker::instance();
 
   // store tracked feature information
-  std::vector<std::tuple<int, Vec2f>> tracked_features_info;
+  std::vector<std::tuple<int, Vec2>> tracked_features_info;
 
   for (auto f : tracker->features_)
   {
     int id = f->id();
-    cv::KeyPoint kp = f->keypoint();
 
-    // Convert cv::Keypoint to vector
-    Vec2f kp_vector{kp.pt.x, kp.pt.y};
+    Vec2 kp_vector = f->xp();
 
     tracked_features_info.push_back(std::tuple(id, kp_vector));
   }
