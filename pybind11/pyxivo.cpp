@@ -158,10 +158,10 @@ public:
     estimator_->CloseLoop();
   }
 
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features() {
+  std::vector<std::tuple<int, Vec2, MatXf>> tracked_features() {
     return estimator_->tracked_features();
   }
-  std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor() {
+  std::vector<std::tuple<int, Vec2>> tracked_features_no_descriptor() {
     return estimator_->tracked_features_no_descriptor();
   }
 

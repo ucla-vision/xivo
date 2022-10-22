@@ -212,8 +212,8 @@ public:
   int OOS_update_min_observations() { return OOS_update_min_observations_; }
 
   // returns vector to information about tracked features per instance
-  std::vector<std::tuple<int, Vec2f, MatXf>> tracked_features();
-  std::vector<std::tuple<int, Vec2f>> tracked_features_no_descriptor();
+  std::vector<std::tuple<int, Vec2, MatXf>> tracked_features();
+  std::vector<std::tuple<int, Vec2>> tracked_features_no_descriptor();
 
   // depth option for simulation
   void InitWithSimDepths() { sim_initialize_depths_ = true; }
