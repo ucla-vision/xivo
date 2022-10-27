@@ -46,6 +46,7 @@ void Estimator::UpdateStep(const timestamp_t &ts,
   ProcessTracks(ts, tracks);
   instate_features_ = graph.GetInstateFeatures();
 
+#ifndef NDEBUG
   auto sum = [](std::array<bool, kMaxFeature> ff) {
     int cnt = 0;
     for (auto d: ff) {
@@ -54,7 +55,6 @@ void Estimator::UpdateStep(const timestamp_t &ts,
     }
     return cnt;
   };
-#ifndef NDEBUG
   CHECK(sum(fsel_) == instate_features_.size())
     << "bookkeeping error in processing of tracks";
 #endif

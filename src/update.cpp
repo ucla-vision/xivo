@@ -53,7 +53,7 @@ std::vector<FeaturePtr> Estimator::MHGating() {
 
   std::vector<FeaturePtr> inliers; // individually compatible matches
   std::vector<number_t> dist, inlier_dist; // MH distance of features & inlier features
-  int num_mh_rejected = 0;
+  num_mh_rejected_ = 0;
   std::vector<FeaturePtr> to_destroy;
 
   // Compute Mahalanobis distance
@@ -86,7 +86,7 @@ std::vector<FeaturePtr> Estimator::MHGating() {
       if (dist[i] < mh_thresh) {
         inliers.push_back(f);
       } else {
-        num_mh_rejected++;
+        num_mh_rejected_++;
         to_destroy.push_back(f);
         LOG(INFO) << "feature #" << f->id() << " rejected by MH-gating";
       }
@@ -100,7 +100,7 @@ std::vector<FeaturePtr> Estimator::MHGating() {
 #endif
 
   timer_.Tock("MH-gating");
-  LOG(INFO) << "MH rejected " << num_mh_rejected << " features";
+  LOG(INFO) << "MH rejected " << num_mh_rejected_ << " features";
 
   for (auto f: to_destroy) {
     if (f->status() == FeatureStatus::GAUGE) {
@@ -338,7 +338,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
     std::vector<FeaturePtr> hi_inliers; // high-innovation inlier set
     std::vector<FeaturePtr> to_destroy;
     
-    int num_rejected = 0;
+    num_oneptransac_rejected_ = 0;
 
     for (int i = 0; i < mh_inliers.size(); ++i) {
       if (!is_low_innovation_inlier[i]) {
@@ -362,7 +362,7 @@ Estimator::OnePointRANSAC(const std::vector<FeaturePtr> &mh_inliers) {
           }
           f->SetStatus(FeatureStatus::REJECTED_BY_FILTER);
           to_destroy.push_back(f);
-          num_rejected++;
+          num_oneptransac_rejected_++;
           affected_groups_.insert(f->ref());
           LOG(INFO) << "feature #" << f->id() << " rejected by one-pt ransac";
         }

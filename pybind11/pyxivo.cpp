@@ -294,6 +294,13 @@ public:
 
   int num_instate_groups() { return estimator_->num_instate_groups(); }
 
+  int num_mh_rejected() { return estimator_->num_mh_rejected(); }
+
+  int num_oneptransac_rejected() { return estimator_->num_oneptransac_rejected(); }
+
+  int num_tracker_outlier_rejected() { return estimator_->num_tracker_outlier_rejected(); }
+
+
   bool UsingLoopClosure() {
     return estimator_->UsingLoopClosure();
   }
@@ -370,6 +377,9 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("InstateGroupCovs", &EstimatorWrapper::InstateGroupCovs)
       .def("num_instate_features", &EstimatorWrapper::num_instate_features)
       .def("num_instate_groups", &EstimatorWrapper::num_instate_groups)
+      .def("num_mh_rejected", &EstimatorWrapper::num_mh_rejected)
+      .def("num_oneptransac_rejected", &EstimatorWrapper::num_oneptransac_rejected)
+      .def("num_tracker_outlier_rejected", &EstimatorWrapper::num_tracker_outlier_rejected)
       .def("UsingLoopClosure", &EstimatorWrapper::UsingLoopClosure)
       .def("VisionInitialized", &EstimatorWrapper::VisionInitialized)
       .def("now", &EstimatorWrapper::now)

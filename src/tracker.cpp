@@ -23,6 +23,16 @@ auto sum_total = [](std::vector<uint8_t> vec) {
   return sum;
 };
 
+auto num_zeros = [](std::vector<uint8_t> vec) {
+  int num = 0;
+  for (auto v: vec) {
+    if (!v) {
+      num++;
+    }
+  }
+  return num;
+};
+
 cv::Ptr<cv::FeatureDetector> GetOpenCVDetectorDescriptor(
   std::string feature_type, Json::Value feature_cfg)
 {
@@ -394,6 +404,7 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
       }
       cv::Mat H;
       OutlierRejection(pts0, pts1, match_status, H);
+      num_outliers_rejected_ = num_zeros(match_status);
     }
 
     // After outlier rejection, mark match status of old and new features and
@@ -579,6 +590,7 @@ void Tracker::UpdateLK(const cv::Mat &image) {
   bool outlier_rejection_success;
   if (do_outlier_rejection_) {
     outlier_rejection_success = OutlierRejection(pts0, pts1, status, H);
+    num_outliers_rejected_ = num_zeros(status);
   }
 
   // Mark newly dropped tracks for possible rescue
@@ -708,7 +720,7 @@ bool Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
 
   // Mark outliers in `match_status`
   for (int i=0; i<pts0.size(); i++) {
-    if (match_status[i] != 0) {
+    if ((match_status[i] != 0) && (idx_map[i] > -1)) {
       if (inlier_outlier_mask.at<uchar>(idx_map[i]) == 0) {
         match_status[i] = 0;
       }

@@ -221,6 +221,11 @@ class CovDumpModeSaver(BaseSaver):
             group_ids = []
             group_sinds = []
 
+        # Outlier rejection stats
+        num_mh_rejected = estimator.num_mh_rejected()
+        num_oneptransac_rejected = estimator.num_oneptransac_rejected()
+        num_tracker_outlier_rejected = estimator.num_tracker_outlier_rejected()
+
         # Save results
         entry = dict()
 
@@ -260,6 +265,10 @@ class CovDumpModeSaver(BaseSaver):
         entry['group_covs'] = group_covs
         entry['group_ids'] = group_ids
         entry['group_sinds'] = group_sinds
+
+        entry['num_mh_rejected'] = num_mh_rejected
+        entry['num_oneptransac_rejected'] = num_oneptransac_rejected
+        entry['num_tracker_outlier_rejected'] = num_tracker_outlier_rejected
 
         self.results.append(entry)
 

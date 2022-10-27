@@ -42,7 +42,9 @@ public:
 
   /** Called by function `CreateSystem` to force extraction of descriptors when
    * we want to use loop closure. */
-  bool IsExtractingDescriptors() { return extract_descriptor_; }
+  bool IsExtractingDescriptors() { return extract_descriptor_; };
+
+  int num_rejected_outliers() const { return num_outliers_rejected_; };
 
 public:
   std::list<FeaturePtr> features_;
@@ -67,6 +69,7 @@ private:
   int outlier_rejection_maxiters_;
   number_t outlier_rejection_confidence_;
   number_t outlier_rejection_reproj_thresh_;
+  int num_outliers_rejected_ = 0;
 
   cv::Mat img_;
 

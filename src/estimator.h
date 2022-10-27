@@ -177,6 +177,9 @@ public:
   int gauge_group() const { return gauge_group_; }
   int num_instate_features() const { return instate_features_.size(); };
   int num_instate_groups() const {return instate_groups_.size(); };
+  int num_mh_rejected() const { return num_mh_rejected_; };
+  int num_oneptransac_rejected() const { return num_oneptransac_rejected_; };
+  int num_tracker_outlier_rejected() const { return Tracker::instance()->num_rejected_outliers(); };
   MatX3 InstateFeaturePositions(int n_output) const;
   MatX3 InstateFeaturePositions() const;
   MatX6 InstateFeatureCovs(int n_output) const;
@@ -568,6 +571,10 @@ private:
    * outlier rejection.
   */
   std::vector<int> just_dropped_feature_ids_;
+
+  /** Keep track of features rejected by MH-Gating and One-Pt RANSAC. */
+  int num_mh_rejected_;
+  int num_oneptransac_rejected_;
 };
 
 } // xivo
