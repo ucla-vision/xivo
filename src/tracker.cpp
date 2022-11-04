@@ -313,7 +313,7 @@ void Tracker::DetectLK(const cv::Mat &img, int num_to_add,
       // Didn't match to a previously-dropped track, so create a new feature
       FeaturePtr f = Feature::Create(kp.pt.x, kp.pt.y);
       features_.push_back(f);
-
+      num_new_detections_++;
       if (extract_descriptor_) {
         f->SetDescriptor(descriptors.row(i));
       }
@@ -393,6 +393,8 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
                                 pixel_displacement_check_passed);
     }
 
+   num_failed_to_track_ = feature_vec.size() - matches.size() + num_zeros(match_status);
+
     // Outlier rejection
     if (do_outlier_rejection_) {
       std::vector<cv::Point2f> pts0;
@@ -404,7 +406,6 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
       }
       cv::Mat H;
       OutlierRejection(pts0, pts1, match_status, H);
-      num_outliers_rejected_ = num_zeros(match_status);
     }
 
     // After outlier rejection, mark match status of old and new features and
@@ -439,6 +440,7 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
   // Turn rest of detected tracks into a new feature
   int num_to_create = num_features_max_ - feature_vec.size()
     + num_features_dropped;
+  num_new_detections_ = 0;
   for (int i=0; i<new_kps.size(); i++) {
     if (num_to_create <= 0) {
       break;
@@ -449,7 +451,7 @@ void Tracker::UpdateMatch(const cv::Mat &image) {
       f->SetDescriptor(new_descriptors.row(i));
       f->SetKeypoint(new_kps[i]);
       features_.push_back(f);
-
+      num_new_detections_++;
       num_to_create -= 1;
     }
   }
@@ -586,11 +588,14 @@ void Tracker::UpdateLK(const cv::Mat &image) {
     }
   }
 
+  num_new_detections_ = 0;
+  num_failed_to_track_ =  num_zeros(status);
+
   cv::Mat H;
   bool outlier_rejection_success;
   if (do_outlier_rejection_) {
     outlier_rejection_success = OutlierRejection(pts0, pts1, status, H);
-    num_outliers_rejected_ = num_zeros(status);
+    num_valid_features -= num_outliers_rejected_;
   }
 
   // Mark newly dropped tracks for possible rescue
@@ -717,6 +722,9 @@ bool Tracker::OutlierRejection(const std::vector<cv::Point2f> pts0,
     pts0_valid, pts1_valid, outlier_rejection_method_,
     outlier_rejection_reproj_thresh_, inlier_outlier_mask,
     outlier_rejection_maxiters_, outlier_rejection_confidence_);
+
+  // record number of rejected outliers
+  num_outliers_rejected_ = num_zeros(inlier_outlier_mask);
 
   // Mark outliers in `match_status`
   for (int i=0; i<pts0.size(); i++) {

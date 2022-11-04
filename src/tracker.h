@@ -46,6 +46,10 @@ public:
 
   int num_rejected_outliers() const { return num_outliers_rejected_; };
 
+  int num_failed_to_track() const { return num_failed_to_track_; };
+
+  int num_new_detections() const { return num_new_detections_; };
+
 public:
   std::list<FeaturePtr> features_;
 
@@ -70,6 +74,8 @@ private:
   number_t outlier_rejection_confidence_;
   number_t outlier_rejection_reproj_thresh_;
   int num_outliers_rejected_ = 0;
+  int num_failed_to_track_ = 0;
+  int num_new_detections_ = 0;
 
   cv::Mat img_;
 

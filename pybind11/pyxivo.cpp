@@ -300,6 +300,9 @@ public:
 
   int num_tracker_outlier_rejected() { return estimator_->num_tracker_outlier_rejected(); }
 
+  int num_tracker_failed_to_track() { return estimator_->num_tracker_failed_to_track(); }
+
+  int num_tracker_new_detections() { return estimator_->num_tracker_new_detections(); }
 
   bool UsingLoopClosure() {
     return estimator_->UsingLoopClosure();
@@ -380,6 +383,8 @@ PYBIND11_MODULE(pyxivo, m) {
       .def("num_mh_rejected", &EstimatorWrapper::num_mh_rejected)
       .def("num_oneptransac_rejected", &EstimatorWrapper::num_oneptransac_rejected)
       .def("num_tracker_outlier_rejected", &EstimatorWrapper::num_tracker_outlier_rejected)
+      .def("num_tracker_failed_to_track", &EstimatorWrapper::num_tracker_failed_to_track)
+      .def("num_tracker_new_detections", &EstimatorWrapper::num_tracker_new_detections)
       .def("UsingLoopClosure", &EstimatorWrapper::UsingLoopClosure)
       .def("VisionInitialized", &EstimatorWrapper::VisionInitialized)
       .def("now", &EstimatorWrapper::now)

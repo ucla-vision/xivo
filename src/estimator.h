@@ -179,7 +179,15 @@ public:
   int num_instate_groups() const {return instate_groups_.size(); };
   int num_mh_rejected() const { return num_mh_rejected_; };
   int num_oneptransac_rejected() const { return num_oneptransac_rejected_; };
-  int num_tracker_outlier_rejected() const { return Tracker::instance()->num_rejected_outliers(); };
+  int num_tracker_outlier_rejected() const {
+    return Tracker::instance()->num_rejected_outliers();
+  };
+  int num_tracker_failed_to_track() const {
+    return Tracker::instance()->num_failed_to_track();
+  };
+  int num_tracker_new_detections() const {
+    return Tracker::instance()->num_new_detections();
+  };
   MatX3 InstateFeaturePositions(int n_output) const;
   MatX3 InstateFeaturePositions() const;
   MatX6 InstateFeatureCovs(int n_output) const;
