@@ -62,7 +62,7 @@ cv::Ptr<cv::FeatureDetector> GetOpenCVDetectorDescriptor(
   } else if (feature_type == "GFTT") {
     return cv::GFTTDetector::create(
       feature_cfg.get("maxCorners", 1000).asInt(),
-      feature_cfg.get("qualityLevel", true).asDouble(),
+      feature_cfg.get("qualityLevel", 0.01).asDouble(),
       feature_cfg.get("minDistance", 1.0).asDouble(),
       feature_cfg.get("blockSize", 3).asInt(),
       feature_cfg.get("useHarrisDetector", false).asBool(),
