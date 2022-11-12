@@ -640,6 +640,10 @@ void Tracker::UpdatePointCloud(const VecXi &feature_ids, const MatX2 &xps)
     measurement_marked[feature_ids[i]] = false;
   }
 
+  // Save data for possible outlier rejection
+  std::vector<cv::Point2f> pts0;
+  std::vector<cv::Point2f> pts1;
+
   // status of existing tracks
   int i = 0;
   int num_dropped = 0;
@@ -653,6 +657,9 @@ void Tracker::UpdatePointCloud(const VecXi &feature_ids, const MatX2 &xps)
         CheckPixelDisplacement(measurements[f->id()], f->xp(),
                                max_pixel_displacement_);
       if (close_enough) {
+        pts0.push_back(cv::Point2f(f->back()[0], f->back()[1]));
+        pts1.push_back(cv::Point2f(measurements[f->id()][0],
+                                   measurements[f->id()][1]));
         status[i] = 1;
         f->push_back(measurements[f->id()]);
         f->SetTrackStatus(TrackStatus::TRACKED);
@@ -669,8 +676,15 @@ void Tracker::UpdatePointCloud(const VecXi &feature_ids, const MatX2 &xps)
     }
   }
 
+  // Outlier Rejection
+  if (do_outlier_rejection_) {
+    cv::Mat H;
+    OutlierRejection(pts0, pts1, status, H);
+  }
+
   // Create new tracks
-  int num_to_add = num_features_max_ - features_.size() + num_dropped;
+  int num_to_add = num_features_max_ - features_.size()
+    + num_dropped + num_outliers_rejected_;
   for (i = 0; i < feature_ids.size(); i++) {
     if (num_to_add <= 0) {
       break;
